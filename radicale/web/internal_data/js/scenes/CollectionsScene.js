@@ -25,7 +25,7 @@ import { SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
-import { bytesToHumanReadable } from "../utils/misc.js";
+import { bytesToHumanReadable, get_element, get_element_by_id } from "../utils/misc.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { IncomingSharingScene } from "./IncomingSharingScene.js";
@@ -39,18 +39,18 @@ import { UploadCollectionScene } from "./UploadCollectionScene.js";
 export class CollectionsScene {
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {Collection} principal_collection The princial collection
-     * @param {function(string):void} onerror Called when an error occurs, before the
+     * @param {function(?string):void} onerror Called when an error occurs, before the
      *                                   scene is popped.
      */
     constructor(user, password, principal_collection, onerror) {
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("collectionsscene");
-        /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=collectiontemplate]");
-        /** @type {HTMLElement} */ let new_btn = html_scene.querySelector("[data-name=new]");
-        /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=upload]");
-        /** @type {HTMLElement} */ let incomingshares_btn = html_scene.querySelector("[data-name=incomingshares]");
-        /** @type {HTMLElement} */ let error_div = html_scene.querySelector("[data-name=collectionsscene_error]");
+        /** @type {HTMLElement} */ let html_scene = get_element_by_id("collectionsscene");
+        /** @type {HTMLElement} */ let template = get_element(html_scene, "[data-name=collectiontemplate]");
+        /** @type {HTMLElement} */ let new_btn = get_element(html_scene, "[data-name=new]");
+        /** @type {HTMLElement} */ let upload_btn = get_element(html_scene, "[data-name=upload]");
+        /** @type {HTMLElement} */ let incomingshares_btn = get_element(html_scene, "[data-name=incomingshares]");
+        /** @type {HTMLElement} */ let error_div = get_element(html_scene, "[data-name=collectionsscene_error]");
 
         /** @type {Array<HTMLElement>} */ let nodes = [];
         let errorHandler = new ErrorHandler(error_div);
@@ -133,7 +133,7 @@ export class CollectionsScene {
          * @param {boolean} clear_error
          */
         function show_collections(collections, shares, clear_error) {
-            /** @type {HTMLElement} */ let navBar = document.querySelector("#logoutview");
+            /** @type {HTMLElement} */ let navBar = get_element(document, "#logoutview");
             let heightOfNavBar = navBar.offsetHeight + "px";
             html_scene.style.marginTop = heightOfNavBar;
             html_scene.style.height = "calc(100vh - " + heightOfNavBar + ")";
@@ -144,22 +144,24 @@ export class CollectionsScene {
 
             // Clear old nodes
             nodes.forEach(function (node) {
-                node.parentNode.removeChild(node);
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
             });
             nodes = [];
 
             collections.forEach(function (/** @type {Collection} */ collection) {
                 /** @type {HTMLElement} */ let node = /** @type {HTMLElement} */(template.cloneNode(true));
                 node.classList.remove("hidden");
-                /** @type {HTMLElement} */ let title_form = node.querySelector("[data-name=title]");
-                /** @type {HTMLElement} */ let description_form = node.querySelector("[data-name=description]");
-                /** @type {HTMLElement} */ let contentcount_form = node.querySelector("[data-name=contentcount]");
-                /** @type {HTMLInputElement} */ let url_form = node.querySelector("[data-name=url]");
-                /** @type {HTMLElement} */ let color_form = node.querySelector("[data-name=color]");
-                /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
-                /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
-                /** @type {HTMLElement} */ let share_btn = node.querySelector("[data-name=share]");
-                /** @type {HTMLAnchorElement} */ let download_btn = node.querySelector("[data-name=download]");
+                /** @type {HTMLElement} */ let title_form = get_element(node, "[data-name=title]");
+                /** @type {HTMLElement} */ let description_form = get_element(node, "[data-name=description]");
+                /** @type {HTMLElement} */ let contentcount_form = get_element(node, "[data-name=contentcount]");
+                /** @type {HTMLInputElement} */ let url_form = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=url]"));
+                /** @type {HTMLElement} */ let color_form = get_element(node, "[data-name=color]");
+                /** @type {HTMLElement} */ let delete_btn = get_element(node, "[data-name=delete]");
+                /** @type {HTMLElement} */ let edit_btn = get_element(node, "[data-name=edit]");
+                /** @type {HTMLElement} */ let share_btn = get_element(node, "[data-name=share]");
+                /** @type {HTMLAnchorElement} */ let download_btn = /** @type {HTMLAnchorElement} */ (get_element(node, "[data-name=download]"));
                 if (collection.color) {
                     color_form.style.background = collection.color;
                 }
@@ -175,22 +177,22 @@ export class CollectionsScene {
                 });
                 possible_types.forEach(function (e) {
                     if (e !== collection.type) {
-                        node.querySelector("[data-name=" + e + "]").classList.add("hidden");
+                        get_element(node, "[data-name=" + e + "]").classList.add("hidden");
                     }
                 });
-                let share_info = node.querySelector("[data-name=shared-by]");
-                let transformed_from = node.querySelector("[data-name=transformed-from]");
+                let share_info = get_element(node, "[data-name=shared-by]");
+                let transformed_from = get_element(node, "[data-name=transformed-from]");
                 let share = (shares || []).find(
                     s => (s.ShareType === "map" || s.ShareType === "bday") &&
                         (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
                 if (share) {
                     if (share.Owner !== user) {
                         share_info.classList.remove("hidden");
-                        node.querySelector("[data-name=shared-by-owner]").textContent = share.Owner;
+                        get_element(node, "[data-name=shared-by-owner]").textContent = share.Owner;
                     } else {
                         transformed_from.classList.remove("hidden");
                     }
-                    let share_option = node.querySelector("[data-name=shareoption]");
+                    let share_option = get_element(node, "[data-name=shareoption]");
                     if (share_option) {
                         share_option.classList.add("hidden");
                         share_option.removeAttribute("data-name");
@@ -223,10 +225,10 @@ export class CollectionsScene {
                 download_btn.onclick = function (event) {
                     event.preventDefault();
                     let auth = get_auth_header(user, password);
-                    let headers = auth ? { 'Authorization': auth } : {};
-                    fetch(href, {
-                        headers: headers
-                    }).then(function (response) {
+                    let headers = auth ? {
+                        'Authorization': auth
+                    } : undefined;
+                    fetch(href, { headers: headers }).then(function (response) {
                         if (response.ok) {
                             return response.blob();
                         }
@@ -245,14 +247,18 @@ export class CollectionsScene {
                     });
                 };
                 if (collection.type == CollectionType.WEBCAL) {
-                    download_btn.parentElement.classList.add("hidden");
+                    if (download_btn.parentElement) {
+                        download_btn.parentElement.classList.add("hidden");
+                    }
                 }
                 delete_btn.onclick = function () { return ondelete(collection); };
                 edit_btn.onclick = function () { return onedit(collection); };
                 share_btn.onclick = function () { return onshare(collection); };
                 node.classList.remove("hidden");
                 nodes.push(node);
-                template.parentNode.insertBefore(node, template);
+                if (template.parentNode) {
+                    template.parentNode.insertBefore(node, template);
+                }
             });
         }
 
@@ -276,7 +282,9 @@ export class CollectionsScene {
             incomingshares_btn.onclick = null;
             // remove collection
             nodes.forEach(function (node) {
-                node.parentNode.removeChild(node);
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
             });
             nodes = [];
         };

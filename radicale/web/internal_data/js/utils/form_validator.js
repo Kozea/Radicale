@@ -30,6 +30,7 @@ export class FormValidator {
      */
     constructor(error_handler) {
         this.error_handler = error_handler;
+        /** @type {Array<{field: HTMLInputElement, validation_method: function(): ?string}>} */
         this.validation_methods = [];
     }
 
@@ -51,8 +52,8 @@ export class FormValidator {
      */
     validate() {
         let errorMessages = [];
-        for (let { field, validation_method } of this.validation_methods) {
-            let errorMessage = validation_method(field);
+        for (let { validation_method } of this.validation_methods) {
+            let errorMessage = validation_method();
             if (errorMessage) {
                 errorMessages.push(errorMessage);
             }
@@ -136,7 +137,9 @@ export function validate_color(input, field_name) {
         }
         return null;
     };
-}/**
+}
+
+/**
  * Validates that the input matches a specific string.
  * @param {HTMLInputElement} input
  * @param {string} target

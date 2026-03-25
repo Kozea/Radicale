@@ -24,7 +24,7 @@ import { CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
-import { onCleanHREFinput, random_uuid } from "../utils/misc.js";
+import { get_element, get_element_by_id, onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, is_current_scene, pop_scene } from "./scene_manager.js";
 
 /**
@@ -33,7 +33,7 @@ import { Scene, is_current_scene, pop_scene } from "./scene_manager.js";
 export class CreateEditShareScene {
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {import("../models/collection.js").Collection} collection
      * @param {string} shareType
      * @param {Share} [share] If provided, the scene will be in edit mode.
@@ -42,27 +42,27 @@ export class CreateEditShareScene {
         let self = this;
         let edit = !!share;
         let pathMapped = collection.href;
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("newshare");
-        /** @type {HTMLFormElement} */ let form = html_scene.querySelector("form");
-        /** @type {HTMLElement} */ let sharemapfields = html_scene.querySelector("[data-name=sharemapfields]");
-        /** @type {HTMLInputElement} */ let shareuser_input = html_scene.querySelector("[data-name=shareuser]");
-        /** @type {HTMLInputElement} */ let sharehref_input = html_scene.querySelector("[data-name=sharehref]");
-        /** @type {HTMLInputElement} */ let enabled_checkbox = html_scene.querySelector("[data-name=enabled]");
-        /** @type {HTMLInputElement} */ let hidden_checkbox = html_scene.querySelector("[data-name=hidden]");
-        let permissions_ro_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_ro"));
-        let permissions_rw_radio = /** @type {HTMLInputElement} */ (document.getElementById("newshare_attr_permissions_rw"));
+        /** @type {HTMLElement} */ let html_scene = get_element_by_id("newshare");
+        /** @type {HTMLFormElement} */ let form = /** @type {HTMLFormElement} */ (get_element(html_scene, "form"));
+        /** @type {HTMLElement} */ let sharemapfields = get_element(html_scene, "[data-name=sharemapfields]");
+        /** @type {HTMLInputElement} */ let shareuser_input = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=shareuser]"));
+        /** @type {HTMLInputElement} */ let sharehref_input = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=sharehref]"));
+        /** @type {HTMLInputElement} */ let enabled_checkbox = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=enabled]"));
+        /** @type {HTMLInputElement} */ let hidden_checkbox = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=hidden]"));
+        let permissions_ro_radio = /** @type {HTMLInputElement} */ (get_element_by_id("newshare_attr_permissions_ro"));
+        let permissions_rw_radio = /** @type {HTMLInputElement} */ (get_element_by_id("newshare_attr_permissions_rw"));
 
-        /** @type {HTMLDetailsElement} */ let properties_fieldset = /** @type {HTMLDetailsElement} */ (html_scene.querySelector("[data-name=properties_override]"));
-        /** @type {HTMLInputElement} */ let displayname_override_enabled = html_scene.querySelector("[data-name=displayname_override_enabled]");
-        /** @type {HTMLInputElement} */ let displayname_override_input = html_scene.querySelector("[data-name=displayname_override]");
-        /** @type {HTMLInputElement} */ let description_override_enabled = html_scene.querySelector("[data-name=description_override_enabled]");
-        /** @type {HTMLInputElement} */ let description_override_input = html_scene.querySelector("[data-name=description_override]");
-        /** @type {HTMLInputElement} */ let color_override_enabled = html_scene.querySelector("[data-name=color_override_enabled]");
-        /** @type {HTMLInputElement} */ let color_override_input = html_scene.querySelector("[data-name=color_override]");
+        /** @type {HTMLDetailsElement} */ let properties_fieldset = /** @type {HTMLDetailsElement} */ (get_element(html_scene, "[data-name=properties_override]"));
+        /** @type {HTMLInputElement} */ let displayname_override_enabled = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=displayname_override_enabled]"));
+        /** @type {HTMLInputElement} */ let displayname_override_input = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=displayname_override]"));
+        /** @type {HTMLInputElement} */ let description_override_enabled = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=description_override_enabled]"));
+        /** @type {HTMLInputElement} */ let description_override_input = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=description_override]"));
+        /** @type {HTMLInputElement} */ let color_override_enabled = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=color_override_enabled]"));
+        /** @type {HTMLInputElement} */ let color_override_input = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=color_override]"));
 
-        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
-        /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
-        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
+        /** @type {HTMLElement} */ let submit_btn = get_element(html_scene, "[data-name=submit]");
+        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
 
         let errorHandler = new ErrorHandler(error_form);
         let map_validator = new FormValidator(errorHandler);
@@ -108,7 +108,7 @@ export class CreateEditShareScene {
                 let hidden_by_owner = (shareType === "bday" && shareuser_input.value === user) ? false : hidden_checkbox.checked;
                 let permissions = permissions_rw_radio.checked ? "rw" : "r";
 
-                let properties = {};
+                /** @type {Object<string, string>} */ let properties = {};
                 if (displayname_override_enabled.checked) {
                     let key = get_property_key(collection.type, "DISPLAYNAME");
                     if (key) properties[key] = displayname_override_input.value;
@@ -122,7 +122,7 @@ export class CreateEditShareScene {
                     if (key) properties[key] = color_override_input.value + (color_override_input.value ? "ff" : "");
                 }
 
-                let callback = function (/** @type {string} */ error) {
+                let callback = function (/** @type {?string} */ error) {
                     if (!is_current_scene(self)) {
                         return;
                     }
@@ -143,12 +143,12 @@ export class CreateEditShareScene {
                     PathMapped: pathMapped,
                     Permissions: permissions,
                     EnabledByOwner: enabled_by_owner,
-                    EnabledByUser: edit ? share.EnabledByUser : null,
+                    EnabledByUser: (edit && share) ? share.EnabledByUser : null,
                     HiddenByOwner: hidden_by_owner,
-                    HiddenByUser: edit ? share.HiddenByUser : null,
+                    HiddenByUser: (edit && share) ? share.HiddenByUser : null,
                     Properties: properties,
-                    User: edit ? share.User : shareuser_input.value,
-                    PathOrToken: edit ? share.PathOrToken : ((shareType === "map" || shareType === "bday") ? "/" + shareuser_input.value + "/" + sharehref_input.value + "/" : ""),
+                    User: (edit && share) ? share.User : shareuser_input.value,
+                    PathOrToken: (edit && share) ? share.PathOrToken : ((shareType === "map" || shareType === "bday") ? "/" + shareuser_input.value + "/" + sharehref_input.value + "/" : ""),
                 });
 
                 if (edit) {
@@ -187,13 +187,14 @@ export class CreateEditShareScene {
             cancel_btn.onclick = oncancel;
             form.onsubmit = onsubmit;
 
-            html_scene.querySelector("h1").textContent = edit ? "Edit Share" : "New Share";
+            /** @type {HTMLHeadingElement} */ let title = /** @type {HTMLHeadingElement} */ (get_element(html_scene, "h1"));
+            title.textContent = edit ? "Edit Share" : "New Share";
             submit_btn.textContent = edit ? "Save" : "Create";
 
-            shareuser_input.value = edit ? share.User : (shareType === "bday" ? user : "");
+            shareuser_input.value = (edit && share) ? share.User : (shareType === "bday" ? user : "");
             shareuser_input.disabled = edit;
-            enabled_checkbox.checked = edit ? share.EnabledByOwner : true;
-            hidden_checkbox.checked = edit ? share.HiddenByOwner : false;
+            enabled_checkbox.checked = (edit && share && share.EnabledByOwner !== null) ? share.EnabledByOwner : true;
+            hidden_checkbox.checked = (edit && share && share.HiddenByOwner !== null) ? share.HiddenByOwner : false;
 
             if (shareType === "bday") {
                 // bday is always read-only; hide the permissions section entirely
@@ -206,8 +207,8 @@ export class CreateEditShareScene {
                 permissions_ro_radio.closest("details")?.classList.remove("hidden");
                 permissions_ro_radio.disabled = false;
                 permissions_rw_radio.disabled = false;
-                permissions_ro_radio.checked = edit ? share.Permissions.toLowerCase() === "r" : true;
-                permissions_rw_radio.checked = edit ? share.Permissions.toLowerCase() === "rw" : false;
+                permissions_ro_radio.checked = (edit && share) ? share.Permissions.toLowerCase() === "r" : true;
+                permissions_rw_radio.checked = (edit && share) ? share.Permissions.toLowerCase() === "rw" : false;
             }
 
             let displayname = collection.displayname || "";
@@ -217,7 +218,7 @@ export class CreateEditShareScene {
             let description_override_enabled_value = false;
             let color_override_enabled_value = false;
 
-            if (edit && share.Properties) {
+            if (edit && share && share.Properties) {
                 let displayname_key = get_property_key(collection.type, "DISPLAYNAME");
                 if (displayname_key && share.Properties[displayname_key] !== undefined) {
                     displayname = share.Properties[displayname_key];
@@ -257,15 +258,23 @@ export class CreateEditShareScene {
                 properties_fieldset.open = true;
             }
             if (is_calendar || is_addressbook) {
-                description_override_enabled.parentElement.classList.remove("hidden");
-                color_override_enabled.parentElement.classList.remove("hidden");
+                if (description_override_enabled.parentElement) {
+                    description_override_enabled.parentElement.classList.remove("hidden");
+                }
+                if (color_override_enabled.parentElement) {
+                    color_override_enabled.parentElement.classList.remove("hidden");
+                }
             } else {
-                description_override_enabled.parentElement.classList.add("hidden");
-                color_override_enabled.parentElement.classList.add("hidden");
+                if (description_override_enabled.parentElement) {
+                    description_override_enabled.parentElement.classList.add("hidden");
+                }
+                if (color_override_enabled.parentElement) {
+                    color_override_enabled.parentElement.classList.add("hidden");
+                }
             }
 
             if (shareType === "map" || shareType === "bday") {
-                if (edit) {
+                if (edit && share) {
                     sharehref_input.value = share.PathOrToken.split("/").filter(Boolean).pop() || "";
                 } else {
                     sharehref_input.value = random_uuid();

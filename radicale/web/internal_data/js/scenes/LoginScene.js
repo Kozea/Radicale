@@ -21,27 +21,30 @@
 
 import { get_principal } from "../api/api.js";
 import { ROOT_PATH, SERVER } from "../constants.js";
+import { Collection } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_non_empty } from "../utils/form_validator.js";
+import { get_element, get_element_by_id } from "../utils/misc.js";
 import { CollectionsScene } from "./CollectionsScene.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, is_current_scene, pop_scene, pop_to_root, push_scene, replace_scene } from "./scene_manager.js";
+
 /**
  * @constructor
  * @implements {Scene}
  */
 export class LoginScene {
     constructor() {
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("loginscene");
-        /** @type {HTMLElement} */ let form = html_scene.querySelector("[data-name=form]");
-        /** @type {HTMLInputElement} */ let user_form = html_scene.querySelector("[data-name=user]");
-        /** @type {HTMLInputElement} */ let password_form = html_scene.querySelector("[data-name=password]");
-        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
-        /** @type {HTMLElement} */ let logout_view = document.getElementById("logoutview");
-        /** @type {HTMLElement} */ let logout_user_form = logout_view.querySelector("[data-name=user]");
-        /** @type {HTMLElement} */ let logout_btn = logout_view.querySelector("[data-name=logout]");
-        /** @type {HTMLElement} */ let refresh_btn = logout_view.querySelector("[data-name=refresh]");
+        /** @type {HTMLElement} */ let html_scene = get_element_by_id("loginscene");
+        /** @type {HTMLElement} */ let form = get_element(html_scene, "[data-name=form]");
+        /** @type {HTMLInputElement} */ let user_form = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=user]"));
+        /** @type {HTMLInputElement} */ let password_form = /** @type {HTMLInputElement}    */ (get_element(html_scene, "[data-name=password]"));
+        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
+        /** @type {HTMLElement} */ let logout_view = get_element_by_id("logoutview");
+        /** @type {HTMLElement} */ let logout_user_form = get_element(logout_view, "[data-name=user]");
+        /** @type {HTMLElement} */ let logout_btn = get_element(logout_view, "[data-name=logout]");
+        /** @type {HTMLElement} */ let refresh_btn = get_element(logout_view, "[data-name=refresh]");
 
         let user = "";
         /** @type {?XMLHttpRequest} */ let principal_req = null;
@@ -60,7 +63,7 @@ export class LoginScene {
 
         /**
          * @param {string} p_user
-         * @param {string} p_password
+         * @param {?string} p_password
          */
         function perform_login(p_user, p_password) {
             user = p_user;
@@ -77,7 +80,7 @@ export class LoginScene {
             // Fetch principal
             let loading_scene = new LoadingScene();
             push_scene(loading_scene);
-            principal_req = get_principal(user, p_password, function (principal_collection, error1) {
+            principal_req = get_principal(user, p_password, function (/** @type {?Collection} */ principal_collection, error1) {
                 if (!is_current_scene(loading_scene)) {
                     return;
                 }
@@ -85,12 +88,12 @@ export class LoginScene {
                 if (error1) {
                     errorHandler.setError(error1);
                     pop_scene();
-                } else {
+                } else if (principal_collection) {
                     // show collections
                     let saved_user = user;
                     user = "";
                     let collections_scene = new CollectionsScene(
-                        saved_user, p_password, principal_collection, function (error1) {
+                        saved_user, p_password, principal_collection, function (/** @type {?string} */ error1) {
                             errorHandler.setError(error1);
                             user = saved_user;
                         });
@@ -150,29 +153,27 @@ export class LoginScene {
 
             // Probe for existing authentication (e.g. X-Remote-User)
             // Use fetch with credentials: 'omit' to avoid browser login prompt on 401
-            if (window.fetch) {
-                fetch(SERVER + ROOT_PATH, {
-                    method: 'PROPFIND',
-                    headers: { 'Depth': '0' },
-                    credentials: 'omit'
-                }).then(function (response) {
-                    if (response.ok) {
-                        // Authenticated! Now it's safe to call get_principal
-                        get_principal(null, null, function (principal_collection, error) {
-                            if (!error && principal_collection) {
-                                let authenticated_user = principal_collection.displayname;
-                                if (!authenticated_user) {
-                                    let href = principal_collection.href.replace(/\/+$/, "");
-                                    authenticated_user = href.substring(href.lastIndexOf("/") + 1);
-                                }
-                                perform_login(authenticated_user, null);
+            fetch(SERVER + ROOT_PATH, {
+                method: 'PROPFIND',
+                headers: { 'Depth': '0' },
+                credentials: 'omit'
+            }).then(function (response) {
+                if (response.ok) {
+                    // Authenticated! Now it's safe to call get_principal
+                    get_principal(null, null, function (/** @type {?Collection} */ principal_collection, error) {
+                        if (!error && principal_collection) {
+                            let authenticated_user = principal_collection.displayname;
+                            if (!authenticated_user) {
+                                let href = principal_collection.href.replace(/\/+$/, "");
+                                authenticated_user = href.substring(href.lastIndexOf("/") + 1);
                             }
-                        });
-                    }
-                })["catch"](function () {
-                    // Ignore error: we are not authenticated or something else went wrong
-                });
-            }
+                            perform_login(authenticated_user, null);
+                        }
+                    });
+                }
+            })["catch"](function () {
+                // Ignore error: we are not authenticated or something else went wrong
+            });
         };
         this.hide = function () {
             read_form();

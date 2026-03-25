@@ -24,12 +24,12 @@ export function displayPermissions(permissions, node) {
   permissions = (permissions || "").toLowerCase();
   if (permissions === "rw") {
     const roElement = node.querySelector("[data-name=ro]");
-    if (roElement) {
+    if (roElement && roElement.parentNode) {
       roElement.parentNode.removeChild(roElement);
     }
   } else if (permissions === "r") {
     const rwElement = node.querySelector("[data-name=rw]");
-    if (rwElement) {
+    if (rwElement && rwElement.parentNode) {
       rwElement.parentNode.removeChild(rwElement);
     }
   } else {

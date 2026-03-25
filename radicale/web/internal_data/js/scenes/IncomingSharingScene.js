@@ -22,6 +22,7 @@
 import { update_incoming_share } from "../api/sharing.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
+import { get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissions } from "../utils/permissions.js";
 import { Scene, pop_scene } from "./scene_manager.js";
 
@@ -31,16 +32,16 @@ import { Scene, pop_scene } from "./scene_manager.js";
 export class IncomingSharingScene {
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      */
     constructor(user, password) {
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("incomingsharingscene");
-        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
-        /** @type {HTMLElement} */ let error_element = html_scene.querySelector("[data-name=error]");
-        /** @type {HTMLElement} */ let tbody = html_scene.querySelector("tbody[data-name=incomingsharesbody]");
-        /** @type {HTMLElement} */ let template = tbody.querySelector("[data-name=incomingsharerowtemplate]");
-        /** @type {HTMLElement} */ let table = html_scene.querySelector("table");
-        /** @type {HTMLElement} */ let noshares_message = html_scene.querySelector("[data-name=nosharesmessage]");
+        /** @type {HTMLElement} */ let html_scene = get_element_by_id("incomingsharingscene");
+        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
+        /** @type {HTMLElement} */ let error_element = get_element(html_scene, "[data-name=error]");
+        /** @type {HTMLElement} */ let tbody = get_element(html_scene, "tbody[data-name=incomingsharesbody]");
+        /** @type {HTMLElement} */ let template = get_element(tbody, "[data-name=incomingsharerowtemplate]");
+        /** @type {HTMLElement} */ let table = get_element(html_scene, "table");
+        /** @type {HTMLElement} */ let noshares_message = get_element(html_scene, "[data-name=nosharesmessage]");
 
         let error_handler = new ErrorHandler(error_element);
 
@@ -62,8 +63,8 @@ export class IncomingSharingScene {
             enabled_cb.disabled = true;
             shown_cb.disabled = true;
 
-            let old_enabled = share.EnabledByUser;
-            let old_hidden = share.HiddenByUser;
+            let old_enabled = share.EnabledByUser || false;
+            let old_hidden = share.HiddenByUser || false;
 
             share.EnabledByUser = enabled_cb.checked;
             share.HiddenByUser = !shown_cb.checked;
@@ -90,7 +91,9 @@ export class IncomingSharingScene {
         function render_shares(shares) {
             // clear old nodes
             nodes.forEach(function (node) {
-                node.parentNode.removeChild(node);
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
             });
             nodes = [];
 
@@ -111,11 +114,11 @@ export class IncomingSharingScene {
                 let node = /** @type {HTMLElement} */(template.cloneNode(true));
                 node.classList.remove("hidden");
 
-                let pathortoken = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=pathortoken]"));
-                let owner_td = node.querySelector("[data-name=owner]");
-                let permissions_td = /** @type {HTMLElement} */ (node.querySelector("[data-name=permissions]"));
-                let enabled_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=enabled]"));
-                let shown_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=shown]"));
+                let pathortoken = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
+                let owner_td = get_element(node, "[data-name=owner]");
+                let permissions_td = /** @type {HTMLElement} */ (get_element(node, "[data-name=permissions]"));
+                let enabled_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=enabled]"));
+                let shown_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=shown]"));
 
                 let displayPath = share.PathOrToken.substring(prefix.length);
                 if (displayPath.endsWith("/")) {

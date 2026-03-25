@@ -49,7 +49,7 @@ class CollectionsCache {
 
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {import("../models/collection.js").Collection} principal_collection
      * @param {function(string):void} onerror
      * @param {function(Array<import("../models/collection.js").Collection>, Array<import("../api/sharing.js").Share>, boolean):void} displayData
@@ -63,9 +63,9 @@ class CollectionsCache {
         let loading_scene = new LoadingScene();
         push_scene(loading_scene);
 
-        let collections = null;
-        let shares = null;
-        let error = null;
+        /** @type {?Array<import("../models/collection.js").Collection>} */ let collections = null;
+        /** @type {?Array<import("../api/sharing.js").Share>} */ let shares = null;
+        /** @type {?string} */ let error = null;
 
         let check_if_completed = () => {
             if (!is_current_scene(loading_scene)) {
@@ -101,7 +101,7 @@ class CollectionsCache {
 
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {function(string):void} onerror
      * @param {function(Array<import("../api/sharing.js").Share>):void} displayData
      */
@@ -132,7 +132,7 @@ class CollectionsCache {
 
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {function(string):void} onerror
      * @param {function(import("../api/sharing.js").ServerFeatures):void} displayData
      */

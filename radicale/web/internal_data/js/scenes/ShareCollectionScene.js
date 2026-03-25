@@ -28,6 +28,7 @@ import {
 import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
+import { get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissions } from "../utils/permissions.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
@@ -39,37 +40,25 @@ import { Scene, pop_scene, push_scene } from "./scene_manager.js";
 export class ShareCollectionScene {
   /**
    * @param {string} user
-   * @param {string} password
+   * @param {?string} password
    * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
    */
   constructor(user, password, collection) {
 
-    let html_scene = document.getElementById("sharecollectionscene");
+    let html_scene = get_element_by_id("sharecollectionscene");
 
-    /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
-    /** @type {HTMLElement} */ let share_by_token_btn = html_scene.querySelector(
-      "button[data-name=sharebytoken]"
-    );
-     /** @type {HTMLElement} */ let share_by_map_btn = html_scene.querySelector(
-      "button[data-name=sharebymap]"
-    );
-     /** @type {HTMLElement} */ let share_by_bday_btn = html_scene.querySelector(
-      "button[data-name=sharebybday]"
-    );
-    /** @type {HTMLElement} */ let share_by_token_div = html_scene.querySelector(
-      "div[data-name=sharebytoken]"
-    );
-    /** @type {HTMLElement} */ let share_by_map_div = html_scene.querySelector(
-      "div[data-name=sharebymap]"
-    );
-    /** @type {HTMLElement} */ let share_by_bday_div = html_scene.querySelector(
-      "div[data-name=sharebybday]"
-    );
-    /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
+    /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
+    /** @type {HTMLElement} */ let share_by_token_btn = get_element(html_scene, "button[data-name=sharebytoken]");
+     /** @type {HTMLElement} */ let share_by_map_btn = get_element(html_scene, "button[data-name=sharebymap]");
+     /** @type {HTMLElement} */ let share_by_bday_btn = get_element(html_scene, "button[data-name=sharebybday]");
+    /** @type {HTMLElement} */ let share_by_token_div = get_element(html_scene, "div[data-name=sharebytoken]");
+    /** @type {HTMLElement} */ let share_by_map_div = get_element(html_scene, "div[data-name=sharebymap]");
+    /** @type {HTMLElement} */ let share_by_bday_div = get_element(html_scene, "div[data-name=sharebybday]");
+    /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
 
     let errorHandler = new ErrorHandler(error_form);
 
-    /** @type {HTMLElement} */ let title = html_scene.querySelector("[data-name=title]");
+    /** @type {HTMLElement} */ let title = get_element(html_scene, "[data-name=title]");
 
     function oncancel() {
       try {
@@ -169,7 +158,7 @@ export class ShareCollectionScene {
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Collection} collection
  * @param {ErrorHandler} errorHandler
  */
@@ -179,7 +168,9 @@ function update_share_list(user, password, collection, errorHandler) {
   );
   share_rows.forEach(function (row) {
     if (!row.classList.contains("hidden")) {
-      row.parentNode.removeChild(row);
+      if (row.parentNode) {
+        row.parentNode.removeChild(row);
+      }
     }
   });
 
@@ -195,7 +186,7 @@ function update_share_list(user, password, collection, errorHandler) {
 /**
  * 
  * @param {string} user 
- * @param {string} password 
+ * @param {?string} password 
  * @param {Collection} collection 
  * @param {import('../api/sharing.js').Share} share 
  * @param {HTMLElement} template 
@@ -209,7 +200,7 @@ function add_share_row_node(user, password, collection, share, template, delete_
   let node = /** @type {HTMLElement} */ (template.cloneNode(true));
   node.classList.remove("hidden");
 
-  /** @type {HTMLInputElement} */ let pathortoken_form = node.querySelector("[data-name=pathortoken]");
+  /** @type {HTMLInputElement} */ let pathortoken_form = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
   if (pathortoken_form) {
     pathortoken_form.value = pathortoken;
   }
@@ -217,13 +208,13 @@ function add_share_row_node(user, password, collection, share, template, delete_
   let permissions = (share["Permissions"] || "").toLowerCase();
   displayPermissions(permissions, node);
 
-  /** @type {HTMLElement} */ let edit_btn = node.querySelector("[data-name=edit]");
+  /** @type {HTMLElement} */ let edit_btn = get_element(node, "[data-name=edit]");
   edit_btn.onclick = function () {
     let create_edit_share_scene = new CreateEditShareScene(user, password, collection, share.ShareType, share);
     push_scene(create_edit_share_scene);
   };
 
-  /** @type {HTMLElement} */ let delete_btn = node.querySelector("[data-name=delete]");
+  /** @type {HTMLElement} */ let delete_btn = get_element(node, "[data-name=delete]");
   delete_btn.onclick = function () {
     let delete_collection_scene = new DeleteConfirmationScene(
       user, password, "Delete Share", share, delete_label + " " + pathortoken, delete_action, false,
@@ -236,20 +227,22 @@ function add_share_row_node(user, password, collection, share, template, delete_
     push_scene(delete_collection_scene);
   };
 
-  template.parentNode.insertBefore(node, template);
+  if (template.parentNode) {
+    template.parentNode.insertBefore(node, template);
+  }
 }
 
 /**
  * @param {string} user 
- * @param {string} password 
+ * @param {?string} password 
  * @param {Collection} collection 
  * @param {Array<import('../api/sharing.js').Share>} shares 
  * @param {ErrorHandler} errorHandler
  */
 function add_share_rows(user, password, collection, shares, errorHandler) {
-  /** @type {HTMLElement} */ let token_template = document.querySelector("[data-name=sharetokenrowtemplate]");
-  /** @type {HTMLElement} */ let map_template = document.querySelector("[data-name=sharemaprowtemplate]");
-  /** @type {HTMLElement} */ let bday_template = document.querySelector("[data-name=sharebdayrowtemplate]");
+  /** @type {HTMLElement} */ let token_template = get_element(document, "[data-name=sharetokenrowtemplate]");
+  /** @type {HTMLElement} */ let map_template = get_element(document, "[data-name=sharemaprowtemplate]");
+  /** @type {HTMLElement} */ let bday_template = get_element(document, "[data-name=sharebdayrowtemplate]");
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";

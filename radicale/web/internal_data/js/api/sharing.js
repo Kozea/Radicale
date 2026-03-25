@@ -39,12 +39,12 @@ import { create_request, to_error_message } from "./common.js";
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {string} path
  * @param {object} body
  * @param {function(string):void} on_success
- * @param {function():void} on_not_found
- * @param {function(string):void} on_error
+ * @param {?function():void} on_not_found
+ * @param {?function(string):void} on_error
  * @returns {XMLHttpRequest}
  */
 function call_sharing_api(
@@ -92,7 +92,7 @@ function call_sharing_api(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {function(import("../api/sharing.js").ServerFeatures, ?string):void} callback
  */
 export function discover_server_features(user, password, callback) {
@@ -106,7 +106,11 @@ export function discover_server_features(user, password, callback) {
                 let features = { "sharing": JSON.parse(response) };
                 callback(features, null);
             } catch (e) {
-                callback({}, e.message);
+                if (e instanceof Error) {
+                    callback({}, e.message);
+                } else {
+                    callback({}, e ? e.toString() : "Unknown error");
+                }
             }
         },
         function () {
@@ -119,9 +123,29 @@ export function discover_server_features(user, password, callback) {
     );
 }
 
+/**
+ * @typedef {Object} ShareData
+ * @property {string} [ShareType]
+ * @property {string} [PathOrToken]
+ * @property {string} [PathMapped]
+ * @property {string} [Owner]
+ * @property {string} [User]
+ * @property {string} [Permissions]
+ * @property {?boolean} [EnabledByOwner]
+ * @property {?boolean} [EnabledByUser]
+ * @property {?boolean} [Enabled]
+ * @property {?boolean} [HiddenByOwner]
+ * @property {?boolean} [HiddenByUser]
+ * @property {?boolean} [Hidden]
+ * @property {number} [TimestampCreated]
+ * @property {number} [TimestampUpdated]
+ * @property {Object<String, String>} [Properties]
+ */
+
+
 export class Share {
     /**
-     * @param {Object} [data]
+     * @param {ShareData} [data]
      */
     constructor(data = {}) {
         /** @type {string} */ this.ShareType = data.ShareType || "";
@@ -130,20 +154,20 @@ export class Share {
         /** @type {string} */ this.Owner = data.Owner || "";
         /** @type {string} */ this.User = data.User || "";
         /** @type {string} */ this.Permissions = data.Permissions || "r";
-        /** @type {boolean} */ this.EnabledByOwner = data.EnabledByOwner ?? data.Enabled ?? false;
+        /** @type {?boolean} */ this.EnabledByOwner = data.EnabledByOwner ?? data.Enabled ?? false;
         /** @type {?boolean} */ this.EnabledByUser = data.EnabledByUser ?? data.Enabled ?? null;
-        /** @type {boolean} */ this.HiddenByOwner = data.HiddenByOwner ?? data.Hidden ?? false;
+        /** @type {?boolean} */ this.HiddenByOwner = data.HiddenByOwner ?? data.Hidden ?? false;
         /** @type {?boolean} */ this.HiddenByUser = data.HiddenByUser ?? data.Hidden ?? null;
         /** @type {number} */ this.TimestampCreated = data.TimestampCreated || 0;
         /** @type {number} */ this.TimestampUpdated = data.TimestampUpdated || 0;
-        /** @type {Object} */ this.Properties = data.Properties || {};
+        /** @type {Object<String, String>} */ this.Properties = data.Properties || {};
     }
 }
 
 /**
  * @param {string} user
- * @param {string} password
- * @param {import("../models/collection.js").Collection} collection
+ * @param {?string} password
+ * @param {?import("../models/collection.js").Collection} collection
  * @param {function(Array<Share>, ?string):void} callback
  */
 export function reload_sharing_list(user, password, collection, callback) {
@@ -155,7 +179,7 @@ export function reload_sharing_list(user, password, collection, callback) {
         body,
         function (response) {
             let parsed = JSON.parse(response);
-            let shares = (parsed["Content"] || []).map(data => new Share(data));
+            let shares = (parsed["Content"] || []).map((/** @type {ShareData} */ data) => new Share(data));
             callback(shares, null);
         },
         null, // on_not_found
@@ -200,7 +224,7 @@ export function get_property_key(type, property) {
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -238,7 +262,7 @@ export function add_share_by_token(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -278,7 +302,7 @@ export function add_share_by_map(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -310,7 +334,7 @@ export function delete_share_by_token(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -341,7 +365,7 @@ export function delete_share_by_map(
 }
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -379,7 +403,7 @@ export function update_share_by_token(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -421,7 +445,7 @@ export function update_share_by_map(
  * Update a shared map entry as the recipient user.
  * Only sends fields the non-owner user is allowed to change: PathOrToken, EnabledByUser, HiddenByUser.
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -457,7 +481,7 @@ export function update_incoming_share(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -497,7 +521,7 @@ export function add_share_by_bday(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */
@@ -529,7 +553,7 @@ export function delete_share_by_bday(
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Share} share
  * @param {function(?string):void} callback
  */

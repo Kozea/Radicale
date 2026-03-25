@@ -24,7 +24,7 @@ import { Collection } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_files, validate_href } from "../utils/form_validator.js";
-import { cleanHREFinput, onCleanHREFinput, random_uuid } from "../utils/misc.js";
+import { cleanHREFinput, get_element, get_element_by_id, onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, pop_scene } from "./scene_manager.js";
 
 /**
@@ -33,21 +33,21 @@ import { Scene, pop_scene } from "./scene_manager.js";
 export class UploadCollectionScene {
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {Collection} collection parent collection
      */
     constructor(user, password, collection) {
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("uploadcollectionscene");
-        /** @type {HTMLElement} */ let template = html_scene.querySelector("[data-name=filetemplate]");
-        /** @type {HTMLElement} */ let upload_btn = html_scene.querySelector("[data-name=submit]");
-        /** @type {HTMLElement} */ let close_btn = html_scene.querySelector("[data-name=close]");
-        /** @type {HTMLInputElement} */ let uploadfile_form = html_scene.querySelector("[data-name=uploadfile]");
-        /** @type {HTMLElement} */ let uploadfile_lbl = html_scene.querySelector("label[for=uploadfile]");
-        /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
-        /** @type {HTMLElement} */ let href_label = html_scene.querySelector("label[for=href]");
-        /** @type {HTMLElement} */ let hreflimitmsg_html = html_scene.querySelector("[data-name=hreflimitmsg]");
-        /** @type {HTMLElement} */ let pending_html = html_scene.querySelector("[data-name=pending]");
-        /** @type {HTMLElement} */ let error_form = html_scene.querySelector(":scope > span[data-name=error]");
+        /** @type {HTMLElement} */ let html_scene = get_element_by_id("uploadcollectionscene");
+        /** @type {HTMLElement} */ let template = get_element(html_scene, "[data-name=filetemplate]");
+        /** @type {HTMLElement} */ let upload_btn = get_element(html_scene, "[data-name=submit]");
+        /** @type {HTMLElement} */ let close_btn = get_element(html_scene, "[data-name=close]");
+        /** @type {HTMLInputElement} */ let uploadfile_form = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=uploadfile]"));
+        /** @type {HTMLElement} */ let uploadfile_lbl = get_element(html_scene, "label[for=uploadfile]");
+        /** @type {HTMLInputElement} */ let href_form = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=href]"));
+        /** @type {HTMLElement} */ let href_label = get_element(html_scene, "label[for=href]");
+        /** @type {HTMLElement} */ let hreflimitmsg_html = get_element(html_scene, "[data-name=hreflimitmsg]");
+        /** @type {HTMLElement} */ let pending_html = get_element(html_scene, "[data-name=pending]");
+        /** @type {HTMLElement} */ let error_form = get_element(html_scene, ":scope > span[data-name=error]");
 
         let files = uploadfile_form.files;
         href_form.addEventListener("input", onCleanHREFinput);
@@ -64,12 +64,15 @@ export class UploadCollectionScene {
         validator.addValidator(uploadfile_form, validate_files(uploadfile_form, "file"));
 
         /** @type {?XMLHttpRequest} */ let upload_req = null;
-        /** @type {Array<string>} */ let results = [];
+        /** @type {Array<?string>} */ let results = [];
         /** @type {?Array<HTMLElement>} */ let nodes = null;
 
         function upload_start() {
             try {
                 if (!validator.validate()) {
+                    return false;
+                }
+                if (!files) {
                     return false;
                 }
                 read_form();
@@ -88,12 +91,14 @@ export class UploadCollectionScene {
                     let file = files[i];
                     let node = /** @type {HTMLElement} */ (template.cloneNode(true));
                     node.classList.remove("hidden");
-                    let name_form = node.querySelector("[data-name=name]");
+                    let name_form = get_element(node, "[data-name=name]");
                     name_form.textContent = file.name;
                     node.classList.remove("hidden");
                     nodes.push(node);
                     updateFileStatus(i);
-                    template.parentNode.insertBefore(node, template);
+                    if (template.parentNode) {
+                        template.parentNode.insertBefore(node, template);
+                    }
                 }
                 upload_next();
             } catch (err) {
@@ -103,6 +108,9 @@ export class UploadCollectionScene {
         }
 
         function upload_next() {
+            if (!files) {
+                return;
+            }
             try {
                 if (files.length === results.length) {
                     pending_html.classList.add("hidden");
@@ -145,8 +153,8 @@ export class UploadCollectionScene {
             if (nodes === null) {
                 return;
             }
-            /** @type {HTMLElement} */ let file_success_form = nodes[i].querySelector("[data-name=success]");
-            /** @type {HTMLElement} */ let file_error_form = nodes[i].querySelector("[data-name=error]");
+            /** @type {HTMLElement} */ let file_success_form = get_element(nodes[i], "[data-name=success]");
+            /** @type {HTMLElement} */ let file_error_form = get_element(nodes[i], "[data-name=error]");
             if (results.length > i) {
                 if (results[i]) {
                     file_success_form.classList.add("hidden");
@@ -171,7 +179,7 @@ export class UploadCollectionScene {
 
         function onfileschange() {
             files = uploadfile_form.files;
-            if (files.length > 1) {
+            if (files && files.length > 1) {
                 hreflimitmsg_html.classList.remove("hidden");
                 href_form.classList.add("hidden");
                 href_label.classList.add("hidden");
@@ -213,7 +221,9 @@ export class UploadCollectionScene {
                 return;
             }
             nodes.forEach(function (node) {
-                node.parentNode.removeChild(node);
+                if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
             });
             nodes = null;
         };

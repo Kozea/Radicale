@@ -57,13 +57,26 @@ export function push_scene(scene) {
 }
 
 /**
+ * Pop the current scene and release it.
+ */
+function pop_and_release() {
+    if (scene_stack.length === 0) {
+        return;
+    }
+    let scene = scene_stack.pop();
+    if (scene) {
+        scene.release();
+    }
+}
+
+/**
  * Replace the current scene with a new one.
  * @param {Scene} scene
  */
 export function replace_scene(scene) {
     if (scene_stack.length >= 1) {
         scene_stack[scene_stack.length - 1].hide();
-        scene_stack.pop().release();
+        pop_and_release();
     }
     scene_stack.push(scene);
     scene.show();
@@ -77,7 +90,7 @@ export function pop_scene() {
         return;
     }
     scene_stack[scene_stack.length - 1].hide();
-    scene_stack.pop().release();
+    pop_and_release();
     if (scene_stack.length >= 1) {
         scene_stack[scene_stack.length - 1].show();
     }
@@ -92,9 +105,9 @@ export function pop_to_parent() {
         return;
     }
     scene_stack[scene_stack.length - 1].hide();
-    scene_stack.pop().release();
+    pop_and_release();
     if (scene_stack.length >= 1) {
-        scene_stack.pop().release();
+        pop_and_release();
     }
     if (scene_stack.length >= 1) {
         scene_stack[scene_stack.length - 1].show();
@@ -112,7 +125,7 @@ export function pop_to_root() {
     // Pop all scenes until only the first one remains
     while (scene_stack.length > 1) {
         scene_stack[scene_stack.length - 1].hide();
-        scene_stack.pop().release();
+        pop_and_release();
     }
     // The root scene is now at the top (index 0) and should be shown
     if (scene_stack.length === 1) {

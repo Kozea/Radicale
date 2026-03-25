@@ -48,11 +48,7 @@ export function random_uuid() {
 export function random_hex(length) {
     let bytes = new Uint8Array(Math.ceil(length / 2));
     window.crypto.getRandomValues(bytes);
-    // Fallback for compatibility with older browsers which may not have padStart
-    return bytes.reduce((s, b) => {
-        let hex = b.toString(16);
-        return s + (String.prototype["padStart"] ? hex["padStart"](2, "0") : ("0" + hex).slice(-2));
-    }, "").substring(0, length);
+    return bytes.reduce((s, b) => s + b.toString(16).padStart(2, "0"), "").substring(0, length);
 }
 
 /**
@@ -118,4 +114,31 @@ export function setupSelectAll() {
             event.target.setSelectionRange(0, 99999);
         }
     });
+}
+
+/**
+ * Get an element by its ID and throw an error if it's not found.
+ * @param {string} id The ID of the element to find.
+ * @return {HTMLElement} The found element.
+ */
+export function get_element_by_id(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        throw new Error("Element with ID '" + id + "' not found");
+    }
+    return element;
+}
+
+/**
+ * Get an element by a selector and throw an error if it's not found.
+ * @param {ParentNode} node The parent node to search within.
+ * @param {string} selector The CSS selector to use.
+ * @return {HTMLElement} The found element.
+ */
+export function get_element(node, selector) {
+    const element = node.querySelector(selector);
+    if (!element) {
+        throw new Error("Element with selector '" + selector + "' not found");
+    }
+    return /** @type {HTMLElement} */ (element);
 }

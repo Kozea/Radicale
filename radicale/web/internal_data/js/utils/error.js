@@ -31,10 +31,14 @@ export class ErrorHandler {
 
     /**
      * Sets an error message for a given key.
-     * @param {string} errorMessage
+     * @param {?string} errorMessage
      */
     setError(errorMessage) {
-        this._update([errorMessage]);
+        if (errorMessage) {
+            this._update([errorMessage]);
+        } else {
+            this.clearError();
+        }
     }
 
     /**
