@@ -4351,6 +4351,20 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
+            # list by user
+            logging.info("\n*** list by user")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user:userpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+            row = answer_dict['Content'][0]
+            if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+                assert row['ShareType'] == "bday"  # TODO: remove/3.7.0-final
+            else:  # TODO: remove/3.7.0-final
+                assert row['ShareType'] == "map"
+                assert row['Conversion'] == "bday"
+
             # check PROPFIND item as user
             logging.info("\n*** PROPFIND item as user -> calendar")
             response = self._propfind_allprop(path_shared_r, login="user:userpw")

@@ -16,6 +16,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import base64
+import copy  # TODO: remove/3.7.0-final
 import io
 import json
 import logging
@@ -877,6 +878,14 @@ class BaseSharing:
                         PathOrToken=PathOrToken,
                         Conversion=Conversion,
                         )
+
+            if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
+                # check and change to legacy ShareType  # TODO: remove/3.7.0-final
+                result_array_adj = copy.deepcopy(result_array)  # TODO: remove/3.7.0-final
+                for index in range(0, len(result_array_adj)):  # TODO: remove/3.7.0-final
+                    if result_array_adj[index]['Conversion'] == "bday":  # TODO: remove/3.7.0-final
+                        result_array_adj[index]['ShareType'] = "bday"  # TODO: remove/3.7.0-final
+                result_array = result_array_adj
 
             answer['Lines'] = len(result_array)
             if len(result_array) == 0:
