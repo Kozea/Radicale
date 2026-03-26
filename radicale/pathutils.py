@@ -32,6 +32,7 @@ from tempfile import TemporaryDirectory
 from typing import Iterator, Type, Union
 
 from radicale import storage, types, utils
+from radicale.log import logger
 
 if sys.platform == "win32":
     import ctypes
@@ -355,3 +356,12 @@ def path_permissions_as_string(path):
     pp = path_permissions(path)
     s = "path=%r owner=%s(%s) group=%s(%s) mode=%s" % (path, pp[0], pp[1], pp[2], pp[3], pp[4])
     return s
+
+
+def file_check_size(path: str, limit: int):
+    if os.path.isfile(path):
+        size = os.stat(path).st_size
+        if size > limit:
+            logger.warning("file skipped because size exceeds limit %s > %s: %r", utils.format_unit(size, binary=True), utils.format_unit(limit, binary=True), path)
+            return False
+    return True
