@@ -25,12 +25,10 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Generator, Optional
 
-from playwright.sync_api import BrowserContext, Page
-
-
-from enum import Enum
+from playwright.sync_api import BrowserContext, Page, expect
 
 
 class AuthType(Enum):
@@ -101,7 +99,7 @@ type = {config.auth_type.value}
             f.write("htpasswd_encryption = plain\n")
 
         f.write(
-            f"""[web]
+            """[web]
 type = internal
 [headers]
 Content-Security-Policy = default-src 'self'; object-src 'none'
@@ -170,9 +168,6 @@ max:maxpassword
     # Cleanup
     process.terminate()
     process.wait()
-
-
-from playwright.sync_api import BrowserContext, Page, expect
 
 
 def login(

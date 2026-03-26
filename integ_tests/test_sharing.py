@@ -24,14 +24,9 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import (
-    SHARING_HTPASSWD,
-    SHARING_XREMOTE,
-    Config,
-    create_collection,
-    login,
-    start_radicale_server,
-)
+from integ_tests.common import (SHARING_HTPASSWD, SHARING_XREMOTE, Config,
+                                create_collection, login,
+                                start_radicale_server)
 
 
 @pytest.fixture(params=[SHARING_HTPASSWD, SHARING_XREMOTE], ids=lambda c: c.name)

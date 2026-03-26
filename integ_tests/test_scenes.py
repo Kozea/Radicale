@@ -24,15 +24,9 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import (
-    NOSHARE_HTPASSWD,
-    SHARING_HTPASSWD,
-    SHARING_XREMOTE,
-    Config,
-    create_collection,
-    login,
-    start_radicale_server,
-)
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, create_collection,
+                                login, start_radicale_server)
 
 
 @pytest.fixture(

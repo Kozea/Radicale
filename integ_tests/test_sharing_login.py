@@ -24,12 +24,8 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from integ_tests.common import (
-    SHARING_HTPASSWD,
-    create_collection,
-    login,
-    start_radicale_server,
-)
+from integ_tests.common import (SHARING_HTPASSWD, create_collection, login,
+                                start_radicale_server)
 
 
 @pytest.fixture

@@ -24,15 +24,9 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import (
-    NOSHARE_HTPASSWD,
-    SHARING_HTPASSWD,
-    SHARING_XREMOTE,
-    Config,
-    create_collection,
-    login,
-    start_radicale_server,
-)
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, create_collection,
+                                login, start_radicale_server)
 
 
 @pytest.fixture
@@ -42,7 +36,9 @@ def radicale_server(
     yield from start_radicale_server(tmp_path, config)
 
 
-@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD])
+@pytest.mark.parametrize(
+    "config", [SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD]
+)
 def test_delete_wrong_confirmation(
     context: BrowserContext, page: Page, radicale_server: str, config: Config
 ) -> None:
@@ -68,7 +64,9 @@ def test_delete_wrong_confirmation(
     expect(page.locator("#deleteconfirmationscene")).to_be_visible()
 
 
-@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD])
+@pytest.mark.parametrize(
+    "config", [SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD]
+)
 def test_delete_correct_confirmation(
     context: BrowserContext, page: Page, radicale_server: str, config: Config
 ) -> None:

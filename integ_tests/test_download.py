@@ -18,19 +18,15 @@
 Integration tests for download page
 """
 
+import pathlib
 from typing import Any, Generator
 
 import pytest
 from playwright.sync_api import BrowserContext, Page
 
-from integ_tests.common import (
-    NOSHARE_HTPASSWD,
-    SHARING_HTPASSWD,
-    SHARING_XREMOTE,
-    Config,
-    login,
-    start_radicale_server,
-)
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, login,
+                                start_radicale_server)
 
 
 @pytest.fixture(
