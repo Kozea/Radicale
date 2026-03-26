@@ -24,5 +24,11 @@ playwright install --with-deps
 if you use uv, you can run
 
 ``` lang=shell
-uv run --extra integ_test pytest integ_tests
+uv run --extra dev pytest integ_tests
+```
+
+if you use tox, you can run
+
+``` lang=shell
+tox -c pyproject.toml -e integ_test
 ```

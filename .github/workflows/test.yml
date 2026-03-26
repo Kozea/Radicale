@@ -218,6 +218,6 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Install Playwright Browsers
-        run: uv run --extra integ_test playwright install --with-deps
+        run: uv run --extra dev playwright install --with-deps
       - name: Run Integration Tests
-        run: uv run --extra integ_test pytest integ_tests/ -v
+        run: uv run --extra dev pytest integ_tests/ -v
