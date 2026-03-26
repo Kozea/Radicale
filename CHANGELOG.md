@@ -16,6 +16,7 @@
 * Add: [server] delay_on_error option
 * Add: [logging] limit_content option
 * Add: [headers] Content-Security-Policy is now set to be strict on new configs
+* Improve: [server] max_resource_size is now also checked on storage discover+get to avoid issues with items stored outside using PUT
 
 ## 3.6.1
 
