@@ -193,6 +193,38 @@ permissions: RrWw""")
         path = "/calendar.ics/"
         self.put(path, event, check=412)
 
+    def test_get_vcard_exceed_size(self) -> None:
+        """Add vcards partially exceeding max-resource-size (adjusted after upload)."""
+        path_base = "/contacts.vcf/"
+        file1 = "contact1.vcf"
+        file2 = "contact_photo_with_data_uri.vcf"
+        self.create_addressbook(path_base)
+        contact1 = get_file_content(file1)
+        contact2 = get_file_content(file2)
+        path1 = path_base + file1
+        path2 = path_base + file2
+        self.put(path1, contact1)
+        self.put(path2, contact2)
+        self.configure({"server": {"max_resource_size": 100}})
+        # test "get"
+        self.get(path1, check=200)
+        self.get(path2, check=404)
+        # test "report"
+        _, responses = self.report(path_base, """\
+<?xml version="1.0"?>
+<CR:addressbook-multiget xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
+   <prop>
+     <getetag />
+   </prop>
+   <href>""" + path_base + """</href>
+</CR:addressbook-multiget>""")
+        logging.info("response: %r", responses)
+        assert len(responses) == 1
+        response = responses[path1]
+        assert isinstance(response, dict)
+        status, prop = response["D:getetag"]
+        assert status == 200 and prop.text
+
     def test_add_event_broken(self) -> None:
         """Add a broken event."""
         self.mkcalendar("/calendar.ics/")

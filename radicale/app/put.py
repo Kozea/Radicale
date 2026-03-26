@@ -105,11 +105,11 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
                         raise
                     size = len(item.serialize())
                     if (size > max_resource_size):
-                        logger.warning("PUT request contains item with UID %r size %d > limit %d: %r", item.uid, size, max_resource_size, path)
+                        logger.warning("PUT request contains item with UID %r size %s > limit %s: %r", item.uid, utils.format_unit(size, binary=True), utils.format_unit(max_resource_size, binary=True), path)
                         # Use OverflowError as flag for max_resource_size
                         raise OverflowError
                     else:
-                        logger.debug("PUT request contains item with UID %r size %d <= limit %d: %r", item.uid, size, max_resource_size, path)
+                        logger.debug("PUT request contains item with UID %r size %s <= limit %s: %r", item.uid, utils.format_unit(size, binary=True), utils.format_unit(max_resource_size, binary=True), path)
                     items.append(item)
             elif write_whole_collection and tag == "VADDRESSBOOK":
                 for vobject_item in vobject_items:

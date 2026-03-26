@@ -77,7 +77,8 @@ class StoragePartDiscover(StorageBase):
         if href:
             item = collection._get(href)
             if item is not None:
-                yield item
+                if pathutils.file_check_size(filesystem_path, self._max_resource_size):
+                    yield item
             return
 
         yield collection

@@ -175,7 +175,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                              href)
                 yield (href, None)
             else:
-                yield (href, self._get(href, verify_href=False))
+                if pathutils.file_check_size(path, self._storage._max_resource_size):
+                    yield (href, self._get(href, verify_href=False))
 
     def get_all(self) -> Iterator[radicale_item.Item]:
         for href in self._list():
@@ -183,4 +184,5 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
             # are from os.listdir.
             item = self._get(href, verify_href=False)
             if item is not None:
-                yield item
+                if pathutils.file_check_size(os.path.join(self._filesystem_path, href), self._storage._max_resource_size):
+                    yield item
