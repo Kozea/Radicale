@@ -45,8 +45,12 @@ def test_index_html_loads(page: Page, radicale_server: str, config: Config) -> N
     page.on("console", lambda msg: console_msgs.append(msg.text))
     page.goto(radicale_server)
     expect(page).to_have_title("Radicale Web Interface")
-    # There should be no errors on the console, except for the expected 401 from auto-login check
-    errors = [msg for msg in console_msgs if "401 (Unauthorized)" not in msg]
+    # There should be no errors on the console, except for the expected 401/403 from auto-login check
+    errors = [
+        msg
+        for msg in console_msgs
+        if "401 (Unauthorized)" not in msg and "403 (Forbidden)" not in msg
+    ]
     assert len(errors) == 0
 
 
