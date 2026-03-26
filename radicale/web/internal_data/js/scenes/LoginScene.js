@@ -67,6 +67,7 @@ export class LoginScene {
          */
         function perform_login(p_user, p_password) {
             user = p_user;
+            fill_form();
             // setup logout
             logout_view.classList.remove("hidden");
             if (p_password === null) {
@@ -165,7 +166,9 @@ export class LoginScene {
                             let authenticated_user = principal_collection.displayname;
                             if (!authenticated_user) {
                                 let href = principal_collection.href.replace(/\/+$/, "");
-                                authenticated_user = href.substring(href.lastIndexOf("/") + 1);
+                                if (href && href !== ROOT_PATH.replace(/\/+$/, "")) {
+                                    authenticated_user = href.substring(href.lastIndexOf("/") + 1);
+                                }
                             }
                             perform_login(authenticated_user, null);
                         }

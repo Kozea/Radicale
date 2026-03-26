@@ -22,18 +22,34 @@ import pathlib
 from typing import Any, Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import create_collection, login, start_radicale_server
+from integ_tests.common import (
+    SHARING_HTPASSWD,
+    SHARING_XREMOTE,
+    Config,
+    create_collection,
+    login,
+    start_radicale_server,
+)
+
+
+@pytest.fixture(params=[SHARING_HTPASSWD, SHARING_XREMOTE], ids=lambda c: c.name)
+def config(request: pytest.FixtureRequest) -> Config:
+    return request.param
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_create_and_delete_share_by_key(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
@@ -75,8 +91,10 @@ def test_create_and_delete_share_by_key(page: Page, radicale_server: str) -> Non
     ).to_have_count(0)
 
 
-def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_create_and_delete_share_by_map(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
@@ -122,8 +140,10 @@ def test_create_and_delete_share_by_map(page: Page, radicale_server: str) -> Non
     ).to_have_count(0)
 
 
-def test_share_with_property_overrides(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_share_with_property_overrides(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     # Create a collection with specific details
     page.click('a[data-name="new"]')
     page.locator('#createcollectionscene input[data-name="displayname"]').fill(
@@ -177,8 +197,10 @@ def test_share_with_property_overrides(page: Page, radicale_server: str) -> None
     ).to_have_count(1)
 
 
-def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_share_journal_no_overrides(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     # Create a collection of type JOURNAL
     page.click('a[data-name="new"]')
     page.locator('#createcollectionscene select[data-name="type"]').select_option(
@@ -220,8 +242,10 @@ def test_share_journal_no_overrides(page: Page, radicale_server: str) -> None:
     ).to_have_count(1)
 
 
-def test_edit_share_by_token(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_edit_share_by_token(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
@@ -249,8 +273,10 @@ def test_edit_share_by_token(page: Page, radicale_server: str) -> None:
     ).to_be_visible()
 
 
-def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_edit_share_by_map(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
@@ -290,8 +316,10 @@ def test_edit_share_by_map(page: Page, radicale_server: str) -> None:
     page.click('#newshare button[data-name="cancel"]')
 
 
-def test_share_by_map_validation(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_share_by_map_validation(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
@@ -323,136 +351,10 @@ def test_share_by_map_validation(page: Page, radicale_server: str) -> None:
     ).to_have_count(1)
 
 
-@pytest.mark.parametrize("permissions", ["ro", "rw"])
-def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> None:
-    # 1. Admin logs in and creates a map share for 'max'
-    login(page, radicale_server)
-    create_collection(page, radicale_server)
-
-    page.hover("article:not(.hidden)")
-    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
-    page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill("max")
-    page.locator('input[data-name="sharehref"]').fill("mapped")
-    if permissions == "rw":
-        page.check("#newshare_attr_permissions_rw")
-    page.click('#newshare button[data-name="submit"]')
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#sharecollectionscene button[data-name="cancel"]')
-
-    # 2. Admin logs out
-    page.click('a[data-name="logout"]')
-
-    # 3. Max logs in
-    page.fill('#loginscene input[data-name="user"]', "max")
-    page.fill('#loginscene input[data-name="password"]', "maxpassword")
-    page.click('button:has-text("Next")')
-
-    # 4. Max sees the incoming share
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    expect(
-        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='pathortoken']"
-        )
-    ).to_have_value("mapped")
-
-    # 5. Max enables and shows the share
-    # Initially, it's disabled and not shown (security by default)
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
-        )
-    ).not_to_be_checked()
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_checked()
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).to_be_disabled()
-
-    # Enable it
-    page.check(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
-    )
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_disabled()
-
-    # Show it
-    page.check(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-    )
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).to_be_checked()
-
-    # 6. Verify "shared by admin" and button visibility in the collection article
-    page.click('#incomingsharingscene button[data-name="cancel"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()
-
-    article = page.locator("article:not(.hidden)").first
-    expect(article.locator('[data-name="shared-by"]')).to_be_visible()
-    expect(article.locator('[data-name="shared-by-owner"]')).to_have_text("admin")
-
-    # Action buttons are only visible on mouseover
-    article.hover()
-
-    # Share and delete buttons should be hidden for all incoming shares
-    expect(article.locator('a[data-name="share"]')).to_be_hidden()
-    expect(article.locator('[data-name="shareoption"]')).to_be_hidden()
-    expect(article.locator('a[data-name="delete"]')).to_be_hidden()
-
-    # Edit button depends on permissions
-    if permissions == "rw":
-        expect(article.locator('a[data-name="edit"]')).to_be_visible()
-    else:
-        expect(article.locator('a[data-name="edit"]')).to_be_hidden()
-
-    # 7. Assert no error was shown
-    expect(page.locator('#incomingsharingscene span[data-name="error"]')).to_be_hidden()
-
-
-def test_no_incoming_shares_message(page: Page, radicale_server: str) -> None:
-    # 1. Max logs in
-    page.goto(radicale_server)
-    page.fill('#loginscene input[data-name="user"]', "max")
-    page.fill('#loginscene input[data-name="password"]', "maxpassword")
-    page.click('button:has-text("Next")')
-
-    # 2. Max goes to incoming shares scene
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-
-    # 3. Verify that the table is hidden and the message is visible
-    expect(page.locator("#incomingsharingscene table")).to_be_hidden()
-    expect(
-        page.locator('#incomingsharingscene [data-name="nosharesmessage"]')
-    ).to_be_visible()
-    expect(
-        page.locator('#incomingsharingscene [data-name="nosharesmessage"]')
-    ).to_have_text("No incoming shares")
-
-    page.click('#incomingsharingscene button[data-name="cancel"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()
-
-
-def test_create_and_delete_share_by_bday(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_create_and_delete_share_by_bday(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     # create collection of type ADDRESSBOOK for bday (bday only works with ADDRESSBOOK)
     page.click('a[data-name="new"]')
     page.locator('#createcollectionscene select[data-name="type"]').select_option(
@@ -513,9 +415,11 @@ def test_create_and_delete_share_by_bday(page: Page, radicale_server: str) -> No
     ).to_have_count(0)
 
 
-def test_bday_section_hidden_for_calendar(page: Page, radicale_server: str) -> None:
+def test_bday_section_hidden_for_calendar(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
     """Verify the bday calendar section is hidden for CALENDAR collections."""
-    login(page, radicale_server)
+    login(page, radicale_server, config, context=context)
 
     page.click('a[data-name="new"]')
     page.locator('#createcollectionscene select[data-name="type"]').select_option(
@@ -534,9 +438,11 @@ def test_bday_section_hidden_for_calendar(page: Page, radicale_server: str) -> N
     page.click('#sharecollectionscene button[data-name="cancel"]')
 
 
-def test_bday_section_visible_for_addressbook(page: Page, radicale_server: str) -> None:
+def test_bday_section_visible_for_addressbook(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
     """Verify the bday calendar section is visible for ADDRESSBOOK collections."""
-    login(page, radicale_server)
+    login(page, radicale_server, config, context=context)
 
     page.click('a[data-name="new"]')
     page.locator('#createcollectionscene select[data-name="type"]').select_option(

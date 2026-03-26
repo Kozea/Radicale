@@ -22,17 +22,26 @@ import pathlib
 from typing import Any, Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import login, start_radicale_server
+from integ_tests.common import (
+    SHARING_HTPASSWD,
+    SHARING_XREMOTE,
+    Config,
+    login,
+    start_radicale_server,
+)
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_index_html_loads(page: Page, radicale_server: str) -> None:
+@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE])
+def test_index_html_loads(page: Page, radicale_server: str, config: Config) -> None:
     """Test that the index.html loads from the server."""
     console_msgs: list[str] = []
     page.on("console", lambda msg: console_msgs.append(msg.text))
@@ -43,9 +52,12 @@ def test_index_html_loads(page: Page, radicale_server: str) -> None:
     assert len(errors) == 0
 
 
-def test_user_login_works(page: Page, radicale_server: str) -> None:
+@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE])
+def test_user_login_works(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
     """Test that the login form works."""
-    login(page, radicale_server)
+    login(page, radicale_server, config, context=context)
 
     # After login, we should see the collections list (which is empty)
     expect(
