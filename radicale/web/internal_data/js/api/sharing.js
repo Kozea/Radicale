@@ -133,10 +133,8 @@ export function discover_server_features(user, password, callback) {
  * @property {string} [Permissions]
  * @property {?boolean} [EnabledByOwner]
  * @property {?boolean} [EnabledByUser]
- * @property {?boolean} [Enabled]
  * @property {?boolean} [HiddenByOwner]
  * @property {?boolean} [HiddenByUser]
- * @property {?boolean} [Hidden]
  * @property {number} [TimestampCreated]
  * @property {number} [TimestampUpdated]
  * @property {Object<String, String>} [Properties]
@@ -154,10 +152,10 @@ export class Share {
         /** @type {string} */ this.Owner = data.Owner || "";
         /** @type {string} */ this.User = data.User || "";
         /** @type {string} */ this.Permissions = data.Permissions || "r";
-        /** @type {?boolean} */ this.EnabledByOwner = data.EnabledByOwner ?? data.Enabled ?? false;
-        /** @type {?boolean} */ this.EnabledByUser = data.EnabledByUser ?? data.Enabled ?? null;
-        /** @type {?boolean} */ this.HiddenByOwner = data.HiddenByOwner ?? data.Hidden ?? false;
-        /** @type {?boolean} */ this.HiddenByUser = data.HiddenByUser ?? data.Hidden ?? null;
+        /** @type {?boolean} */ this.EnabledByOwner = data.EnabledByOwner ?? null;
+        /** @type {?boolean} */ this.EnabledByUser = data.EnabledByUser ?? null;
+        /** @type {?boolean} */ this.HiddenByOwner = data.HiddenByOwner ?? null;
+        /** @type {?boolean} */ this.HiddenByUser = data.HiddenByUser ?? null;
         /** @type {number} */ this.TimestampCreated = data.TimestampCreated || 0;
         /** @type {number} */ this.TimestampUpdated = data.TimestampUpdated || 0;
         /** @type {Object<String, String>} */ this.Properties = data.Properties || {};
