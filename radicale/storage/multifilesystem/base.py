@@ -78,6 +78,7 @@ class StorageBase(storage.BaseStorage):
     _debug_cache_actions: bool
     _folder_umask: str
     _config_umask: int
+    _max_resource_size: int
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -99,6 +100,8 @@ class StorageBase(storage.BaseStorage):
             "storage", "folder_umask")
         self._debug_cache_actions = configuration.get(
             "logging", "storage_cache_actions_on_debug")
+        self._max_resource_size = configuration.get(
+            "server", "max_resource_size")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")
