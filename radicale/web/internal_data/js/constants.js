@@ -36,6 +36,7 @@ export const ROOT_PATH = location.pathname.replace(new RegExp("/+[^/]+/*(/index\
 /**
  * Regex to match and normalize color
  * @const
+ * @type {RegExp}
  */
 export const COLOR_RE = new RegExp("^(#[0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?$");
 
@@ -43,5 +44,6 @@ export const COLOR_RE = new RegExp("^(#[0-9A-Fa-f]{6})(?:[0-9A-Fa-f]{2})?$");
 /**
  * The text needed to confirm deleting a collection
  * @const
+ * @type {string}
  */
 export const DELETE_CONFIRMATION_TEXT = "DELETE";

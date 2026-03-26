@@ -25,7 +25,7 @@ import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_color, validate_href } from "../utils/form_validator.js";
-import { cleanHREFinput, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
+import { cleanHREFinput, get_element, get_element_by_id, onCleanHREFinput, random_hex, random_uuid } from "../utils/misc.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, is_current_scene, pop_scene, pop_to_parent, push_scene } from "./scene_manager.js";
 
@@ -35,25 +35,25 @@ import { Scene, is_current_scene, pop_scene, pop_to_parent, push_scene } from ".
 export class CreateEditCollectionScene {
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {Collection} collection if it's a principal collection, a new
      *                                collection will be created inside of it.
      *                                Otherwise the collection will be edited.
      */
     constructor(user, password, collection) {
         let edit = collection.type !== CollectionType.PRINCIPAL;
-        let html_scene = document.getElementById(edit ? "editcollectionscene" : "createcollectionscene");
-        /** @type {HTMLElement} */ let title_form = edit ? html_scene.querySelector("[data-name=title]") : null;
-        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
-        /** @type {HTMLInputElement} */ let href_form = html_scene.querySelector("[data-name=href]");
-        /** @type {HTMLInputElement} */ let displayname_form = html_scene.querySelector("[data-name=displayname]");
-        /** @type {HTMLInputElement} */ let description_form = html_scene.querySelector("[data-name=description]");
-        /** @type {HTMLInputElement} */ let source_form = html_scene.querySelector("[data-name=source]");
-        /** @type {HTMLElement} */ let source_label = html_scene.querySelector("label[for=source]");
-        /** @type {HTMLSelectElement} */ let type_form = html_scene.querySelector("[data-name=type]");
-        /** @type {HTMLInputElement} */ let color_form = html_scene.querySelector("[data-name=color]");
-        /** @type {HTMLElement} */ let submit_btn = html_scene.querySelector("[data-name=submit]");
-        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+        let html_scene = get_element_by_id(edit ? "editcollectionscene" : "createcollectionscene");
+        /** @type {?HTMLElement} */ let title_form = edit ? get_element(html_scene, "[data-name=title]") : null;
+        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
+        /** @type {?HTMLInputElement} */ let href_form = edit ? null : /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=href]"));
+        /** @type {HTMLInputElement} */ let displayname_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=displayname]"));
+        /** @type {HTMLInputElement} */ let description_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=description]"));
+        /** @type {HTMLInputElement} */ let source_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=source]"));
+        /** @type {HTMLElement} */ let source_label = get_element(html_scene, "label[for=source]");
+        /** @type {HTMLSelectElement} */ let type_form = /** @type {HTMLSelectElement} */(get_element(html_scene, "[data-name=type]"));
+        /** @type {HTMLInputElement} */ let color_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=color]"));
+        /** @type {HTMLElement} */ let submit_btn = get_element(html_scene, "[data-name=submit]");
+        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
 
 
         /** @type {?XMLHttpRequest} */ let create_edit_req = null;
@@ -62,7 +62,7 @@ export class CreateEditCollectionScene {
         let errorHandler = new ErrorHandler(error_form);
         let validator = new FormValidator(errorHandler);
 
-        if (!edit) {
+        if (!edit && href_form) {
             validator.addValidator(href_form, validate_href(href_form, "HREF"));
         }
         validator.addValidator(color_form, validate_color(color_form, "Color"));
@@ -74,7 +74,7 @@ export class CreateEditCollectionScene {
         let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
         let color = edit && collection.color ? collection.color : "#" + random_hex(6);
 
-        if (!edit) {
+        if (!edit && href_form) {
             href_form.addEventListener("input", onCleanHREFinput);
         }
 
@@ -93,7 +93,7 @@ export class CreateEditCollectionScene {
         }
 
         function read_form() {
-            if (!edit) {
+            if (!edit && href_form) {
                 cleanHREFinput(href_form);
                 let newhreftxtvalue = href_form.value.trim().toLowerCase();
                 href = collection.href + newhreftxtvalue + "/";
@@ -107,7 +107,7 @@ export class CreateEditCollectionScene {
         }
 
         function fill_form() {
-            if (!edit) {
+            if (!edit && href_form) {
                 href_form.value = random_uuid();
             }
             displayname_form.value = displayname;
@@ -127,12 +127,15 @@ export class CreateEditCollectionScene {
                 read_form();
                 let sane_color = color.trim();
                 if (sane_color) {
-                    sane_color = COLOR_RE.exec(sane_color)[1];
+                    /** @type {?RegExpExecArray} */ let match = COLOR_RE.exec(sane_color);
+                    if (match) {
+                        sane_color = match[1];
+                    }
                 }
                 let loading_scene = new LoadingScene();
                 push_scene(loading_scene);
                 let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
-                let callback = function (error1) {
+                let callback = function (/** @type {?string} */ error1) {
                     if (!is_current_scene(loading_scene)) {
                         return;
                     }
@@ -166,7 +169,7 @@ export class CreateEditCollectionScene {
         }
 
         /** 
-         * @param {Event} _e
+         * @param {?Event} _e
          */
         function onTypeChange(_e) {
             if (type_form.value == CollectionType.WEBCAL) {
@@ -183,10 +186,12 @@ export class CreateEditCollectionScene {
             // Clone type_form because it's impossible to hide options without removing them
             saved_type_form = type_form;
             type_form = /** @type {HTMLSelectElement} */ (type_form.cloneNode(true));
-            saved_type_form.parentNode.replaceChild(type_form, saved_type_form);
+            if (saved_type_form.parentNode) {
+                saved_type_form.parentNode.replaceChild(type_form, saved_type_form);
+            }
             remove_invalid_types();
             html_scene.classList.remove("hidden");
-            if (edit) {
+            if (edit && title_form) {
                 title_form.textContent = collection.displayname || collection.href;
             }
             fill_form();
@@ -198,8 +203,10 @@ export class CreateEditCollectionScene {
             read_form();
             html_scene.classList.add("hidden");
             // restore type_form
-            type_form.parentNode.replaceChild(saved_type_form, type_form);
-            type_form = saved_type_form;
+            if (type_form.parentNode && saved_type_form) {
+                type_form.parentNode.replaceChild(saved_type_form, type_form);
+                type_form = saved_type_form;
+            }
             saved_type_form = null;
             submit_btn.onclick = null;
             cancel_btn.onclick = null;

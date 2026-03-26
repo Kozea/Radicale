@@ -26,8 +26,8 @@ import { create_request, to_error_message } from "./common.js";
 
 /**
  * Find the principal collection.
- * @param {string} user
- * @param {string} password
+ * @param {?string} user
+ * @param {?string} password
  * @param {function(?Collection, ?string):void} callback Returns result or error
  * @return {XMLHttpRequest}
  */
@@ -39,18 +39,22 @@ export function get_principal(user, password, callback) {
         }
         if (request.status === 207) {
             let xml = request.responseXML;
-            let principal_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|current-user-principal > *|href");
-            let displayname_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|displayname");
-            if (principal_element) {
-                callback(new Collection(
-                    principal_element.textContent,
-                    CollectionType.PRINCIPAL,
-                    displayname_element ? displayname_element.textContent : "",
-                    "",
-                    "",
-                    0,
-                    0,
-                    ""), null);
+            if (xml) {
+                let principal_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|current-user-principal > *|href");
+                let displayname_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|displayname");
+                if (principal_element) {
+                    callback(new Collection(
+                        principal_element.textContent,
+                        CollectionType.PRINCIPAL,
+                        displayname_element ? displayname_element.textContent : "",
+                        "",
+                        "",
+                        0,
+                        0,
+                        ""), null);
+                } else {
+                    callback(null, "No valid XML received")
+                }
             } else {
                 callback(null, "Internal error");
             }
@@ -71,7 +75,7 @@ export function get_principal(user, password, callback) {
 /**
  * Find all calendars and addressbooks in collection.
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Collection} collection
  * @param {function(?Array<Collection>, ?string):void} callback Returns result or error
  * @return {XMLHttpRequest}
@@ -85,81 +89,86 @@ export function get_collections(user, password, collection, callback) {
         }
         if (request.status === 207) {
             let xml = request.responseXML;
-            let collections = [];
-            let response_query = "*|multistatus:root > *|response";
-            let responses = xml.querySelectorAll(response_query);
-            for (let i = 0; i < responses.length; i++) {
-                let response = responses[i];
-                let href_element = response.querySelector(response_query + " > *|href");
-                let resourcetype_query = response_query + " > *|propstat > *|prop > *|resourcetype";
-                let resourcetype_element = response.querySelector(resourcetype_query);
-                let displayname_element = response.querySelector(response_query + " > *|propstat > *|prop > *|displayname");
-                let calendarcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-color");
-                let addressbookcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-color");
-                let calendardesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-description");
-                let addressbookdesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-description");
-                let contentcount_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentcount");
-                let contentlength_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentlength");
-                let webcalsource_element = response.querySelector(response_query + " > *|propstat > *|prop > *|source");
-                let components_query = response_query + " > *|propstat > *|prop > *|supported-calendar-component-set";
-                let components_element = response.querySelector(components_query);
-                let href = href_element ? href_element.textContent : "";
-                let displayname = displayname_element ? displayname_element.textContent : "";
-                let type = "";
-                let color = "";
-                let description = "";
-                let source = "";
-                let count = 0;
-                let size = 0;
-                if (resourcetype_element) {
-                    if (resourcetype_element.querySelector(resourcetype_query + " > *|addressbook")) {
-                        type = CollectionType.ADDRESSBOOK;
-                        color = addressbookcolor_element ? addressbookcolor_element.textContent : "";
-                        description = addressbookdesc_element ? addressbookdesc_element.textContent : "";
-                        count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
-                        size = contentlength_element ? parseInt(contentlength_element.textContent) : 0;
-                    } else if (resourcetype_element.querySelector(resourcetype_query + " > *|subscribed")) {
-                        type = CollectionType.WEBCAL;
-                        source = webcalsource_element ? webcalsource_element.textContent : "";
-                        color = calendarcolor_element ? calendarcolor_element.textContent : "";
-                        description = calendardesc_element ? calendardesc_element.textContent : "";
-                    } else if (resourcetype_element.querySelector(resourcetype_query + " > *|calendar")) {
-                        if (components_element) {
-                            if (components_element.querySelector(components_query + " > *|comp[name=VEVENT]")) {
-                                type = CollectionType.union(type, CollectionType.CALENDAR);
+            if (xml) {
+                let collections = [];
+                let response_query = "*|multistatus:root > *|response";
+                let responses = xml.querySelectorAll(response_query);
+                for (let i = 0; i < responses.length; i++) {
+                    let response = responses[i];
+                    let href_element = response.querySelector(response_query + " > *|href");
+                    let resourcetype_query = response_query + " > *|propstat > *|prop > *|resourcetype";
+                    let resourcetype_element = response.querySelector(resourcetype_query);
+                    let displayname_element = response.querySelector(response_query + " > *|propstat > *|prop > *|displayname");
+                    let calendarcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-color");
+                    let addressbookcolor_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-color");
+                    let calendardesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|calendar-description");
+                    let addressbookdesc_element = response.querySelector(response_query + " > *|propstat > *|prop > *|addressbook-description");
+                    let contentcount_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentcount");
+                    let contentlength_element = response.querySelector(response_query + " > *|propstat > *|prop > *|getcontentlength");
+                    let webcalsource_element = response.querySelector(response_query + " > *|propstat > *|prop > *|source");
+                    let components_query = response_query + " > *|propstat > *|prop > *|supported-calendar-component-set";
+                    let components_element = response.querySelector(components_query);
+                    let href = href_element ? href_element.textContent : "";
+                    let displayname = displayname_element ? displayname_element.textContent : "";
+                    let type = "";
+                    let color = "";
+                    let description = "";
+                    let source = "";
+                    let count = 0;
+                    let size = 0;
+                    if (resourcetype_element) {
+                        if (resourcetype_element.querySelector(resourcetype_query + " > *|addressbook")) {
+                            type = CollectionType.ADDRESSBOOK;
+                            color = addressbookcolor_element ? addressbookcolor_element.textContent : "";
+                            description = addressbookdesc_element ? addressbookdesc_element.textContent : "";
+                            count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
+                            size = contentlength_element ? parseInt(contentlength_element.textContent) : 0;
+                        } else if (resourcetype_element.querySelector(resourcetype_query + " > *|subscribed")) {
+                            type = CollectionType.WEBCAL;
+                            source = webcalsource_element ? webcalsource_element.textContent : "";
+                            color = calendarcolor_element ? calendarcolor_element.textContent : "";
+                            description = calendardesc_element ? calendardesc_element.textContent : "";
+                        } else if (resourcetype_element.querySelector(resourcetype_query + " > *|calendar")) {
+                            if (components_element) {
+                                if (components_element.querySelector(components_query + " > *|comp[name=VEVENT]")) {
+                                    type = CollectionType.union(type, CollectionType.CALENDAR);
+                                }
+                                if (components_element.querySelector(components_query + " > *|comp[name=VJOURNAL]")) {
+                                    type = CollectionType.union(type, CollectionType.JOURNAL);
+                                }
+                                if (components_element.querySelector(components_query + " > *|comp[name=VTODO]")) {
+                                    type = CollectionType.union(type, CollectionType.TASKS);
+                                }
                             }
-                            if (components_element.querySelector(components_query + " > *|comp[name=VJOURNAL]")) {
-                                type = CollectionType.union(type, CollectionType.JOURNAL);
-                            }
-                            if (components_element.querySelector(components_query + " > *|comp[name=VTODO]")) {
-                                type = CollectionType.union(type, CollectionType.TASKS);
-                            }
+                            color = calendarcolor_element ? calendarcolor_element.textContent : "";
+                            description = calendardesc_element ? calendardesc_element.textContent : "";
+                            count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
+                            size = contentlength_element ? parseInt(contentlength_element.textContent) : 0;
                         }
-                        color = calendarcolor_element ? calendarcolor_element.textContent : "";
-                        description = calendardesc_element ? calendardesc_element.textContent : "";
-                        count = contentcount_element ? parseInt(contentcount_element.textContent) : 0;
-                        size = contentlength_element ? parseInt(contentlength_element.textContent) : 0;
+                    }
+                    let sane_color = color.trim();
+                    if (sane_color) {
+                        let color_match = COLOR_RE.exec(sane_color);
+                        if (color_match) {
+                            sane_color = color_match[1];
+                        } else {
+                            sane_color = "";
+                        }
+                    }
+                    if (href.substr(-1) === "/" && href !== collection.href && type) {
+                        collections.push(new Collection(href, type, displayname, description, sane_color, count, size, source));
                     }
                 }
-                let sane_color = color.trim();
-                if (sane_color) {
-                    let color_match = COLOR_RE.exec(sane_color);
-                    if (color_match) {
-                        sane_color = color_match[1];
-                    } else {
-                        sane_color = "";
-                    }
-                }
-                if (href.substr(-1) === "/" && href !== collection.href && type) {
-                    collections.push(new Collection(href, type, displayname, description, sane_color, count, size, source));
-                }
-            }
-            collections.sort(function (a, b) {
+                collections.sort(function (a, b) {
                 /** @type {string} */ let ca = a.displayname || a.href;
                 /** @type {string} */ let cb = b.displayname || b.href;
-                return ca.localeCompare(cb);
-            });
-            callback(collections, null);
+                    return ca.localeCompare(cb);
+                });
+                callback(collections, null);
+            } else {
+                callback(null, "No valid XML received")
+            }
+
         } else {
             callback(null, to_error_message(request));
         }
@@ -192,7 +201,7 @@ export function get_collections(user, password, collection, callback) {
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {string} collection_href Must always start and end with /.
  * @param {File} file
  * @param {function(?string):void} callback Returns error or null
@@ -217,7 +226,7 @@ export function upload_collection(user, password, collection_href, file, callbac
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Collection} collection
  * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
@@ -240,7 +249,7 @@ export function delete_collection(user, password, collection, callback) {
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Collection} collection
  * @param {boolean} create
  * @param {function(?string):void} callback Returns error or null
@@ -320,7 +329,7 @@ function create_edit_collection(user, password, collection, create, callback) {
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Collection} collection
  * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}
@@ -331,7 +340,7 @@ export function create_collection(user, password, collection, callback) {
 
 /**
  * @param {string} user
- * @param {string} password
+ * @param {?string} password
  * @param {Collection} collection
  * @param {function(?string):void} callback Returns error or null
  * @return {XMLHttpRequest}

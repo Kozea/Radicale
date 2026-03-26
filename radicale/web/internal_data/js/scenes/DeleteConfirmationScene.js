@@ -23,6 +23,7 @@ import { DELETE_CONFIRMATION_TEXT } from "../constants.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_equals } from "../utils/form_validator.js";
+import { get_element, get_element_by_id } from "../utils/misc.js";
 import { LoadingScene } from "./LoadingScene.js";
 import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.js";
 
@@ -32,7 +33,7 @@ import { Scene, is_current_scene, pop_scene, push_scene } from "./scene_manager.
 export class DeleteConfirmationScene {
     /**
      * @param {string} user
-     * @param {string} password
+     * @param {?string} password
      * @param {string} header_title
      * @param {any} item
      * @param {string} item_title
@@ -41,16 +42,16 @@ export class DeleteConfirmationScene {
      * @param {function} [on_success]
      */
     constructor(user, password, header_title, item, item_title, delete_action, needsconfirmation, on_success) {
-        /** @type {HTMLElement} */ let html_scene = document.getElementById("deleteconfirmationscene");
-        /** @type {HTMLElement} */ let header_html = html_scene.querySelector("[data-name=headertitle]");
+        /** @type {HTMLElement} */ let html_scene = get_element_by_id("deleteconfirmationscene");
+        /** @type {HTMLElement} */ let header_html = get_element(html_scene, "[data-name=headertitle]");
         if (header_html) header_html.textContent = header_title;
-        /** @type {HTMLElement} */ let title_form = html_scene.querySelector("[data-name=title]");
-        /** @type {HTMLElement} */ let error_form = html_scene.querySelector("[data-name=error]");
-        /** @type {HTMLElement} */ let confirmation_prompt = html_scene.querySelector("[data-name=confirmationprompt]");
-        /** @type {HTMLInputElement} */ let confirmation_txt = html_scene.querySelector("[data-name=confirmationtxt]");
-        /** @type {HTMLElement} */ let delete_confirmation_lbl = html_scene.querySelector("[data-name=deleteconfirmationtext]");
-        /** @type {HTMLElement} */ let delete_btn = html_scene.querySelector("[data-name=delete]");
-        /** @type {HTMLElement} */ let cancel_btn = html_scene.querySelector("[data-name=cancel]");
+        /** @type {HTMLElement} */ let title_form = get_element(html_scene, "[data-name=title]");
+        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
+        /** @type {HTMLElement} */ let confirmation_prompt = get_element(html_scene, "[data-name=confirmationprompt]");
+        /** @type {HTMLInputElement} */ let confirmation_txt = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=confirmationtxt]"));
+        /** @type {HTMLElement} */ let delete_confirmation_lbl = get_element(html_scene, "[data-name=deleteconfirmationtext]");
+        /** @type {HTMLElement} */ let delete_btn = get_element(html_scene, "[data-name=delete]");
+        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
 
         if (needsconfirmation) {
             delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
@@ -80,7 +81,7 @@ export class DeleteConfirmationScene {
             try {
                 let loading_scene = new LoadingScene();
                 push_scene(loading_scene);
-                delete_req = delete_action(user, password, item, function (error1) {
+                delete_req = delete_action(user, password, item, function (/** @type {?string} */ error1) {
                     if (!is_current_scene(loading_scene)) {
                         return;
                     }
@@ -113,8 +114,8 @@ export class DeleteConfirmationScene {
             return false;
         }
 
-        function onkeydown(event) {
-            if (event.keyCode !== 13) {
+        function onkeydown(/** @type  {KeyboardEvent}*/ event) {
+            if (event.code !== "Enter") {
                 return;
             }
             ondelete();
