@@ -36,4 +36,5 @@ export class LoadingScene {
         this.html_scene.classList.add("hidden");
     }
     release() { }
+    is_transient() { return true; }
 }

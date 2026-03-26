@@ -36,6 +36,11 @@ export class Scene {
      * Scene is removed from scene stack.
      */
     release() { }
+    /**
+     * Whether the scene should be excluded from browser history.
+     * @returns boolean
+     */
+    is_transient() { return false; }
 }
 
 
@@ -43,6 +48,87 @@ export class Scene {
  * @type {Array<Scene>}
  */
 let scene_stack = [];
+
+/** @type {Array<Array<Scene>>} */
+let history_array = [];
+let current_history_index = -1;
+let is_navigating_history = false;
+
+function record_history() {
+    if (is_navigating_history) return;
+
+    let current_scene = scene_stack.length > 0 ? scene_stack[scene_stack.length - 1] : null;
+    if (current_scene && current_scene.is_transient && current_scene.is_transient()) {
+        return;
+    }
+
+    // Compare with current history to avoid duplicates
+    if (history_array.length > 0 && current_history_index >= 0) {
+        let last_stack = history_array[current_history_index];
+        if (last_stack && last_stack.length === scene_stack.length) {
+            let is_identical = true;
+            for (let i = 0; i < scene_stack.length; i++) {
+                if (last_stack[i] !== scene_stack[i]) {
+                    is_identical = false;
+                    break;
+                }
+            }
+            if (is_identical) return;
+        }
+    }
+
+    history_array.splice(current_history_index + 1);
+    history_array.push(scene_stack.slice());
+    current_history_index++;
+
+    // Check if this is the first history entry we are recording
+    if (typeof window !== "undefined" && window.history) {
+        if (current_history_index === 0) {
+            history.replaceState({ history_index: current_history_index }, '');
+        } else {
+            history.pushState({ history_index: current_history_index }, '');
+        }
+    }
+}
+
+if (typeof window !== "undefined" && window.history) {
+    if (!history.state || typeof history.state.history_index !== "number") {
+        current_history_index = -1;
+    } else {
+        // If there's an existing state but we just loaded, we don't have the history_array memory.
+        // We'll reset it. The user will be redirected to the root if they go back out of bounds.
+        current_history_index = -1;
+    }
+
+    window.addEventListener("popstate", (event) => {
+        if (!event.state || typeof event.state.history_index !== "number") return;
+        let new_index = event.state.history_index;
+
+        if (new_index >= 0 && new_index < history_array.length) {
+            is_navigating_history = true;
+            try {
+                let new_stack = history_array[new_index];
+
+                if (scene_stack.length > 0) {
+                    scene_stack[scene_stack.length - 1].hide();
+                }
+
+                scene_stack = new_stack.slice();
+
+                if (scene_stack.length > 0) {
+                    scene_stack[scene_stack.length - 1].show();
+                }
+
+                current_history_index = new_index;
+            } finally {
+                is_navigating_history = false;
+            }
+        } else {
+            // Out of bounds (e.g., from a previous session after a reload)
+            window.location.reload();
+        }
+    });
+}
 
 /**
  * Push scene onto stack.
@@ -54,6 +140,7 @@ export function push_scene(scene) {
     }
     scene_stack.push(scene);
     scene.show();
+    record_history();
 }
 
 /**
@@ -80,6 +167,7 @@ export function replace_scene(scene) {
     }
     scene_stack.push(scene);
     scene.show();
+    record_history();
 }
 
 /**
@@ -94,6 +182,7 @@ export function pop_scene() {
     if (scene_stack.length >= 1) {
         scene_stack[scene_stack.length - 1].show();
     }
+    record_history();
 }
 
 /**
@@ -112,6 +201,7 @@ export function pop_to_parent() {
     if (scene_stack.length >= 1) {
         scene_stack[scene_stack.length - 1].show();
     }
+    record_history();
 }
 
 /**
@@ -131,6 +221,7 @@ export function pop_to_root() {
     if (scene_stack.length === 1) {
         scene_stack[0].show(); // Ensure the root scene is visible
     }
+    record_history();
 }
 
 /**

@@ -227,6 +227,7 @@ export class UploadCollectionScene {
             });
             nodes = null;
         };
+        this.is_transient = function () { return false; };
         this.release = function () {
             if (upload_req !== null) {
                 upload_req.abort();

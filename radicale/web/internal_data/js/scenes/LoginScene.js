@@ -183,6 +183,7 @@ export class LoginScene {
             html_scene.classList.add("hidden");
             form.onsubmit = null;
         };
+        this.is_transient = function () { return false; };
         this.release = function () {
             // cancel pending requests
             if (principal_req !== null) {

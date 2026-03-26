@@ -134,6 +134,7 @@ export class DeleteConfirmationScene {
             cancel_btn.onclick = null;
             delete_btn.onclick = null;
         };
+        this.is_transient = function () { return false; };
         this.release = function () {
             if (delete_req !== null) {
                 delete_req.abort();

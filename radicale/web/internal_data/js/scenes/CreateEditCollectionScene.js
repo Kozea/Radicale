@@ -211,6 +211,7 @@ export class CreateEditCollectionScene {
             submit_btn.onclick = null;
             cancel_btn.onclick = null;
         };
+        this.is_transient = function () { return false; };
         this.release = function () {
             if (create_edit_req !== null) {
                 create_edit_req.abort();

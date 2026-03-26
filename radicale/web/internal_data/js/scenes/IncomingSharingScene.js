@@ -157,6 +157,7 @@ export class IncomingSharingScene {
             error_handler.clearError();
         };
 
+        this.is_transient = function () { return false; };
         this.release = function () {
             error_handler.clearError();
             nodes.forEach(function (node) {

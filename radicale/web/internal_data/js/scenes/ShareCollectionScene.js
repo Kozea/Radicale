@@ -126,6 +126,7 @@ export class ShareCollectionScene {
     };
     this.release = function () {
     };
+    this.is_transient = function () { return false; };
   }
 }
 
