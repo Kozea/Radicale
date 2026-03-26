@@ -378,7 +378,10 @@ def format_unit(value: float, binary: bool = False) -> str:
             unit = "k"
         else:
             unit = ""
-    return ("%.1f %s" % (value, unit))
+    if unit == "":
+        return ("%d" % value)
+    else:
+        return ("%.1f %s" % (value, unit))
 
 
 def limit_str(content: str, limit: int) -> str:
