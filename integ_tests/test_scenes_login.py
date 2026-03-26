@@ -24,17 +24,30 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from integ_tests.common import SHARING_HTPASSWD, login, start_radicale_server
+from integ_tests.common import (
+    NOSHARE_HTPASSWD,
+    SHARING_HTPASSWD,
+    Config,
+    login,
+    start_radicale_server,
+)
+
+
+@pytest.fixture(params=[SHARING_HTPASSWD, NOSHARE_HTPASSWD], ids=lambda c: c.name)
+def config(request: pytest.FixtureRequest) -> Config:
+    return request.param
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path, SHARING_HTPASSWD)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_login_logout_login(page: Page, radicale_server: str) -> None:
+def test_login_logout_login(page: Page, radicale_server: str, config: Config) -> None:
     # 1. First login
-    login(page, radicale_server, SHARING_HTPASSWD)
+    login(page, radicale_server, config)
     expect(page.locator("#collectionsscene")).to_be_visible()
 
     # 2. Logout
@@ -43,5 +56,5 @@ def test_login_logout_login(page: Page, radicale_server: str) -> None:
     expect(page.locator("#collectionsscene")).to_be_hidden()
 
     # 3. Second login
-    login(page, radicale_server, SHARING_HTPASSWD)
+    login(page, radicale_server, config)
     expect(page.locator("#collectionsscene")).to_be_visible()

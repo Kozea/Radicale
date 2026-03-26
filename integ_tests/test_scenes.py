@@ -25,6 +25,7 @@ import pytest
 from playwright.sync_api import BrowserContext, Page, expect
 
 from integ_tests.common import (
+    NOSHARE_HTPASSWD,
     SHARING_HTPASSWD,
     SHARING_XREMOTE,
     Config,
@@ -34,7 +35,9 @@ from integ_tests.common import (
 )
 
 
-@pytest.fixture(params=[SHARING_HTPASSWD, SHARING_XREMOTE], ids=lambda c: c.name)
+@pytest.fixture(
+    params=[SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD], ids=lambda c: c.name
+)
 def config(request: pytest.FixtureRequest) -> Config:
     return request.param
 

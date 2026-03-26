@@ -25,6 +25,7 @@ import pytest
 from playwright.sync_api import BrowserContext, Page, expect
 
 from integ_tests.common import (
+    NOSHARE_HTPASSWD,
     SHARING_HTPASSWD,
     SHARING_XREMOTE,
     Config,
@@ -40,7 +41,7 @@ def radicale_server(
     yield from start_radicale_server(tmp_path, config)
 
 
-@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE])
+@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD])
 def test_index_html_loads(page: Page, radicale_server: str, config: Config) -> None:
     """Test that the index.html loads from the server."""
     console_msgs: list[str] = []
@@ -52,7 +53,7 @@ def test_index_html_loads(page: Page, radicale_server: str, config: Config) -> N
     assert len(errors) == 0
 
 
-@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE])
+@pytest.mark.parametrize("config", [SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD])
 def test_user_login_works(
     context: BrowserContext, page: Page, radicale_server: str, config: Config
 ) -> None:
