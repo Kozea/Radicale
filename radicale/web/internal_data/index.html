@@ -158,7 +158,7 @@
                   <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
                       class="small_icon" alt="Edit"></button>
                 </td>
-                <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
+                <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span><span data-name="conversion">⟿</span></td>
                 <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
                 <td>
                   <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
@@ -184,7 +184,7 @@
                   <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
                       class="small_icon" alt="Edit"></button>
                 </td>
-                <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span></td>
+                <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span><span data-name="conversion">⟿</span></td>
                 <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
                 <td>
                   <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
@@ -195,33 +195,6 @@
                 <td>
                   <button type="button" class="blue inline" data-name="sharebymap">
                     <img src="css/icons/new.svg" class="small_icon" alt="New Share by Map">
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </details>
-      </div>
-      <div data-name="sharebybday">
-        <details open>
-          <summary>shared as bday calendar</summary>
-          <table>
-            <tbody>
-              <tr data-name="sharebdayrowtemplate" class="hidden">
-                <td>
-                  <button type="button" class="blue inline" data-name="edit"><img src="css/icons/edit.svg"
-                      class="small_icon" alt="Edit"></button>
-                </td>
-                <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
-                <td>
-                  <button type="button" class="red inline" data-name="delete"><img src="css/icons/delete.svg"
-                      class="small_icon" alt="Delete"></button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <button type="button" class="blue inline" data-name="sharebybday">
-                    <img src="css/icons/new.svg" class="small_icon" alt="New Share as Bday Calendar">
                   </button>
                 </td>
               </tr>
@@ -253,7 +226,7 @@
             <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
             <td data-name="owner"></td>
             <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
-                data-name="ro">ro</span></td>
+                data-name="ro">ro</span><span data-name="conversion">⟿</span></td>
             <td><input type="checkbox" data-name="enabled"></td>
             <td><input type="checkbox" data-name="shown"></td>
           </tr>
@@ -285,10 +258,16 @@
         </details>
         <details open>
           <summary>Permissions</summary>
-          <input type="radio" data-name="permissions" checked="true" id="newshare_attr_permissions_ro"
+          <input type="radio" data-name="permissions" checked id="newshare_attr_permissions_ro"
             name="newshare_permissions"><label for="newshare_attr_permissions_ro">Readonly</label>
-          <input type="radio" data-name="permissions" checked="false" id="newshare_attr_permissions_rw"
+          <input type="radio" data-name="permissions" id="newshare_attr_permissions_rw"
             name="newshare_permissions" /><label for="newshare_attr_permissions_rw">Read/Write</label>
+        </details>
+        <details data-name="conversions" class="hidden">
+          <summary>Conversions</summary>
+          <div data-name="conversions_container">
+            <!-- Dynamic radio buttons will be inserted here -->
+          </div>
         </details>
         <details data-name="properties_override">
           <summary>Properties override</summary>

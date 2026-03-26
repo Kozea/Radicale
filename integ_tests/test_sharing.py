@@ -364,30 +364,37 @@ def test_create_and_delete_share_by_bday(
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
 
     expect(
-        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(0)
 
-    page.click('button[data-name="sharebybday"]')
+    page.click('button[data-name="sharebymap"]')
+    page.click('label[for="newshare_conv_bday"]')
 
-    # verify user is auto-filled with current user (admin)
-    expect(page.locator('input[data-name="shareuser"]')).to_have_value("admin")
-    page.locator('input[data-name="sharehref"]').fill("bdaymapped")
+    # share to self (admin), which is allowed for conversions
+    page.locator('input[data-name="shareuser"]').fill("admin")
 
-    # verify that the permissions section is hidden entirely
-    expect(page.locator("input#newshare_attr_permissions_ro")).to_be_hidden()
-    expect(page.locator("input#newshare_attr_permissions_rw")).to_be_hidden()
+    # verify that the permissions section is disabled
+    expect(page.locator("input#newshare_attr_permissions_ro")).to_be_disabled()
+    expect(page.locator("input#newshare_attr_permissions_rw")).to_be_disabled()
 
     page.click('#newshare button[data-name="submit"]')
     expect(
-        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
 
     # verify no permissions pill in the bday row
     expect(
         page.locator(
-            "tr[data-name='sharebdayrowtemplate']:not(.hidden) span[data-name='ro']"
+            "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']"
         )
-    ).to_have_count(0)
+    ).to_be_hidden()
+
+    # Instead, there should be the conversion icon
+    expect(
+        page.locator(
+            "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='conversion']"
+        )
+    ).to_have_count(1)
 
     # Close the share scene and verify the virtual bday calendar is now in the collections list
     page.click('#sharecollectionscene button[data-name="cancel"]')
@@ -401,12 +408,12 @@ def test_create_and_delete_share_by_bday(
     page.hover("article:not(.hidden) >> nth=0")
     page.click('article:not(.hidden) >> nth=0 >> a[data-name="share"]', force=True)
     page.click(
-        "tr[data-name='sharebdayrowtemplate']:not(.hidden) button[data-name='delete']",
+        "tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='delete']",
         strict=True,
     )
     page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
-        page.locator("tr[data-name='sharebdayrowtemplate']:not(.hidden)")
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(0)
 
 
@@ -429,8 +436,9 @@ def test_bday_section_hidden_for_calendar(
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
 
     expect(page.locator("#sharecollectionscene")).to_be_visible()
-    expect(page.locator("div[data-name='sharebybday']")).to_be_hidden()
-    page.click('#sharecollectionscene button[data-name="cancel"]')
+    page.click('button[data-name="sharebymap"]')
+    expect(page.locator("details[data-name='conversions']")).to_be_hidden()
+    page.click('#newshare button[data-name="cancel"]')
 
 
 def test_bday_section_visible_for_addressbook(
@@ -452,5 +460,6 @@ def test_bday_section_visible_for_addressbook(
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
 
     expect(page.locator("#sharecollectionscene")).to_be_visible()
-    expect(page.locator("div[data-name='sharebybday']")).to_be_visible()
-    page.click('#sharecollectionscene button[data-name="cancel"]')
+    page.click('button[data-name="sharebymap"]')
+    expect(page.locator("details[data-name='conversions']")).to_be_visible()
+    page.click('#newshare button[data-name="cancel"]')
