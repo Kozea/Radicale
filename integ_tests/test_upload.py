@@ -23,18 +23,31 @@ import re
 from typing import Any, Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import login, start_radicale_server
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, login,
+                                start_radicale_server)
+
+
+@pytest.fixture(
+    params=[SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD], ids=lambda c: c.name
+)
+def config(request: pytest.FixtureRequest) -> Config:
+    return request.param
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_upload_zero_files(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_upload_zero_files(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     page.click('.fabcontainer a[data-name="upload"]')
 
     # Click upload without selecting files
@@ -47,9 +60,13 @@ def test_upload_zero_files(page: Page, radicale_server: str) -> None:
 
 
 def test_upload_one_file_custom_href(
-    page: Page, radicale_server: str, tmp_path: pathlib.Path
+    context: BrowserContext,
+    page: Page,
+    radicale_server: str,
+    config: Config,
+    tmp_path: pathlib.Path,
 ) -> None:
-    login(page, radicale_server)
+    login(page, radicale_server, config, context=context)
 
     # Create a fake file to upload
     test_file = tmp_path / "test.ics"
@@ -80,9 +97,13 @@ def test_upload_one_file_custom_href(
 
 
 def test_upload_two_files(
-    page: Page, radicale_server: str, tmp_path: pathlib.Path
+    context: BrowserContext,
+    page: Page,
+    radicale_server: str,
+    config: Config,
+    tmp_path: pathlib.Path,
 ) -> None:
-    login(page, radicale_server)
+    login(page, radicale_server, config, context=context)
 
     # Create two fake files
     file1 = tmp_path / "test1.ics"

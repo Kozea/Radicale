@@ -22,18 +22,31 @@ import pathlib
 from typing import Any, Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import create_collection, login, start_radicale_server
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, create_collection,
+                                login, start_radicale_server)
+
+
+@pytest.fixture(
+    params=[SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD], ids=lambda c: c.name
+)
+def config(request: pytest.FixtureRequest) -> Config:
+    return request.param
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_edit_save(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_edit_save(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
 
     # Get original values
@@ -55,8 +68,10 @@ def test_edit_save(page: Page, radicale_server: str) -> None:
     expect(article.locator('[data-name="description"]')).to_have_text(new_description)
 
 
-def test_edit_cancel(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_edit_cancel(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
 
     # Get original values

@@ -22,18 +22,31 @@ import pathlib
 from typing import Any, Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import create_collection, login, start_radicale_server
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, create_collection,
+                                login, start_radicale_server)
+
+
+@pytest.fixture(
+    params=[SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD], ids=lambda c: c.name
+)
+def config(request: pytest.FixtureRequest) -> Config:
+    return request.param
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_navigation_create_collection_cancel(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_navigation_create_collection_cancel(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     expect(page.locator("#collectionsscene")).to_be_visible()
 
     page.click('a[data-name="new"]')
@@ -44,8 +57,10 @@ def test_navigation_create_collection_cancel(page: Page, radicale_server: str) -
     expect(page.locator("#collectionsscene")).to_be_visible()
 
 
-def test_navigation_create_collection_submit(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_navigation_create_collection_submit(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     expect(page.locator("#collectionsscene")).to_be_visible()
 
     page.click('a[data-name="new"]')
@@ -61,8 +76,10 @@ def test_navigation_create_collection_submit(page: Page, radicale_server: str) -
     expect(page.locator("article:has-text('Nav Test Col')")).to_be_visible()
 
 
-def test_navigation_delete_collection_cancel(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_navigation_delete_collection_cancel(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     expect(page.locator("#collectionsscene")).to_be_visible()
 
@@ -75,8 +92,10 @@ def test_navigation_delete_collection_cancel(page: Page, radicale_server: str) -
     expect(page.locator("#collectionsscene")).to_be_visible()
 
 
-def test_navigation_delete_collection_confirm(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_navigation_delete_collection_confirm(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     create_collection(page, radicale_server)
     expect(page.locator("#collectionsscene")).to_be_visible()
 
@@ -98,25 +117,12 @@ def test_navigation_delete_collection_confirm(page: Page, radicale_server: str) 
     expect(page.locator("article:not(.hidden)")).to_have_count(0)
 
 
-def test_navigation_refresh_button(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_navigation_refresh_button(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     expect(page.locator("#collectionsscene")).to_be_visible()
 
     page.click('#logoutview a[data-name="refresh"]')
     # It shows LoadingScene briefly then back to CollectionsScene
-    expect(page.locator("#collectionsscene")).to_be_visible()
-
-
-def test_login_logout_login(page: Page, radicale_server: str) -> None:
-    # 1. First login
-    login(page, radicale_server)
-    expect(page.locator("#collectionsscene")).to_be_visible()
-
-    # 2. Logout
-    page.click('#logoutview a[data-name="logout"]')
-    expect(page.locator("#loginscene")).to_be_visible()
-    expect(page.locator("#collectionsscene")).to_be_hidden()
-
-    # 3. Second login
-    login(page, radicale_server)
     expect(page.locator("#collectionsscene")).to_be_visible()

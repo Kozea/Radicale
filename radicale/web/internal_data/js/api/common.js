@@ -39,7 +39,7 @@ export function to_error_message(request) {
  */
 export function get_auth_header(user, password) {
     if (user !== null && password !== null && password !== "") {
-        return 'Basic ' + btoa(user + ':' + encodeURIComponent(password));
+        return 'Basic ' + btoa(user + ':' + password);
     }
     return null;
 }

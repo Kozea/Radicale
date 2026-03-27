@@ -182,7 +182,10 @@ export function reload_sharing_list(user, password, collection, callback) {
             let shares = (parsed["Content"] || []).map((/** @type {ShareData} */ data) => new Share(data));
             callback(shares, null);
         },
-        null, // on_not_found
+        function () {
+            // sharing is disabled on the server
+            callback([], null);
+        },
         function (error) {
             callback([], error);
         },
