@@ -82,10 +82,6 @@ SHARE_TYPES: Sequence[str] = ('token', 'map', 'all')
 
 SHARE_TYPES_V1: Sequence[str] = ('token', 'map')
 
-if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-    SHARE_TYPES: Sequence[str] = ('token', 'map', 'bday', 'all')  # type: ignore[no-redef] # TODO: remove/3.7.0-final
-    SHARE_TYPES_V1: Sequence[str] = ('token', 'map', 'bday')  # type: ignore[no-redef] # TODO: remove/3.7.0-final
-
 API_HOOKS_V1: Sequence[str] = ('list', 'create', 'delete', 'update', 'hide', 'unhide', 'enable', 'disable', 'info')
 # list  : list sharings (optional filtered)
 # create : create share by token or map
@@ -163,12 +159,8 @@ class BaseSharing:
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
-        if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-            self.sharing_collection_by_map = self.sharing_collection_by_map or configuration.get("sharing", "collection_by_bday")  # TODO: remove/3.7.0-final
         self.permit_create_token = configuration.get("sharing", "permit_create_token")
         self.permit_create_map = configuration.get("sharing", "permit_create_map")
-        if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-            self.permit_create_map = self.permit_create_map or configuration.get("sharing", "permit_create_bday")  # TODO: remove/3.7.0-final
         self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
@@ -843,11 +835,6 @@ class BaseSharing:
         answer['ApiVersion'] = 1
         Timestamp = int((datetime.now() - datetime(1970, 1, 1)).total_seconds())
 
-        if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-            if ShareType == "bday":  # TODO: remove/3.7.0-final
-                ShareType = "map"  # TODO: remove/3.7.0-final
-                Conversion = "bday"  # TODO: remove/3.7.0-final
-
         if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
             if not action == 'info':
                 # API is not enabled
@@ -878,14 +865,6 @@ class BaseSharing:
                         PathOrToken=PathOrToken,
                         Conversion=Conversion,
                         )
-
-            if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-                # check and change to legacy ShareType  # TODO: remove/3.7.0-final
-                result_array_adj = copy.deepcopy(result_array)  # TODO: remove/3.7.0-final
-                for index in range(0, len(result_array_adj)):  # TODO: remove/3.7.0-final
-                    if result_array_adj[index]['Conversion'] == "bday":  # TODO: remove/3.7.0-final
-                        result_array_adj[index]['ShareType'] = "bday"  # TODO: remove/3.7.0-final
-                result_array = result_array_adj
 
             answer['Lines'] = len(result_array)
             if len(result_array) == 0:
@@ -1273,9 +1252,6 @@ class BaseSharing:
             if ShareType in ["all", "map"]:
                 answer['FeatureEnabledCollectionByMap'] = self.sharing_collection_by_map
                 answer['PermittedCreateCollectionByMap'] = self.permit_create_map
-                if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-                    answer['FeatureEnabledCollectionByBday'] = self.sharing_collection_by_map  # TODO: remove/3.7.0-final
-                    answer['PermittedCreateCollectionByBday'] = self.permit_create_map  # TODO: remove/3.7.0-final
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
                 answer['PermittedCreateCollectionByToken'] = self.permit_create_token
