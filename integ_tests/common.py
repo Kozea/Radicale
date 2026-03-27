@@ -125,7 +125,7 @@ database_path = {sharing_path}
     if config.auth_type == AuthType.HTPASSWD:
         with open(user_path, "w") as f:
             f.write(
-                """admin:adminpassword
+                """admin:admi$pass#word
 max:maxpassword
 
 """
@@ -185,7 +185,7 @@ def login(
 
     if config.auth_type == AuthType.HTPASSWD:
         page.fill('#loginscene input[data-name="user"]', "admin")
-        page.fill('#loginscene input[data-name="password"]', "adminpassword")
+        page.fill('#loginscene input[data-name="password"]', "admi$pass#word")
         page.click('button:has-text("Next")')
 
     expect(page.locator("#collectionsscene")).to_be_visible()
