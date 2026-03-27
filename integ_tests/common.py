@@ -24,9 +24,48 @@ import socket
 import subprocess
 import sys
 import time
-from typing import Any, Generator
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Generator, Optional
 
-from playwright.sync_api import Page
+from playwright.sync_api import BrowserContext, Page, expect
+
+
+class AuthType(Enum):
+    HTPASSWD = "htpasswd"
+    XREMOTE = "http_x_remote_user"
+
+
+class SharingType(Enum):
+    SHARING = "sharing"
+    NOSHARING = "nosharing"
+
+
+@dataclass(frozen=True)
+class Config:
+    name: str
+    auth_type: AuthType
+    sharing_type: SharingType
+    extra_config: str = ""
+
+
+SHARING_HTPASSWD = Config(
+    name="sharing_htpasswd",
+    auth_type=AuthType.HTPASSWD,
+    sharing_type=SharingType.SHARING,
+)
+
+SHARING_XREMOTE = Config(
+    name="sharing_xremote",
+    auth_type=AuthType.XREMOTE,
+    sharing_type=SharingType.SHARING,
+)
+
+NOSHARE_HTPASSWD = Config(
+    name="noshare_htpasswd",
+    auth_type=AuthType.HTPASSWD,
+    sharing_type=SharingType.NOSHARING,
+)
 
 
 def get_free_port():
@@ -35,13 +74,16 @@ def get_free_port():
         return s.getsockname()[1]
 
 
-def start_radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
+def start_radicale_server(
+    tmp_path: pathlib.Path, config: Config = SHARING_HTPASSWD
+) -> Generator[str, Any, None]:
     port = get_free_port()
     config_path = tmp_path / "config"
     user_path = tmp_path / "users"
     storage_path = tmp_path / "collections"
 
-    # Create a local config file
+    sharing_path = tmp_path / "sharing.csv"
+
     with open(config_path, "w") as f:
         f.write(
             f"""[server]
@@ -49,13 +91,23 @@ hosts = 127.0.0.1:{port}
 [storage]
 filesystem_folder = {storage_path}
 [auth]
-type = htpasswd
-htpasswd_filename = {user_path}
-[web]
+type = {config.auth_type.value}
+"""
+        )
+        if config.auth_type == AuthType.HTPASSWD:
+            f.write(f"htpasswd_filename = {user_path}\n")
+            f.write("htpasswd_encryption = plain\n")
+
+        f.write(
+            """[web]
 type = internal
 [headers]
 Content-Security-Policy = default-src 'self'; object-src 'none'
-[sharing]
+"""
+        )
+        if config.sharing_type == SharingType.SHARING:
+            f.write(
+                f"""[sharing]
 type = csv
 collection_by_map = true
 collection_by_token = true
@@ -64,16 +116,20 @@ permit_create_map = true
 permit_properties_overlay = true
 collection_by_bday = true
 permit_create_bday = true
-
+database_path = {sharing_path}
 """
-        )
-    with open(user_path, "w") as f:
-        f.write(
-            """admin:adminpassword
+            )
+
+        f.write(f"\n{config.extra_config}\n")
+
+    if config.auth_type == AuthType.HTPASSWD:
+        with open(user_path, "w") as f:
+            f.write(
+                """admin:adminpassword
 max:maxpassword
 
 """
-        )
+            )
 
     env = os.environ.copy()
     # Ensure the radicale package is in PYTHONPATH
@@ -114,11 +170,25 @@ max:maxpassword
     process.wait()
 
 
-def login(page: Page, radicale_server: str) -> None:
+def login(
+    page: Page,
+    radicale_server: str,
+    config: Config = SHARING_HTPASSWD,
+    context: Optional[BrowserContext] = None,
+) -> None:
+    if config.auth_type == AuthType.XREMOTE:
+        if context is None:
+            raise ValueError("context is required for http_x_remote_user login")
+        context.set_extra_http_headers({"X-Remote-User": "admin"})
+
     page.goto(radicale_server)
-    page.fill('#loginscene input[data-name="user"]', "admin")
-    page.fill('#loginscene input[data-name="password"]', "adminpassword")
-    page.click('button:has-text("Next")')
+
+    if config.auth_type == AuthType.HTPASSWD:
+        page.fill('#loginscene input[data-name="user"]', "admin")
+        page.fill('#loginscene input[data-name="password"]', "adminpassword")
+        page.click('button:has-text("Next")')
+
+    expect(page.locator("#collectionsscene")).to_be_visible()
 
 
 def create_collection(page: Page, radicale_server: str) -> None:

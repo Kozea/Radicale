@@ -22,18 +22,31 @@ import pathlib
 from typing import Any, Generator
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import BrowserContext, Page
 
-from integ_tests.common import login, start_radicale_server
+from integ_tests.common import (NOSHARE_HTPASSWD, SHARING_HTPASSWD,
+                                SHARING_XREMOTE, Config, login,
+                                start_radicale_server)
+
+
+@pytest.fixture(
+    params=[SHARING_HTPASSWD, SHARING_XREMOTE, NOSHARE_HTPASSWD], ids=lambda c: c.name
+)
+def config(request: pytest.FixtureRequest) -> Config:
+    return request.param
 
 
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path)
+def radicale_server(
+    tmp_path: pathlib.Path, config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, config)
 
 
-def test_download_addressbook(page: Page, radicale_server: str) -> None:
-    login(page, radicale_server)
+def test_download_addressbook(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
     page.click('.fabcontainer a[data-name="new"]')
 
     # an address book is created
@@ -52,9 +65,9 @@ def test_download_addressbook(page: Page, radicale_server: str) -> None:
 
 
 def test_download_calendar_uses_displayname_ics(
-    page: Page, radicale_server: str
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
 ) -> None:
-    login(page, radicale_server)
+    login(page, radicale_server, config, context=context)
     page.click('.fabcontainer a[data-name="new"]')
 
     # a calendar is created

@@ -270,11 +270,24 @@ export function maybe_enable_sharing_options(features) {
   let map_is_enabled = features.sharing.FeatureEnabledCollectionByMap || false;
   let token_is_enabled = features.sharing.FeatureEnabledCollectionByToken || false;
   let bday_is_enabled = features.sharing.FeatureEnabledCollectionByBday || false;
-  if (map_is_enabled || token_is_enabled || bday_is_enabled) {
-    let share_options = document.querySelectorAll("[data-name=shareoption]");
-    for (let i = 0; i < share_options.length; i++) {
-      let share_option = share_options[i];
+  let any_sharing_enabled = map_is_enabled || token_is_enabled || bday_is_enabled;
+
+  let share_options = document.querySelectorAll("[data-name=shareoption]");
+  for (let i = 0; i < share_options.length; i++) {
+    let share_option = share_options[i];
+    if (any_sharing_enabled) {
       share_option.classList.remove("hidden");
+    } else {
+      share_option.classList.add("hidden");
+    }
+  }
+
+  let incomingshares_btn = document.querySelector("#collectionsscene [data-name=incomingshares]");
+  if (incomingshares_btn) {
+    if (any_sharing_enabled) {
+      incomingshares_btn.classList.remove("hidden");
+    } else {
+      incomingshares_btn.classList.add("hidden");
     }
   }
 }
