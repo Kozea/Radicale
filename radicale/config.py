@@ -487,10 +487,6 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "false",
             "help": "enable sharing of collection by map",
             "type": bool}),
-        ("collection_by_bday", {  # TODO: remove/3.7.0-final
-            "value": "false",  # TODO: remove/3.7.0-final
-            "help": "enable sharing of collection by bday (conversion on-the-fly)",  # TODO: remove/3.7.0-final
-            "type": bool}),  # TODO: remove/3.7.0-final
         ("permit_create_token", {
             "value": "false",
             "help": "permit create of token-based sharing",
@@ -499,10 +495,6 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "false",
             "help": "permit create of map-based sharing",
             "type": bool}),
-        ("permit_create_bday", {  # TODO: remove/3.7.0-final
-            "value": "false",  # TODO: remove/3.7.0-final
-            "help": "permit create of bday-based sharing",  # TODO: remove/3.7.0-final
-            "type": bool}),  # TODO: remove/3.7.0-final
         ("permit_properties_overlay", {
             "value": "false",
             "help": "permit properties overlay",

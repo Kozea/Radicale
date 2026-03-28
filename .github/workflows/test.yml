@@ -23,7 +23,7 @@ jobs:
 
   test-python-32bit:
     name: Test Ubuntu:latest Python:32-bit
-    needs: [lint, test-ubuntu-python-newest]
+    needs: [lint, test-ubuntu-python-newest, integ-test]
     strategy:
       matrix:
         os: [ubuntu-latest]
