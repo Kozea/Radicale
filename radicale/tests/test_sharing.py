@@ -4359,11 +4359,8 @@ permissions: RrWw""")
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
             row = answer_dict['Content'][0]
-            if "SHARING_NO_LEGACY" not in os.environ:  # TODO: remove/3.7.0-final
-                assert row['ShareType'] == "bday"  # TODO: remove/3.7.0-final
-            else:  # TODO: remove/3.7.0-final
-                assert row['ShareType'] == "map"
-                assert row['Conversion'] == "bday"
+            assert row['ShareType'] == "map"
+            assert row['Conversion'] == "bday"
 
             # check PROPFIND item as user
             logging.info("\n*** PROPFIND item as user -> calendar")

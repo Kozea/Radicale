@@ -225,8 +225,7 @@ function add_share_rows(user, password, collection, shares, errorHandler) {
       if (share["ShareType"] === "token") {
         add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token, errorHandler);
       }
-      // TODO: Eventually remove bday
-      else if (share["ShareType"] === "map" || share["ShareType"] === "bday") {
+      else if (share["ShareType"] === "map") {
         add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map, errorHandler);
       }
     }
