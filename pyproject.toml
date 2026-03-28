@@ -44,7 +44,7 @@ test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
-dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright"]
+dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
 
 [project.scripts]
 radicale = "radicale.__main__:run"
@@ -55,7 +55,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.tox]
 min_version = "4.0"
-envlist = ["py", "flake8", "isort", "mypy", "integ_test"]
+envlist = ["py", "flake8", "isort", "mypy", "integ_test", "html5validator"]
 
 [tool.tox.env.py]
 extras = ["test"]
@@ -86,6 +86,11 @@ deps = ["pytest", "pytest-playwright"]
 setenv = { PLAYWRIGHT_BROWSERS_PATH = "{toxworkdir}/.playwright" }
 commands_pre = [["playwright", "install", "chromium"]]
 commands = [["pytest", "integ_tests"]]
+
+[tool.tox.env.html5validator]
+deps = ["html5validator"]
+commands = [["html5validator", "--root", "radicale/web/internal_data/", "--also-check-css"]]
+
 
 [tool.pytest.ini_options]
 norecursedirs = ["integ_tests"]

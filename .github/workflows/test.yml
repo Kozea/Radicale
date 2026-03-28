@@ -206,6 +206,20 @@ jobs:
       - name: Lint
         run: tox -c pyproject.toml -e flake8,mypy,isort
 
+  htmlvalidator:
+    name: HTML Validator
+    runs-on: ubuntu-latest
+    needs: test-ubuntu-python-newest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - uses: Cyb3r-Jak3/html5validator-action@v7.2.0
+        with:
+          root: 'radicale/web/internal_data/'
+          css: true
+
   integ-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
