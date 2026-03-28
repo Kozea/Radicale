@@ -44,7 +44,7 @@ test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
-integ_test = ["pytest", "pytest-playwright"]
+dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright"]
 
 [project.scripts]
 radicale = "radicale.__main__:run"
@@ -55,7 +55,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.tox]
 min_version = "4.0"
-envlist = ["py", "flake8", "isort", "mypy"]
+envlist = ["py", "flake8", "isort", "mypy", "integ_test"]
 
 [tool.tox.env.py]
 extras = ["test"]
@@ -79,6 +79,10 @@ skip_install = true
 deps = ["mypy==1.11.0"]
 commands = [["mypy", "--install-types", "--non-interactive", "."]]
 skip_install = true
+
+[tool.tox.env.integ_test]
+deps = ["pytest", "pytest-playwright"]
+commands = [["pytest", "integ_tests"]]
 
 [tool.pytest.ini_options]
 norecursedirs = ["integ_tests"]
