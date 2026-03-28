@@ -82,6 +82,9 @@ skip_install = true
 
 [tool.tox.env.integ_test]
 deps = ["pytest", "pytest-playwright"]
+# Store Playwright browsers inside .tox for better caching
+setenv = { PLAYWRIGHT_BROWSERS_PATH = "{toxworkdir}/.playwright" }
+commands_pre = [["playwright", "install", "chromium"]]
 commands = [["pytest", "integ_tests"]]
 
 [tool.pytest.ini_options]
