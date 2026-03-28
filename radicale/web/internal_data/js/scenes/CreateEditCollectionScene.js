@@ -53,7 +53,7 @@ export class CreateEditCollectionScene {
         this._displayname_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=displayname]"));
         this._description_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=description]"));
         this._source_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=source]"));
-        this._source_label = get_element(this._html_scene, "label[for=source]");
+        this._source_label = get_element(this._html_scene, "label[for$=source]");
         this._type_form = /** @type {HTMLSelectElement} */(get_element(this._html_scene, "[data-name=type]"));
         this._color_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=color]"));
         this._submit_btn = get_element(this._html_scene, "[data-name=submit]");

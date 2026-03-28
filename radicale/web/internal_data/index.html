@@ -127,13 +127,13 @@
           <option value="WEBCAL">webcal</option>
         </select>
         <label for="displayname">Title:</label>
-        <input data-name="displayname" type="text">
+        <input data-name="displayname" id="displayname" type="text">
         <label for="description">Description:</label>
-        <input data-name="description" type="text">
+        <input data-name="description" id="description" type="text">
         <label for="source">Source:</label>
-        <input data-name="source" type="url">
+        <input data-name="source" id="source" type="url">
         <label for="color">Color:</label>
-        <input data-name="color" type="color">
+        <input data-name="color" id="color" type="color">
         <br>
         <span class="error hidden" data-name="error"></span>
         <br>
@@ -309,15 +309,15 @@
           <option value="WEBCAL">Webcal</option>
         </select>
         <label for="href">HREF:</label>
-        <input data-name="href" type="text">
+        <input data-name="href" id="href" type="text">
         <label for="displayname">Title:</label>
-        <input data-name="displayname" type="text">
+        <input data-name="displayname" id="create_displayname" type="text">
         <label for="description">Description:</label>
-        <input data-name="description" type="text">
+        <input data-name="description" id="create_description" type="text">
         <label for="source">Source:</label>
-        <input data-name="source" type="url">
+        <input data-name="source" id="create_source" type="url">
         <label for="color">Color:</label>
-        <input data-name="color" type="color">
+        <input data-name="color" id="create_color" type="color">
         <br>
         <span class="error" data-name="error"></span>
         <br>
@@ -342,9 +342,9 @@
       </div>
       <form>
         <label for="uploadfile">File:</label>
-        <input data-name="uploadfile" type="file" accept=".ics, .vcf" multiple>
-        <label for="href">HREF:</label>
-        <input data-name="href" type="text">
+        <input data-name="uploadfile" id="uploadfile" type="file" accept=".ics, .vcf" multiple>
+        <label for="upload_href">HREF:</label>
+        <input data-name="href" id="upload_href" type="text">
         <small data-name="hreflimitmsg" class="hidden">You can only specify the HREF if you upload 1 file.</small>
         <button type="submit" class="green" data-name="submit">Upload</button>
         <button type="button" class="red" data-name="close">Close</button>

@@ -191,7 +191,7 @@ main {
 #collectionsscene article p {
     font-size: 1em;
     max-height: 130px;
-    overflow: overlay;
+    overflow: auto;
     word-wrap: break-word;
 }
 
@@ -476,7 +476,8 @@ a.blue:active {
 }
 
 button.inline {
-    padding-inline: 1px;
+    padding-left: 1px;
+    padding-right: 1px;
     min-width: 2em;
     margin: 0;
 }

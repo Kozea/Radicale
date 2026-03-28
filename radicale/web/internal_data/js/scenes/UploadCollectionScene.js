@@ -48,7 +48,7 @@ export class UploadCollectionScene {
         this._uploadfile_form = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=uploadfile]"));
         this._uploadfile_lbl = get_element(this._html_scene, "label[for=uploadfile]");
         this._href_form = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=href]"));
-        this._href_label = get_element(this._html_scene, "label[for=href]");
+        this._href_label = get_element(this._html_scene, "label[for$=href]");
         this._hreflimitmsg_html = get_element(this._html_scene, "[data-name=hreflimitmsg]");
         this._pending_html = get_element(this._html_scene, "[data-name=pending]");
         this._error_form = get_element(this._html_scene, ":scope > span[data-name=error]");
