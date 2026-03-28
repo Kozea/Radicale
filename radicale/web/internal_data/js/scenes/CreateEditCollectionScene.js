@@ -41,182 +41,187 @@ export class CreateEditCollectionScene {
      *                                Otherwise the collection will be edited.
      */
     constructor(user, password, collection) {
-        let edit = collection.type !== CollectionType.PRINCIPAL;
-        let html_scene = get_element_by_id(edit ? "editcollectionscene" : "createcollectionscene");
-        /** @type {?HTMLElement} */ let title_form = edit ? get_element(html_scene, "[data-name=title]") : null;
-        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
-        /** @type {?HTMLInputElement} */ let href_form = edit ? null : /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=href]"));
-        /** @type {HTMLInputElement} */ let displayname_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=displayname]"));
-        /** @type {HTMLInputElement} */ let description_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=description]"));
-        /** @type {HTMLInputElement} */ let source_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=source]"));
-        /** @type {HTMLElement} */ let source_label = get_element(html_scene, "label[for=source]");
-        /** @type {HTMLSelectElement} */ let type_form = /** @type {HTMLSelectElement} */(get_element(html_scene, "[data-name=type]"));
-        /** @type {HTMLInputElement} */ let color_form = /** @type {HTMLInputElement} */(get_element(html_scene, "[data-name=color]"));
-        /** @type {HTMLElement} */ let submit_btn = get_element(html_scene, "[data-name=submit]");
-        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
+        this._user = user;
+        this._password = password;
+        this._collection = collection;
+        this._edit = collection.type !== CollectionType.PRINCIPAL;
 
+        this._html_scene = get_element_by_id(this._edit ? "editcollectionscene" : "createcollectionscene");
+        this._title_form = this._edit ? get_element(this._html_scene, "[data-name=title]") : null;
+        this._error_form = get_element(this._html_scene, "[data-name=error]");
+        this._href_form = this._edit ? null : /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=href]"));
+        this._displayname_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=displayname]"));
+        this._description_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=description]"));
+        this._source_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=source]"));
+        this._source_label = get_element(this._html_scene, "label[for=source]");
+        this._type_form = /** @type {HTMLSelectElement} */(get_element(this._html_scene, "[data-name=type]"));
+        this._color_form = /** @type {HTMLInputElement} */(get_element(this._html_scene, "[data-name=color]"));
+        this._submit_btn = get_element(this._html_scene, "[data-name=submit]");
+        this._cancel_btn = get_element(this._html_scene, "[data-name=cancel]");
 
-        /** @type {?XMLHttpRequest} */ let create_edit_req = null;
-        /** @type {?HTMLSelectElement} */ let saved_type_form = null;
+        /** @type {?XMLHttpRequest} */ this._create_edit_req = null;
+        /** @type {?HTMLSelectElement} */ this._saved_type_form = null;
 
-        let errorHandler = new ErrorHandler(error_form);
-        let validator = new FormValidator(errorHandler);
+        this._errorHandler = new ErrorHandler(this._error_form);
+        this._validator = new FormValidator(this._errorHandler);
 
-        if (!edit && href_form) {
-            validator.addValidator(href_form, validate_href(href_form, "HREF"));
+        if (!this._edit && this._href_form) {
+            this._validator.addValidator(this._href_form, validate_href(this._href_form, "HREF"));
         }
-        validator.addValidator(color_form, validate_color(color_form, "Color"));
+        this._validator.addValidator(this._color_form, validate_color(this._color_form, "Color"));
 
-        let href = edit ? collection.href : collection.href + random_uuid() + "/";
-        let displayname = edit ? collection.displayname : "";
-        let description = edit ? collection.description : "";
-        let source = edit ? collection.source : "";
-        let type = edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
-        let color = edit && collection.color ? collection.color : "#" + random_hex(6);
+        this._href = this._edit ? collection.href : collection.href + random_uuid() + "/";
+        this._displayname = this._edit ? collection.displayname : "";
+        this._description = this._edit ? collection.description : "";
+        this._source = this._edit ? collection.source : "";
+        this._type = this._edit ? collection.type : CollectionType.CALENDAR_JOURNAL_TASKS;
+        this._color = this._edit && collection.color ? collection.color : "#" + random_hex(6);
 
-        if (!edit && href_form) {
-            href_form.addEventListener("input", onCleanHREFinput);
+        if (!this._edit && this._href_form) {
+            this._href_form.addEventListener("input", onCleanHREFinput);
         }
+    }
 
-        function remove_invalid_types() {
-            if (!edit) {
-                return;
+    _remove_invalid_types() {
+        if (!this._edit) {
+            return;
+        }
+        /** @type {HTMLOptionsCollection} */ let options = this._type_form.options;
+        let valid_type_options = CollectionType.valid_options_for_type(this._type);
+        for (let i = options.length - 1; i >= 0; i--) {
+            if (valid_type_options.indexOf(options[i].value) < 0) {
+                options.remove(i);
             }
-            /** @type {HTMLOptionsCollection} */ let options = type_form.options;
-            // remove all options that are not supersets
-            let valid_type_options = CollectionType.valid_options_for_type(type);
-            for (let i = options.length - 1; i >= 0; i--) {
-                if (valid_type_options.indexOf(options[i].value) < 0) {
-                    options.remove(i);
+        }
+    }
+
+    _read_form() {
+        if (!this._edit && this._href_form) {
+            cleanHREFinput(this._href_form);
+            let newhreftxtvalue = this._href_form.value.trim().toLowerCase();
+            this._href = this._collection.href + newhreftxtvalue + "/";
+        }
+        this._displayname = this._displayname_form.value;
+        this._description = this._description_form.value;
+        this._source = this._source_form.value;
+        this._type = this._type_form.value;
+        this._color = this._color_form.value;
+        return true;
+    }
+
+    _fill_form() {
+        if (!this._edit && this._href_form) {
+            this._href_form.value = random_uuid();
+        }
+        this._displayname_form.value = this._displayname;
+        this._description_form.value = this._description;
+        this._source_form.value = this._source;
+        this._type_form.value = this._type;
+        this._color_form.value = this._color;
+        this._onTypeChange(null);
+        this._type_form.addEventListener("change", (e) => this._onTypeChange(e));
+    }
+
+    _onsubmit() {
+        try {
+            if (!this._validator.validate()) {
+                return false;
+            }
+            this._read_form();
+            let sane_color = this._color.trim();
+            if (sane_color) {
+                /** @type {?RegExpExecArray} */ let match = COLOR_RE.exec(sane_color);
+                if (match) {
+                    sane_color = match[1];
                 }
             }
-        }
-
-        function read_form() {
-            if (!edit && href_form) {
-                cleanHREFinput(href_form);
-                let newhreftxtvalue = href_form.value.trim().toLowerCase();
-                href = collection.href + newhreftxtvalue + "/";
-            }
-            displayname = displayname_form.value;
-            description = description_form.value;
-            source = source_form.value;
-            type = type_form.value;
-            color = color_form.value;
-            return true;
-        }
-
-        function fill_form() {
-            if (!edit && href_form) {
-                href_form.value = random_uuid();
-            }
-            displayname_form.value = displayname;
-            description_form.value = description;
-            source_form.value = source;
-            type_form.value = type;
-            color_form.value = color;
-            onTypeChange(null);
-            type_form.addEventListener("change", onTypeChange);
-        }
-
-        function onsubmit() {
-            try {
-                if (!validator.validate()) {
-                    return false;
+            let loading_scene = new LoadingScene();
+            push_scene(loading_scene);
+            let collection = new Collection(this._href, this._type, this._displayname, this._description, sane_color, 0, 0, this._source);
+            let callback = (/** @type {?string} */ error1) => {
+                if (!is_current_scene(loading_scene)) {
+                    return;
                 }
-                read_form();
-                let sane_color = color.trim();
-                if (sane_color) {
-                    /** @type {?RegExpExecArray} */ let match = COLOR_RE.exec(sane_color);
-                    if (match) {
-                        sane_color = match[1];
-                    }
-                }
-                let loading_scene = new LoadingScene();
-                push_scene(loading_scene);
-                let collection = new Collection(href, type, displayname, description, sane_color, 0, 0, source);
-                let callback = function (/** @type {?string} */ error1) {
-                    if (!is_current_scene(loading_scene)) {
-                        return;
-                    }
-                    create_edit_req = null;
-                    if (error1) {
-                        errorHandler.setError(error1);
-                        pop_scene();
-                    } else {
-                        collectionsCache.invalidate();
-                        pop_to_parent();
-                    }
-                };
-                if (edit) {
-                    create_edit_req = edit_collection(user, password, collection, callback);
+                this._create_edit_req = null;
+                if (error1) {
+                    this._errorHandler.setError(error1);
+                    pop_scene();
                 } else {
-                    create_edit_req = create_collection(user, password, collection, callback);
+                    collectionsCache.invalidate();
+                    pop_to_parent();
                 }
-            } catch (err) {
-                console.error(err);
-            }
-            return false;
-        }
-
-        function oncancel() {
-            try {
-                pop_scene();
-            } catch (err) {
-                console.error(err);
-            }
-            return false;
-        }
-
-        /** 
-         * @param {?Event} _e
-         */
-        function onTypeChange(_e) {
-            if (type_form.value == CollectionType.WEBCAL) {
-                source_label.classList.remove("hidden");
-                source_form.classList.remove("hidden");
+            };
+            if (this._edit) {
+                this._create_edit_req = edit_collection(this._user, this._password, collection, callback);
             } else {
-                source_label.classList.add("hidden");
-                source_form.classList.add("hidden");
+                this._create_edit_req = create_collection(this._user, this._password, collection, callback);
             }
+        } catch (err) {
+            console.error(err);
         }
+        return false;
+    }
 
-        this.show = function () {
-            this.release();
-            // Clone type_form because it's impossible to hide options without removing them
-            saved_type_form = type_form;
-            type_form = /** @type {HTMLSelectElement} */ (type_form.cloneNode(true));
-            if (saved_type_form.parentNode) {
-                saved_type_form.parentNode.replaceChild(type_form, saved_type_form);
-            }
-            remove_invalid_types();
-            html_scene.classList.remove("hidden");
-            if (edit && title_form) {
-                title_form.textContent = collection.displayname || collection.href;
-            }
-            fill_form();
-            submit_btn.onclick = onsubmit;
-            cancel_btn.onclick = oncancel;
-            validator.validate();
-        };
-        this.hide = function () {
-            read_form();
-            html_scene.classList.add("hidden");
-            // restore type_form
-            if (type_form.parentNode && saved_type_form) {
-                type_form.parentNode.replaceChild(saved_type_form, type_form);
-                type_form = saved_type_form;
-            }
-            saved_type_form = null;
-            submit_btn.onclick = null;
-            cancel_btn.onclick = null;
-        };
-        this.is_transient = function () { return false; };
-        this.release = function () {
-            if (create_edit_req !== null) {
-                create_edit_req.abort();
-                create_edit_req = null;
-            }
-        };
+    _oncancel() {
+        try {
+            pop_scene();
+        } catch (err) {
+            console.error(err);
+        }
+        return false;
+    }
+
+    /**
+     * @param {?Event} _e
+     */
+    _onTypeChange(_e) {
+        if (this._type_form.value == CollectionType.WEBCAL) {
+            this._source_label.classList.remove("hidden");
+            this._source_form.classList.remove("hidden");
+        } else {
+            this._source_label.classList.add("hidden");
+            this._source_form.classList.add("hidden");
+        }
+    }
+
+    show() {
+        this.release();
+        // Clone type_form because it's impossible to hide options without removing them
+        this._saved_type_form = this._type_form;
+        this._type_form = /** @type {HTMLSelectElement} */ (this._type_form.cloneNode(true));
+        if (this._saved_type_form.parentNode) {
+            this._saved_type_form.parentNode.replaceChild(this._type_form, this._saved_type_form);
+        }
+        this._remove_invalid_types();
+        this._html_scene.classList.remove("hidden");
+        if (this._edit && this._title_form) {
+            this._title_form.textContent = this._collection.displayname || this._collection.href;
+        }
+        this._fill_form();
+        this._submit_btn.onclick = () => this._onsubmit();
+        this._cancel_btn.onclick = () => this._oncancel();
+        this._validator.validate();
+    }
+
+    hide() {
+        this._read_form();
+        this._html_scene.classList.add("hidden");
+        // restore type_form
+        if (this._type_form.parentNode && this._saved_type_form) {
+            this._type_form.parentNode.replaceChild(this._saved_type_form, this._type_form);
+            this._type_form = this._saved_type_form;
+        }
+        this._saved_type_form = null;
+        this._submit_btn.onclick = null;
+        this._cancel_btn.onclick = null;
+    }
+
+    is_transient() { return false; }
+
+    release() {
+        if (this._create_edit_req !== null) {
+            this._create_edit_req.abort();
+            this._create_edit_req = null;
+        }
     }
 }
