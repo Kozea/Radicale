@@ -2127,14 +2127,6 @@ Share collection by map
 
 Default: `false`
 
-##### collection_by_bday
-
-_(>= 3.7.0)_
-
-Share collection by bday (conversion on-the-fly)
-
-Default: `false`
-
 ##### permit_create_token
 
 _(>= 3.7.0)_
@@ -2156,17 +2148,6 @@ Default: `false`
 
 * If `False` it can be explicitly granted by *rights* permissions: `M`
 * If `True` it can be explicitly forbidden by *rights* permissions: `m`
-
-##### permit_create_bday
-
-_(>= 3.7.0)_
-
-Permit create of bday-based sharing
-
-Default: `false`
-
-* If `False` it can be explicitly granted by *rights* permissions: `B`
-* If `True` it can be explicitly forbidden by *rights* permissions: `b`
 
 ##### permit_properties_overlay
 
@@ -2434,8 +2415,6 @@ The following `permissions` are recognized:
 * **t:** deny create of token-based sharing of collection in case `permit_create_token=True` _(>= 3.7.0)_
 * **M:** permit create of map-based sharing of collection in case `permit_create_map= False` _(>= 3.7.0)_
 * **m:** deny create of map-based sharing of collection in case `permit_create_map=True` _(>= 3.7.0)_
-* **B:** permit create of bday-based sharing of addressbook collection in case `permit_create_bday= False` _(>= 3.7.0)_
-* **b:** deny create of bday-based sharing of addressbook collection in case `permit_create_bday=True` _(>= 3.7.0)_
 
 ### Storage
 
