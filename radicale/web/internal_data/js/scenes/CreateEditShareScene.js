@@ -76,7 +76,7 @@ export class CreateEditShareScene {
 
         this._map_validator.addValidator(this._shareuser_input, () => {
             let conversion = this._get_selected_conversion();
-            if (conversion === "bday") {
+            if (conversion != "none") {
                 return validate_non_empty(this._shareuser_input, "Share User")();
             } else {
                 return validate_not_empty_or_equals(this._shareuser_input, user, "Share User")();
@@ -105,9 +105,7 @@ export class CreateEditShareScene {
 
     _on_conversion_change() {
         let conversion = this._get_selected_conversion();
-        if (conversion === "bday") {
-            this._permissions_ro_radio.checked = true;
-            this._permissions_rw_radio.checked = false;
+        if (conversion != "none") {
             this._permissions_ro_radio.disabled = true;
             this._permissions_rw_radio.disabled = true;
             this._enabled_checkbox.checked = true;
@@ -138,10 +136,10 @@ export class CreateEditShareScene {
                 }
             }
             let conversion = this._get_selected_conversion();
-            let is_birthday = conversion === "bday";
-            let enabled_by_owner = is_birthday ? true : this._enabled_checkbox.checked;
-            let hidden_by_owner = is_birthday ? false : this._hidden_checkbox.checked;
-            let permissions = is_birthday ? "r" : (this._permissions_rw_radio.checked ? "rw" : "r");
+            let is_conversion = conversion != "none";
+            let enabled_by_owner = is_conversion ? true : this._enabled_checkbox.checked;
+            let hidden_by_owner = is_conversion ? false : this._hidden_checkbox.checked;
+            let permissions = is_conversion ? "r" : (this._permissions_rw_radio.checked ? "rw" : "r");
             /** @type {string} */ let conversion_value = conversion;
 
             /** @type {Object<string, string>} */ let properties = {};

@@ -28,7 +28,7 @@ export function displayPermissionsOrConversion(conversion, permissions, node) {
   const roElement = get_element(node, "[data-name=ro]");
   const rwElement = get_element(node, "[data-name=rw]");
   let fixedConversion = (conversion || "").toLowerCase();
-  if (fixedConversion === "bday") {
+  if (fixedConversion != "none" && fixedConversion != "") {
     conversionElement.classList.remove("hidden");
     roElement.classList.add("hidden");
     rwElement.classList.add("hidden");
