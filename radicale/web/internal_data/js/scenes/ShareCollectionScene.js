@@ -20,16 +20,15 @@
  */
 
 import {
-  delete_share_by_bday,
   delete_share_by_map,
   delete_share_by_token,
   reload_sharing_list,
 } from "../api/sharing.js";
-import { Collection, CollectionType } from "../models/collection.js";
+import { Collection } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
-import { displayPermissions } from "../utils/permissions.js";
+import { displayPermissionsOrConversion } from "../utils/permissions.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { Scene, pop_scene, push_scene } from "./scene_manager.js";
@@ -50,10 +49,8 @@ export class ShareCollectionScene {
     /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
     /** @type {HTMLElement} */ let share_by_token_btn = get_element(html_scene, "button[data-name=sharebytoken]");
      /** @type {HTMLElement} */ let share_by_map_btn = get_element(html_scene, "button[data-name=sharebymap]");
-     /** @type {HTMLElement} */ let share_by_bday_btn = get_element(html_scene, "button[data-name=sharebybday]");
     /** @type {HTMLElement} */ let share_by_token_div = get_element(html_scene, "div[data-name=sharebytoken]");
     /** @type {HTMLElement} */ let share_by_map_div = get_element(html_scene, "div[data-name=sharebymap]");
-    /** @type {HTMLElement} */ let share_by_bday_div = get_element(html_scene, "div[data-name=sharebybday]");
     /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
 
     let errorHandler = new ErrorHandler(error_form);
@@ -76,11 +73,6 @@ export class ShareCollectionScene {
 
     function onsharebymap() {
       let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map");
-      push_scene(create_edit_share_scene);
-    }
-
-    function onsharebybday() {
-      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "bday");
       push_scene(create_edit_share_scene);
     }
 
@@ -123,25 +115,6 @@ export class ShareCollectionScene {
           if (share_by_map_div) share_by_map_div.classList.add("hidden");
         }
 
-        if (features.sharing && features.sharing.PermittedCreateCollectionByBday) {
-          let is_addressbook = collection.type === CollectionType.ADDRESSBOOK;
-          if (share_by_bday_btn) {
-            if (is_addressbook) {
-              share_by_bday_btn.classList.remove("hidden");
-              share_by_bday_btn.onclick = onsharebybday;
-            } else {
-              share_by_bday_btn.classList.add("hidden");
-            }
-          }
-        } else {
-          if (share_by_bday_btn) share_by_bday_btn.classList.add("hidden");
-        }
-
-        if (features.sharing && features.sharing.FeatureEnabledCollectionByBday && collection.type === CollectionType.ADDRESSBOOK) {
-          if (share_by_bday_div) share_by_bday_div.classList.remove("hidden");
-        } else {
-          if (share_by_bday_div) share_by_bday_div.classList.add("hidden");
-        }
       });
 
       title.textContent = collection.displayname || collection.href;
@@ -164,7 +137,7 @@ export class ShareCollectionScene {
  */
 function update_share_list(user, password, collection, errorHandler) {
   let share_rows = document.querySelectorAll(
-    "[data-name=sharetokenrowtemplate], [data-name=sharemaprowtemplate], [data-name=sharebdayrowtemplate]",
+    "[data-name=sharetokenrowtemplate], [data-name=sharemaprowtemplate]",
   );
   share_rows.forEach(function (row) {
     if (!row.classList.contains("hidden")) {
@@ -206,7 +179,7 @@ function add_share_row_node(user, password, collection, share, template, delete_
   }
 
   let permissions = (share["Permissions"] || "").toLowerCase();
-  displayPermissions(permissions, node);
+  displayPermissionsOrConversion(share["Conversion"], permissions, node);
 
   /** @type {HTMLElement} */ let edit_btn = get_element(node, "[data-name=edit]");
   edit_btn.onclick = function () {
@@ -242,7 +215,6 @@ function add_share_row_node(user, password, collection, share, template, delete_
 function add_share_rows(user, password, collection, shares, errorHandler) {
   /** @type {HTMLElement} */ let token_template = get_element(document, "[data-name=sharetokenrowtemplate]");
   /** @type {HTMLElement} */ let map_template = get_element(document, "[data-name=sharemaprowtemplate]");
-  /** @type {HTMLElement} */ let bday_template = get_element(document, "[data-name=sharebdayrowtemplate]");
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
@@ -252,11 +224,10 @@ function add_share_rows(user, password, collection, shares, errorHandler) {
     ) {
       if (share["ShareType"] === "token") {
         add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token, errorHandler);
-      } else if (share["ShareType"] === "map") {
+      }
+      // TODO: Eventually remove bday
+      else if (share["ShareType"] === "map" || share["ShareType"] === "bday") {
         add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map, errorHandler);
-      } else if (share["ShareType"] === "bday") {
-        let onDeleteSuccess = (share["User"] === user) ? function () { collectionsCache.invalidate(); } : undefined;
-        add_share_row_node(user, password, collection, share, bday_template, "bday", delete_share_by_bday, errorHandler, onDeleteSuccess);
       }
     }
   });
@@ -269,8 +240,7 @@ export function maybe_enable_sharing_options(features) {
   if (!features || !features.sharing) return;
   let map_is_enabled = features.sharing.FeatureEnabledCollectionByMap || false;
   let token_is_enabled = features.sharing.FeatureEnabledCollectionByToken || false;
-  let bday_is_enabled = features.sharing.FeatureEnabledCollectionByBday || false;
-  let any_sharing_enabled = map_is_enabled || token_is_enabled || bday_is_enabled;
+  let any_sharing_enabled = map_is_enabled || token_is_enabled;
 
   let share_options = document.querySelectorAll("[data-name=shareoption]");
   for (let i = 0; i < share_options.length; i++) {

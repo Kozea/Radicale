@@ -183,6 +183,7 @@ export class CollectionsScene {
                 let share_info = get_element(node, "[data-name=shared-by]");
                 let transformed_from = get_element(node, "[data-name=transformed-from]");
                 let share = (shares || []).find(
+                    // TODO: Eventually remove the check for "bday"
                     s => (s.ShareType === "map" || s.ShareType === "bday") &&
                         (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
                 if (share) {

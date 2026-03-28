@@ -16,23 +16,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { get_element } from "../utils/misc.js";
+
 /**
+ * @param {string} conversion
  * @param {string} permissions
  * @param {HTMLElement} node
  */
-export function displayPermissions(permissions, node) {
-  permissions = (permissions || "").toLowerCase();
-  if (permissions === "rw") {
-    const roElement = node.querySelector("[data-name=ro]");
-    if (roElement && roElement.parentNode) {
-      roElement.parentNode.removeChild(roElement);
-    }
-  } else if (permissions === "r") {
-    const rwElement = node.querySelector("[data-name=rw]");
-    if (rwElement && rwElement.parentNode) {
-      rwElement.parentNode.removeChild(rwElement);
-    }
+export function displayPermissionsOrConversion(conversion, permissions, node) {
+  const conversionElement = get_element(node, "[data-name=conversion]");
+  const roElement = get_element(node, "[data-name=ro]");
+  const rwElement = get_element(node, "[data-name=rw]");
+  let fixedConversion = (conversion || "").toLowerCase();
+  if (fixedConversion === "bday") {
+    conversionElement.classList.remove("hidden");
+    roElement.classList.add("hidden");
+    rwElement.classList.add("hidden");
   } else {
-    console.warn("Unknown permissions", permissions);
+    permissions = (permissions || "").toLowerCase();
+    if (permissions === "rw") {
+      rwElement.classList.remove("hidden");
+      roElement.classList.add("hidden");
+      conversionElement.classList.add("hidden");
+    } else if (permissions === "r") {
+      roElement.classList.remove("hidden");
+      rwElement.classList.add("hidden");
+      conversionElement.classList.add("hidden");
+    } else {
+      console.warn("Unknown permissions", permissions);
+    }
   }
 }

@@ -23,7 +23,7 @@ import { update_incoming_share } from "../api/sharing.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
-import { displayPermissions } from "../utils/permissions.js";
+import { displayPermissionsOrConversion } from "../utils/permissions.js";
 import { Scene, pop_scene } from "./scene_manager.js";
 
 /**
@@ -99,6 +99,7 @@ export class IncomingSharingScene {
 
             let prefix = "/" + user + "/";
             let filtered_shares = shares.filter(
+                // TODO: Eventually remove bday
                 share => (share.ShareType === "map" || share.ShareType === "bday")
                     && share.PathOrToken.startsWith(prefix));
 
@@ -127,7 +128,7 @@ export class IncomingSharingScene {
 
                 pathortoken.value = displayPath;
                 owner_td.textContent = share.Owner;
-                displayPermissions(share.Permissions, permissions_td);
+                displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
 
                 let enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
                 let shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
