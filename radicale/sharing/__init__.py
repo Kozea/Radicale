@@ -16,11 +16,9 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import base64
-import copy  # TODO: remove/3.7.0-final
 import io
 import json
 import logging
-import os  # TODO: remove/3.7.0-final
 import re
 import socket
 import uuid

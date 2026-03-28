@@ -99,8 +99,7 @@ export class IncomingSharingScene {
 
             let prefix = "/" + user + "/";
             let filtered_shares = shares.filter(
-                // TODO: Eventually remove bday
-                share => (share.ShareType === "map" || share.ShareType === "bday")
+                share => (share.ShareType === "map")
                     && share.PathOrToken.startsWith(prefix));
 
             if (filtered_shares.length === 0) {
