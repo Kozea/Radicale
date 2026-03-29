@@ -181,6 +181,7 @@
 #htpasswd_cache = False
 
 # Incorrect authentication delay (seconds)
+# Also used for invalid/not-existing/not-enabled share-by-token (>= 3.7.0)
 #delay = 1
 
 # Message displayed in the client when a password is needed
