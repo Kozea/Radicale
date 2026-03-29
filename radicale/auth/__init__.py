@@ -225,7 +225,7 @@ class BaseAuth:
         See also issue 591
 
         """
-        time_delta = (time.time_ns() - time_ns_begin) / 1000 / 1000 / 1000
+        time_delta = (time.time_ns() - time_ns_begin) / 10**9
         with self._lock:
             # avoid that another thread is changing global value at the same time
             failed_auth_delay = self._failed_auth_delay
@@ -268,7 +268,7 @@ class BaseAuth:
                 cache_failed_cleanup = dict()
                 for digest in self._cache_failed:
                     (time_ns_cache, login_cache) = self._cache_failed[digest]
-                    age_failed = int((time_ns - time_ns_cache) / 1000 / 1000 / 1000)
+                    age_failed = int((time_ns - time_ns_cache) / 10**9)
                     if age_failed > self._cache_failed_logins_expiry:
                         cache_failed_cleanup[digest] = (login_cache, age_failed)
                 cache_failed_cleanup_entries = len(cache_failed_cleanup)
@@ -285,7 +285,7 @@ class BaseAuth:
             if self._cache_failed.get(digest_failed):
                 # login+password found in cache "failed" -> shortcut return
                 (time_ns_cache, login_cache) = self._cache_failed[digest]
-                age_failed = int((time_ns - time_ns_cache) / 1000 / 1000 / 1000)
+                age_failed = int((time_ns - time_ns_cache) / 10**9)
                 logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login_cache, age_failed)
                 self._sleep_for_constant_exec_time(time_ns_begin)
                 return ("", self._type + " / cached")
@@ -294,7 +294,7 @@ class BaseAuth:
                 (digest_cache, time_ns_cache) = self._cache_successful[login]
                 digest = self._cache_digest(login, password, str(time_ns_cache))
                 if digest == digest_cache:
-                    age_success = int((time_ns - time_ns_cache) / 1000 / 1000 / 1000)
+                    age_success = int((time_ns - time_ns_cache) / 10**9)
                     if age_success > self._cache_successful_logins_expiry:
                         logger.debug("Login successful cache entry for user+password found but expired: '%s' (age: %d > %d sec)", login, age_success, self._cache_successful_logins_expiry)
                         # delete expired success from cache
