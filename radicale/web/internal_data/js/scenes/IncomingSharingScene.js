@@ -25,6 +25,7 @@ import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissionsOrConversion } from "../utils/permissions.js";
 import { Scene, pop_scene } from "./scene_manager.js";
+import { UrlTextHandler } from "../utils/url_text.js";
 
 /**
  * @implements {Scene}
@@ -119,12 +120,7 @@ export class IncomingSharingScene {
             let enabled_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=enabled]"));
             let shown_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=shown]"));
 
-            let displayPath = share.PathOrToken.substring(prefix.length);
-            if (displayPath.endsWith("/")) {
-                displayPath = displayPath.substring(0, displayPath.length - 1);
-            }
-
-            pathortoken.value = displayPath;
+            new UrlTextHandler(pathortoken).setHref(share.PathOrToken);
             owner_td.textContent = share.Owner;
             displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
 

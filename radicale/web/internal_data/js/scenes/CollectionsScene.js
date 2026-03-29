@@ -21,7 +21,6 @@
 
 import { delete_collection } from "../api/api.js";
 import { get_auth_header } from "../api/common.js";
-import { SERVER } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
@@ -30,6 +29,7 @@ import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { Scene, push_scene } from "./scene_manager.js";
+import { UrlTextHandler } from "../utils/url_text.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 
@@ -225,8 +225,8 @@ export class CollectionsScene {
                 }
                 contentcount_form.textContent = contentcount_form_txt;
             }
-            let href = SERVER + collection.href;
-            url_form.value = href;
+            let href = collection.href;
+            new UrlTextHandler(url_form).setHref(href);
             download_btn.href = href;
             download_btn.onclick = (event) => {
                 event.preventDefault();
