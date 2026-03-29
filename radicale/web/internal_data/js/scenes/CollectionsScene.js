@@ -168,6 +168,7 @@ export class CollectionsScene {
             /** @type {HTMLElement} */ let edit_btn = get_element(node, "[data-name=edit]");
             /** @type {HTMLElement} */ let share_btn = get_element(node, "[data-name=share]");
             /** @type {HTMLAnchorElement} */ let download_btn = /** @type {HTMLAnchorElement} */ (get_element(node, "[data-name=download]"));
+            /** @type {HTMLButtonElement} */ let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
             if (collection.color) {
                 color_form.style.background = collection.color;
             }
@@ -226,7 +227,7 @@ export class CollectionsScene {
                 contentcount_form.textContent = contentcount_form_txt;
             }
             let href = collection.href;
-            new UrlTextHandler(url_form).setHref(href);
+            new UrlTextHandler(url_form, copy_btn).setHref(href);
             download_btn.href = href;
             download_btn.onclick = (event) => {
                 event.preventDefault();

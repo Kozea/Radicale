@@ -83,7 +83,10 @@
           <span data-name="WEBCAL">Webcal</span>
         </small>
         <small data-name="contentcount"></small>
-        <input type="text" data-name="url" value="" readonly="" class="selectall">
+        <div class="url-input-wrapper">
+          <input type="text" data-name="url" value="" readonly="" class="selectall">
+          <button type="button" class="copy-btn" data-name="copy-url" title="copy">⧉</button>
+        </div>
         <p data-name="description">Description</p>
         <ul>
           <li>
@@ -159,7 +162,12 @@
                       class="small_icon" alt="Edit"></button>
                 </td>
                 <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span><span data-name="conversion">⟿</span></td>
-                <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
+                <td>
+                  <div class="url-input-wrapper">
+                    <input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall">
+                    <button type="button" class="copy-btn" data-name="copy-url" title="copy">⧉</button>
+                  </div>
+                </td>
                 <td>
                   <button type="button" class="red inline" data-name="delete" title="Delete Share"><img src="css/icons/delete.svg"
                       class="small_icon" alt="Delete"></button>
@@ -185,7 +193,12 @@
                       class="small_icon" alt="Edit"></button>
                 </td>
                 <td><span class="pill" data-name="rw">rw</span><span class="pill" data-name="ro">ro</span><span data-name="conversion">⟿</span></td>
-                <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
+                <td>
+                  <div class="url-input-wrapper">
+                    <input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall">
+                    <button type="button" class="copy-btn" data-name="copy-url" title="copy">⧉</button>
+                  </div>
+                </td>
                 <td>
                   <button type="button" class="red inline" data-name="delete" title="Delete Share"><img src="css/icons/delete.svg"
                       class="small_icon" alt="Delete"></button>
@@ -223,7 +236,12 @@
         </thead>
         <tbody data-name="incomingsharesbody">
           <tr data-name="incomingsharerowtemplate" class="hidden">
-            <td><input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall"></td>
+            <td>
+              <div class="url-input-wrapper">
+                <input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall">
+                <button type="button" class="copy-btn" data-name="copy-url" title="copy">⧉</button>
+              </div>
+            </td>
             <td data-name="owner"></td>
             <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
                 data-name="ro">ro</span><span data-name="conversion">⟿</span></td>

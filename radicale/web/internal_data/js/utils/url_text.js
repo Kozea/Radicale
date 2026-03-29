@@ -1,8 +1,5 @@
 /**
  * This file is part of Radicale Server - Calendar Server
- * Copyright © 2017-2024 Unrud <unrud@outlook.com>
- * Copyright © 2023-2024 Matthew Hana <matthew.hana@gmail.com>
- * Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
  * Copyright © 2026-2026 Max Berger <max@berger.name>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * Utilities for resource URL boxes
+ */
 import { SERVER } from "../constants.js";
 
 /**
@@ -27,11 +27,38 @@ import { SERVER } from "../constants.js";
 export class UrlTextHandler {
     /**
      * @param {HTMLInputElement} element The input element to handle.
+     * @param {HTMLButtonElement} copyButton The button element for copying.
      */
-    constructor(element) {
+    constructor(element, copyButton) {
         this._element = element;
+        this._copyButton = copyButton;
+
         this._element.addEventListener("focusin", () => {
             this._element.setSelectionRange(0, 99999);
+        });
+
+        if (this._copyButton) {
+            this._copyButton.onclick = () => this._oncopy();
+        }
+    }
+
+    /**
+     * Copy the current value of the input to the clipboard.
+     */
+    _oncopy() {
+        if (!this._element.value) return;
+
+        navigator.clipboard.writeText(this._element.value).then(() => {
+            if (this._copyButton) {
+                this._copyButton.classList.add("copied");
+                this._copyButton.title = "Copied!";
+                setTimeout(() => {
+                    this._copyButton.classList.remove("copied");
+                    this._copyButton.title = "copy";
+                }, 1500);
+            }
+        }).catch(err => {
+            console.error("Could not copy text: ", err);
         });
     }
 
@@ -50,9 +77,7 @@ export class UrlTextHandler {
             this._element.value = href;
         }
 
-        // Scroll the input all the way to the right so that the end of
-        // the URL (the most important part) is visible.
-        // Use a timeout to ensure that the layout has been calculated.
+        // Needs timeout to work correctly.
         setTimeout(() => {
             this._element.scrollLeft = this._element.scrollWidth;
         }, 0);

@@ -119,8 +119,9 @@ export class IncomingSharingScene {
             let permissions_td = /** @type {HTMLElement} */ (get_element(node, "[data-name=permissions]"));
             let enabled_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=enabled]"));
             let shown_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=shown]"));
+            let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
 
-            new UrlTextHandler(pathortoken).setHref(share.PathOrToken);
+            new UrlTextHandler(pathortoken, copy_btn).setHref(share.PathOrToken);
             owner_td.textContent = share.Owner;
             displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
 

@@ -181,8 +181,9 @@ function add_share_row_node(user, password, collection, share, template, delete_
   node.classList.remove("hidden");
 
   /** @type {HTMLInputElement} */ let pathortoken_form = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
+  /** @type {HTMLButtonElement} */ let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
   if (pathortoken_form) {
-    new UrlTextHandler(pathortoken_form).setHref(pathortoken);
+    new UrlTextHandler(pathortoken_form, copy_btn).setHref(pathortoken);
   }
 
   let permissions = (share["Permissions"] || "").toLowerCase();

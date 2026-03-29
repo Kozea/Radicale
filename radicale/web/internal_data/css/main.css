@@ -412,6 +412,65 @@ input:focus-visible {
     border-width: 1px !important;
 }
 
+.url-input-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    clear: both;
+}
+
+.url-input-wrapper input {
+    flex: 1;
+    min-width: 0;
+    padding-right: 45px !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}
+
+#collectionsscene article .url-input-wrapper {
+    margin-bottom: 15px;
+}
+
+.copy-btn {
+    flex: none;
+    margin-left: -38px;
+    background: transparent;
+    border: none;
+    color: #2494fe;
+    font-size: 1.25em;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+    line-height: 1;
+    z-index: 2;
+    float: none;
+    margin-bottom: 0;
+    margin-top: 0;
+    margin-right: 8px;
+}
+
+.copy-btn:hover {
+    background-color: #f0f7ff;
+    color: #055fb5;
+}
+
+.copy-btn:active {
+    transform: scale(0.9);
+}
+
+.copy-btn.copied {
+    color: #4e9a06;
+}
+
 input[type=radio],
 input[type=checkbox] {
     width: auto;
@@ -507,19 +566,19 @@ button.inline {
 }
 
 .pill {
-  display: inline-block;
-  padding: 0.25em 0.6em;
-  font-size: 75%;
-  font-weight: 700;
-  line-height: 1;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: baseline;
-  border-radius: 0.375rem;
-  background-color: #6c757d;
-  color: #fff;
-  margin: 0 2px;
-  width: 1.4em;
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.375rem;
+    background-color: #6c757d;
+    color: #fff;
+    margin: 0 2px;
+    width: 1.4em;
 }
 
 .hidden {
