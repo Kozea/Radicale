@@ -320,9 +320,6 @@
 # Share collection by map
 #collection_by_map = false
 
-# Share collection by bday (conversion on-the-fly)
-#collection_by_bday = false
-
 # Permit create of token-based sharing
 #  If False it can be explicitly granted by permissions: t
 #  If True it can be explicitly forbidden by permissions: T
@@ -332,11 +329,6 @@
 #  If False it can be explicitly granted by permissions: m
 #  If True it can be explicitly forbidden by permissions: M
 #permit_create_map = false
-
-# Permit create of bday-based sharing
-#  If False it can be explicitly granted by permissions: b
-#  If True it can be explicitly forbidden by permissions: B
-#permit_create_bday = false
 
 # Permit properties overlay
 #  If False it can be explicitly granted by share permissions: P

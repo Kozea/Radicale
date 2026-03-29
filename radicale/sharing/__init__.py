@@ -953,8 +953,8 @@ class BaseSharing:
                 else:
                     User = user
 
-                # v1: create uuid token with 2x 32 bytes = 256 bit with base64 encoding but replace '=' with '0' to avoid any additional encoding issues issues
-                token = "/.token/v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes), 'utf-8').replace('=', '0') + "/"
+                # v1: create uuid token with 2x 16 bytes + separator = 264 bit with base64 encoding resulting in 56 chars without '=' padding
+                token = "/.token/v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + b"\0" + uuid.uuid4().bytes), 'utf-8') + "/"
 
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)
