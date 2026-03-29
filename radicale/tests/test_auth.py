@@ -192,7 +192,7 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_login_cache_successful_plain(self, caplog) -> None:
         caplog.set_level(logging.INFO)
         self.configure({"auth": {"cache_logins": "True"}})
-        self._test_htpasswd("plain", "tmp:bepo", (("tmp", "bepo", True), ("tmp", "bepo", True)))
+        self._test_htpasswd("plain", "tmp:bepo", [("tmp", "bepo", True), ("tmp", "bepo", True)])
         htpasswd_found = False
         htpasswd_cached_found = False
         for line in caplog.messages:
@@ -207,7 +207,7 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_login_cache_failed_plain(self, caplog) -> None:
         caplog.set_level(logging.INFO)
         self.configure({"auth": {"cache_logins": "True"}})
-        self._test_htpasswd("plain", "tmp:bepo", (("tmp", "bepo1", False), ("tmp", "bepo1", False)))
+        self._test_htpasswd("plain", "tmp:bepo", [("tmp", "bepo1", False), ("tmp", "bepo1", False)])
         htpasswd_found = False
         htpasswd_cached_found = False
         for line in caplog.messages:
