@@ -126,3 +126,24 @@ def test_navigation_refresh_button(
     page.click('#logoutview a[data-name="refresh"]')
     # It shows LoadingScene briefly then back to CollectionsScene
     expect(page.locator("#collectionsscene")).to_be_visible()
+
+
+def test_navigation_browser_history(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
+    expect(page.locator("#collectionsscene")).to_be_visible()
+
+    # Navigate forward inside the SPA to CreateEditCollectionScene
+    page.click('a[data-name="new"]')
+    expect(page.locator("#createcollectionscene")).to_be_visible()
+
+    # Emulate browser Back button
+    page.go_back()
+    expect(page.locator("#createcollectionscene")).to_be_hidden()
+    expect(page.locator("#collectionsscene")).to_be_visible()
+
+    # Emulate browser Forward button
+    page.go_forward()
+    expect(page.locator("#collectionsscene")).to_be_hidden()
+    expect(page.locator("#createcollectionscene")).to_be_visible()

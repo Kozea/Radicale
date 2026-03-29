@@ -31,165 +31,167 @@ import { LoadingScene } from "./LoadingScene.js";
 import { Scene, is_current_scene, pop_scene, pop_to_root, push_scene, replace_scene } from "./scene_manager.js";
 
 /**
- * @constructor
  * @implements {Scene}
  */
 export class LoginScene {
     constructor() {
-        /** @type {HTMLElement} */ let html_scene = get_element_by_id("loginscene");
-        /** @type {HTMLElement} */ let form = get_element(html_scene, "[data-name=form]");
-        /** @type {HTMLInputElement} */ let user_form = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=user]"));
-        /** @type {HTMLInputElement} */ let password_form = /** @type {HTMLInputElement}    */ (get_element(html_scene, "[data-name=password]"));
-        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
-        /** @type {HTMLElement} */ let logout_view = get_element_by_id("logoutview");
-        /** @type {HTMLElement} */ let logout_user_form = get_element(logout_view, "[data-name=user]");
-        /** @type {HTMLElement} */ let logout_btn = get_element(logout_view, "[data-name=logout]");
-        /** @type {HTMLElement} */ let refresh_btn = get_element(logout_view, "[data-name=refresh]");
+        this._html_scene = get_element_by_id("loginscene");
+        this._form = get_element(this._html_scene, "[data-name=form]");
+        this._user_form = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=user]"));
+        this._password_form = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=password]"));
+        this._error_form = get_element(this._html_scene, "[data-name=error]");
+        this._logout_view = get_element_by_id("logoutview");
+        this._logout_user_form = get_element(this._logout_view, "[data-name=user]");
+        this._logout_btn = get_element(this._logout_view, "[data-name=logout]");
+        this._refresh_btn = get_element(this._logout_view, "[data-name=refresh]");
 
-        let user = "";
-        /** @type {?XMLHttpRequest} */ let principal_req = null;
-        let errorHandler = new ErrorHandler(error_form);
-        let validator = new FormValidator(errorHandler);
-        validator.addValidator(user_form, validate_non_empty(user_form, "Username"));
+        this._user = "";
+        /** @type {?XMLHttpRequest} */ this._principal_req = null;
+        this._errorHandler = new ErrorHandler(this._error_form);
+        this._validator = new FormValidator(this._errorHandler);
+        this._validator.addValidator(this._user_form, validate_non_empty(this._user_form, "Username"));
+    }
 
-        function read_form() {
-            user = user_form.value;
+    _read_form() {
+        this._user = this._user_form.value;
+    }
+
+    _fill_form() {
+        this._user_form.value = this._user;
+        this._password_form.value = "";
+    }
+
+    /**
+     * @param {string} p_user
+     * @param {?string} p_password
+     */
+    _perform_login(p_user, p_password) {
+        this._user = p_user;
+        this._fill_form();
+        // setup logout
+        this._logout_view.classList.remove("hidden");
+        if (p_password === null) {
+            this._logout_btn.classList.add("hidden");
+        } else {
+            this._logout_btn.classList.remove("hidden");
         }
-
-        function fill_form() {
-            user_form.value = user;
-            password_form.value = "";
-        }
-
-        /**
-         * @param {string} p_user
-         * @param {?string} p_password
-         */
-        function perform_login(p_user, p_password) {
-            user = p_user;
-            fill_form();
-            // setup logout
-            logout_view.classList.remove("hidden");
-            if (p_password === null) {
-                logout_btn.classList.add("hidden");
-            } else {
-                logout_btn.classList.remove("hidden");
+        this._logout_btn.onclick = () => this._onlogout();
+        this._refresh_btn.onclick = () => this._refresh();
+        this._logout_user_form.textContent = this._user + "'s Collections";
+        // Fetch principal
+        let loading_scene = new LoadingScene();
+        push_scene(loading_scene);
+        this._principal_req = get_principal(this._user, p_password, (/** @type {?Collection} */ principal_collection, error1) => {
+            if (!is_current_scene(loading_scene)) {
+                return;
             }
-            logout_btn.onclick = onlogout;
-            refresh_btn.onclick = refresh;
-            logout_user_form.textContent = user + "'s Collections";
-            // Fetch principal
-            let loading_scene = new LoadingScene();
-            push_scene(loading_scene);
-            principal_req = get_principal(user, p_password, function (/** @type {?Collection} */ principal_collection, error1) {
-                if (!is_current_scene(loading_scene)) {
-                    return;
-                }
-                principal_req = null;
-                if (error1) {
-                    errorHandler.setError(error1);
-                    pop_scene();
-                } else if (principal_collection) {
-                    // show collections
-                    let saved_user = user;
-                    user = "";
-                    let collections_scene = new CollectionsScene(
-                        saved_user, p_password, principal_collection, function (/** @type {?string} */ error1) {
-                            errorHandler.setError(error1);
-                            user = saved_user;
-                        });
-                    replace_scene(collections_scene);
-                }
-            });
-        }
-
-        function onlogin() {
-            try {
-                collectionsCache.invalidate();
-                read_form();
-                let password = password_form.value;
-                if (!validator.validate()) {
-                    return false;
-                }
-                perform_login(user, password);
-            } catch (err) {
-                console.error(err);
-            }
-            return false;
-        }
-
-        let onlogout = function () {
-            try {
-                collectionsCache.invalidate();
-                user = "";
-                pop_to_root();
-            } catch (err) {
-                console.error(err);
-            }
-            return false;
-        };
-
-
-        function remove_logout() {
-            logout_view.classList.add("hidden");
-            logout_btn.onclick = null;
-            refresh_btn.onclick = null;
-            logout_user_form.textContent = "";
-        }
-
-        function refresh() {
-            // The easiest way to refresh is to push a LoadingScene onto the stack and then pop it
-            // forcing the scene below it, the Collections Scene to refresh itself.
-            collectionsCache.invalidate();
-            push_scene(new LoadingScene());
-            pop_scene();
-        }
-
-        this.show = function () {
-            remove_logout();
-            fill_form();
-            form.onsubmit = onlogin;
-            html_scene.classList.remove("hidden");
-            user_form.focus();
-
-            // Probe for existing authentication (e.g. X-Remote-User)
-            // Use fetch with credentials: 'omit' to avoid browser login prompt on 401
-            fetch(SERVER + ROOT_PATH, {
-                method: 'PROPFIND',
-                headers: { 'Depth': '0' },
-                credentials: 'omit'
-            }).then(function (response) {
-                if (response.ok) {
-                    // Authenticated! Now it's safe to call get_principal
-                    get_principal(null, null, function (/** @type {?Collection} */ principal_collection, error) {
-                        if (!error && principal_collection) {
-                            let authenticated_user = principal_collection.displayname;
-                            if (!authenticated_user) {
-                                let href = principal_collection.href.replace(/\/+$/, "");
-                                if (href && href !== ROOT_PATH.replace(/\/+$/, "")) {
-                                    authenticated_user = href.substring(href.lastIndexOf("/") + 1);
-                                }
-                            }
-                            perform_login(authenticated_user, null);
-                        }
+            this._principal_req = null;
+            if (error1) {
+                this._errorHandler.setError(error1);
+                pop_scene();
+            } else if (principal_collection) {
+                // show collections
+                let saved_user = this._user;
+                this._user = "";
+                let collections_scene = new CollectionsScene(
+                    saved_user, p_password, principal_collection, (/** @type {?string} */ error1) => {
+                        this._errorHandler.setError(error1);
+                        this._user = saved_user;
                     });
-                }
-            })["catch"](function () {
-                // Ignore error: we are not authenticated or something else went wrong
-            });
-        };
-        this.hide = function () {
-            read_form();
-            html_scene.classList.add("hidden");
-            form.onsubmit = null;
-        };
-        this.release = function () {
-            // cancel pending requests
-            if (principal_req !== null) {
-                principal_req.abort();
-                principal_req = null;
+                replace_scene(collections_scene);
             }
-            remove_logout();
-        };
+        });
+    }
+
+    _onlogin() {
+        try {
+            collectionsCache.invalidate();
+            this._read_form();
+            let password = this._password_form.value;
+            if (!this._validator.validate()) {
+                return false;
+            }
+            this._perform_login(this._user, password);
+        } catch (err) {
+            console.error(err);
+        }
+        return false;
+    }
+
+    _onlogout() {
+        try {
+            collectionsCache.invalidate();
+            this._user = "";
+            pop_to_root();
+        } catch (err) {
+            console.error(err);
+        }
+        return false;
+    }
+
+    _remove_logout() {
+        this._logout_view.classList.add("hidden");
+        this._logout_btn.onclick = null;
+        this._refresh_btn.onclick = null;
+        this._logout_user_form.textContent = "";
+    }
+
+    _refresh() {
+        // The easiest way to refresh is to push a LoadingScene onto the stack and then pop it
+        // forcing the scene below it, the Collections Scene to refresh itself.
+        collectionsCache.invalidate();
+        push_scene(new LoadingScene());
+        pop_scene();
+    }
+
+    show() {
+        this._remove_logout();
+        this._fill_form();
+        this._form.onsubmit = () => this._onlogin();
+        this._html_scene.classList.remove("hidden");
+        this._user_form.focus();
+
+        // Probe for existing authentication (e.g. X-Remote-User)
+        // Use fetch with credentials: 'omit' to avoid browser login prompt on 401
+        fetch(SERVER + ROOT_PATH, {
+            method: 'PROPFIND',
+            headers: { 'Depth': '0' },
+            credentials: 'omit'
+        }).then((response) => {
+            if (response.ok) {
+                // Authenticated! Now it's safe to call get_principal
+                get_principal(null, null, (/** @type {?Collection} */ principal_collection, error) => {
+                    if (!error && principal_collection) {
+                        let authenticated_user = principal_collection.displayname;
+                        if (!authenticated_user) {
+                            let href = principal_collection.href.replace(/\/+$/, "");
+                            if (href && href !== ROOT_PATH.replace(/\/+$/, "")) {
+                                authenticated_user = href.substring(href.lastIndexOf("/") + 1);
+                            }
+                        }
+                        this._perform_login(authenticated_user, null);
+                    }
+                });
+            }
+        })["catch"](function () {
+            // Ignore error: we are not authenticated or something else went wrong
+        });
+    }
+
+    hide() {
+        this._read_form();
+        this._html_scene.classList.add("hidden");
+        this._form.onsubmit = null;
+    }
+
+    is_transient() { return false; }
+
+    release() {
+        // cancel pending requests
+        if (this._principal_req !== null) {
+            this._principal_req.abort();
+            this._principal_req = null;
+        }
+        this._remove_logout();
     }
 }

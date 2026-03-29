@@ -43,90 +43,96 @@ export class ShareCollectionScene {
    * @param {Collection} collection The collection on which to edit sharing setting. Must exist.
    */
   constructor(user, password, collection) {
+    this._user = user;
+    this._password = password;
+    this._collection = collection;
 
-    let html_scene = get_element_by_id("sharecollectionscene");
+    this._html_scene = get_element_by_id("sharecollectionscene");
+    this._cancel_btn = get_element(this._html_scene, "[data-name=cancel]");
+    this._share_by_token_btn = get_element(this._html_scene, "button[data-name=sharebytoken]");
+    this._share_by_map_btn = get_element(this._html_scene, "button[data-name=sharebymap]");
+    this._share_by_token_div = get_element(this._html_scene, "div[data-name=sharebytoken]");
+    this._share_by_map_div = get_element(this._html_scene, "div[data-name=sharebymap]");
+    this._error_form = get_element(this._html_scene, "[data-name=error]");
 
-    /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
-    /** @type {HTMLElement} */ let share_by_token_btn = get_element(html_scene, "button[data-name=sharebytoken]");
-     /** @type {HTMLElement} */ let share_by_map_btn = get_element(html_scene, "button[data-name=sharebymap]");
-    /** @type {HTMLElement} */ let share_by_token_div = get_element(html_scene, "div[data-name=sharebytoken]");
-    /** @type {HTMLElement} */ let share_by_map_div = get_element(html_scene, "div[data-name=sharebymap]");
-    /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
+    this._errorHandler = new ErrorHandler(this._error_form);
 
-    let errorHandler = new ErrorHandler(error_form);
-
-    /** @type {HTMLElement} */ let title = get_element(html_scene, "[data-name=title]");
-
-    function oncancel() {
-      try {
-        pop_scene();
-      } catch (err) {
-        console.error(err);
-      }
-      return false;
-    }
-
-    function onsharebytoken() {
-      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "token");
-      push_scene(create_edit_share_scene);
-    }
-
-    function onsharebymap() {
-      let create_edit_share_scene = new CreateEditShareScene(user, password, collection, "map");
-      push_scene(create_edit_share_scene);
-    }
-
-    this.show = function () {
-      this.release();
-      html_scene.classList.remove("hidden");
-      html_scene.querySelectorAll("details").forEach(function (details) {
-        details.open = true;
-      });
-      cancel_btn.onclick = oncancel;
-
-      collectionsCache.getServerFeatures(user, password, errorHandler.setError, (features) => {
-        if (features.sharing && features.sharing.PermittedCreateCollectionByToken) {
-          if (share_by_token_btn) {
-            share_by_token_btn.classList.remove("hidden");
-            share_by_token_btn.onclick = onsharebytoken;
-          }
-        } else {
-          if (share_by_token_btn) share_by_token_btn.classList.add("hidden");
-        }
-
-        if (features.sharing && features.sharing.FeatureEnabledCollectionByToken) {
-          if (share_by_token_div) share_by_token_div.classList.remove("hidden");
-        } else {
-          if (share_by_token_div) share_by_token_div.classList.add("hidden");
-        }
-
-        if (features.sharing && features.sharing.PermittedCreateCollectionByMap) {
-          if (share_by_map_btn) {
-            share_by_map_btn.classList.remove("hidden");
-            share_by_map_btn.onclick = onsharebymap;
-          }
-        } else {
-          if (share_by_map_btn) share_by_map_btn.classList.add("hidden");
-        }
-
-        if (features.sharing && features.sharing.FeatureEnabledCollectionByMap) {
-          if (share_by_map_div) share_by_map_div.classList.remove("hidden");
-        } else {
-          if (share_by_map_div) share_by_map_div.classList.add("hidden");
-        }
-
-      });
-
-      title.textContent = collection.displayname || collection.href;
-      update_share_list(user, password, collection, errorHandler);
-    };
-    this.hide = function () {
-      html_scene.classList.add("hidden");
-      cancel_btn.onclick = null;
-    };
-    this.release = function () {
-    };
+    this._title = get_element(this._html_scene, "[data-name=title]");
   }
+
+  _oncancel() {
+    try {
+      pop_scene();
+    } catch (err) {
+      console.error(err);
+    }
+    return false;
+  }
+
+  _onsharebytoken() {
+    let create_edit_share_scene = new CreateEditShareScene(this._user, this._password, this._collection, "token");
+    push_scene(create_edit_share_scene);
+  }
+
+  _onsharebymap() {
+    let create_edit_share_scene = new CreateEditShareScene(this._user, this._password, this._collection, "map");
+    push_scene(create_edit_share_scene);
+  }
+
+  show() {
+    this.release();
+    this._html_scene.classList.remove("hidden");
+    this._html_scene.querySelectorAll("details").forEach(function (details) {
+      details.open = true;
+    });
+    this._cancel_btn.onclick = () => this._oncancel();
+
+    collectionsCache.getServerFeatures(this._user, this._password, this._errorHandler.setError, (features) => {
+      if (features.sharing && features.sharing.PermittedCreateCollectionByToken) {
+        if (this._share_by_token_btn) {
+          this._share_by_token_btn.classList.remove("hidden");
+          this._share_by_token_btn.onclick = () => this._onsharebytoken();
+        }
+      } else {
+        if (this._share_by_token_btn) this._share_by_token_btn.classList.add("hidden");
+      }
+
+      if (features.sharing && features.sharing.FeatureEnabledCollectionByToken) {
+        if (this._share_by_token_div) this._share_by_token_div.classList.remove("hidden");
+      } else {
+        if (this._share_by_token_div) this._share_by_token_div.classList.add("hidden");
+      }
+
+      if (features.sharing && features.sharing.PermittedCreateCollectionByMap) {
+        if (this._share_by_map_btn) {
+          this._share_by_map_btn.classList.remove("hidden");
+          this._share_by_map_btn.onclick = () => this._onsharebymap();
+        }
+      } else {
+        if (this._share_by_map_btn) this._share_by_map_btn.classList.add("hidden");
+      }
+
+      if (features.sharing && features.sharing.FeatureEnabledCollectionByMap) {
+        if (this._share_by_map_div) this._share_by_map_div.classList.remove("hidden");
+      } else {
+        if (this._share_by_map_div) this._share_by_map_div.classList.add("hidden");
+      }
+
+    });
+
+    this._title.textContent = this._collection.displayname || this._collection.href;
+    update_share_list(this._user, this._password, this._collection, this._errorHandler);
+  }
+
+  hide() {
+    this._html_scene.classList.add("hidden");
+    this._cancel_btn.onclick = null;
+  }
+
+  release() {
+  }
+
+  is_transient() { return false; }
 }
 
 /**

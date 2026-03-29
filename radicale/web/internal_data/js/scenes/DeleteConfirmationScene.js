@@ -42,103 +42,115 @@ export class DeleteConfirmationScene {
      * @param {function} [on_success]
      */
     constructor(user, password, header_title, item, item_title, delete_action, needsconfirmation, on_success) {
-        /** @type {HTMLElement} */ let html_scene = get_element_by_id("deleteconfirmationscene");
-        /** @type {HTMLElement} */ let header_html = get_element(html_scene, "[data-name=headertitle]");
+        this._user = user;
+        this._password = password;
+        this._item = item;
+        this._item_title = item_title;
+        this._delete_action = delete_action;
+        this._needsconfirmation = needsconfirmation;
+        this._on_success = on_success;
+
+        this._html_scene = get_element_by_id("deleteconfirmationscene");
+        /** @type {HTMLElement} */ let header_html = get_element(this._html_scene, "[data-name=headertitle]");
         if (header_html) header_html.textContent = header_title;
-        /** @type {HTMLElement} */ let title_form = get_element(html_scene, "[data-name=title]");
-        /** @type {HTMLElement} */ let error_form = get_element(html_scene, "[data-name=error]");
-        /** @type {HTMLElement} */ let confirmation_prompt = get_element(html_scene, "[data-name=confirmationprompt]");
-        /** @type {HTMLInputElement} */ let confirmation_txt = /** @type {HTMLInputElement} */ (get_element(html_scene, "[data-name=confirmationtxt]"));
-        /** @type {HTMLElement} */ let delete_confirmation_lbl = get_element(html_scene, "[data-name=deleteconfirmationtext]");
-        /** @type {HTMLElement} */ let delete_btn = get_element(html_scene, "[data-name=delete]");
-        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
+        this._title_form = get_element(this._html_scene, "[data-name=title]");
+        this._error_form = get_element(this._html_scene, "[data-name=error]");
+        this._confirmation_prompt = get_element(this._html_scene, "[data-name=confirmationprompt]");
+        this._confirmation_txt = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=confirmationtxt]"));
+        this._delete_confirmation_lbl = get_element(this._html_scene, "[data-name=deleteconfirmationtext]");
+        this._delete_btn = get_element(this._html_scene, "[data-name=delete]");
+        this._cancel_btn = get_element(this._html_scene, "[data-name=cancel]");
 
         if (needsconfirmation) {
-            delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
-            confirmation_txt.value = "";
-            confirmation_txt.addEventListener("keydown", onkeydown);
-            confirmation_prompt.classList.remove("hidden");
-            confirmation_txt.classList.remove("hidden");
+            this._delete_confirmation_lbl.innerHTML = DELETE_CONFIRMATION_TEXT;
+            this._confirmation_txt.value = "";
+            this._confirmation_txt.addEventListener("keydown", (e) => this._onkeydown(e));
+            this._confirmation_prompt.classList.remove("hidden");
+            this._confirmation_txt.classList.remove("hidden");
         } else {
-            confirmation_prompt.classList.add("hidden");
-            confirmation_txt.classList.add("hidden");
-            confirmation_txt.removeEventListener("keydown", onkeydown);
+            this._confirmation_prompt.classList.add("hidden");
+            this._confirmation_txt.classList.add("hidden");
         }
 
-        /** @type {?XMLHttpRequest} */ let delete_req = null;
+        /** @type {?XMLHttpRequest} */ this._delete_req = null;
 
-        let errorHandler = new ErrorHandler(error_form);
-        let validator = new FormValidator(errorHandler);
+        this._errorHandler = new ErrorHandler(this._error_form);
+        this._validator = new FormValidator(this._errorHandler);
 
         if (needsconfirmation) {
-            validator.addValidator(confirmation_txt, validate_equals(confirmation_txt, DELETE_CONFIRMATION_TEXT, "confirmation"));
+            this._validator.addValidator(this._confirmation_txt, validate_equals(this._confirmation_txt, DELETE_CONFIRMATION_TEXT, "confirmation"));
         }
+    }
 
-        function ondelete() {
-            if (needsconfirmation && !validator.validate()) {
-                return false;
-            }
-            try {
-                let loading_scene = new LoadingScene();
-                push_scene(loading_scene);
-                delete_req = delete_action(user, password, item, function (/** @type {?string} */ error1) {
-                    if (!is_current_scene(loading_scene)) {
-                        return;
-                    }
-                    delete_req = null;
-                    if (error1) {
-                        pop_scene();
-                        errorHandler.setError(error1);
+    _ondelete() {
+        if (this._needsconfirmation && !this._validator.validate()) {
+            return false;
+        }
+        try {
+            let loading_scene = new LoadingScene();
+            push_scene(loading_scene);
+            this._delete_req = this._delete_action(this._user, this._password, this._item, (/** @type {?string} */ error1) => {
+                if (!is_current_scene(loading_scene)) {
+                    return;
+                }
+                this._delete_req = null;
+                if (error1) {
+                    pop_scene();
+                    this._errorHandler.setError(error1);
+                } else {
+                    pop_scene();
+                    if (this._on_success) {
+                        this._on_success();
                     } else {
+                        collectionsCache.invalidate();
                         pop_scene();
-                        if (on_success) {
-                            on_success();
-                        } else {
-                            collectionsCache.invalidate();
-                            pop_scene();
-                        }
                     }
-                });
-            } catch (err) {
-                console.error(err);
-            }
-            return false;
+                }
+            });
+        } catch (err) {
+            console.error(err);
         }
+        return false;
+    }
 
-        function oncancel() {
-            try {
-                pop_scene();
-            } catch (err) {
-                console.error(err);
-            }
-            return false;
+    _oncancel() {
+        try {
+            pop_scene();
+        } catch (err) {
+            console.error(err);
         }
+        return false;
+    }
 
-        function onkeydown(/** @type  {KeyboardEvent}*/ event) {
-            if (event.code !== "Enter") {
-                return;
-            }
-            ondelete();
+    /** @param {KeyboardEvent} event */
+    _onkeydown(event) {
+        if (event.code !== "Enter") {
+            return;
         }
+        this._ondelete();
+    }
 
-        this.show = function () {
-            this.release();
-            html_scene.classList.remove("hidden");
-            title_form.textContent = item_title;
-            delete_btn.onclick = ondelete;
-            cancel_btn.onclick = oncancel;
-            validator.validate();
-        };
-        this.hide = function () {
-            html_scene.classList.add("hidden");
-            cancel_btn.onclick = null;
-            delete_btn.onclick = null;
-        };
-        this.release = function () {
-            if (delete_req !== null) {
-                delete_req.abort();
-                delete_req = null;
-            }
-        };
+    show() {
+        this.release();
+        this._html_scene.classList.remove("hidden");
+        this._title_form.textContent = this._item_title;
+        this._delete_btn.onclick = () => this._ondelete();
+        this._cancel_btn.onclick = () => this._oncancel();
+        this._validator.validate();
+    }
+
+    hide() {
+        this._html_scene.classList.add("hidden");
+        this._cancel_btn.onclick = null;
+        this._delete_btn.onclick = null;
+    }
+
+    is_transient() { return false; }
+
+    release() {
+        if (this._delete_req !== null) {
+            this._delete_req.abort();
+            this._delete_req = null;
+        }
     }
 }

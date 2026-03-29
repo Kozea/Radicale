@@ -35,136 +35,136 @@ export class IncomingSharingScene {
      * @param {?string} password
      */
     constructor(user, password) {
-        /** @type {HTMLElement} */ let html_scene = get_element_by_id("incomingsharingscene");
-        /** @type {HTMLElement} */ let cancel_btn = get_element(html_scene, "[data-name=cancel]");
-        /** @type {HTMLElement} */ let error_element = get_element(html_scene, "[data-name=error]");
-        /** @type {HTMLElement} */ let tbody = get_element(html_scene, "tbody[data-name=incomingsharesbody]");
-        /** @type {HTMLElement} */ let template = get_element(tbody, "[data-name=incomingsharerowtemplate]");
-        /** @type {HTMLElement} */ let table = get_element(html_scene, "table");
-        /** @type {HTMLElement} */ let noshares_message = get_element(html_scene, "[data-name=nosharesmessage]");
+        this._user = user;
+        this._password = password;
 
-        let error_handler = new ErrorHandler(error_element);
+        this._html_scene = get_element_by_id("incomingsharingscene");
+        this._cancel_btn = get_element(this._html_scene, "[data-name=cancel]");
+        this._error_element = get_element(this._html_scene, "[data-name=error]");
+        this._tbody = get_element(this._html_scene, "tbody[data-name=incomingsharesbody]");
+        this._template = get_element(this._tbody, "[data-name=incomingsharerowtemplate]");
+        this._table = get_element(this._html_scene, "table");
+        this._noshares_message = get_element(this._html_scene, "[data-name=nosharesmessage]");
 
-        /** @type {Array<HTMLElement>} */ let nodes = [];
+        this._error_handler = new ErrorHandler(this._error_element);
 
-        function on_cancel() {
-            pop_scene();
-        }
+        /** @type {Array<HTMLElement>} */ this._nodes = [];
+    }
 
-        /**
-         * @param {import("../api/sharing.js").Share} share
-         * @param {HTMLElement} node
-         */
-        function toggle_share(share, node) {
-            let enabled_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=enabled]"));
-            let shown_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=shown]"));
+    /**
+     * @param {import("../api/sharing.js").Share} share
+     * @param {HTMLElement} node
+     */
+    _toggle_share(share, node) {
+        let enabled_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=enabled]"));
+        let shown_cb = /** @type {HTMLInputElement} */ (node.querySelector("[data-name=shown]"));
 
-            // disable checkboxes while updating
-            enabled_cb.disabled = true;
-            shown_cb.disabled = true;
+        enabled_cb.disabled = true;
+        shown_cb.disabled = true;
 
-            let old_enabled = share.EnabledByUser || false;
-            let old_hidden = share.HiddenByUser || false;
+        let old_enabled = share.EnabledByUser || false;
+        let old_hidden = share.HiddenByUser || false;
 
-            share.EnabledByUser = enabled_cb.checked;
-            share.HiddenByUser = !shown_cb.checked;
-            error_handler.clearError();
+        share.EnabledByUser = enabled_cb.checked;
+        share.HiddenByUser = !shown_cb.checked;
+        this._error_handler.clearError();
 
-            update_incoming_share(user, password, share, function (error) {
-                enabled_cb.disabled = false;
-                shown_cb.disabled = !share.EnabledByUser;
+        update_incoming_share(this._user, this._password, share, (error) => {
+            enabled_cb.disabled = false;
+            shown_cb.disabled = !share.EnabledByUser;
 
-                if (error) {
-                    error_handler.setError(error);
-                    enabled_cb.checked = old_enabled;
-                    shown_cb.checked = !old_hidden;
-                    shown_cb.disabled = !old_enabled;
-                } else {
-                    collectionsCache.invalidate();
-                }
-            });
-        }
-
-        /**
-         * @param {import("../api/sharing.js").Share[]} shares
-         */
-        function render_shares(shares) {
-            // clear old nodes
-            nodes.forEach(function (node) {
-                if (node.parentNode) {
-                    node.parentNode.removeChild(node);
-                }
-            });
-            nodes = [];
-
-            let prefix = "/" + user + "/";
-            let filtered_shares = shares.filter(
-                share => (share.ShareType === "map")
-                    && share.PathOrToken.startsWith(prefix));
-
-            if (filtered_shares.length === 0) {
-                table.classList.add("hidden");
-                noshares_message.classList.remove("hidden");
+            if (error) {
+                this._error_handler.setError(error);
+                enabled_cb.checked = old_enabled;
+                shown_cb.checked = !old_hidden;
+                shown_cb.disabled = !old_enabled;
             } else {
-                table.classList.remove("hidden");
-                noshares_message.classList.add("hidden");
+                collectionsCache.invalidate();
+            }
+        });
+    }
+
+    /**
+     * @param {import("../api/sharing.js").Share[]} shares
+     */
+    _render_shares(shares) {
+        // clear old nodes
+        this._nodes.forEach(function (node) {
+            if (node.parentNode) {
+                node.parentNode.removeChild(node);
+            }
+        });
+        this._nodes = [];
+
+        let prefix = "/" + this._user + "/";
+        let filtered_shares = shares.filter(
+            share => (share.ShareType === "map")
+                && share.PathOrToken.startsWith(prefix));
+
+        if (filtered_shares.length === 0) {
+            this._table.classList.add("hidden");
+            this._noshares_message.classList.remove("hidden");
+        } else {
+            this._table.classList.remove("hidden");
+            this._noshares_message.classList.add("hidden");
+        }
+
+        filtered_shares.forEach((share) => {
+            let node = /** @type {HTMLElement} */(this._template.cloneNode(true));
+            node.classList.remove("hidden");
+
+            let pathortoken = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
+            let owner_td = get_element(node, "[data-name=owner]");
+            let permissions_td = /** @type {HTMLElement} */ (get_element(node, "[data-name=permissions]"));
+            let enabled_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=enabled]"));
+            let shown_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=shown]"));
+
+            let displayPath = share.PathOrToken.substring(prefix.length);
+            if (displayPath.endsWith("/")) {
+                displayPath = displayPath.substring(0, displayPath.length - 1);
             }
 
-            filtered_shares.forEach(function (share) {
-                let node = /** @type {HTMLElement} */(template.cloneNode(true));
-                node.classList.remove("hidden");
+            pathortoken.value = displayPath;
+            owner_td.textContent = share.Owner;
+            displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
 
-                let pathortoken = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
-                let owner_td = get_element(node, "[data-name=owner]");
-                let permissions_td = /** @type {HTMLElement} */ (get_element(node, "[data-name=permissions]"));
-                let enabled_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=enabled]"));
-                let shown_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=shown]"));
+            let enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
+            let shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
 
-                let displayPath = share.PathOrToken.substring(prefix.length);
-                if (displayPath.endsWith("/")) {
-                    displayPath = displayPath.substring(0, displayPath.length - 1);
-                }
+            enabled_cb.checked = enabled;
+            shown_cb.checked = shown;
+            shown_cb.disabled = !enabled;
 
-                pathortoken.value = displayPath;
-                owner_td.textContent = share.Owner;
-                displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
+            enabled_cb.onchange = () => { this._toggle_share(share, node); };
+            shown_cb.onchange = () => { this._toggle_share(share, node); };
 
-                let enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
-                let shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
+            this._nodes.push(node);
+            this._tbody.appendChild(node);
+        });
+    }
 
-                enabled_cb.checked = enabled;
-                shown_cb.checked = shown;
-                shown_cb.disabled = !enabled;
+    show() {
+        this._html_scene.classList.remove("hidden");
+        this._cancel_btn.onclick = () => pop_scene();
+        this._error_handler.clearError();
+        collectionsCache.getIncomingShares(this._user, this._password, this._error_handler.setError, (shares) => this._render_shares(shares));
+    }
 
-                enabled_cb.onchange = function () { toggle_share(share, node); };
-                shown_cb.onchange = function () { toggle_share(share, node); };
+    hide() {
+        this._html_scene.classList.add("hidden");
+        this._cancel_btn.onclick = null;
+        this._error_handler.clearError();
+    }
 
-                nodes.push(node);
-                tbody.appendChild(node);
-            });
-        }
+    is_transient() { return false; }
 
-        this.show = function () {
-            html_scene.classList.remove("hidden");
-            cancel_btn.onclick = on_cancel;
-            error_handler.clearError();
-            collectionsCache.getIncomingShares(user, password, error_handler.setError, render_shares);
-        };
-
-        this.hide = function () {
-            html_scene.classList.add("hidden");
-            cancel_btn.onclick = null;
-            error_handler.clearError();
-        };
-
-        this.release = function () {
-            error_handler.clearError();
-            nodes.forEach(function (node) {
-                if (node.parentNode) {
-                    node.parentNode.removeChild(node);
-                }
-            });
-            nodes = [];
-        };
+    release() {
+        this._error_handler.clearError();
+        this._nodes.forEach(function (node) {
+            if (node.parentNode) {
+                node.parentNode.removeChild(node);
+            }
+        });
+        this._nodes = [];
     }
 }
