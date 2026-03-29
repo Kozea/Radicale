@@ -60,7 +60,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def _test_htpasswd(self, htpasswd_encryption: str, htpasswd_content: str,
                        test_matrix: Union[str, Iterable[Tuple[str, str, bool]]]
-                       = "ascii") -> None:
+                       = "ascii", delay: int = 0) -> None:
         """Test htpasswd authentication with user "tmp" and password "bepo" for
            ``test_matrix`` "ascii" or user "😀" and password "🔑" for
            ``test_matrix`` "unicode"."""
@@ -69,7 +69,7 @@ class TestBaseAuthRequests(BaseTest):
         with open(htpasswd_file_path, "w", encoding=encoding) as f:
             f.write(htpasswd_content)
         self.configure({"auth": {"type": "htpasswd",
-                                 "delay": 0,
+                                 "delay": delay,
                                  "htpasswd_filename": htpasswd_file_path,
                                  "htpasswd_encryption": htpasswd_encryption},
                         "server": {"delay_on_error": 0}})
