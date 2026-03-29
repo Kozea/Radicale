@@ -24,6 +24,7 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Dict, Sequence, Tuple, Union
 
 from radicale import sharing, xmlutils
@@ -865,8 +866,95 @@ class TestSharingApiSanity(BaseTest):
             form_array = ["PathOrToken=" + token]
             _, headers, answer = self._sharing_api_form("token", "delete", check=404, login="owner:ownerpw", form_array=form_array)
 
-            logging.info("\n*** fetch collection using deleted token (without credentials)")
+            logging.info("\n*** fetch collection using deleted token")
             _, headers, answer = self.request("GET", token, check=401)
+
+    def test_sharing_api_token_usage_delay(self) -> None:
+        """share-by-token API tests - real usage."""
+        delay = .3
+        delay_ns = delay * 10**9 * 0.5  # delay minimum jitter
+
+        self.configure({"auth": {"type": "htpasswd",
+                                 "delay": delay,
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        form_array: Sequence[str]
+        json_dict: dict
+
+        path_base = "/owner/calendar.ics/"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_base, login="owner:ownerpw")
+        event = get_file_content("event1.ics")
+        path = path_base + "/event1.ics"
+        self.put(path, event, login="owner:ownerpw")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            logging.info("\n*** create token")
+            form_array = []
+            form_array.append("PathMapped=" + path_base)
+            form_array.append("Enabled=True")
+            _, headers, answer = self._sharing_api_form("token", "create", check=200, login="owner:ownerpw", form_array=form_array)
+            assert "Status='success'" in answer
+            assert "PathOrToken=" in answer
+            # extract token
+            match = re.search("PathOrToken='(.+)'", answer)
+            if match:
+                token = match.group(1)
+                logging.info("received token %r", token)
+            else:
+                assert False
+
+            logging.info("\n*** fetch collection using invalid token")
+            time_ns_begin = time.time_ns()
+            _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=401)
+            time_ns_end = time.time_ns()
+            assert (time_ns_end - time_ns_begin) > delay_ns
+
+            logging.info("\n*** fetch collection using token")
+            time_ns_begin = time.time_ns()
+            _, headers, answer = self.request("GET", token, check=200)
+            time_ns_end = time.time_ns()
+            assert (time_ns_end - time_ns_begin) < delay_ns
+            assert "UID:event" in answer
+
+            logging.info("\n*** disable token (form->text)")
+            form_array = ["PathOrToken=" + token]
+            _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
+            assert "Status='success'" in answer
+
+            logging.info("\n*** fetch collection using disabled token")
+            time_ns_begin = time.time_ns()
+            _, headers, answer = self.request("GET", token, check=401)
+            time_ns_end = time.time_ns()
+            assert (time_ns_end - time_ns_begin) > delay_ns
+
+            logging.info("\n*** delete token (json->json)")
+            json_dict = {'PathOrToken': token}
+            _, headers, answer = self._sharing_api_json("token", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['ApiVersion'] == 1
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** fetch collection using deleted token with delay")
+            time_ns_begin = time.time_ns()
+            _, headers, answer = self.request("GET", token, check=401)
+            time_ns_end = time.time_ns()
+            assert (time_ns_end - time_ns_begin) > delay_ns
 
     def test_sharing_api_map_basic(self) -> None:
         """share-by-map API basic tests."""
