@@ -393,7 +393,7 @@ class BaseSharing:
                 share = self.sharing_collection_by_token_resolver(path)
                 if share is not None and 'error' in share:
                     if self._auth_delay > 0:
-                        random_delay = self._auth_delay * (1 + random.random())
+                        random_delay = self._auth_delay * (0.5 + random.random())
                         logger.debug("Failed shared-by-token resolver, sleeping random: %.3f sec", random_delay)
                         time.sleep(random_delay)
                     return None
