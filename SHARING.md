@@ -672,10 +672,10 @@ Preconditions:
 curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" -d "PathMapped=/owner/addressbook/" -d "User=owner" -d "Conversion=bday" http://localhost:5232/.sharing/v1/map/create
 
 ## Enable
-curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/bday/enable
+curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/map/enable
 
 ## Unhide
-curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/bday/unhide
+curl -u owner:$ownerpw -d "PathOrToken=/owner/bday-of-addressbook/" http://localhost:5232/.sharing/v1/map/unhide
 ```
 
   * Fetch *map*
