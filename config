@@ -31,7 +31,7 @@
 # Max resource size (bytes), default: 10 Mbyte
 # Limited to 80% of max_content_length to cover plain base64 encoded payload
 # Announced to clients requesting "max-resource-size" via PROPFIND
-#max_ressource_size = 10000000
+#max_resource_size = 10000000
 
 # Socket timeout (seconds)
 #timeout = 30
