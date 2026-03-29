@@ -132,7 +132,9 @@ export class IncomingSharingScene {
             let shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
 
             enabled_cb.checked = enabled;
+            enabled_cb.setAttribute("title", "Enabled");
             shown_cb.checked = shown;
+            shown_cb.setAttribute("title", "Shown");
             shown_cb.disabled = !enabled;
 
             enabled_cb.onchange = () => { this._toggle_share(share, node); };

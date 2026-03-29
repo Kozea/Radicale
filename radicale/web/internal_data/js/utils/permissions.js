@@ -30,16 +30,19 @@ export function displayPermissionsOrConversion(conversion, permissions, node) {
   let fixedConversion = (conversion || "").toLowerCase();
   if (fixedConversion != "none" && fixedConversion != "") {
     conversionElement.classList.remove("hidden");
+    conversionElement.setAttribute("title", "Converted");
     roElement.classList.add("hidden");
     rwElement.classList.add("hidden");
   } else {
     permissions = (permissions || "").toLowerCase();
     if (permissions === "rw") {
       rwElement.classList.remove("hidden");
+      rwElement.setAttribute("title", "Read and write");
       roElement.classList.add("hidden");
       conversionElement.classList.add("hidden");
     } else if (permissions === "r") {
       roElement.classList.remove("hidden");
+      roElement.setAttribute("title", "Read-only");
       rwElement.classList.add("hidden");
       conversionElement.classList.add("hidden");
     } else {
