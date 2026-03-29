@@ -26,6 +26,7 @@ import base64
 import logging
 import os
 import sys
+import time
 from typing import Iterable, Tuple, Union
 
 import pytest
@@ -217,6 +218,21 @@ class TestBaseAuthRequests(BaseTest):
                 htpasswd_cached_found = True
         if (htpasswd_found is False) or (htpasswd_cached_found is False):
             raise ValueError("Logging misses expected log lines")
+
+    # login cache failed
+    def test_htpasswd_login_cache_failed_delay_plain(self, caplog) -> None:
+        caplog.set_level(logging.INFO)
+        self.configure({"auth": {"cache_logins": "True"}})
+        delay = 1
+        delay_ns = delay * 10**9 * 0.5  # delay minimum jitter
+        time_ns_begin1 = time.time_ns()
+        self._test_htpasswd("plain", "tmp:bepo", [("tmp", "bepo1", False)], delay=delay)
+        time_ns_end1 = time.time_ns()
+        time_ns_begin2 = time.time_ns()
+        self._test_htpasswd("plain", "tmp:bepo", [("tmp", "bepo1", False)], delay=delay)
+        time_ns_end2 = time.time_ns()
+        assert (time_ns_end1 - time_ns_begin1) > delay_ns
+        assert (time_ns_end2 - time_ns_begin2) > delay_ns
 
     # htpasswd file cache
     def test_htpasswd_file_cache(self, caplog) -> None:
