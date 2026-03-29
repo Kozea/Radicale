@@ -747,7 +747,7 @@ class TestSharingApiSanity(BaseTest):
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
 
-    def test_sharing_api_token_usage(self) -> None:
+    def test_sharing_api_token_usage_basic(self) -> None:
         """share-by-token API tests - real usage."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -822,10 +822,10 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
 
-            logging.info("\n*** fetch collection using invalid token (without credentials)")
+            logging.info("\n*** fetch collection using invalid token")
             _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=401)
 
-            logging.info("\n*** fetch collection using token (without credentials)")
+            logging.info("\n*** fetch collection using token")
             _, headers, answer = self.request("GET", token, check=200)
             assert "UID:event" in answer
 
@@ -834,7 +834,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "disable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
 
-            logging.info("\n*** fetch collection using disabled token (without credentials)")
+            logging.info("\n*** fetch collection using disabled token")
             _, headers, answer = self.request("GET", token, check=401)
 
             logging.info("\n*** enable token (form->text)")
@@ -842,7 +842,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
 
-            logging.info("\n*** fetch collection using token (without credentials)")
+            logging.info("\n*** fetch collection using token")
             _, headers, answer = self.request("GET", token, check=200)
             assert "UID:event" in answer
 
