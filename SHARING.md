@@ -253,7 +253,7 @@ Can be selected by `HTTP_ACCEPT` - default is equal to provided `CONTENT_TYPE`
 
 ##### API Hook "info"
 
-Shows what kind of ShareTypes are supported
+Shows what is active/supported like ShareTypes(Feature), Conversions or permission to create or use properties overlay (depending on config options)
 
  * Output: text/plain|application/json
 
@@ -270,6 +270,8 @@ PermittedCreateCollectionByMap=True
 FeatureEnabledCollectionByToken=True
 PermittedCreateCollectionByToken=True
 SupportedConversions=(bday none)
+PermittedPropertiesOverlay=True
+SupportedPropertiesOverlay=(C:calendar-description ICAL:calendar-color CR:addressbook-description INF:addressbook-color D:displayname)
 ```
 
   * json->json, parsed with `jq`
@@ -284,7 +286,9 @@ curl -u user:$userpw --silent -H "accept: application/json" -d "" http://localho
   "PermittedCreateCollectionByMap": true,
   "FeatureEnabledCollectionByToken": true,
   "PermittedCreateCollectionByToken": true,
-  "SupportedConversions": ["bday", "none"]
+  "SupportedConversions": ["bday", "none"],
+  "PermittedPropertiesOverlay": true,
+  "SupportedPropertiesOverlay": ["C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname"]
 }
 ```
 
