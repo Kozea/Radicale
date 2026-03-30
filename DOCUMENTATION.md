@@ -2783,7 +2783,10 @@ You can find the source packages of all releases on
 
 #### Docker
 
-Radicale is available as a [Docker image](https://github.com/Kozea/Radicale/pkgs/container/radicale) for platforms `linux/amd64` and `linux/arm64`.
+Radicale is available as a Docker image for platforms `linux/amd64` and `linux/arm64` on:
+
+* [Docker Hub](https://hub.docker.com/r/kozea/radicale), and
+* [GitHub's Container Registry](https://github.com/Kozea/Radicale/pkgs/container/radicale)
 
 Here are the steps to install Radicale via Docker Compose:
 
@@ -2815,7 +2818,11 @@ Here are the steps to install Radicale via Docker Compose:
 
 3. Create Radicale configuration file as necessary
 
-    Create new or place existing configuration file in the `./config` directory.
+    Create a new configuration file or place an existing one in the `./config` directory.
+
+
+    **Note**: This section demonstrates only basic steps to setup Radicale using `docker compose`. For details on configuring Radicale, including authentication, please refer to the documentation for [Basic Configuration](#basic-configuration) or detailed [Configuration](#configuration)
+
 
 4. Start Radicale
 
@@ -2824,6 +2831,28 @@ Here are the steps to install Radicale via Docker Compose:
     ```
 
     This will start the Radicale container in detached mode.
+
+
+    To view the logs of the running container, run:
+
+    ```bash
+    $ docker compose logs -f
+    ```
+
+    To stop the container, run this from the current directory:
+
+    ```bash
+    $ docker compose down
+    ```
+
+##### Available tags
+
+* `stable`: Points to the latest stable release. This is recommended for most users.
+* Major.Minor.Patch (e.g. `3.6.1`): Points to a specific release version.
+* Major.Minor (e.g. `3.6`): Tracks the latest release for a minor version.
+* Major (e.g. `3`): Tracks the latest release for a major version.
+* nightly tags (e.g. `nightly-20260206`): Nightly builds.
+* `latest`: Points to the most recent build. In most cases, this is nightly.
 
 #### Linux Distribution Packages
 
