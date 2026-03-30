@@ -2762,9 +2762,14 @@ GitHub</a>, or install it directly with:</p>
 </section>
 <section class="level4" id="docker">
 <h4>Docker <a class="headerlink" href="#docker">&para;</a></h4>
-<p>Radicale is available as a <a href="https://github.com/Kozea/Radicale/pkgs/container/radicale">Docker
-image</a> for platforms <code>linux/amd64</code> and
-<code>linux/arm64</code>.</p>
+<p>Radicale is available as a Docker image for platforms
+<code>linux/amd64</code> and <code>linux/arm64</code> on:</p>
+<ul>
+<li><a href="https://hub.docker.com/r/kozea/radicale">Docker Hub</a>,
+and</li>
+<li><a href="https://github.com/Kozea/Radicale/pkgs/container/radicale">GitHub's
+Container Registry</a></li>
+</ul>
 <p>Here are the steps to install Radicale via Docker Compose:</p>
 <ol type="1">
 <li><p>Create required directories</p>
@@ -2783,12 +2788,38 @@ configuration directory as <code>./config</code>:</p>
 <code>./data</code> directories. Review the file and modify as
 needed.</p></li>
 <li><p>Create Radicale configuration file as necessary</p>
-<p>Create new or place existing configuration file in the
-<code>./config</code> directory.</p></li>
+<p>Create a new configuration file or place an existing one in the
+<code>./config</code> directory.</p>
+<p><strong>Note</strong>: This section demonstrates only basic steps to
+setup Radicale using <code>docker compose</code>. For details on
+configuring Radicale, including authentication, please refer to the
+documentation for <a href="#basic-configuration">Basic Configuration</a>
+or detailed <a href="#configuration">Configuration</a></p></li>
 <li><p>Start Radicale</p>
 <div class="sourceCode" id="cb71"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb71-1"><a aria-hidden="true" href="#cb71-1" tabindex="-1"></a><span class="ex">$</span> docker compose up <span class="at">-d</span></span></code></pre></div>
-<p>This will start the Radicale container in detached mode.</p></li>
+<p>This will start the Radicale container in detached mode.</p>
+<p>To view the logs of the running container, run:</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb72-1"><a aria-hidden="true" href="#cb72-1" tabindex="-1"></a><span class="ex">$</span> docker compose logs <span class="at">-f</span></span></code></pre></div>
+<p>To stop the container, run this from the current directory:</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb73-1"><a aria-hidden="true" href="#cb73-1" tabindex="-1"></a><span class="ex">$</span> docker compose down</span></code></pre></div></li>
 </ol>
+<section class="level5" id="available-tags">
+<h5>Available tags <a class="headerlink" href="#available-tags">&para;</a></h5>
+<ul>
+<li><code>stable</code>: Points to the latest stable release. This is
+recommended for most users.</li>
+<li>Major.Minor.Patch (e.g. <code>3.6.1</code>): Points to a specific
+release version.</li>
+<li>Major.Minor (e.g. <code>3.6</code>): Tracks the latest release for a
+minor version.</li>
+<li>Major (e.g. <code>3</code>): Tracks the latest release for a major
+version.</li>
+<li>nightly tags (e.g. <code>nightly-20260206</code>): Nightly
+builds.</li>
+<li><code>latest</code>: Points to the most recent build. In most cases,
+this is nightly.</li>
+</ul>
+</section>
 </section>
 <section class="level4" id="linux-distribution-packages">
 <h4>Linux Distribution Packages <a class="headerlink" href="#linux-distribution-packages">&para;</a></h4>
