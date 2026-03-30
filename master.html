@@ -496,12 +496,15 @@ most scenarios.</p>
 <span id="cb14-2"><a aria-hidden="true" href="#cb14-2" tabindex="-1"></a><span class="dt">max_connections </span><span class="ot">=</span><span class="st"> </span><span class="dv">20</span></span>
 <span id="cb14-3"><a aria-hidden="true" href="#cb14-3" tabindex="-1"></a><span class="co"># 100 Megabyte</span></span>
 <span id="cb14-4"><a aria-hidden="true" href="#cb14-4" tabindex="-1"></a><span class="dt">max_content_length </span><span class="ot">=</span><span class="st"> </span><span class="dv">100000000</span></span>
-<span id="cb14-5"><a aria-hidden="true" href="#cb14-5" tabindex="-1"></a><span class="co"># 30 seconds</span></span>
-<span id="cb14-6"><a aria-hidden="true" href="#cb14-6" tabindex="-1"></a><span class="dt">timeout </span><span class="ot">=</span><span class="st"> </span><span class="dv">30</span></span>
-<span id="cb14-7"><a aria-hidden="true" href="#cb14-7" tabindex="-1"></a></span>
-<span id="cb14-8"><a aria-hidden="true" href="#cb14-8" tabindex="-1"></a><span class="kw">[auth]</span></span>
-<span id="cb14-9"><a aria-hidden="true" href="#cb14-9" tabindex="-1"></a><span class="co"># Average delay after failed login attempts in seconds</span></span>
-<span id="cb14-10"><a aria-hidden="true" href="#cb14-10" tabindex="-1"></a><span class="dt">delay </span><span class="ot">=</span><span class="st"> </span><span class="dv">1</span></span></code></pre></div>
+<span id="cb14-5"><a aria-hidden="true" href="#cb14-5" tabindex="-1"></a><span class="co"># 10 Megabyte (&gt;= 3.5.10)</span></span>
+<span id="cb14-6"><a aria-hidden="true" href="#cb14-6" tabindex="-1"></a><span class="dt">max_resource_size </span><span class="ot">=</span><span class="st"> </span><span class="dv">10000000</span></span>
+<span id="cb14-7"><a aria-hidden="true" href="#cb14-7" tabindex="-1"></a><span class="co"># 30 seconds</span></span>
+<span id="cb14-8"><a aria-hidden="true" href="#cb14-8" tabindex="-1"></a><span class="dt">timeout </span><span class="ot">=</span><span class="st"> </span><span class="dv">30</span></span>
+<span id="cb14-9"><a aria-hidden="true" href="#cb14-9" tabindex="-1"></a></span>
+<span id="cb14-10"><a aria-hidden="true" href="#cb14-10" tabindex="-1"></a><span class="kw">[auth]</span></span>
+<span id="cb14-11"><a aria-hidden="true" href="#cb14-11" tabindex="-1"></a><span class="co"># Average delay after failed login attempts in seconds</span></span>
+<span id="cb14-12"><a aria-hidden="true" href="#cb14-12" tabindex="-1"></a><span class="co"># Also used for invalid/not-existing/not-enabled share-by-token (&gt;= 3.7.0)</span></span>
+<span id="cb14-13"><a aria-hidden="true" href="#cb14-13" tabindex="-1"></a><span class="dt">delay </span><span class="ot">=</span><span class="st"> </span><span class="dv">1</span></span></code></pre></div>
 </section>
 </section>
 <section class="level3" id="running-as-a-service">
@@ -1187,6 +1190,8 @@ Automatically detect the encryption method used per user entry.</p></li>
 <section class="level5" id="delay">
 <h5>delay <a class="headerlink" href="#delay">&para;</a></h5>
 <p>Average delay (in seconds) after failed login attempts.</p>
+<p>Also used for invalid/not-existing/not-enabled share-by-token.
+<em>(&gt;= 3.7.0)</em></p>
 <p>Default: <code>1</code></p>
 </section>
 <section class="level5" id="realm">
