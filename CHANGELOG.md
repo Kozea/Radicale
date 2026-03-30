@@ -27,6 +27,8 @@
 * Fix: format_ut problem on 32-bit systems (got lost inbetween since fixed in 3.5.8)
 * Maintain: Refactor Web UI Javascript into separate files
 * Maintain: code preparation for upcoming "sharing" extension and optimizations
+* Improve: check if hook is enabled before constructing hook notification items
+* Fix: skip by early exit email hook if notification item is not a VCALENDAR
 
 ## 3.6.0
 
