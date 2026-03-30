@@ -19,6 +19,7 @@ Integration tests for sharing (login/logout specific)
 """
 
 import pathlib
+import re
 from typing import Any, Generator
 
 import pytest
@@ -71,7 +72,7 @@ def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> 
         page.locator(
             "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='pathortoken']"
         )
-    ).to_have_value("mapped")
+    ).to_have_value(re.compile(r".*mapped/"))
 
     # 5. Max enables and shows the share
     # Initially, it's disabled and not shown (security by default)

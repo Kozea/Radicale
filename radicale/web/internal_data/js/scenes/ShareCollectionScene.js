@@ -32,6 +32,7 @@ import { displayPermissionsOrConversion } from "../utils/permissions.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { Scene, pop_scene, push_scene } from "./scene_manager.js";
+import { UrlTextHandler } from "../utils/url_text.js";
 
 /**
  * @implements {Scene}
@@ -180,8 +181,9 @@ function add_share_row_node(user, password, collection, share, template, delete_
   node.classList.remove("hidden");
 
   /** @type {HTMLInputElement} */ let pathortoken_form = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
+  /** @type {HTMLButtonElement} */ let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
   if (pathortoken_form) {
-    pathortoken_form.value = pathortoken;
+    new UrlTextHandler(pathortoken_form, copy_btn).setHref(pathortoken);
   }
 
   let permissions = (share["Permissions"] || "").toLowerCase();

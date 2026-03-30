@@ -22,10 +22,7 @@
 import { LoadingScene } from "./scenes/LoadingScene.js";
 import { LoginScene } from "./scenes/LoginScene.js";
 import { push_scene } from "./scenes/scene_manager.js";
-import { setupSelectAll } from "./utils/misc.js";
 
-// Add selection handler for input fields with 'selectall' class.
-setupSelectAll();
 
 // Hide startup loading message
 // This works because the LoadingScene is the one that is already active in index.html,

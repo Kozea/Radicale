@@ -105,16 +105,6 @@ export function bytesToHumanReadable(bytes) {
     return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + units[i];
 }
 
-/**
- * Add selection handler for input fields with 'selectall' class.
- */
-export function setupSelectAll() {
-    document.addEventListener("focusin", (event) => {
-        if (event.target instanceof HTMLInputElement && event.target.classList.contains("selectall")) {
-            event.target.setSelectionRange(0, 99999);
-        }
-    });
-}
 
 /**
  * Get an element by its ID and throw an error if it's not found.
