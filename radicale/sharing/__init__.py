@@ -117,6 +117,8 @@ API_TYPES_V1: dict[str, type] = {
         "Conversion": str,
         "Actions": dict,
         "SupportedConversions": list,
+        "PermittedPropertiesOverlay": bool,
+        "SupportedPropertiesOverlay": list,
 }
 
 
@@ -1261,8 +1263,10 @@ class BaseSharing:
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
                 answer['PermittedCreateCollectionByToken'] = self.permit_create_token
-            if ShareType in ["all", "map", "token"]:
+            if ShareType in SHARE_TYPES:
                 answer['SupportedConversions'] = CONVERSIONS_WHITELIST
+                answer['PermittedPropertiesOverlay'] = self.permit_properties_overlay
+                answer['SupportedPropertiesOverlay'] = OVERLAY_PROPERTIES_WHITELIST
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
