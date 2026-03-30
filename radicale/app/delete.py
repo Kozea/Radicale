@@ -89,34 +89,38 @@ class ApplicationPartDelete(ApplicationBase):
                     if not access.check("D", item):
                         logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %s", path)
                         return httputils.NOT_ALLOWED
-                for i in item.get_all():
-                    hook_notification_item_list.append(
-                        HookNotificationItem(
-                            notification_item_type=HookNotificationItemTypes.DELETE,
-                            path=access.path,
-                            content=i.uid,
-                            uid=i.uid,
-                            old_content=i.serialize(),  # type: ignore
-                            new_content=None
+                if self._hook.enabled:
+                    for i in item.get_all():
+                        hook_notification_item_list.append(
+                            HookNotificationItem(
+                                notification_item_type=HookNotificationItemTypes.DELETE,
+                                path=access.path,
+                                content=i.uid,
+                                content_type=i.name,
+                                uid=i.uid,
+                                old_content=i.serialize(),  # type: ignore
+                                new_content=None
+                            )
                         )
-                    )
                 xml_answer = xml_delete(base_prefix, path, item)
             else:
                 assert item.collection is not None
                 assert item.href is not None
-                hook_notification_item_list.append(
-                    HookNotificationItem(
-                        notification_item_type=HookNotificationItemTypes.DELETE,
-                        path=access.path,
-                        content=item.uid,
-                        uid=item.uid,
-                        old_content=item.serialize(),  # type: ignore
-                        new_content=None,
+                if self._hook.enabled:
+                    hook_notification_item_list.append(
+                        HookNotificationItem(
+                            notification_item_type=HookNotificationItemTypes.DELETE,
+                            path=access.path,
+                            content=item.uid,
+                            content_type=item.name,
+                            uid=item.uid,
+                            old_content=item.serialize(),  # type: ignore
+                            new_content=None,
+                        )
                     )
-                )
                 xml_answer = xml_delete(
                     base_prefix, path, item.collection, item.href)
-            for notification_item in hook_notification_item_list:
+            for notification_item in hook_notification_item_list:  # Will be empty if hook not enabled
                 self._hook.notify(notification_item)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
             return client.OK, headers, self._xml_response(xml_answer), None

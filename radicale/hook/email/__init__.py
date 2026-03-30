@@ -930,12 +930,21 @@ class Hook(BaseHook):
             self.email_config
         )
 
+    @property
+    def enabled(self) -> bool:
+        """Check if this hook is enabled (has a notify method)."""
+        return self.email_config.host is not None
+
     def notify(self, notification_item) -> None:
         """
         Entrypoint for processing a single notification item.
         Overrides default notify method from BaseHook.
         Triggered by Radicale when a notifiable event occurs (e.g. item added, updated or deleted)
         """
+        # Skip any non-VCALENDAR items
+        if not notification_item.is_calendar_item:
+            return
+
         if isinstance(notification_item, HookNotificationItem):
             self._process_event_and_notify(notification_item)
 

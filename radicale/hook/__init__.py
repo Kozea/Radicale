@@ -33,6 +33,11 @@ class BaseHook:
         """
         self.configuration = configuration
 
+    @property
+    def enabled(self) -> bool:
+        """Check if this hook is enabled."""
+        raise NotImplementedError
+
     def notify(self, notification_item):
         """Upload a new or replace an existing item."""
         raise NotImplementedError
@@ -55,10 +60,12 @@ def _cleanup(path):
 
 class HookNotificationItem:
 
-    def __init__(self, notification_item_type, path, content=None, uid=None, new_content=None, old_content=None):
+    def __init__(self, notification_item_type, path, content=None, content_type=None, uid=None, new_content=None,
+                 old_content=None):
         self.type = notification_item_type.value
         self.point = _cleanup(path)
         self._content_legacy = content
+        self.content_type = content_type
         self.uid = uid
         self.new_content = new_content
         self.old_content = old_content
@@ -66,6 +73,30 @@ class HookNotificationItem:
     @property
     def content(self):  # For backward compatibility
         return self._content_legacy or self.uid or self.new_content or self.old_content
+
+    @property
+    def is_calendar_item(self) -> bool:
+        """Check if this notification item is related to a VCALENDAR item."""
+        if not self.content_type:
+            return False
+
+        return self.content_type.upper().strip() == "VCALENDAR"
+
+    @property
+    def is_card_item(self) -> bool:
+        """Check if this notification item is related to a VCARD item."""
+        if not self.content_type:
+            return False
+
+        return self.content_type.upper().strip() == "VCARD"
+
+    @property
+    def is_addressbook_item(self) -> bool:
+        """Check if this notification item is related to a VADDRESSBOOK item."""
+        if not self.content_type:
+            return False
+
+        return self.content_type.upper().strip() == "VADDRESSBOOK"
 
     @property
     def replaces_existing_item(self) -> bool:

@@ -205,15 +205,17 @@ class ApplicationPartProppatch(ApplicationBase):
                         xml_content,
                         encoding=self._encoding
                     ).decode(encoding=self._encoding)
-                    hook_notification_item = HookNotificationItem(
-                        notification_item_type=HookNotificationItemTypes.CPATCH,
-                        path=access.path,
-                        content=content,
-                        uid=None,
-                        old_content=None,
-                        new_content=content
-                    )
-                    self._hook.notify(hook_notification_item)
+                    if self._hook.enabled:
+                        hook_notification_item = HookNotificationItem(
+                            notification_item_type=HookNotificationItemTypes.CPATCH,
+                            path=access.path,
+                            content=content,
+                            content_type=None, # Can't easily determine content type, won't trigger email hook
+                            uid=None,
+                            old_content=None,
+                            new_content=content
+                        )
+                        self._hook.notify(hook_notification_item)
             except ValueError as e:
                 # return better matching HTTP result in case errno is provided and catched
                 errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))

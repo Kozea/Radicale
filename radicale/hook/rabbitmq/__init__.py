@@ -53,6 +53,11 @@ class Hook(hook.BaseHook):
         logger.debug("Hook 'rabbitmq': _make_declare_queue_synced")
         self._channel.queue_declare(queue=self._topic, durable=True, arguments={"x-queue-type": self._queue_type})
 
+    @property
+    def enabled(self) -> bool:
+        """Check if this hook is enabled."""
+        return self._endpoint is not None
+
     def notify(self, notification_item):
         if isinstance(notification_item, HookNotificationItem):
             self._notify(notification_item, True)
