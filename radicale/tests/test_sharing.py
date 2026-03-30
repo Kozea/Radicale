@@ -366,6 +366,7 @@ class TestSharingApiSanity(BaseTest):
                                         "collection_by_map": "True",
                                         "collection_by_token": "True",
                                         "permit_create_map": "True",
+                                        "permit_properties_overlay": "True",
                                         "permit_create_token": "True"}
                             })
             logging.info("\n*** check API hook: info/all")
@@ -376,7 +377,16 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['FeatureEnabledCollectionByToken'] is True, f'FeatureEnabledCollectionByToken {db_type}'
             assert answer_dict['PermittedCreateCollectionByMap'] is True, f'PermittedCreateCollectionByMap {db_type}'
             assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
-            assert answer_dict['SupportedConversions'] == ["bday", "none"]
+            assert answer_dict['SupportedConversions'] == list(sharing.CONVERSIONS_WHITELIST)
+            assert answer_dict['PermittedPropertiesOverlay'] is True
+            assert answer_dict['SupportedPropertiesOverlay'] == list(sharing.OVERLAY_PROPERTIES_WHITELIST)
+
+            logging.info("\n*** check API hook: info/all (2)")
+            self.configure({"sharing": {"permit_properties_overlay": "False"}})
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['PermittedPropertiesOverlay'] is False
 
     def test_sharing_api_list_with_auth(self) -> None:
         """POST/list with authentication."""
