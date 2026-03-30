@@ -19,8 +19,10 @@ import base64
 import io
 import json
 import logging
+import random
 import re
 import socket
+import time
 import uuid
 from csv import DictWriter
 from datetime import datetime
@@ -138,6 +140,7 @@ class BaseSharing:
 
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
+    _auth_delay: float
     _enabled: bool = False
     default_permissions_create_token: str
     default_permissions_create_map: str
@@ -154,6 +157,7 @@ class BaseSharing:
         self.configuration = configuration
         self._rights = rights.load(configuration)
         self._storage = storage.load(configuration)
+        self._auth_delay = configuration.get("auth", "delay")
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
@@ -388,6 +392,10 @@ class BaseSharing:
             if share is None:
                 share = self.sharing_collection_by_token_resolver(path)
                 if share is not None and 'error' in share:
+                    if self._auth_delay > 0:
+                        random_delay = self._auth_delay * (0.5 + random.random())
+                        logger.debug("Failed shared-by-token resolver, sleeping random: %.3f sec", random_delay)
+                        time.sleep(random_delay)
                     return None
         else:
             if logger.isEnabledFor(logging.DEBUG):

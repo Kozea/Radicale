@@ -253,11 +253,14 @@ The default values should be fine for most scenarios.
 max_connections = 20
 # 100 Megabyte
 max_content_length = 100000000
+# 10 Megabyte (>= 3.5.10)
+max_resource_size = 10000000
 # 30 seconds
 timeout = 30
 
 [auth]
 # Average delay after failed login attempts in seconds
+# Also used for invalid/not-existing/not-enabled share-by-token (>= 3.7.0)
 delay = 1
 ```
 
@@ -1076,6 +1079,8 @@ Default: `False`
 ##### delay
 
 Average delay (in seconds) after failed login attempts.
+
+Also used for invalid/not-existing/not-enabled share-by-token. _(>= 3.7.0)_
 
 Default: `1`
 
