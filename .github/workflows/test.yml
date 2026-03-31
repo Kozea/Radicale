@@ -223,7 +223,7 @@ jobs:
   integ-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    needs: test-ubuntu-python-newest
+    needs: [test-ubuntu-python-newest, htmlvalidator, js-test]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
