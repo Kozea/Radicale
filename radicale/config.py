@@ -172,8 +172,8 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "maximum size of request body in bytes (default: 100 Mbyte)",
             "type": positive_int}),
         ("delay_on_error", {
-            "value": "0.01",
-            "help": "base delay in case of error response (seconds)",
+            "value": "1",
+            "help": "base delay in case of error 5xx response (seconds)",
             "type": positive_float}),
         ("max_resource_size", {
             "value": "10000000",

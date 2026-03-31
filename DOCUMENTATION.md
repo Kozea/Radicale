@@ -838,9 +838,9 @@ Default: `8`
 
 _(>= 3.7.0)_
 
-Base delay in case of error response (seconds)
+Base delay in case of error 5xx response (seconds)
 
-Default: `0.01`
+Default: `1`
 
 ##### max_content_length
 

@@ -311,14 +311,18 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             else:
                 flags_text = ""
             # delay on error
-            if status >= 400:
+            delay: float = 0.0
+            if status == 401 and (not login or user):
+                # delay for required but missing authentication
+                if self._auth_delay > 0:
+                    delay = self._auth_delay * (0.5 + random.random())
+            if status >= 500 and status <= 599:
                 if self._delay_on_error > 0:
-                    random_delay = self._delay_on_error * (1 + random.random())
-                    if status >= 500:
-                        random_delay = 2 * random_delay
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("Response delay triggered by result code: %d -> %0.3f seconds", status, random_delay)
-                    time.sleep(random_delay)
+                    delay = self._delay_on_error
+            if delay > 0:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Response delay triggered by result code: %d -> %0.3f seconds", status, delay)
+                time.sleep(delay)
             if answer is not None:
                 logger.info("%s response status for %r%s in %.3f seconds %s %s bytes%s: %s",
                             request_method, unsafe_path, depthinfo,
