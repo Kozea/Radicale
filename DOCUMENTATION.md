@@ -1078,9 +1078,7 @@ Default: `False`
 
 ##### delay
 
-Average delay (in seconds) after failed login attempts.
-
-Also used for invalid/not-existing/not-enabled share-by-token. _(>= 3.7.0)_
+Average delay (in seconds) after failed or missing login attempts or denied access.
 
 Default: `1`
 
