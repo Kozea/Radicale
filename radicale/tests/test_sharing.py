@@ -2976,6 +2976,14 @@ permissions: RrWwM
 user: owner1
 collection: {user}/cal-m-lc(/.*)?
 permissions: RrWwm
+[owner1-P]
+user: owner1
+collection: {user}/cal-P-uc(/.*)?
+permissions: RrWwP
+[owner1-p]
+user: owner1
+collection: {user}/cal-p-lc(/.*)?
+permissions: RrWwp
 [default]
 user: .+
 collection: {user}(/.*)?
@@ -3004,12 +3012,16 @@ permissions: RrWw""")
         path_owner1_t = "/owner1/cal-t-lc/"
         path_owner1_M = "/owner1/cal-M-uc/"
         path_owner1_m = "/owner1/cal-m-lc/"
+        path_owner1_P = "/owner1/cal-P-uc/"
+        path_owner1_p = "/owner1/cal-p-lc/"
 
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1_T, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_t, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_M, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_m, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_P, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_p, login="owner1:owner1pw")
 
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
@@ -3111,6 +3123,25 @@ permissions: RrWw""")
             logging.info("\n*** create token owner1, globally enabled / ignore t -> 200")
             json_dict['PathMapped'] = path_owner1_t
             _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** check PROPFIND priviledges list on collections directly")
+            priviledges_T = self._propfind_priviledges(path_owner1_T, login="owner1:owner1pw")
+            assert "RADICALE:share-token" in priviledges_T
+
+            priviledges_t = self._propfind_priviledges(path_owner1_t, login="owner1:owner1pw")
+            assert "RADICALE:no-share-token" in priviledges_t
+
+            priviledges_M = self._propfind_priviledges(path_owner1_M, login="owner1:owner1pw")
+            assert "RADICALE:share-map" in priviledges_M
+
+            priviledges_m = self._propfind_priviledges(path_owner1_m, login="owner1:owner1pw")
+            assert "RADICALE:no-share-map" in priviledges_m
+
+            priviledges_P = self._propfind_priviledges(path_owner1_P, login="owner1:owner1pw")
+            assert "D:write-properties" in priviledges_P
+
+            priviledges_p = self._propfind_priviledges(path_owner1_p, login="owner1:owner1pw")
+            assert "RADICALE:no-write-properties" in priviledges_p
 
     def test_sharing_api_permissions_default(self) -> None:
         """sharing API usage tests related to global permissions."""

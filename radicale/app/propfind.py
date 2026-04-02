@@ -36,7 +36,7 @@ from radicale.log import logger
 
 def xml_propfind(base_prefix: str, path: str,
                  xml_request: Optional[ET.Element],
-                 allowed_items: Iterable[Tuple[types.CollectionOrItem, str, str]],
+                 allowed_items: Iterable[Tuple[types.CollectionOrItem, str, str, str]],
                  user: str, encoding: str, max_resource_size: int, shares: dict = {}) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
@@ -73,19 +73,44 @@ def xml_propfind(base_prefix: str, path: str,
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("TRACE/PROPFIND/xml_propfind: shares=%r", shares)
 
-    for item, permission, conversion in allowed_items:
+    for item, permission, raw_permissions, conversion in allowed_items:
         write = permission == "w"
-        multistatus.append(xml_propfind_response(
-            base_prefix, path, item, props, user, encoding, write=write,
-            allprop=allprop, propname=propname, max_resource_size=max_resource_size, shares=shares, conversion=conversion))
+        multistatus.append(
+            xml_propfind_response(
+                base_prefix,
+                path,
+                item,
+                props,
+                user,
+                encoding,
+                write=write,
+                allprop=allprop,
+                propname=propname,
+                max_resource_size=max_resource_size,
+                shares=shares,
+                conversion=conversion,
+                raw_permissions=raw_permissions,
+            )
+        )
 
     return multistatus
 
 
 def xml_propfind_response(
-        base_prefix: str, path: str, item: types.CollectionOrItem,
-        props: Sequence[str], user: str, encoding: str, max_resource_size: int, write: bool = False,
-        propname: bool = False, allprop: bool = False, shares: dict = {}, conversion: Union[str, None] = None) -> ET.Element:
+    base_prefix: str,
+    path: str,
+    item: types.CollectionOrItem,
+    props: Sequence[str],
+    user: str,
+    encoding: str,
+    max_resource_size: int,
+    write: bool = False,
+    propname: bool = False,
+    allprop: bool = False,
+    shares: dict = {},
+    conversion: Union[str, None] = None,
+    raw_permissions: str = "",
+) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
         raise ValueError("Only use one of props, propname and allprops")
@@ -285,6 +310,20 @@ def xml_propfind_response(
                 privileges.append("D:write")
                 privileges.append("D:write-properties")
                 privileges.append("D:write-content")
+
+            if "P" in raw_permissions and "D:write-properties" not in privileges:
+                privileges.append("D:write-properties")
+            if "p" in raw_permissions:
+                privileges.append("RADICALE:no-write-properties")
+            if "T" in raw_permissions:
+                privileges.append("RADICALE:share-token")
+            if "t" in raw_permissions:
+                privileges.append("RADICALE:no-share-token")
+            if "M" in raw_permissions:
+                privileges.append("RADICALE:share-map")
+            if "m" in raw_permissions:
+                privileges.append("RADICALE:no-share-map")
+
             for human_tag in privileges:
                 privilege = ET.Element(xmlutils.make_clark("D:privilege"))
                 privilege.append(ET.Element(
@@ -470,26 +509,25 @@ class ApplicationPartPropfind(ApplicationBase):
 
     def _collect_allowed_items(
             self, items: Iterable[types.CollectionOrItem], user: str
-            ) -> Iterator[Tuple[types.CollectionOrItem, str]]:
+            ) -> Iterator[Tuple[types.CollectionOrItem, str, str]]:
         """Get items from request that user is allowed to access."""
         for item in items:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
+                raw_permissions = self._rights.authorization(user, path)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("TRACE/PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r", path, user)
                 if item.tag:
-                    permissions = rights.intersect(
-                        self._rights.authorization(user, path), "rw")
+                    permissions = rights.intersect(raw_permissions, "rw")
                     target = "collection with tag %r" % item.path
                 else:
-                    permissions = rights.intersect(
-                        self._rights.authorization(user, path), "RW")
+                    permissions = rights.intersect(raw_permissions, "RW")
                     target = "collection %r" % item.path
             else:
                 assert item.collection is not None
                 path = pathutils.unstrip_path(item.collection.path, True)
-                permissions = rights.intersect(
-                    self._rights.authorization(user, path), "rw")
+                raw_permissions = self._rights.authorization(user, path)
+                permissions = rights.intersect(raw_permissions, "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
             if rights.intersect(permissions, "Ww"):
                 permission = "w"
@@ -504,7 +542,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 "%s has %s access to %s",
                 repr(user) if user else "anonymous user", status, target)
             if permission:
-                yield item, permission
+                yield item, permission, raw_permissions
 
     def do_PROPFIND(self, environ: types.WSGIEnviron, base_prefix: str,
                     path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
@@ -548,14 +586,14 @@ class ApplicationPartPropfind(ApplicationBase):
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
-            for item, permission in list(self._collect_allowed_items(items_iter, user)):
+            for item, permission, raw_permissions in list(self._collect_allowed_items(items_iter, user)):
                 if self._sharing._enabled and share:
                     if share['Conversion'] == "bday" and not isinstance(item, storage.BaseCollection):
                         if not item.convert_vcf_to_ics():
                             continue
-                    allowed_items.append((item, permission, share['Conversion']))
+                    allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                 else:
-                    allowed_items.append((item, permission, None))
+                    allowed_items.append((item, permission, raw_permissions, None))
         if self._sharing._enabled:
             if http_depth == "1":
                 if logger.isEnabledFor(logging.DEBUG):
@@ -580,8 +618,8 @@ class ApplicationPartPropfind(ApplicationBase):
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
-                        for item, permission in c_allowed_items:
-                            allowed_items.append((item, permission, share['Conversion']))
+                        for item, permission, raw_permissions in c_allowed_items:
+                            allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                         shares[c_share] = share
 
         headers = {"DAV": httputils.DAV_HEADERS,
