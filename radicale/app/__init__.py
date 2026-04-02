@@ -31,6 +31,7 @@ import cProfile
 import datetime
 import io
 import logging
+import os
 import pprint
 import pstats
 import random
@@ -292,6 +293,26 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     logger.debug("Response header: suppressed by config/option [logging] response_header_on_debug")
 
             # Start response
+            # delay on error
+            delay: float = 0.0
+            if (status == 401 or status == 403) and (not login or user):
+                # delay for required but missing authentication or denied access
+                if self._auth_delay > 0:
+                    if 'PYTEST_VERSION' in os.environ:
+                        # no random during tests
+                        delay = self._auth_delay
+                    else:
+                        delay = self._auth_delay * (0.5 + random.random())
+            if status >= 500 and status <= 599:
+                if self._delay_on_error > 0:
+                    delay = self._delay_on_error
+            if delay > 0:
+                if logger.isEnabledFor(logging.DEBUG):
+                    if 'PYTEST_VERSION' in os.environ:
+                        logger.debug("Response fixed(pytest) delay triggered by result code: %d -> %0.3f seconds", status, delay)
+                    else:
+                        logger.debug("Response random delay triggered by result code: %d -> %0.3f seconds", status, delay)
+                time.sleep(delay)
             time_end = datetime.datetime.now()
             time_delta_seconds = (time_end - time_begin).total_seconds()
             status_text = "%d %s" % (
@@ -310,19 +331,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 flags_text = " (" + " ".join(flags) + ")"
             else:
                 flags_text = ""
-            # delay on error
-            if status >= 400:
-                if self._delay_on_error > 0:
-                    random_delay = self._delay_on_error * (1 + random.random())
-                    if status >= 500:
-                        random_delay = 2 * random_delay
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("Response delay triggered by result code: %d -> %0.3f seconds", status, random_delay)
-                    time.sleep(random_delay)
             if answer is not None:
                 logger.info("%s response status for %r%s in %.3f seconds %s %s bytes%s: %s",
                             request_method, unsafe_path, depthinfo,
-                            (time_end - time_begin).total_seconds(), content_encoding, str(len(answer)),
+                            time_delta_seconds, content_encoding, str(len(answer)),
                             flags_text,
                             status_text)
             else:
@@ -487,8 +499,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                            remote_host, login, info)
             # Random delay to avoid timing oracles and bruteforce attacks
             if self._auth_delay > 0:
-                random_delay = self._auth_delay * (0.5 + random.random())
-                logger.debug("Failed login, sleeping random: %.3f sec", random_delay)
+                if 'PYTEST_VERSION' in os.environ:
+                    # no random during tests
+                    random_delay = self._auth_delay
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Failed login, sleeping fixed(pytest): %.3f sec", random_delay)
+                else:
+                    random_delay = self._auth_delay * (0.5 + random.random())
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Failed login, sleeping random: %.3f sec", random_delay)
                 time.sleep(random_delay)
 
         if user and not pathutils.is_safe_path_component(user):
@@ -566,12 +585,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     self.profiler_per_request_method[request_method].disable()
 
             if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
-                logger.info("Access to %r denied for %s", path,
-                            repr(user) if user else "anonymous user")
+                if path.startswith("/.token"):
+                    logger.info("Access to %r denied", path)
+                else:
+                    logger.info("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
         else:
             status, headers, answer, xml_request = httputils.NOT_ALLOWED
 
         if ((status, headers, answer, xml_request) == httputils.NOT_ALLOWED and not user and
+                not path.startswith("/.token") and
                 not external_login):
             # Unknown or unauthorized user
             logger.debug("Asking client for authentication")

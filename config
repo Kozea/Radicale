@@ -21,8 +21,8 @@
 # Max parallel connections
 #max_connections = 8
 
-# Base delay in case of error response (seconds)
-#delay_on_error = 0.01
+# Base delay in case of error 5xx response (seconds)
+#delay_on_error = 1
 
 # Max size of request body (bytes), default: 100 Mbyte
 # In case of using a reverse proxy in front of check also there related option
@@ -180,8 +180,7 @@
 # Enable caching of htpasswd file based on size and mtime_ns
 #htpasswd_cache = False
 
-# Incorrect authentication delay (seconds)
-# Also used for invalid/not-existing/not-enabled share-by-token (>= 3.7.0)
+# Incorrect or missing authentication or denied access average delay (seconds)
 #delay = 1
 
 # Message displayed in the client when a password is needed

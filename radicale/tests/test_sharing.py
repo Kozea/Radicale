@@ -20,11 +20,12 @@ Radicale tests related to sharing.
 
 """
 
+import datetime
 import json
 import logging
 import os
 import re
-import time
+import sys
 from typing import Dict, Sequence, Tuple, Union
 
 from radicale import sharing, xmlutils
@@ -202,7 +203,7 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_token": "False"}
                         })
 
-    def test_sharing_api_base_no_auth(self) -> None:
+    def test_sharing_api_base_no_auth_basic(self) -> None:
         """POST request at '/.sharing' without authentication."""
         # disabled
         for path in ["/.sharing", "/.sharing/"]:
@@ -257,6 +258,39 @@ class TestSharingApiSanity(BaseTest):
                                         "collection_by_token": "True"}
                             })
             _, headers, _ = self.request("POST", path, check=401)
+
+    def test_sharing_api_base_no_auth_delay(self) -> None:
+        delay = .3
+        delay_min = delay * 0.9  # no random jitter during test
+        delay_max = delay + 0.2  # no random jitter during test
+        if sys.platform == "darwin":  # no reliable sleep times
+            delay_max = delay_max * 1.5
+
+        for path in ["/.sharing", "/.sharing/"]:
+            time_begin = datetime.datetime.now()
+            _, headers, _ = self.request("POST", path, check=404)
+            time_end = datetime.datetime.now()
+            time_delta = (time_end - time_begin).total_seconds()
+            assert time_delta < delay_min  # 404 should have no delay
+
+        path = "/.sharing/"
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            # no database is active
+            logging.info("\n*** check API hook base: map=True token=False (incl. delay)")
+            self.configure({"sharing": {
+                                        "collection_by_map": "True",
+                                        "collection_by_token": "False"},
+                            "auth": {"delay": delay}})
+            time_begin = datetime.datetime.now()
+            _, headers, _ = self.request("POST", path, check=401)
+            time_end = datetime.datetime.now()
+            time_delta = (time_end - time_begin).total_seconds()
+            assert time_delta > delay_min
+            assert time_delta < delay_max
 
     def test_sharing_api_base_with_auth(self) -> None:
         """POST request at '/.sharing' with authentication."""
@@ -834,7 +868,7 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using invalid token")
-            _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=401)
+            _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=403)
 
             logging.info("\n*** fetch collection using token")
             _, headers, answer = self.request("GET", token, check=200)
@@ -846,7 +880,7 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using disabled token")
-            _, headers, answer = self.request("GET", token, check=401)
+            _, headers, answer = self.request("GET", token, check=403)
 
             logging.info("\n*** enable token (form->text)")
             form_array = ["PathOrToken=" + token]
@@ -877,12 +911,15 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "delete", check=404, login="owner:ownerpw", form_array=form_array)
 
             logging.info("\n*** fetch collection using deleted token")
-            _, headers, answer = self.request("GET", token, check=401)
+            _, headers, answer = self.request("GET", token, check=403)
 
     def test_sharing_api_token_usage_delay(self) -> None:
         """share-by-token API tests - real usage."""
         delay = .3
-        delay_ns = delay * 10**9 * 0.5  # delay minimum jitter
+        delay_min = delay * 0.9  # no random jitter during test
+        delay_max = delay + 0.2  # no random jitter during test
+        if sys.platform == "darwin":  # no reliable sleep times
+            delay_max = delay_max * 1.5
 
         self.configure({"auth": {"type": "htpasswd",
                                  "delay": delay,
@@ -930,16 +967,19 @@ class TestSharingApiSanity(BaseTest):
                 assert False
 
             logging.info("\n*** fetch collection using invalid token")
-            time_ns_begin = time.time_ns()
-            _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=401)
-            time_ns_end = time.time_ns()
-            assert (time_ns_end - time_ns_begin) > delay_ns
+            time_begin = datetime.datetime.now()
+            _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=403)
+            time_end = datetime.datetime.now()
+            time_delta = (time_end - time_begin).total_seconds()
+            assert time_delta > delay_min
+            assert time_delta < delay_max
 
             logging.info("\n*** fetch collection using token")
-            time_ns_begin = time.time_ns()
+            time_begin = datetime.datetime.now()
             _, headers, answer = self.request("GET", token, check=200)
-            time_ns_end = time.time_ns()
-            assert (time_ns_end - time_ns_begin) < delay_ns
+            time_end = datetime.datetime.now()
+            time_delta = (time_end - time_begin).total_seconds()
+            assert time_delta < delay_min  # no delay
             assert "UID:event" in answer
 
             logging.info("\n*** disable token (form->text)")
@@ -948,10 +988,12 @@ class TestSharingApiSanity(BaseTest):
             assert "Status='success'" in answer
 
             logging.info("\n*** fetch collection using disabled token")
-            time_ns_begin = time.time_ns()
-            _, headers, answer = self.request("GET", token, check=401)
-            time_ns_end = time.time_ns()
-            assert (time_ns_end - time_ns_begin) > delay_ns
+            time_begin = datetime.datetime.now()
+            _, headers, answer = self.request("GET", token, check=403)
+            time_end = datetime.datetime.now()
+            time_delta = (time_end - time_begin).total_seconds()
+            assert time_delta > delay_min
+            assert time_delta < delay_max
 
             logging.info("\n*** delete token (json->json)")
             json_dict = {'PathOrToken': token}
@@ -961,10 +1003,12 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Status'] == "success"
 
             logging.info("\n*** fetch collection using deleted token with delay")
-            time_ns_begin = time.time_ns()
-            _, headers, answer = self.request("GET", token, check=401)
-            time_ns_end = time.time_ns()
-            assert (time_ns_end - time_ns_begin) > delay_ns
+            time_begin = datetime.datetime.now()
+            _, headers, answer = self.request("GET", token, check=403)
+            time_end = datetime.datetime.now()
+            time_delta = (time_end - time_begin).total_seconds()
+            assert time_delta > delay_min
+            assert time_delta < delay_max
 
     def test_sharing_api_map_basic(self) -> None:
         """share-by-map API basic tests."""

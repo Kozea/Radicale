@@ -23,10 +23,10 @@ Radicale tests with simple requests and authentication.
 """
 
 import base64
+import datetime
 import logging
 import os
 import sys
-import time
 from typing import Iterable, Tuple, Union
 
 import pytest
@@ -61,7 +61,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def _test_htpasswd(self, htpasswd_encryption: str, htpasswd_content: str,
                        test_matrix: Union[str, Iterable[Tuple[str, str, bool]]]
-                       = "ascii", delay: int = 0) -> None:
+                       = "ascii", delay: float = 0) -> None:
         """Test htpasswd authentication with user "tmp" and password "bepo" for
            ``test_matrix`` "ascii" or user "😀" and password "🔑" for
            ``test_matrix`` "unicode"."""
@@ -223,16 +223,25 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_login_cache_failed_delay_plain(self, caplog) -> None:
         caplog.set_level(logging.INFO)
         self.configure({"auth": {"cache_logins": "True"}})
-        delay = 1
-        delay_ns = delay * 10**9 * 0.5  # delay minimum jitter
-        time_ns_begin1 = time.time_ns()
+        delay = .3
+        delay_min = delay * 0.9  # no random jitter during test
+        delay_max = delay + 0.2  # no random jitter during test
+        if sys.platform == "darwin":  # no reliable sleep times
+            delay_max = delay_max * 1.5
+
+        time_begin = datetime.datetime.now()
         self._test_htpasswd("plain", "tmp:bepo", [("tmp", "bepo1", False)], delay=delay)
-        time_ns_end1 = time.time_ns()
-        time_ns_begin2 = time.time_ns()
+        time_end = datetime.datetime.now()
+        time_delta = (time_end - time_begin).total_seconds()
+        assert time_delta > delay_min
+        assert time_delta < delay_max
+
+        time_begin = datetime.datetime.now()
         self._test_htpasswd("plain", "tmp:bepo", [("tmp", "bepo1", False)], delay=delay)
-        time_ns_end2 = time.time_ns()
-        assert (time_ns_end1 - time_ns_begin1) > delay_ns
-        assert (time_ns_end2 - time_ns_begin2) > delay_ns
+        time_end = datetime.datetime.now()
+        time_delta = (time_end - time_begin).total_seconds()
+        assert time_delta > delay_min
+        assert time_delta < delay_max
 
     # htpasswd file cache
     def test_htpasswd_file_cache(self, caplog) -> None:

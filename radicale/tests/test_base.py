@@ -21,9 +21,11 @@ Radicale tests with simple requests.
 
 """
 
+import datetime
 import logging
 import os
 import posixpath
+import sys
 import urllib
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
 
@@ -727,7 +729,7 @@ permissions: RrWw""")
         assert responses["/calendar.ics/"] == 200
         self.get("/calendar.ics/", check=404)
 
-    def test_delete_collection_global_forbid(self) -> None:
+    def test_delete_collection_global_forbid_base(self) -> None:
         """Delete a collection (expect forbidden)."""
         self.configure({"rights": {"permit_delete_collection": False}})
         self.mkcalendar("/calendar.ics/")
@@ -735,6 +737,23 @@ permissions: RrWw""")
         self.put("/calendar.ics/event1.ics", event)
         _, responses = self.delete("/calendar.ics/", check=401)
         self.get("/calendar.ics/", check=200)
+
+    def test_delete_collection_global_forbid_delay(self) -> None:
+        """Delete a collection (expect forbidden, check delay)."""
+        delay = .3
+        delay_min = delay * 0.9  # no random jitter during test
+        delay_max = delay + 0.2  # no random jitter during test
+        if sys.platform == "darwin":  # no reliable sleep times
+            delay_max = delay_max * 1.5
+
+        self.configure({"rights": {"permit_delete_collection": False}, "auth": {"delay": delay}})
+        self.mkcalendar("/calendar.ics/")
+        time_begin = datetime.datetime.now()
+        _, responses = self.delete("/calendar.ics/", check=401)
+        time_end = datetime.datetime.now()
+        time_delta = (time_end - time_begin).total_seconds()
+        assert time_delta > delay_min
+        assert time_delta < delay_max
 
     def test_delete_collection_global_forbid_explicit_permit(self) -> None:
         """Delete a collection with permitted path (expect permit)."""
