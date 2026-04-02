@@ -499,8 +499,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                            remote_host, login, info)
             # Random delay to avoid timing oracles and bruteforce attacks
             if self._auth_delay > 0:
-                random_delay = self._auth_delay * (0.5 + random.random())
-                logger.debug("Failed login, sleeping random: %.3f sec", random_delay)
+                if 'PYTEST_VERSION' in os.environ:
+                    # no random during tests
+                    random_delay = self._auth_delay
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Failed login, sleeping fixed(pytest): %.3f sec", random_delay)
+                else:
+                    random_delay = self._auth_delay * (0.5 + random.random())
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Failed login, sleeping random: %.3f sec", random_delay)
                 time.sleep(random_delay)
 
         if user and not pathutils.is_safe_path_component(user):
