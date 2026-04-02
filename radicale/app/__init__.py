@@ -585,12 +585,15 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     self.profiler_per_request_method[request_method].disable()
 
             if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
-                logger.info("Access to %r denied for %s", path,
-                            repr(user) if user else "anonymous user")
+                if path.startswith("/.token"):
+                    logger.info("Access to %r denied", path)
+                else:
+                    logger.info("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
         else:
             status, headers, answer, xml_request = httputils.NOT_ALLOWED
 
         if ((status, headers, answer, xml_request) == httputils.NOT_ALLOWED and not user and
+                not path.startswith("/.token") and
                 not external_login):
             # Unknown or unauthorized user
             logger.debug("Asking client for authentication")
