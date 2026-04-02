@@ -137,7 +137,7 @@ export class CreateEditCollectionScene {
             }
             let loading_scene = new LoadingScene();
             push_scene(loading_scene);
-            let collection = new Collection(this._href, this._type, this._displayname, this._description, sane_color, 0, 0, this._source);
+            let collection = new Collection(this._href, this._type, this._displayname, this._description, sane_color, 0, 0, this._source, []);
             let callback = (/** @type {?string} */ error1) => {
                 if (!is_current_scene(loading_scene)) {
                     return;

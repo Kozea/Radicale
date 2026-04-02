@@ -110,8 +110,9 @@ export class Collection {
      * @param {number} contentcount
      * @param {number} size
      * @param {string} source
+     * @param {Array<string>} permissions
      */
-    constructor(href, type, displayname, description, color, contentcount, size, source) {
+    constructor(href, type, displayname, description, color, contentcount, size, source, permissions) {
         this.href = href;
         this.type = type;
         this.displayname = displayname;
@@ -120,5 +121,6 @@ export class Collection {
         this.source = source;
         this.contentcount = contentcount;
         this.size = size;
+        this.permissions = permissions;
     }
 }
