@@ -910,8 +910,8 @@ class BaseSharing:
                 if Conversion == "bday":
                     # bday is read-only
                     for permission in Permissions:
-                        if permission not in "r":
-                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported  for Conversion=%r", PathMapped, Permissions, Conversion)
+                        if permission not in "rPpEe":
+                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
                             return httputils.METHOD_NOT_ALLOWED
 
             if Enabled is None:
