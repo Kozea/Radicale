@@ -589,6 +589,24 @@ Whitelisted ones are defined in `OVERLAY_PROPERTIES_WHITELIST` in `radicale/shar
  * `enforce_properties_overlay`
    * supported *share* permissions: `Ee`
 
+#### Properties Overlay Control Precedence
+
+##### General Permission for Overlay
+
+ 1. permission of particular share configuration: `p` or `P`
+
+ 2. permission based on `rights` per location: `p` or `P`
+
+ 3. config option: `permit_properties_overlay`
+
+##### Enforce Overlay on Write
+
+ 1. permission of particular share configuration: `e` or `E`
+
+ 2. permission based on `rights` per location: `e` or `E`
+
+ 3. config option: `enforce_properties_overlay`
+
 ### Properties Overlay Example
 
 #### Requirements
