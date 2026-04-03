@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from http import client
 
 from radicale import httputils, types
@@ -33,4 +34,7 @@ class ApplicationPartOptions(ApplicationBase):
             "Allow": ", ".join(
                 name[3:] for name in dir(self) if name.startswith("do_")),
             "DAV": httputils.DAV_HEADERS}
+        if 'PYTEST_VERSION' in os.environ and 'PYTEST_RADICALE_RAISE_GENERIC_ERROR' in os.environ:
+            # trigger special test case
+            raise ValueError('PYTEST_RADICALE_RAISE_GENERIC_ERROR')
         return client.OK, headers, None, None
