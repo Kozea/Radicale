@@ -36,6 +36,7 @@ import pprint
 import pstats
 import random
 import time
+import traceback
 import zlib
 from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
@@ -573,6 +574,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     environ, base_prefix, path, user, remote_host, remote_useragent)
             except PermissionError as e:
                 logger.error("PermissionError: %s", e)
+                status, headers, answer, xml_request = httputils.INTERNAL_SERVER_ERROR
+            except Exception as e:
+                logger.error("Exception: %s", e)
+                logging.error("%s", traceback.format_exc())
                 status, headers, answer, xml_request = httputils.INTERNAL_SERVER_ERROR
 
             # Profiling

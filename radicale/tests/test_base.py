@@ -720,6 +720,24 @@ permissions: RrWw""")
         _, headers, _ = self.request("OPTIONS", "/", check=200)
         assert "DAV" in headers
 
+    def test_server_error_delay_basic(self) -> None:
+        """Trigger a server error and check delay."""
+        delay = .3
+        delay_min = delay * 0.9  # no random jitter during test
+        delay_max = delay + 0.2  # no random jitter during test
+        if sys.platform == "darwin":  # no reliable sleep times
+            delay_max = delay_max * 1.5
+
+        self.configure({"server": {"delay_on_error": delay}})
+        os.environ["PYTEST_RADICALE_RAISE_GENERIC_ERROR"] = "1"
+        time_begin = datetime.datetime.now()
+        _, headers, answer = self.request("OPTIONS", "/", check=500)
+        time_end = datetime.datetime.now()
+        time_delta = (time_end - time_begin).total_seconds()
+        assert time_delta > delay_min
+        assert time_delta < delay_max
+        del os.environ["PYTEST_RADICALE_RAISE_GENERIC_ERROR"]
+
     def test_delete_collection(self) -> None:
         """Delete a collection."""
         self.mkcalendar("/calendar.ics/")
