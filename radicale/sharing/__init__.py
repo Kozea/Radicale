@@ -749,6 +749,10 @@ class BaseSharing:
                 for permission in request_data[key]:
                     if permission not in rights.INTERNAL_PERMISSIONS:
                         return httputils.bad_request("Invalid value for Permissions")
+                if "p" in request_data[key] and "P" in request_data[key]:
+                    return httputils.bad_request("Invalid combination of Permissions (P+p)")
+                if "e" in request_data[key] and "E" in request_data[key]:
+                    return httputils.bad_request("Invalid combination of Permissions (E+e)")
             elif key == "PathOrToken":
                 if ShareType == "token":
                     if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
