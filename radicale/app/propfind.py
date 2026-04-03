@@ -34,10 +34,16 @@ from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
 
-def xml_propfind(base_prefix: str, path: str,
-                 xml_request: Optional[ET.Element],
-                 allowed_items: Iterable[Tuple[types.CollectionOrItem, str, str, str]],
-                 user: str, encoding: str, max_resource_size: int, shares: dict = {}) -> Optional[ET.Element]:
+def xml_propfind(
+        self,
+        base_prefix: str,
+        path: str,
+        xml_request: Optional[ET.Element],
+        allowed_items: Iterable[Tuple[types.CollectionOrItem, str, str, str]],
+        user: str, encoding: str,
+        max_resource_size: int,
+        shares: dict = {},
+        ) -> Optional[ET.Element]:
     """Read and answer PROPFIND requests.
 
     Read rfc4918-9.1 for info.
@@ -77,6 +83,7 @@ def xml_propfind(base_prefix: str, path: str,
         write = permission == "w"
         multistatus.append(
             xml_propfind_response(
+                self,
                 base_prefix,
                 path,
                 item,
@@ -97,6 +104,7 @@ def xml_propfind(base_prefix: str, path: str,
 
 
 def xml_propfind_response(
+    self,
     base_prefix: str,
     path: str,
     item: types.CollectionOrItem,
@@ -299,30 +307,33 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:current-user-privilege-set"):
             privileges = ["D:read"]
             if share:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("TRACE/PROPFIND/xml_propfind_response/current-user-privilege-set: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay)
                 if write:
-                    if "P" in share['Permissions']:
-                        privileges.append("D:write-properties")
                     if "w" in share['Permissions']:
                         if not share_bday_automap:
                             privileges.append("D:write-content")
+                # priority share->rights->global
+                if ("P" in share['Permissions'] or
+                    ("P" in raw_permissions and "p" not in share['Permissions']) or
+                    (self._sharing.permit_properties_overlay and "p" not in raw_permissions and "p" not in share['Permissions'])
+                    ) and not (
+                            "p" in share['Permissions'] or
+                            ("p" in raw_permissions and "P" not in share['Permissions']) or
+                            (self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("TRACE/PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
+                    privileges.append("D:write-properties")
             elif write:
                 privileges.append("D:all")
                 privileges.append("D:write")
                 privileges.append("D:write-properties")
                 privileges.append("D:write-content")
 
-            if "P" in raw_permissions and "D:write-properties" not in privileges:
-                privileges.append("D:write-properties")
-            if "p" in raw_permissions:
-                privileges.append("RADICALE:no-write-properties")
-            if "T" in raw_permissions:
+            if ("T" in raw_permissions or (self._sharing.permit_create_token and "t" not in raw_permissions)):
                 privileges.append("RADICALE:share-token")
-            if "t" in raw_permissions:
-                privileges.append("RADICALE:no-share-token")
-            if "M" in raw_permissions:
+            if ("M" in raw_permissions or (self._sharing.permit_create_map and "m" not in raw_permissions)):
                 privileges.append("RADICALE:share-map")
-            if "m" in raw_permissions:
-                privileges.append("RADICALE:no-share-map")
 
             for human_tag in privileges:
                 privilege = ET.Element(xmlutils.make_clark("D:privilege"))
@@ -624,7 +635,7 @@ class ApplicationPartPropfind(ApplicationBase):
 
         headers = {"DAV": httputils.DAV_HEADERS,
                    "Content-Type": "text/xml; charset=%s" % self._encoding}
-        xml_answer = xml_propfind(base_prefix, path, xml_content,
+        xml_answer = xml_propfind(self, base_prefix, path, xml_content,
                                   allowed_items, user, self._encoding, max_resource_size=self._max_resource_size, shares=shares)
         if xml_answer is None:
             return httputils.NOT_ALLOWED
