@@ -527,7 +527,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 path = pathutils.unstrip_path(item.path, True)
                 raw_permissions = self._rights.authorization(user, path)
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r", path, user)
+                    logger.debug("TRACE/PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r raw_permissions=%r", path, user, raw_permissions)
                 if item.tag:
                     permissions = rights.intersect(raw_permissions, "rw")
                     target = "collection with tag %r" % item.path
@@ -618,14 +618,14 @@ class ApplicationPartPropfind(ApplicationBase):
                         c_user = share['Owner']
                         c_permissions_filter = share['Permissions']
                         if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%s", c_share, c_path, c_user, c_permissions_filter)
+                            logger.debug("TRACE/PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
                         if not c_access.check("r"):
                             if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%s (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
+                                logger.debug("TRACE/PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
                             continue
                         if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r", c_share, c_path, c_user)
+                            logger.debug("TRACE/PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
