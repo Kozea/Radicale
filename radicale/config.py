@@ -69,7 +69,11 @@ def positive_float(value: Any) -> float:
 def rights_permission(value: Any) -> str:
     for permission in value:
         if permission not in rights.INTERNAL_PERMISSIONS:
-            raise ValueError("unsupported permssion %r found in: %r" % (permission, value))
+            raise ValueError("unsupported permission %r found in: %r" % (permission, value))
+    if "p" in value and "P" in value:
+        raise ValueError("invalid combination of permissions (P+p) found in %r", value)
+    if "e" in value and "E" in value:
+        raise ValueError("invalid combination of permissions (E+e) found in %r", value)
     return value
 
 

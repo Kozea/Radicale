@@ -406,16 +406,6 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
 
-        if share is not None:
-            if self.permit_properties_overlay:
-                if share['Permissions'] and "p" not in share['Permissions']:
-                    # add permit permission
-                    share['Permissions'] += "P"
-            else:
-                if share['Permissions'] and "P" not in share['Permissions']:
-                    # add deny permission
-                    share['Permissions'] += "p"
-
         return share
 
     # adjust a share
@@ -749,6 +739,10 @@ class BaseSharing:
                 for permission in request_data[key]:
                     if permission not in rights.INTERNAL_PERMISSIONS:
                         return httputils.bad_request("Invalid value for Permissions")
+                if "p" in request_data[key] and "P" in request_data[key]:
+                    return httputils.bad_request("Invalid combination of Permissions (P+p)")
+                if "e" in request_data[key] and "E" in request_data[key]:
+                    return httputils.bad_request("Invalid combination of Permissions (E+e)")
             elif key == "PathOrToken":
                 if ShareType == "token":
                     if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
@@ -916,8 +910,8 @@ class BaseSharing:
                 if Conversion == "bday":
                     # bday is read-only
                     for permission in Permissions:
-                        if permission not in "r":
-                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported  for Conversion=%r", PathMapped, Permissions, Conversion)
+                        if permission not in "rPpEe":
+                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
                             return httputils.METHOD_NOT_ALLOWED
 
             if Enabled is None:

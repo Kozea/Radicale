@@ -89,14 +89,14 @@ class TestSharingApiSanity(BaseTest):
         assert not isinstance(response, int)
         return response
 
-    def _propfind_priviledges(self, path: str, login) -> list[str]:
+    def _propfind_privileges(self, path: str, login) -> list[str]:
         response = self._propfind_allprop(path, login)
         status, prop = response["D:current-user-privilege-set"]
         logging.debug("prop: %r", prop)
-        priviledges = prop.findall(xmlutils.make_clark("D:privilege"))
-        assert len(priviledges) >= 1
-        priviledges_list = [xmlutils.make_human_tag(priviledge.findall("*")[0].tag) for priviledge in priviledges]
-        return priviledges_list
+        privileges = prop.findall(xmlutils.make_clark("D:privilege"))
+        assert len(privileges) >= 1
+        privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+        return privileges_list
 
     def _propfind_calendar_color(self, path, login) -> Union[str, None]:
         propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
@@ -2976,6 +2976,14 @@ permissions: RrWwM
 user: owner1
 collection: {user}/cal-m-lc(/.*)?
 permissions: RrWwm
+[owner1-P]
+user: owner1
+collection: {user}/cal-P-uc(/.*)?
+permissions: RrWwP
+[owner1-p]
+user: owner1
+collection: {user}/cal-p-lc(/.*)?
+permissions: RrWwp
 [default]
 user: .+
 collection: {user}(/.*)?
@@ -2992,7 +3000,7 @@ permissions: RrWw""")
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
-                                    "response_content_on_debug": "False",
+                                    "response_content_on_debug": "True",
                                     "rights_rule_doesnt_match_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "from_file"}})
@@ -3004,12 +3012,16 @@ permissions: RrWw""")
         path_owner1_t = "/owner1/cal-t-lc/"
         path_owner1_M = "/owner1/cal-M-uc/"
         path_owner1_m = "/owner1/cal-m-lc/"
+        path_owner1_P = "/owner1/cal-P-uc/"
+        path_owner1_p = "/owner1/cal-p-lc/"
 
         logging.info("\n*** prepare")
         self.mkcalendar(path_owner1_T, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_t, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_M, login="owner1:owner1pw")
         self.mkcalendar(path_owner1_m, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_P, login="owner1:owner1pw")
+        self.mkcalendar(path_owner1_p, login="owner1:owner1pw")
 
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
@@ -3043,7 +3055,7 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_user1.replace(".ics", "dm-lc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
-            logging.info("\n*** deletee map user1/owner1, globally disabled / granted m -> 200")
+            logging.info("\n*** delete map user1/owner1, globally disabled / granted m -> 200")
             json_dict['PathMapped'] = path_owner1_m
             json_dict['PathOrToken'] = path_user1.replace(".ics", "dm-lc" + db_type + ".ics")
             _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner1:owner1pw", json_dict=json_dict)
@@ -3112,6 +3124,171 @@ permissions: RrWw""")
             json_dict['PathMapped'] = path_owner1_t
             _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-token T (permit=True)")
+            privileges_T = self._propfind_privileges(path_owner1_T, login="owner1:owner1pw")
+            assert "RADICALE:share-token" in privileges_T
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-token t (permit=True)")
+            privileges_t = self._propfind_privileges(path_owner1_t, login="owner1:owner1pw")
+            assert "RADICALE:share-token" not in privileges_t
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-token * (permit=True)")
+            privileges_p = self._propfind_privileges(path_owner1_p, login="owner1:owner1pw")
+            assert "RADICALE:share-token" in privileges_p
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-map M (permit=True)")
+            privileges_M = self._propfind_privileges(path_owner1_M, login="owner1:owner1pw")
+            assert "RADICALE:share-map" in privileges_M
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-map m (permit=True)")
+            privileges_m = self._propfind_privileges(path_owner1_m, login="owner1:owner1pw")
+            assert "RADICALE:share-map" not in privileges_m
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-map * (permit=True)")
+            privileges_t = self._propfind_privileges(path_owner1_t, login="owner1:owner1pw")
+            assert "RADICALE:share-map" in privileges_t
+
+            self.configure({"sharing": {"permit_create_token": "False", "permit_create_map": "False"}})
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-token T (permit=False)")
+            privileges_T = self._propfind_privileges(path_owner1_T, login="owner1:owner1pw")
+            assert "RADICALE:share-token" in privileges_T
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-token t (permit=False)")
+            privileges_t = self._propfind_privileges(path_owner1_t, login="owner1:owner1pw")
+            assert "RADICALE:share-token" not in privileges_t
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-token * (permit=False)")
+            privileges_t = self._propfind_privileges(path_owner1_t, login="owner1:owner1pw")
+            assert "RADICALE:share-token" not in privileges_t
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-map M (permit=False)")
+            privileges_M = self._propfind_privileges(path_owner1_M, login="owner1:owner1pw")
+            assert "RADICALE:share-map" in privileges_M
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-map m (permit=False)")
+            privileges_m = self._propfind_privileges(path_owner1_m, login="owner1:owner1pw")
+            assert "RADICALE:share-map" not in privileges_m
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly: RADICALE:share-map * (permit=False)")
+            privileges_t = self._propfind_privileges(path_owner1_t, login="owner1:owner1pw")
+            assert "RADICALE:share-map" not in privileges_t
+
+            # continue
+            self.configure({"sharing": {"permit_create_token": "True", "permit_create_map": "True"}})
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by owner")
+            privileges_P = self._propfind_privileges(path_owner1_P, login="owner1:owner1pw")
+            assert "D:write-properties" in privileges_P
+
+            privileges_p = self._propfind_privileges(path_owner1_p, login="owner1:owner1pw")
+            assert "D:write-properties" in privileges_p
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user")
+
+            logging.info("\n*** create map user1/owner1 P -> 200")
+            path_share = path_user1.replace(".ics", "P-uc" + db_type + ".ics")
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_P
+            json_dict['Hidden'] = False
+            json_dict['Enabled'] = True
+            json_dict['User'] = "user1"
+            json_dict['Permissions'] = "r"
+            json_dict['PathOrToken'] = path_share
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "unhide", check=200, login="user1:user1pw", json_dict=json_dict)
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=P r (permit_properties_overlay=False)")
+            self.configure({"sharing": {"permit_properties_overlay": "False"}})
+            privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" in privileges_P
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: r (permit_properties_overlay=True)")
+            self.configure({"sharing": {"permit_properties_overlay": "True"}})
+            privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" in privileges_P
+
+            logging.info("\n*** update map with illegal combination pP")
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_P
+            json_dict['PathOrToken'] = path_share
+            json_dict['User'] = "user1"
+            json_dict['Permissions'] = "rpP"
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** update map with illegal combination eE")
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_P
+            json_dict['PathOrToken'] = path_share
+            json_dict['User'] = "user1"
+            json_dict['Permissions'] = "reE"
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** update map with only p")
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_p
+            json_dict['PathOrToken'] = path_share
+            json_dict['User'] = "user1"
+            json_dict['Permissions'] = "rp"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=P rp (permit_properties_overlay=False)")
+            self.configure({"sharing": {"permit_properties_overlay": "False"}})
+            privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" not in privileges_P
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=P rp (permit_properties_overlay=True)")
+            self.configure({"sharing": {"permit_properties_overlay": "True"}})
+            privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" not in privileges_P
+
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_P
+            json_dict['PathOrToken'] = path_share
+            json_dict['User'] = "user1"
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1 p -> 200")
+            path_share = path_user1.replace(".ics", "p-lc" + db_type + ".ics")
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_p
+            json_dict['Hidden'] = False
+            json_dict['Enabled'] = True
+            json_dict['User'] = "user1"
+            json_dict['Permissions'] = "r"
+            json_dict['PathOrToken'] = path_share
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "unhide", check=200, login="user1:user1pw", json_dict=json_dict)
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=p r (permit_properties_overlay=False)")
+            self.configure({"sharing": {"permit_properties_overlay": "False"}})
+            privileges_p = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" not in privileges_p
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=p r (permit_properties_overlay=True)")
+            self.configure({"sharing": {"permit_properties_overlay": "True"}})
+            privileges_p = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" not in privileges_p
+
+            json_dict = {}
+            json_dict['PathMapped'] = path_owner1_p
+            json_dict['PathOrToken'] = path_share
+            json_dict['User'] = "user1"
+            json_dict['Permissions'] = "rP"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=p rP (permit_properties_overlay=False)")
+            self.configure({"sharing": {"permit_properties_overlay": "False"}})
+            privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" in privileges_P
+
+            logging.info("\n*** check PROPFIND privileges list on collections directly by user: rights=p rP (permit_properties_overlay=True)")
+            self.configure({"sharing": {"permit_properties_overlay": "True"}})
+            privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
+            assert "D:write-properties" in privileges_P
+
     def test_sharing_api_permissions_default(self) -> None:
         """sharing API usage tests related to global permissions."""
         self.configure({"auth": {"type": "htpasswd",
@@ -3171,14 +3348,14 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['Permissions'] == "r"
 
-            # check PROPFIND/priviledges item as user
-            logging.info("\n*** PROPFIND/priviledges item as user")
-            priviledges_list = self._propfind_priviledges(path_user1_r, login="user1:user1pw")
-            assert "D:read" in priviledges_list
-            assert "D:write-content" not in priviledges_list
-            assert "D:write-properties" not in priviledges_list
-            assert "D:write" not in priviledges_list
-            assert "D:all" not in priviledges_list
+            # check PROPFIND/privileges item as user
+            logging.info("\n*** PROPFIND/privileges item as user")
+            privileges_list = self._propfind_privileges(path_user1_r, login="user1:user1pw")
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
 
             logging.info("\n*** create map user1/owner1 rw -> 200")
             json_dict = {}
@@ -3203,14 +3380,14 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_user1_rw
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1:user1pw", json_dict=json_dict)
 
-            # check PROPFIND/priviledges item as user
-            logging.info("\n*** PROPFIND/priviledges item as user")
-            priviledges_list = self._propfind_priviledges(path_user1_rw, login="user1:user1pw")
-            assert "D:read" in priviledges_list
-            assert "D:write-content" in priviledges_list
-            assert "D:write-properties" not in priviledges_list
-            assert "D:write" not in priviledges_list
-            assert "D:all" not in priviledges_list
+            # check PROPFIND/privileges item as user
+            logging.info("\n*** PROPFIND/privileges item as user")
+            privileges_list = self._propfind_privileges(path_user1_rw, login="user1:user1pw")
+            assert "D:read" in privileges_list
+            assert "D:write-content" in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
 
             logging.info("\n*** create map user1/owner1 with adjusted default permissions -> 200")
             self.configure({"sharing": {"default_permissions_create_map": "RrWw"}})
@@ -3986,14 +4163,14 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
-            # check PROPFIND/priviledges item as user
-            logging.info("\n*** PROPFIND/priviledges item as user -> calendar")
-            priviledges_list = self._propfind_priviledges(path_shared_r, login="user:userpw")
-            assert "D:read" in priviledges_list
-            assert "D:write-content" not in priviledges_list
-            assert "D:write-properties" in priviledges_list
-            assert "D:write" not in priviledges_list
-            assert "D:all" not in priviledges_list
+            # check PROPFIND/privileges item as user
+            logging.info("\n*** PROPFIND/privileges item as user -> calendar")
+            privileges_list = self._propfind_privileges(path_shared_r, login="user:userpw")
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
 
             # verify PROPPATCH as user
             logging.info("\n*** PROPFIND collection user -> color #AAAAAA")
@@ -4478,6 +4655,8 @@ permissions: RrWw""")
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
@@ -4513,14 +4692,14 @@ permissions: RrWw""")
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
 
-            # check PROPFIND/priviledges item as user
-            logging.info("\n*** PROPFIND/priviledges item as user -> calendar")
-            priviledges_list = self._propfind_priviledges(path_shared_r, login="user:userpw")
-            assert "D:read" in priviledges_list
-            assert "D:write-content" not in priviledges_list
-            assert "D:write-properties" in priviledges_list
-            assert "D:write" not in priviledges_list
-            assert "D:all" not in priviledges_list
+            # check PROPFIND/privileges item as user
+            logging.info("\n*** PROPFIND/privileges item as user -> calendar")
+            privileges_list = self._propfind_privileges(path_shared_r, login="user:userpw")
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
 
             # verify content as user
             logging.info("\n*** GET collection user -> ok")
