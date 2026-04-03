@@ -736,6 +736,7 @@ permissions: RrWw""")
         time_delta = (time_end - time_begin).total_seconds()
         assert time_delta > delay_min
         assert time_delta < delay_max
+        del os.environ["PYTEST_RADICALE_RAISE_GENERIC_ERROR"]
 
     def test_delete_collection(self) -> None:
         """Delete a collection."""
