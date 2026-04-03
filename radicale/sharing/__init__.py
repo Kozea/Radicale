@@ -406,16 +406,6 @@ class BaseSharing:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/sharing/map: not active")
 
-        if share is not None:
-            if self.permit_properties_overlay:
-                if share['Permissions'] and "p" not in share['Permissions']:
-                    # add permit permission
-                    share['Permissions'] += "P"
-            else:
-                if share['Permissions'] and "P" not in share['Permissions']:
-                    # add deny permission
-                    share['Permissions'] += "p"
-
         return share
 
     # adjust a share
