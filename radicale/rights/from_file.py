@@ -68,6 +68,11 @@ class Rights(rights.BaseRights):
                 collection_pattern = rights_config_parser.get(section, "collection")
                 allowed_groups = rights_config_parser.get(section, "groups", fallback="").split(",")
                 permission = rights_config_parser.get(section, "permissions")
+                # test for conflicting permissions
+                if "p" in permission and "P" in permission:
+                    raise RuntimeError("conflicting p+P found")
+                if "e" in permission and "E" in permission:
+                    raise RuntimeError("conflicting e+E found")
                 self._rights_config[section] = {"user_pattern": user_pattern, "collection_pattern": collection_pattern,
                                                 "allowed_groups": allowed_groups, "permission": permission}
             except Exception as e:

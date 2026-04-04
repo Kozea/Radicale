@@ -330,10 +330,12 @@ def xml_propfind_response(
                 privileges.append("D:write-properties")
                 privileges.append("D:write-content")
 
-            if ("T" in raw_permissions or (self._sharing.permit_create_token and "t" not in raw_permissions)):
-                privileges.append("RADICALE:share-token")
-            if ("M" in raw_permissions or (self._sharing.permit_create_map and "m" not in raw_permissions)):
-                privileges.append("RADICALE:share-map")
+            if self._sharing._enabled and not share:
+                # only offer this privileges if sharing is enabled and not being a share (nested sharing is not supported)
+                if ("T" in raw_permissions or (self._sharing.permit_create_token and "t" not in raw_permissions)):
+                    privileges.append("RADICALE:share-token")
+                if ("M" in raw_permissions or (self._sharing.permit_create_map and "m" not in raw_permissions)):
+                    privileges.append("RADICALE:share-map")
 
             for human_tag in privileges:
                 privilege = ET.Element(xmlutils.make_clark("D:privilege"))
