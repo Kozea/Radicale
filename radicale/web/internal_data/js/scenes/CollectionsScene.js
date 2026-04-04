@@ -25,11 +25,11 @@ import { Collection, CollectionType } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { bytesToHumanReadable, get_element, get_element_by_id } from "../utils/misc.js";
+import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { Scene, push_scene } from "./scene_manager.js";
-import { UrlTextHandler } from "../utils/url_text.js";
 import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 
@@ -187,6 +187,20 @@ export class CollectionsScene {
                     get_element(node, "[data-name=" + e + "]").classList.add("hidden");
                 }
             });
+
+            let share_option = get_element(node, "[data-name=shareoption]");
+            let can_share = collection.permissions && (
+                collection.permissions.includes("RADICALE:share-map") ||
+                collection.permissions.includes("RADICALE:share-token")
+            );
+            if (share_option) {
+                if (can_share) {
+                    share_option.classList.remove("hidden");
+                } else {
+                    share_option.classList.add("hidden");
+                }
+            }
+
             let share_info = get_element(node, "[data-name=shared-by]");
             let transformed_from = get_element(node, "[data-name=transformed-from]");
             let share = (shares || []).find(
