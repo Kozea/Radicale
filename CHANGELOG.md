@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.7.0.dev
+## 3.7.0
 
 * Feature: collection sharing by map or token incl. management API and WebUI extension
 * Feature: share address book collection as birthday calendar
