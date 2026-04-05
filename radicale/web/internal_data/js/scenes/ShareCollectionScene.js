@@ -25,14 +25,14 @@ import {
   reload_sharing_list,
 } from "../api/sharing.js";
 import { Collection } from "../models/collection.js";
-import { collectionsCache } from "../utils/collections_cache.js";
+
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissionsOrConversion } from "../utils/permissions.js";
+import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
 import { Scene, pop_scene, push_scene } from "./scene_manager.js";
-import { UrlTextHandler } from "../utils/url_text.js";
 
 /**
  * @implements {Scene}
@@ -88,38 +88,30 @@ export class ShareCollectionScene {
     });
     this._cancel_btn.onclick = () => this._oncancel();
 
-    collectionsCache.getServerFeatures(this._user, this._password, this._errorHandler.setError, (features) => {
-      if (features.sharing && features.sharing.PermittedCreateCollectionByToken) {
-        if (this._share_by_token_btn) {
-          this._share_by_token_btn.classList.remove("hidden");
-          this._share_by_token_btn.onclick = () => this._onsharebytoken();
-        }
-      } else {
-        if (this._share_by_token_btn) this._share_by_token_btn.classList.add("hidden");
-      }
+    let can_share_by_token = this._collection.permissions && this._collection.permissions.includes("RADICALE:share-token");
+    let can_share_by_map = this._collection.permissions && this._collection.permissions.includes("RADICALE:share-map");
 
-      if (features.sharing && features.sharing.FeatureEnabledCollectionByToken) {
-        if (this._share_by_token_div) this._share_by_token_div.classList.remove("hidden");
-      } else {
-        if (this._share_by_token_div) this._share_by_token_div.classList.add("hidden");
+    if (can_share_by_token) {
+      if (this._share_by_token_btn) {
+        this._share_by_token_btn.classList.remove("hidden");
+        this._share_by_token_btn.onclick = () => this._onsharebytoken();
       }
+      if (this._share_by_token_div) this._share_by_token_div.classList.remove("hidden");
+    } else {
+      if (this._share_by_token_btn) this._share_by_token_btn.classList.add("hidden");
+      if (this._share_by_token_div) this._share_by_token_div.classList.add("hidden");
+    }
 
-      if (features.sharing && features.sharing.PermittedCreateCollectionByMap) {
-        if (this._share_by_map_btn) {
-          this._share_by_map_btn.classList.remove("hidden");
-          this._share_by_map_btn.onclick = () => this._onsharebymap();
-        }
-      } else {
-        if (this._share_by_map_btn) this._share_by_map_btn.classList.add("hidden");
+    if (can_share_by_map) {
+      if (this._share_by_map_btn) {
+        this._share_by_map_btn.classList.remove("hidden");
+        this._share_by_map_btn.onclick = () => this._onsharebymap();
       }
-
-      if (features.sharing && features.sharing.FeatureEnabledCollectionByMap) {
-        if (this._share_by_map_div) this._share_by_map_div.classList.remove("hidden");
-      } else {
-        if (this._share_by_map_div) this._share_by_map_div.classList.add("hidden");
-      }
-
-    });
+      if (this._share_by_map_div) this._share_by_map_div.classList.remove("hidden");
+    } else {
+      if (this._share_by_map_btn) this._share_by_map_btn.classList.add("hidden");
+      if (this._share_by_map_div) this._share_by_map_div.classList.add("hidden");
+    }
 
     this._title.textContent = this._collection.displayname || this._collection.href;
     update_share_list(this._user, this._password, this._collection, this._errorHandler);
@@ -245,23 +237,11 @@ function add_share_rows(user, password, collection, shares, errorHandler) {
  */
 export function maybe_enable_sharing_options(features) {
   if (!features || !features.sharing) return;
-  let map_is_enabled = features.sharing.FeatureEnabledCollectionByMap || false;
-  let token_is_enabled = features.sharing.FeatureEnabledCollectionByToken || false;
-  let any_sharing_enabled = map_is_enabled || token_is_enabled;
-
-  let share_options = document.querySelectorAll("[data-name=shareoption]");
-  for (let i = 0; i < share_options.length; i++) {
-    let share_option = share_options[i];
-    if (any_sharing_enabled) {
-      share_option.classList.remove("hidden");
-    } else {
-      share_option.classList.add("hidden");
-    }
-  }
+  let has_sharing = features.sharing.ApiVersion !== undefined;
 
   let incomingshares_btn = document.querySelector("#collectionsscene [data-name=incomingshares]");
   if (incomingshares_btn) {
-    if (any_sharing_enabled) {
+    if (has_sharing) {
       incomingshares_btn.classList.remove("hidden");
     } else {
       incomingshares_btn.classList.add("hidden");

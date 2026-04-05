@@ -24,8 +24,8 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import BrowserContext, Page, expect
 
-from integ_tests.common import (SHARING_HTPASSWD, SHARING_XREMOTE, Config,
-                                create_collection, login,
+from integ_tests.common import (SHARING_HTPASSWD, SHARING_XREMOTE, AuthType,
+                                Config, SharingType, create_collection, login,
                                 start_radicale_server)
 
 
@@ -463,3 +463,99 @@ def test_bday_section_visible_for_addressbook(
     page.click('button[data-name="sharebymap"]')
     expect(page.locator("details[data-name='conversions']")).to_be_visible()
     page.click('#newshare button[data-name="cancel"]')
+
+
+@pytest.fixture
+def map_disabled_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
+    config = Config(
+        name="map_disabled",
+        auth_type=AuthType.HTPASSWD,
+        sharing_type=SharingType.NOSHARING,
+        extra_config=f"""[sharing]
+type = csv
+collection_by_map = false
+collection_by_token = true
+permit_create_token = true
+permit_create_map = false
+database_path = {tmp_path / 'sharing.csv'}
+""",
+    )
+    yield from start_radicale_server(tmp_path, config)
+
+
+@pytest.fixture
+def token_disabled_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
+    config = Config(
+        name="token_disabled",
+        auth_type=AuthType.HTPASSWD,
+        sharing_type=SharingType.NOSHARING,
+        extra_config=f"""[sharing]
+type = csv
+collection_by_map = true
+collection_by_token = false
+permit_create_token = false
+permit_create_map = true
+database_path = {tmp_path / 'sharing.csv'}
+""",
+    )
+    yield from start_radicale_server(tmp_path, config)
+
+
+@pytest.fixture
+def both_disabled_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
+    config = Config(
+        name="both_disabled",
+        auth_type=AuthType.HTPASSWD,
+        sharing_type=SharingType.NOSHARING,
+        extra_config=f"""[sharing]
+type = csv
+collection_by_map = false
+collection_by_token = false
+permit_create_token = false
+permit_create_map = false
+database_path = {tmp_path / 'sharing.csv'}
+""",
+    )
+    yield from start_radicale_server(tmp_path, config)
+
+
+def test_map_sharing_disabled(
+    context: BrowserContext, page: Page, map_disabled_server: str
+) -> None:
+    login(page, map_disabled_server, SHARING_HTPASSWD, context=context)
+    create_collection(page, map_disabled_server)
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(
+        page.locator('#sharecollectionscene button[data-name="sharebymap"]')
+    ).to_be_hidden()
+    expect(
+        page.locator('#sharecollectionscene button[data-name="sharebytoken"]')
+    ).to_be_visible()
+
+
+def test_token_sharing_disabled(
+    context: BrowserContext, page: Page, token_disabled_server: str
+) -> None:
+    login(page, token_disabled_server, SHARING_HTPASSWD, context=context)
+    create_collection(page, token_disabled_server)
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    expect(
+        page.locator('#sharecollectionscene button[data-name="sharebytoken"]')
+    ).to_be_hidden()
+    expect(
+        page.locator('#sharecollectionscene button[data-name="sharebymap"]')
+    ).to_be_visible()
+
+
+def test_both_sharing_disabled(
+    context: BrowserContext, page: Page, both_disabled_server: str
+) -> None:
+    login(page, both_disabled_server, SHARING_HTPASSWD, context=context)
+    create_collection(page, both_disabled_server)
+    page.hover("article:not(.hidden)")
+
+    expect(page.locator('article:not(.hidden) a[data-name="share"]')).to_be_hidden()
