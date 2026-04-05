@@ -189,8 +189,10 @@ class TestMultiFileSystem(BaseTest):
             assert "\r\nUID:%s\r\n" % uid in answer
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_PUT(self, caplog) -> None:
-        """Run hook and check placeholders: PUT"""
+        """Run hook and check placeholders via debug log: PUT"""
+        caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
         found = 0
         self.mkcalendar("/calendar.ics/")
@@ -230,8 +232,10 @@ class TestMultiFileSystem(BaseTest):
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_DELETE(self, caplog) -> None:
-        """Run hook and check placeholders: DELETE"""
+        """Run hook and check placeholders via debug log: DELETE"""
+        caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
         found = 0
         self.mkcalendar("/calendar.ics/")
@@ -272,8 +276,10 @@ class TestMultiFileSystem(BaseTest):
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_MKCALENDAR(self, caplog) -> None:
-        """Run hook and check placeholders: MKCALENDAR"""
+        """Run hook and check placeholders via debug log: MKCALENDAR"""
+        caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
         found = 0
         self.mkcalendar("/calendar.ics/")
@@ -310,8 +316,10 @@ class TestMultiFileSystem(BaseTest):
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_MKCOL(self, caplog) -> None:
-        """Run hook and check placeholders: MKCOL"""
+        """Run hook and check placeholders via debug log: MKCOL"""
+        caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
         found = 0
         self.mkcol("/user1/")
@@ -348,8 +356,10 @@ class TestMultiFileSystem(BaseTest):
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_PROPPATCH(self, caplog) -> None:
-        """Run hook and check placeholders: PROPPATCH"""
+        """Run hook and check placeholders via debug log: PROPPATCH"""
+        caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
         found = 0
         self.mkcalendar("/calendar.ics/")
@@ -388,8 +398,10 @@ class TestMultiFileSystem(BaseTest):
             logging.info("Logging contains expected hook line, found=%d data=%r", found, d)
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_MOVE(self, caplog) -> None:
-        """Run hook and check placeholders: MOVE"""
+        """Run hook and check placeholders via debug log: MOVE"""
+        caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s'}\""}})
         found = 0
         self.mkcalendar("/calendar.ics/")
