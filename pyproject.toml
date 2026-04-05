@@ -55,7 +55,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.tox]
 min_version = "4.0"
-envlist = ["py", "flake8", "isort", "mypy", "integ_test", "html5validator"]
+envlist = ["py_loglevel_info", "py_radicale_loglevel_info", "py", "flake8", "isort", "mypy", "integ_test", "html5validator"]
 
 [tool.tox.env.py]
 extras = ["test"]
@@ -64,6 +64,21 @@ deps = [
     "pytest-cov"
 ]
 commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
+
+[tool.tox.env.py_loglevel_info]
+extras = ["test"]
+deps = [
+    "pytest"
+]
+commands = [["pytest", "-r", "s", "--log-level", "INFO", "."]]
+
+[tool.tox.env.py_radicale_loglevel_info]
+extras = ["test"]
+setenv = { PYTEST_RADICALE_LOGLEVEL = "info" }
+deps = [
+    "pytest"
+]
+commands = [["pytest", "-r", "s", "--log-level", "INFO", "."]]
 
 [tool.tox.env.flake8]
 deps = ["flake8==7.1.0"]
