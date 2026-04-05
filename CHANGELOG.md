@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.7.1.dev
+* Fix: share address book collection as birthday calendar not working on non-DEBUG level
 
 ## 3.7.0
 
