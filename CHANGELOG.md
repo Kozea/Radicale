@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.7.1.dev
+
 ## 3.7.0
 
 * Feature: collection sharing by map or token incl. management API and WebUI extension
