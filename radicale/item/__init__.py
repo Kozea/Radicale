@@ -512,14 +512,14 @@ class Item:
         if self.vobject_item.name != "VCARD":
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/item/convert_vcf_to_ics: item is not a VCARD (skip): %r", self.href)
-                return None
+            return None
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/item/convert_vcf_to_ics: item is a VCARD (ok): %r", self.href)
         if not hasattr(self.vobject_item, "bday"):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("TRACE/item/convert_vcf_to_ics: miss bday (skip): %r", self.href)
-                return None
+            return None
         else:
             pass
 
