@@ -42,8 +42,18 @@ from radicale import app, config, types, utils, xmlutils
 
 RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]], vobject.base.Component]]
 
-# Enable debug output
-radicale.log.logger.setLevel(logging.DEBUG)
+if 'PYTEST_RADICALE_LOGLEVEL' in os.environ:
+    # Set custom loglevel
+    level = os.environ["PYTEST_RADICALE_LOGLEVEL"]
+    logging.info("Setting loglevel by environment (PYTEST_RADICALE_LOGLEVEL): %s", level)
+else:
+    # Default level
+    level = "debug"
+    logging.info("Setting loglevel by default: %s", level)
+if isinstance(level, str):
+    level = getattr(logging, level.upper())
+    assert isinstance(level, int)
+radicale.log.logger.setLevel(level)
 
 
 class BaseTest:
