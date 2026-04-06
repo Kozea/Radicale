@@ -122,9 +122,9 @@ API_TYPES_V1: dict[str, type] = {
 
 TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
-PATH_PATTERN: str = "([a-zA-Z0-9/.\\-]+)"  # TODO: extend or find better source
+PATH_PATTERN: str = "([a-zA-Z0-9/.\\-@]+)"  # TODO: extend or find better source
 
-USER_PATTERN: str = "([a-zA-Z0-9@]+)"  # TODO: extend or find better source
+USER_PATTERN: str = "([a-zA-Z0-9@.]+)"  # TODO: extend or find better source
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
 
