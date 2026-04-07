@@ -281,7 +281,8 @@ class BaseSharing:
 
     def database_delete_sharing(self,
                                 ShareType: str,
-                                PathOrToken: str) -> dict:
+                                PathOrToken: str,
+                                User: str) -> dict:
         """ delete sharing """
         return {"status": "not-implemented"}
 
