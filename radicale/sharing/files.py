@@ -362,7 +362,8 @@ class Sharing(sharing.BaseSharing):
 
     def database_delete_sharing(self,
                                 ShareType: str,
-                                PathOrToken: str) -> dict:
+                                PathOrToken: str,
+                                User: str) -> dict:
         """ delete sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
@@ -373,7 +374,7 @@ class Sharing(sharing.BaseSharing):
             return {"status": "not-found"}
 
         # open writable so storage hook triggers
-        with self._storage.acquire_lock("w", path=sharing_config_file):
+        with self._storage.acquire_lock("w", User, path=sharing_config_file):
             # read file
             with open(sharing_config_file, "rb") as fb:
                 (version, row) = pickle.load(fb)
