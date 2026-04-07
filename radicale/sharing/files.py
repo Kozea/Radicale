@@ -372,8 +372,8 @@ class Sharing(sharing.BaseSharing):
         if not os.path.isfile(sharing_config_file):
             return {"status": "not-found"}
 
-        # read content
-        with self._storage.acquire_lock("r", path=sharing_config_file):
+        # open writable so storage hook triggers
+        with self._storage.acquire_lock("w", path=sharing_config_file):
             # read file
             with open(sharing_config_file, "rb") as fb:
                 (version, row) = pickle.load(fb)
