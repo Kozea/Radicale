@@ -371,12 +371,13 @@ class Sharing(sharing.BaseSharing):
 
     def database_delete_sharing(self,
                                 ShareType: str,
-                                PathOrToken: str) -> dict:
+                                PathOrToken: str,
+                                User: str) -> dict:
         """ delete sharing """
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
-        with self._storage.acquire_lock("w", path=self._sharing_db_file):
+        with self._storage.acquire_lock("w", User, path=self._sharing_db_file):
             # lookup token
             found = False
             index = 0

@@ -281,7 +281,8 @@ class BaseSharing:
 
     def database_delete_sharing(self,
                                 ShareType: str,
-                                PathOrToken: str) -> dict:
+                                PathOrToken: str,
+                                User: str) -> dict:
         """ delete sharing """
         return {"status": "not-implemented"}
 
@@ -1223,7 +1224,8 @@ class BaseSharing:
             if user == share['Owner']:
                 result = self.database_delete_sharing(
                        ShareType=ShareType,
-                       PathOrToken=PathOrToken) # verification above that it is not None
+                       PathOrToken=PathOrToken,
+                       User=share['Owner']) # verification above that it is not None
             else:
                 # only owner is permitted to delete a share
                 logger.warning(api_info + ": %r not permitted for user %r", PathOrToken, user)
