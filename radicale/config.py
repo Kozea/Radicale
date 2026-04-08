@@ -622,13 +622,9 @@ This is an automated message. Please do not reply.""",
             "value": str(utils.DEFAULT_LIMIT_CONTENT),
             "help": "limit content of wrapped text (chars)",
             "type": positive_int}),
-        ("trace_on_debug", {
-            "value": "False",
-            "help": "do not filter debug messages starting with 'TRACE'",
-            "type": bool}),
         ("trace_filter", {
             "value": "",
-            "help": "filter debug messages starting with 'TRACE/<TOKEN>'",
+            "help": "filter trace messages starting with '<TOKEN>'",
             "type": str}),
         ("bad_put_request_content", {
             "value": "False",
