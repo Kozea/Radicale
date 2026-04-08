@@ -35,8 +35,9 @@ import struct
 import sys
 import threading
 import time
-from typing import (Any, Callable, ClassVar, Dict, Iterator, Mapping, Optional,
-                    Tuple, Union, cast)
+from functools import partial, partialmethod
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterator,
+                    Mapping, Optional, Tuple, Union, cast)
 
 from radicale import types
 
@@ -47,34 +48,69 @@ LOGGER_FORMATS: Mapping[str, str] = {
 }
 DATE_FORMAT: str = "%Y-%m-%d %H:%M:%S %z"
 
-logger: logging.Logger = logging.getLogger(LOGGER_NAME)
+LOG_LEVEL_OPTIONS: list = ["trace", "debug", "info", "notice", "warning", "error", "critical", "alert"]
+
+LOG_LEVEL_TRACE: int = 5
+LOG_LEVEL_NOTICE: int = 25
+LOG_LEVEL_ALERT: int = 55
+
+logging.addLevelName(LOG_LEVEL_TRACE, "TRACE")
+logging.addLevelName(LOG_LEVEL_NOTICE, "NOTICE")
+logging.addLevelName(LOG_LEVEL_ALERT, "ALERT")
+
+setattr(logging, "TRACE", LOG_LEVEL_TRACE)
+setattr(logging, "NOTICE", LOG_LEVEL_NOTICE)
+setattr(logging, "ALERT", LOG_LEVEL_ALERT)
+
+logging.__all__ += ['TRACE', 'NOTICE', 'ALERT']
+
+setattr(logging, "trace", partial(logging.log, LOG_LEVEL_TRACE))
+setattr(logging, "notice", partial(logging.log, LOG_LEVEL_NOTICE))
+setattr(logging, "alert", partial(logging.log, LOG_LEVEL_ALERT))
+
+setattr(logging.getLoggerClass(), "trace", partialmethod(logging.Logger.log, LOG_LEVEL_TRACE))
+setattr(logging.getLoggerClass(), "notice", partialmethod(logging.Logger.log, LOG_LEVEL_NOTICE))
+setattr(logging.getLoggerClass(), "alert", partialmethod(logging.Logger.log, LOG_LEVEL_ALERT))
+
+
+class RadicaleLogger(logging.Logger):
+    if TYPE_CHECKING:
+        pass
+        # reuse similar types
+        trace = logging.Logger.debug
+        notice = logging.Logger.info
+        alert = logging.Logger.critical
+    else:
+        def trace(self, msg, *args, **kwargs):
+            if self.isEnabledFor(LOG_LEVEL_TRACE):
+                self._log(LOG_LEVEL_TRACE, msg, args, **kwargs)
+
+        def notice(self, msg, *args, **kwargs):
+            if self.isEnabledFor(LOG_LEVEL_NOTICE):
+                self._log(LOG_LEVEL_NOTICE, msg, args, **kwargs)
+
+        def alert(self, msg, *args, **kwargs):
+            if self.isEnabledFor(LOG_LEVEL_ALERT):
+                self._log(LOG_LEVEL_ALERT, msg, args, **kwargs)
+
+
+logger = cast(RadicaleLogger, logging.getLogger(LOGGER_NAME))
 
 
 class RemoveTracebackFilter(logging.Filter):
-
     def filter(self, record: logging.LogRecord) -> bool:
         record.exc_info = None
         return True
-
-
-class RemoveTRACEFilter(logging.Filter):
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        if record.msg.startswith("TRACE"):
-            return False
-        else:
-            return True
 
 
 class PassTRACETOKENFilter(logging.Filter):
     def __init__(self, trace_filter: str):
         super().__init__()
         self.trace_filter = trace_filter
-        self.prefix = "TRACE/" + self.trace_filter
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if record.msg.startswith("TRACE"):
-            if record.msg.startswith(self.prefix):
+        if record.levelno == LOG_LEVEL_TRACE:
+            if record.msg.startswith(self.trace_filter):
                 return True
             else:
                 return False
@@ -83,8 +119,6 @@ class PassTRACETOKENFilter(logging.Filter):
 
 
 REMOVE_TRACEBACK_FILTER: logging.Filter = RemoveTracebackFilter()
-
-REMOVE_TRACE_FILTER: logging.Filter = RemoveTRACEFilter()
 
 
 class IdentLogRecordFactory:
@@ -191,11 +225,14 @@ class ThreadedStreamHandler(logging.Handler):
                 return False
             self._journal_socket = journal_socket
 
-        priority = {"DEBUG": 7,
+        priority = {"TRACE": 7,
+                    "DEBUG": 7,
                     "INFO": 6,
+                    "NOTICE": 5,
                     "WARNING": 4,
                     "ERROR": 3,
-                    "CRITICAL": 2}.get(record.levelname, 4)
+                    "CRITICAL": 2,
+                    "ALERT": 1}.get(record.levelname, 4)
         timestamp = time.strftime("%Y-%m-%dT%H:%M:%S.%%03dZ",
                                   time.gmtime(record.created)) % record.msecs
         data = {"PRIORITY": priority,
@@ -258,7 +295,7 @@ logger_display_backtrace_disabled: bool = False
 logger_display_backtrace_enabled: bool = False
 
 
-def set_level(level: Union[int, str], backtrace_on_debug: bool, trace_on_debug: bool = False, trace_filter: str = "") -> None:
+def set_level(level: Union[int, str], backtrace_on_debug: bool, trace_filter: str = "") -> None:
     """Set logging level for global logger."""
     global logger_display_backtrace_disabled
     global logger_display_backtrace_enabled
@@ -282,14 +319,9 @@ def set_level(level: Union[int, str], backtrace_on_debug: bool, trace_on_debug: 
                 logger.debug("Logging of backtrace is enabled by option in this loglevel")
                 logger_display_backtrace_enabled = True
             logger.removeFilter(REMOVE_TRACEBACK_FILTER)
-        if trace_on_debug:
-            if trace_filter != "":
-                logger.debug("Logging messages starting with 'TRACE/%s' enabled", trace_filter)
-                logger.addFilter(PassTRACETOKENFilter(trace_filter))
-                logger.removeFilter(REMOVE_TRACE_FILTER)
-            else:
-                logger.debug("Logging messages starting with 'TRACE' enabled")
-                logger.removeFilter(REMOVE_TRACE_FILTER)
+    if level < logging.DEBUG:
+        if trace_filter != "":
+            logger.trace("Logging messages on 'trace' level enabled but filtered by prefix: %r", trace_filter)
+            logger.addFilter(PassTRACETOKENFilter(trace_filter))
         else:
-            logger.debug("Logging messages starting with 'TRACE' disabled")
-            logger.addFilter(REMOVE_TRACE_FILTER)
+            logger.trace("Logging messages on 'trace' level enabled")
