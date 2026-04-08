@@ -37,7 +37,8 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import auth, hook, rights, sharing, storage, types, utils, web
+from radicale import (auth, hook, log, rights, sharing, storage, types, utils,
+                      web)
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
@@ -78,7 +79,7 @@ def rights_permission(value: Any) -> str:
 
 
 def logging_level(value: Any) -> str:
-    if value not in ("debug", "info", "warning", "error", "critical"):
+    if value not in log.LOG_LEVEL_OPTIONS:
         raise ValueError("unsupported level: %r" % value)
     return value
 
