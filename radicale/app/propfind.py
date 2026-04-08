@@ -20,7 +20,6 @@
 
 import collections
 import itertools
-import logging
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
@@ -76,8 +75,7 @@ def xml_propfind(
     # Writing answer
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/PROPFIND/xml_propfind: shares=%r", shares)
+    logger.trace("PROPFIND/xml_propfind: shares=%r", shares)
 
     for item, permission, raw_permissions, conversion in allowed_items:
         write = permission == "w"
@@ -141,19 +139,15 @@ def xml_propfind_response(
 
     # lookup share
     share = None
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/PROPFIND/xml_propfind: conversion=%r item.path=%r", conversion, uri)
+    logger.trace("PROPFIND/xml_propfind: conversion=%r item.path=%r", conversion, uri)
     for entry in shares:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/PROPFIND/xml_propfind: check entry=%r", entry)
+        logger.trace("PROPFIND/xml_propfind: check entry=%r", entry)
         if entry is not None:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
+            logger.trace("PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
             if uri.startswith(shares[entry]['PathMapped']):
                 if conversion is not None and shares[entry]['Conversion'] == conversion:
                     share = shares[entry]
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/PROPFIND/xml_propfind: found share=%r", share)
+                    logger.trace("PROPFIND/xml_propfind: found share=%r", share)
                     break
 
     share_bday_automap = False
@@ -307,8 +301,7 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:current-user-privilege-set"):
             privileges = ["D:read"]
             if share:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/PROPFIND/xml_propfind_response/current-user-privilege-set: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay)
+                logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay)
                 if write:
                     if "w" in share['Permissions']:
                         if not share_bday_automap:
@@ -321,8 +314,7 @@ def xml_propfind_response(
                             "p" in share['Permissions'] or
                             ("p" in raw_permissions and "P" not in share['Permissions']) or
                             (self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
+                    logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
                     privileges.append("D:write-properties")
             elif write:
                 privileges.append("D:all")
@@ -367,8 +359,7 @@ def xml_propfind_response(
         elif tag == xmlutils.make_clark("D:getcontentlength"):
             if not is_collection or is_leaf:
                 if collection.tag == "VADDRESSBOOK" and share_bday_automap and isinstance(item, storage.BaseCollection):
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling")
+                    logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling")
                     length = 0
                     for entry in item.get_all():
                         item_ics = entry.convert_vcf_to_ics()
@@ -435,8 +426,7 @@ def xml_propfind_response(
                 # Only for internal use by the web interface
                 if isinstance(item, storage.BaseCollection) and not collection.is_principal:
                     if collection.tag == "VADDRESSBOOK" and share_bday_automap:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
+                        logger.trace("PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
                         items = []
                         for entry in item.get_all():
                             item_ics = entry.convert_vcf_to_ics()
@@ -528,8 +518,7 @@ class ApplicationPartPropfind(ApplicationBase):
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
                 raw_permissions = self._rights.authorization(user, path)
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r raw_permissions=%r", path, user, raw_permissions)
+                logger.trace("PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r raw_permissions=%r", path, user, raw_permissions)
                 if item.tag:
                     permissions = rights.intersect(raw_permissions, "rw")
                     target = "collection with tag %r" % item.path
@@ -586,8 +575,7 @@ class ApplicationPartPropfind(ApplicationBase):
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
         with self._storage.acquire_lock("r", user):
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/PROPFIND: discover path=%r depth=%s", path, http_depth)
+            logger.trace("PROPFIND: discover path=%r depth=%s", path, http_depth)
             items_iter = iter(self._storage.discover(
                 path, http_depth,
                 None, self._rights._user_groups))
@@ -609,8 +597,7 @@ class ApplicationPartPropfind(ApplicationBase):
                     allowed_items.append((item, permission, raw_permissions, None))
         if self._sharing._enabled:
             if http_depth == "1":
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/PROPFIND: get shared collections")
+                logger.trace("PROPFIND: get shared collections")
                 # check for shared collections related to user, Enabled and not Hidden
                 collections_share_list = self._sharing.sharing_collection_list(User=user, Enabled=True, Hidden=False)
                 if collections_share_list:
@@ -619,15 +606,12 @@ class ApplicationPartPropfind(ApplicationBase):
                         c_path = share['PathMapped']
                         c_user = share['Owner']
                         c_permissions_filter = share['Permissions']
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
+                        logger.trace("PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
                         if not c_access.check("r"):
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
+                            logger.trace("PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
                             continue
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
+                        logger.trace("PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
