@@ -1674,11 +1674,14 @@ Default: `internal`
 Set the logging level.
 
 Available levels are:
+* `trace` _(>= 3.7.1)_
 * `debug`
 * `info`
+* `notice` _(>= 3.7.1)_
 * `warning`
 * `error`
 * `critical`
+* `alert` _(>= 3.7.1)_
 
 Default: `warning` _(< 3.2.0)_ / `info` _(>= 3.2.0)_
 
