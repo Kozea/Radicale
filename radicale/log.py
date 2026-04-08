@@ -303,6 +303,7 @@ def set_level(level: Union[int, str], backtrace_on_debug: bool, trace_filter: st
         level = getattr(logging, level.upper())
         assert isinstance(level, int)
     logger.setLevel(level)
+    logger.log(level, "Logging level set to: %r", logging.getLevelName(level))
     if level > logging.DEBUG:
         if logger_display_backtrace_disabled is False:
             logger.info("Logging of backtrace is disabled in this loglevel")
