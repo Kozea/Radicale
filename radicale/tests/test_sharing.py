@@ -5202,7 +5202,7 @@ permissions: RrWw""")
 
             # execute PROPPATCH color as user
             logging.info("\n*** PROPPATCH color collection with token -> permission denied")
-            color="#BBBBBB"
+            color = "#BBBBBB"
             _, responses = self.proppatch(path=path_shared, data="""\
 <?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:">
@@ -5224,7 +5224,7 @@ permissions: RrWw""")
 
             # execute PROPPATCH color as user
             logging.info("\n*** PROPPATCH color collection with token -> ok")
-            color="#BBBBBB"
+            color = "#BBBBBB"
             _, responses = self.proppatch(path=path_shared, data="""\
 <?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:">
