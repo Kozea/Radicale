@@ -341,8 +341,6 @@ def serve(configuration: config.Configuration,
         max_connections: int = configuration.get("server", "max_connections")
         logger.info("Maximum parallel connections: %d", max_connections)
         logger.info("Radicale server ready")
-        logger.debug("TRACE: Radicale server ready ('logging/trace_on_debug' is active)")
-        logger.debug("TRACE/SERVER: Radicale server ready ('logging/trace_on_debug' is active - either with 'SERVER' or empty filter)")
         while True:
             rlist: List[socket.socket] = []
             # Wait for finished clients

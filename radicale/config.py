@@ -37,7 +37,8 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import auth, hook, rights, sharing, storage, types, utils, web
+from radicale import (auth, hook, log, rights, sharing, storage, types, utils,
+                      web)
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
@@ -78,7 +79,7 @@ def rights_permission(value: Any) -> str:
 
 
 def logging_level(value: Any) -> str:
-    if value not in ("debug", "info", "warning", "error", "critical"):
+    if value not in log.LOG_LEVEL_OPTIONS:
         raise ValueError("unsupported level: %r" % value)
     return value
 
@@ -622,13 +623,9 @@ This is an automated message. Please do not reply.""",
             "value": str(utils.DEFAULT_LIMIT_CONTENT),
             "help": "limit content of wrapped text (chars)",
             "type": positive_int}),
-        ("trace_on_debug", {
-            "value": "False",
-            "help": "do not filter debug messages starting with 'TRACE'",
-            "type": bool}),
         ("trace_filter", {
             "value": "",
-            "help": "filter debug messages starting with 'TRACE/<TOKEN>'",
+            "help": "filter trace messages starting with '<TOKEN>'",
             "type": str}),
         ("bad_put_request_content", {
             "value": "False",

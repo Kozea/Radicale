@@ -25,7 +25,6 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 """
 
 import json
-import logging
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Callable, ContextManager, Dict, Iterable, Iterator, List,
@@ -157,17 +156,17 @@ class BaseCollection:
             return
         tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, self.tag)
-        logger.debug("TRACE/STORAGE/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
+        logger.trace("STORAGE/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
         for item in self.get_all():
-            logger.debug("TRACE/STORAGE/get_filtered: component_name=%s tag=%s", item.component_name, tag)
+            logger.trace("STORAGE/get_filtered: component_name=%s tag=%s", item.component_name, tag)
             if tag is not None and tag != item.component_name:
                 continue
             istart, iend = item.time_range
-            logger.debug("TRACE/STORAGE/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
+            logger.trace("STORAGE/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
             if istart >= end or iend <= start:
-                logger.debug("TRACE/STORAGE/get_filtered: skip iuid=%s", item.uid)
+                logger.trace("STORAGE/get_filtered: skip iuid=%s", item.uid)
                 continue
-            logger.debug("TRACE/STORAGE/get_filtered: add iuid=%s", item.uid)
+            logger.trace("STORAGE/get_filtered: add iuid=%s", item.uid)
             yield item, simple and (start <= istart or iend <= end)
 
     def has_uid(self, uid: str) -> bool:
@@ -284,13 +283,11 @@ class BaseCollection:
                     template[template_insert_pos:])
         if self.tag == "VADDRESSBOOK":
             if vcf_to_ics:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/storage: convert VCF to ICS")
+                logger.trace("storage: convert VCF to ICS")
 
                 items = []
                 for item in self.get_all():
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/storage/convert VCF to ICS: %r:", item)
+                    logger.trace("storage/convert VCF to ICS: %r:", item)
                     item_ics = item.convert_vcf_to_ics()
                     if item_ics is None:
                         continue

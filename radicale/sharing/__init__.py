@@ -18,7 +18,6 @@
 import base64
 import io
 import json
-import logging
 import re
 import socket
 import uuid
@@ -362,8 +361,7 @@ class BaseSharing:
         sharing_collection_list = []
 
         if not self.sharing_collection_by_map:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/map: not active")
+            logger.trace("sharing/map: not active")
         else:
             # retrieve collections depending on filter
             sharing_collection_list += self.database_list_sharing(
@@ -382,7 +380,7 @@ class BaseSharing:
     # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
-        logger.debug("TRACE/sharing/resolver: lookup path=%r user=%r", path, user)
+        logger.trace("sharing/resolver: lookup path=%r user=%r", path, user)
         share = None
 
         if path == "/":
@@ -395,8 +393,7 @@ class BaseSharing:
                 if share is not None and 'error' in share:
                     return None
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/token: not active")
+            logger.trace("sharing/token: not active")
 
         if self.sharing_collection_by_map:
             if share is None:
@@ -404,23 +401,21 @@ class BaseSharing:
                 if share is not None and 'error' in share:
                     return None
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/map: not active")
+            logger.trace("sharing/map: not active")
 
         return share
 
     # adjust a share
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
-        logger.info("Sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
+        logger.info("sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
         # Filter properies for permitted ones
         properties_filtered: dict = {}
         for prop in Properties:
             if prop in OVERLAY_PROPERTIES_WHITELIST:
                 properties_filtered[prop] = Properties[prop]
             else:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/collection_update: silent discard unsupported property: %r", prop)
+                logger.trace("sharing/collection_update: silent discard unsupported property: %r", prop)
 
         self.database_update_sharing(ShareType=ShareType,
                                      PathOrToken=PathOrToken,
@@ -435,51 +430,43 @@ class BaseSharing:
     def sharing_collection_by_token_resolver(self, path) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_token:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/token/resolver: check path: %r", path)
+            logger.trace("sharing/token/resolver: check path: %r", path)
             if path.startswith("/.token/"):
                 pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)$')
                 match = pattern.match(path)
                 if not match:
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/token/resolver: unsupported token: %r", path)
+                    logger.trace("sharing/token/resolver: unsupported token: %r", path)
                     return {'error': 'token-not-supported'}
                 else:
                     # TODO add token validity checks
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/token/resolver: supported token: %r", path)
+                    logger.trace("sharing/token/resolver: supported token: %r", path)
                     result = self.database_get_sharing(
                             ShareType="token",
                             OnlyEnabled=False,
                             PathOrToken=match[1])
 
                     if result is None:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/token/resolver: supported token not found: %r", path)
+                        logger.trace("sharing/token/resolver: supported token not found: %r", path)
                         return {'error': 'token-not-found'}
 
                     if result['EnabledByOwner'] is not True:
-                        logger.info("Sharing/%s: resolved path %r->%r, User=%r not enabled by owner", "token", path, result['PathMapped'], result['Owner'])
+                        logger.info("sharing/%s: resolved path %r->%r, User=%r not enabled by owner", "token", path, result['PathMapped'], result['Owner'])
                         return {'error': 'token-not-enabled'}
 
-                    logger.info("Sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
+                    logger.info("sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
                     return result
             else:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/token/resolver: no supported prefix found in path: %r", path)
+                logger.trace("sharing/token/resolver: no supported prefix found in path: %r", path)
                 return None
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/token: not active")
+            logger.trace("sharing/token: not active")
             return None
 
     # resolves a map "path" to a share
     def sharing_collection_by_map_resolver(self, path: str, user: str) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_map:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/map/resolver: check path: %r", path)
-
+            logger.trace("sharing/map/resolver: check path: %r", path)
             result = self.database_get_sharing(
                 ShareType="map",
                 PathOrToken=path,
@@ -489,8 +476,7 @@ class BaseSharing:
             if not result:
                 # fallback to parent path
                 parent_path = pathutils.parent_path(path)
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/map/resolver: check parent path: %r", parent_path)
+                logger.trace("sharing/map/resolver: check parent path: %r", parent_path)
                 result = self.database_get_sharing(
                         ShareType="map",
                         PathOrToken=parent_path,
@@ -498,28 +484,25 @@ class BaseSharing:
                         User=user)
                 if result:
                     result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
+                    logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
                 else:
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/map/resolver: not found")
+                    logger.trace("sharing/map/resolver: not found")
                     return None
 
             if result:
                 if result['EnabledByOwner'] is not True:
-                    logger.info("Sharing/%s: resolved path %r->%r, user %r->%r not enabled by owner", "map", path, result['PathMapped'], user, result['Owner'])
+                    logger.info("sharing/%s: resolved path %r->%r, user %r->%r not enabled by owner", "map", path, result['PathMapped'], user, result['Owner'])
                     return {'error': 'map-not-enabled'}
                 if result['EnabledByUser'] is not True:
-                    logger.info("Sharing/%s: resolved path %r->%r, user %r->%r not enabled by user", "map", path, result['PathMapped'], user, result['Owner'])
+                    logger.info("sharing/%s: resolved path %r->%r, user %r->%r not enabled by user", "map", path, result['PathMapped'], user, result['Owner'])
                     return {'error': 'map-not-enabled'}
 
-                logger.info("Sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
+                logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "map", path, result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
                 return result
 
             return None
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/map: not active")
+            logger.trace("sharing/map: not active")
             return None
 
     # *** POST API ***
@@ -570,7 +553,7 @@ class BaseSharing:
 
         """
         # initial log prefix
-        api_info = "Sharing/API/POST"
+        api_info = "sharing/API/POST"
 
         if not self._enabled:
             # API is not enabled
@@ -590,8 +573,7 @@ class BaseSharing:
         ShareType_action = path.removeprefix("/.sharing/v1/")
         match = re.search('([a-z]+)/([a-z]+)$', ShareType_action)
         if not match:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/API: ShareType/action not extractable: %r", ShareType_action)
+            logger.trace("sharing/API: ShareType/action not extractable: %r", ShareType_action)
             return httputils.NOT_FOUND
         else:
             ShareType = match.group(1)
@@ -603,8 +585,7 @@ class BaseSharing:
         # check for valid ShareTypes
         if ShareType:
             if ShareType not in SHARE_TYPES:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/API: ShareType not whitelisted: %r", ShareType)
+                logger.trace("sharing/API: ShareType not whitelisted: %r", ShareType)
                 return httputils.NOT_FOUND
 
         # check for enabled ShareTypes
@@ -620,15 +601,13 @@ class BaseSharing:
 
         # check for valid API hooks
         if action not in API_HOOKS_V1:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/API: action not whitelisted: %r", action)
+            logger.trace("sharing/API: action not whitelisted: %r", action)
             return httputils.NOT_FOUND
 
         # append action
         api_info = api_info + "/" + action
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/API: called by authenticated user: %r", user)
+        logger.trace("sharing/API: called by authenticated user: %r", user)
         # read POST data
         try:
             request_body = httputils.read_request_body(self.configuration, environ)
@@ -654,8 +633,7 @@ class BaseSharing:
                     if type(request_data[key]) is not bool:
                         logger.warning(api_info + ": unsupported (non-boolean) " + key + ": " + request_data[key])
                         return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_data[key])
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + " (json): %r", f"{request_data}")
+            logger.trace(api_info + " (json): %r", f"{request_data}")
         elif 'application/x-www-form-urlencoded' in content_type:
             input_format = "form"
             output_format = "plain"  # default
@@ -667,8 +645,7 @@ class BaseSharing:
                     # Properties key value parser
                     properties_dict: dict = {}
                     for entry in request_parsed[key]:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/API: parse property %r", entry)
+                        logger.trace("sharing/API: parse property %r", entry)
                         if entry == "":
                             continue
                         m = re.search('^([^=]+)=([^=]+)$', entry)
@@ -677,8 +654,7 @@ class BaseSharing:
                         token = m.group(1).lstrip('"\'').rstrip('"\'')
                         value = m.group(2).lstrip('"\'').rstrip('"\'')
                         properties_dict[token] = value
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/API: converted Properties from form into dict: %r", properties_dict)
+                    logger.trace("sharing/API: converted Properties from form into dict: %r", properties_dict)
                     request_data[key] = properties_dict
                     if len(request_data[key]) == 0:
                         # empty
@@ -691,11 +667,9 @@ class BaseSharing:
                         return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_parsed[key][0])
                 else:
                     request_data[key] = request_parsed[key][0]
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + " (form): %r", f"{request_data}")
+            logger.trace("" + api_info + " (form): %r", f"{request_data}")
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + ": no supported content data")
+            logger.trace("" + api_info + ": no supported content data")
             return httputils.bad_request("Content-type not supported")
 
         # check for requested output type
@@ -840,12 +814,10 @@ class BaseSharing:
 
         # action: list
         if action == "list":
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + ": start")
+            logger.trace("" + api_info + ": start")
 
             if PathOrToken is not None:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/" + api_info + ": filter: %r", PathOrToken)
+                logger.trace("" + api_info + ": filter: %r", PathOrToken)
 
             if ShareType != "all":
                 result_array = self.database_list_sharing(
@@ -874,8 +846,7 @@ class BaseSharing:
 
         # action: create
         elif action == "create":
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + ": start")
+            logger.trace("" + api_info + ": start")
 
             if PathMapped is None:
                 logger.warning(api_info + ": missing PathMapped")
@@ -955,8 +926,7 @@ class BaseSharing:
                 # v1: create uuid token with 2x 16 bytes + separator = 264 bit with base64 encoding resulting in 56 chars without '=' padding
                 token = "/.token/v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + b"\0" + uuid.uuid4().bytes), 'utf-8') + "/"
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)
+                logger.trace("" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)
 
                 result = self.database_create_sharing(
                         ShareType=ShareType,
@@ -975,8 +945,7 @@ class BaseSharing:
                         Actions=Actions,
                         )
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/" + api_info + ": result=%r", result)
+                logger.trace("" + api_info + ": result=%r", result)
 
             elif ShareType == "map":
                 # check preconditions
@@ -1031,8 +1000,7 @@ class BaseSharing:
                         logger.warning(api_info + ": PathOrToken=%r already exists as real collection for User=%r", PathOrToken, User)
                         return httputils.CONFLICT
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
+                logger.trace("" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
 
                 result = self.database_create_sharing(
                         ShareType=ShareType,
@@ -1054,8 +1022,7 @@ class BaseSharing:
             else:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
                 return httputils.bad_request("Invalid share type")
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + ": result=%r", result)
+            logger.trace("" + api_info + ": result=%r", result)
             # result handling
             if result['status'] == "conflict":
                 return httputils.CONFLICT
@@ -1078,8 +1045,7 @@ class BaseSharing:
 
         # action: update
         elif action == "update":
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + ": start")
+            logger.trace("" + api_info + ": start")
 
             if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -1105,17 +1071,14 @@ class BaseSharing:
                 elif share['Properties'] is not None:
                     # replace properties
                     for prop in share['Properties']:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/" + api_info + ": check for existing property %r", prop)
+                        logger.trace("" + api_info + ": check for existing property %r", prop)
                         if prop not in Properties:
                             # overtake
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/" + api_info + ": overtake property %r", prop)
+                            logger.trace("" + api_info + ": overtake property %r", prop)
                             Properties[prop] = share['Properties'][prop]
                         elif Properties[prop] == '':
                             # unset, do nothing
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/" + api_info + ": clear property %r", prop)
+                            logger.trace("" + api_info + ": clear property %r", prop)
                             del Properties[prop]
 
             if user == share['Owner']:
@@ -1160,8 +1123,7 @@ class BaseSharing:
                     logger.warning(api_info + ": access to %r not allowed for user %r to adjust anything beside: %s", PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
                     return httputils.NOT_ALLOWED
                 if 'Properties' in request_data:
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
+                    logger.trace("sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
                     if self.permit_properties_overlay:
                         if share['Permissions'] is not None and "p" in str(share['Permissions']):
                             logger.warning(api_info + ": %r properties overlay permitted by option, but denied by permission 'p'", PathOrToken)
@@ -1204,8 +1166,7 @@ class BaseSharing:
 
         # action: delete
         elif action == "delete":
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/" + api_info + ": start")
+            logger.trace("" + api_info + ": start")
 
             if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -1260,8 +1221,7 @@ class BaseSharing:
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/API/POST/" + action)
+            logger.trace("sharing/API/POST/" + action)
 
             if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -1338,9 +1298,8 @@ class BaseSharing:
             return httputils.bad_request("Invalid action")
 
         # output handler
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/API/POST output format: %r", output_format)
-            logger.debug("TRACE/sharing/API/POST answer: %r", answer)
+        logger.trace("sharing/API/POST output format: %r", output_format)
+        logger.trace("sharing/API/POST answer: %r", answer)
         if output_format == "csv" or output_format == "plain":
             answer_array = []
             if output_format == "plain":

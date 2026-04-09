@@ -359,16 +359,13 @@
 [logging]
 
 # Threshold for the logger
-# Value: debug | info | warning | error | critical
+# Value: trace | debug | info | notice | warning | error | critical | alert
 #level = info
 
 # Limit content of wrapped text (chars)
 #limit_content = 3000
 
-# do not filter debug messages starting with 'TRACE'
-#trace_on_debug = False
-
-# filter debug messages starting with 'TRACE/<TOKEN>'
+# filter debug messages starting with '<TOKEN>'
 #trace_filter = ""
 
 # Don't include passwords in logs

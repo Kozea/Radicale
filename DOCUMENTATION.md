@@ -1674,17 +1674,20 @@ Default: `internal`
 Set the logging level.
 
 Available levels are:
+* `trace` _(>= 3.7.1)_
 * `debug`
 * `info`
+* `notice` _(>= 3.7.1)_
 * `warning`
 * `error`
 * `critical`
+* `alert` _(>= 3.7.1)_
 
 Default: `warning` _(< 3.2.0)_ / `info` _(>= 3.2.0)_
 
 ##### limit_content
 
-_(> 3.7.0)_
+_(>= 3.7.0)_
 
 Limit content of wrapped text (chars)
 
@@ -1692,7 +1695,7 @@ Default: `3000`
 
 ##### trace_on_debug
 
-_(> 3.5.4)_
+_(> 3.5.4)_ && _(< 3.7.1)_
 
 Do not filter debug messages starting with 'TRACE'
 
@@ -1700,11 +1703,17 @@ Default: `False`
 
 ##### trace_filter
 
-_(> 3.5.4)_
+_(> 3.5.4)_ && _(< 3.7.1)_
 
 Filter debug messages starting with 'TRACE/<TOKEN>'
 
 Prerequisite: `trace_on_debug = True`
+
+_(>= 3.7.1)_
+
+Filter trace messages starting with '<TOKEN>'
+
+Prerequisite: `level = trace`
 
 Default: (empty)
 

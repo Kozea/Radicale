@@ -17,7 +17,6 @@
 
 import csv
 import json
-import logging
 import os
 from typing import Union
 
@@ -97,8 +96,7 @@ class Sharing(sharing.BaseSharing):
                              User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
         # Lookup
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing: lookup ShareType=%r PathOrToken=%r User=%r OnlyEnabled=%s)", ShareType, PathOrToken, User, OnlyEnabled)
+        logger.trace("sharing: lookup ShareType=%r PathOrToken=%r User=%r OnlyEnabled=%s)", ShareType, PathOrToken, User, OnlyEnabled)
 
         index = 0
         found = False
@@ -107,8 +105,7 @@ class Sharing(sharing.BaseSharing):
                 # skip fieldnames
                 pass
             else:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing: check row: %r", row)
+                logger.trace("sharing: check row: %r", row)
                 if row['ShareType'] != ShareType:
                     pass
                 elif row['PathOrToken'] != PathOrToken:
@@ -174,33 +171,27 @@ class Sharing(sharing.BaseSharing):
         result = []
 
         with self._storage.acquire_lock("r", path=self._sharing_db_file):
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
+            logger.trace("sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
 
             for row in self._sharing_cache:
                 if index == 0:
                     # skip fieldnames
                     pass
                 else:
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/list/row: test: %r", row)
+                    logger.trace("sharing/list/row: test: %r", row)
                     if ShareType is not None and row['ShareType'] != ShareType:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/list/row: skip by ShareType")
+                        logger.trace("sharing/list/row: skip by ShareType")
                         pass
                     elif OwnerOrUser is not None and (row['Owner'] != OwnerOrUser and row['User'] != OwnerOrUser):
                         pass
                     elif User is not None and row['User'] != User:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/list/row: skip by User")
+                        logger.trace("sharing/list/row: skip by User")
                         pass
                     elif PathOrToken is not None and row['PathOrToken'] != PathOrToken:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/list/row: skip by PathOrToken")
+                        logger.trace("sharing/list/row: skip by PathOrToken")
                         pass
                     elif PathMapped is not None and row['PathMapped'] != PathMapped:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/list/row: skip by PathMapped")
+                        logger.trace("sharing/list/row: skip by PathMapped")
                         pass
                     elif EnabledByOwner is not None and row['EnabledByOwner'] != EnabledByOwner:
                         pass
@@ -213,8 +204,7 @@ class Sharing(sharing.BaseSharing):
                     elif Conversion is not None and row['Conversion'] != Conversion:
                         pass
                     else:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/sharing/list/row: add : %r", row)
+                        logger.trace("sharing/list/row: add : %r", row)
                         result.append(row)
                 index += 1
             return result
@@ -235,11 +225,9 @@ class Sharing(sharing.BaseSharing):
         row: dict
 
         with self._storage.acquire_lock("w", path=self._sharing_db_file):
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing: ShareType=%r", ShareType)
+            logger.trace("sharing: ShareType=%r", ShareType)
             if ShareType == "token":
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/token/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
+                logger.trace("sharing/token/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
                 # check for duplicate token entry
                 for row in self._sharing_cache:
                     if row['ShareType'] != "token":
@@ -249,8 +237,7 @@ class Sharing(sharing.BaseSharing):
                         logger.error("sharing/token/create: PathOrToken already exists: PathOrToken=%r", PathOrToken)
                         return {"status": "conflict"}
             elif ShareType == "map":
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/map/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
+                logger.trace("sharing/map/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
                 # check for duplicate map entry
                 for row in self._sharing_cache:
                     if row['ShareType'] != "map":
@@ -279,13 +266,11 @@ class Sharing(sharing.BaseSharing):
                    "Actions": Actions,
                    }
 
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/sharing/*/create: add row: %r", row)
+            logger.trace("sharing/*/create: add row: %r", row)
             self._sharing_cache.append(row)
 
             if self._write_csv(self._sharing_db_file):
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/create: write CSV done", ShareType)
+                logger.trace("sharing/%s/create: write CSV done", ShareType)
                 return {"status": "success"}
 
         logger.error("sharing/%s/create: cannot update CSV database", ShareType)
@@ -308,8 +293,7 @@ class Sharing(sharing.BaseSharing):
                                 Actions: Union[dict, None] = None,
                                 ) -> dict:
         """ update sharing """
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
+        logger.trace("sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
 
         with self._storage.acquire_lock("w", path=self._sharing_db_file):
             # lookup token
@@ -329,8 +313,7 @@ class Sharing(sharing.BaseSharing):
                 index += 1
 
             if found:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/update: orig row[%d]=%r", ShareType, index, row)
+                logger.trace("sharing/%s/update: orig row[%d]=%r", ShareType, index, row)
 
                 # CSV: remove+adjust+readd
                 if PathMapped is not None:
@@ -356,12 +339,10 @@ class Sharing(sharing.BaseSharing):
                 # update timestamp
                 self._sharing_cache[index]["TimestampUpdated"] = Timestamp
 
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/update: adj  row[%d]=%r", ShareType, index, self._sharing_cache[index])
+                logger.trace("sharing/%s/update: adj  row[%d]=%r", ShareType, index, self._sharing_cache[index])
 
                 if self._write_csv(self._sharing_db_file):
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing/%s/update: write CSV done", ShareType)
+                    logger.trace("sharing/%s/update: write CSV done", ShareType)
                     return {"status": "success"}
 
                 logger.error("sharing/%s/update: cannot update CSV database", ShareType)
@@ -374,16 +355,14 @@ class Sharing(sharing.BaseSharing):
                                 PathOrToken: str,
                                 User: str) -> dict:
         """ delete sharing """
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
+        logger.trace("sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
         with self._storage.acquire_lock("w", User, path=self._sharing_db_file):
             # lookup token
             found = False
             index = 0
             for row in self._sharing_cache:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/delete: check: %r", ShareType, row)
+                logger.trace("sharing/%s/delete: check: %r", ShareType, row)
                 if index == 0:
                     # skip fieldnames
                     pass
@@ -397,15 +376,11 @@ class Sharing(sharing.BaseSharing):
                 index += 1
 
             if found:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/delete: found index=%d", ShareType, index)
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/sharing/%s/delete: PathOrToken=%r Owner=%r index=%d", ShareType, PathOrToken, row['Owner'], index)
+                logger.trace("sharing/%s/delete: PathOrToken=%r Owner=%r index=%d", ShareType, PathOrToken, row['Owner'], index)
                 self._sharing_cache.pop(index)
 
                 if self._write_csv(self._sharing_db_file):
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("TRACE/sharing_by_token: write CSV done")
+                    logger.trace("sharing/%s/delete: write CSV done", ShareType)
                     return {"status": "success"}
 
                 logger.error("sharing/%s/delete: cannot update CSV database", ShareType)
@@ -440,8 +415,7 @@ class Sharing(sharing.BaseSharing):
                     # convert txt to bool or int
                     if self._lines > 0:
                         for fieldname in row:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/sharing/_load: test fieldname=%r", fieldname)
+                            logger.trace("sharing/_load_csv: test fieldname=%r", fieldname)
                             if fieldname not in sharing.DB_TYPES_V1:
                                 logger.error("sharing database row error, unsupported fieldname found: %r", fieldname)
                                 return False

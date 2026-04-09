@@ -25,7 +25,6 @@
 import contextlib
 import copy
 import datetime
-import logging
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
@@ -157,14 +156,12 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     Read rfc3253-3.6 for info.
 
     """
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
+    logger.trace("REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
 
     share_bday_automap = False
     if share and share['Conversion'] == "bday":
         share_bday_automap = True
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/REPORT/xml_report(1): share=%r", share)
+    logger.trace("REPORT/xml_report(1): share=%r", share)
 
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
@@ -246,8 +243,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         filter_copy = copy.deepcopy(filter_)
 
         if expand is not None:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/REPORT/xml_report: expand")
+            logger.trace("REPORT/xml_report: expand")
             for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
                 if comp_filter.get("name", "").upper() == "VCALENDAR":
                     continue
@@ -276,10 +272,9 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             item_ics.href = item.href
             retrieved_items_vcf_to_ics.append((item_ics, flag))
         retrieved_items = retrieved_items_vcf_to_ics
-        logging.debug("TRACE/REPORT/retrieved_items: %r", retrieved_items)
+        logger.trace("REPORT/retrieved_items: %r", retrieved_items)
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/REPORT/xml_report(2): share=%r", share)
+    logger.trace("REPORT/xml_report(2): share=%r", share)
 
     n_vevents = 0
     while retrieved_items:
@@ -348,16 +343,13 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     n_vevents += n_vev
                     if prop.tag == xmlutils.make_clark("D:getetag"):
                         if n_vev > 0:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/REPORT/xml_report: getetag/expanded element")
+                            logger.trace("REPORT/xml_report: getetag/expanded element")
                             element.text = item.etag
                             found_props.append(element)
                         else:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("TRACE/REPORT/xml_report: getetag/no expanded element")
+                            logger.trace("REPORT/xml_report: getetag/no expanded element")
                     else:
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug("TRACE/REPORT/xml_report: default")
+                        logger.trace("REPORT/xml_report: default")
                         found_props.append(expanded_element)
                 else:
                     if prop.tag == xmlutils.make_clark("D:getetag"):
@@ -736,8 +728,7 @@ def xml_item_response(base_prefix: str, href: str,
 
     response = ET.Element(xmlutils.make_clark("D:response"))
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/REPORT/xml_item_response: found=%s share=%r", found_item, share)
+    logger.trace("REPORT/xml_item_response: found=%s share=%r", found_item, share)
 
     share_bday_automap = False
     if share and share['Conversion'] == "bday":
@@ -745,16 +736,14 @@ def xml_item_response(base_prefix: str, href: str,
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, href)
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("TRACE/REPORT/xml_report: href=%r", href_element.text)
+    logger.trace("REPORT/xml_report: href=%r", href_element.text)
     if share:
         # backmap
         if href_element.text.startswith(share['PathMapped']):
             href_element.text = str(share['PathOrToken']) + href_element.text.removeprefix(share['PathMapped'])
         if share_bday_automap and href_element.text.endswith(".vcf"):
             href_element.text = href_element.text.removesuffix(".vcf") + ".ics"
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/REPORT/xml_report: href=%r (backmapped)", href_element.text)
+        logger.trace("REPORT/xml_report: href=%r (backmapped)", href_element.text)
     response.append(href_element)
 
     if found_item:
@@ -793,8 +782,7 @@ def retrieve_items(
            gets set to ``True``."""
         nonlocal collection_requested
         for hreference in hreferences:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/REPORT/xml_report: hreference=%r", hreference)
+            logger.trace("REPORT/xml_report: hreference=%r", hreference)
             if share:
                 # map back to owner
                 if hreference.startswith(share['PathOrToken']):
@@ -802,8 +790,7 @@ def retrieve_items(
                 if share['Conversion'] == "bday":
                     if hreference.endswith(".ics"):
                         hreference = hreference.removesuffix(".ics") + ".vcf"
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("TRACE/REPORT/xml_report: hreference=%r (backmapped)", hreference)
+                logger.trace("REPORT/xml_report: hreference=%r (backmapped)", hreference)
             try:
                 name = pathutils.name_from_path(hreference, collection)
             except ValueError as e:
@@ -828,8 +815,7 @@ def retrieve_items(
         else:
             yield item, False
     if collection_requested:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/REPORT/retrieve_items: get_filtered")
+        logger.trace("REPORT/retrieve_items: get_filtered")
         yield from collection.get_filtered(filters)
 
 

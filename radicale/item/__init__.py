@@ -27,7 +27,6 @@ Module for address books and calendar entries (see ``Item``).
 import binascii
 import contextlib
 import datetime
-import logging
 import math
 import os
 import re
@@ -506,32 +505,26 @@ class Item:
         self._vobject_item = orig_vobject_item
 
     def convert_vcf_to_ics(self) -> Union["Item", None]:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
-            logger.debug("TRACE/item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
+        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
+        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
         if self.vobject_item.name != "VCARD":
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/item/convert_vcf_to_ics: item is not a VCARD (skip): %r", self.href)
+            logger.trace("item/convert_vcf_to_ics: item is not a VCARD (skip): %r", self.href)
             return None
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/item/convert_vcf_to_ics: item is a VCARD (ok): %r", self.href)
+            logger.trace("item/convert_vcf_to_ics: item is a VCARD (ok): %r", self.href)
         if not hasattr(self.vobject_item, "bday"):
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/item/convert_vcf_to_ics: miss bday (skip): %r", self.href)
+            logger.trace("item/convert_vcf_to_ics: miss bday (skip): %r", self.href)
             return None
         else:
             pass
 
         bday = self.vobject_item.bday
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/item/convert_vcf_to_ics: has bday (ok): %r -> %r", self.href, bday.value)
+        logger.trace("item/convert_vcf_to_ics: has bday (ok): %r -> %r", self.href, bday.value)
 
         pattern = re.compile('^([0-9]{4})-?([0-9]{2})-?([0-9]{2})$')
         match = pattern.match(bday.value)
         if not match:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/item/convert_vcf_to_ics: has unsupported bday: %r -> %r", self.href, bday.value)
+            logger.trace("item/convert_vcf_to_ics: has unsupported bday: %r -> %r", self.href, bday.value)
             return None
         else:
             pass
@@ -550,8 +543,7 @@ class Item:
         elif hasattr(self.vobject_item, "nickname"):
             name = self.vobject_item.nickname.value
         else:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("TRACE/item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
+            logger.trace("item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
             return None
 
         # create VCALENDAR
@@ -612,10 +604,9 @@ class Item:
                 href=href,
                 vobject_item=item_ics)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("TRACE/storage: item generated/vobject: %r", item_ics.serialize())
-            logger.debug("TRACE/storage: item orig     /etag   : %r", self.etag)
-            logger.debug("TRACE/storage: item generated/etag   : %r", item_new.etag)
-            logger.debug("TRACE/storage: item generated/href   : %r", item_new.href)
+        logger.trace("storage: item generated/vobject: %r", item_ics.serialize())
+        logger.trace("storage: item orig     /etag   : %r", self.etag)
+        logger.trace("storage: item generated/etag   : %r", item_new.etag)
+        logger.trace("storage: item generated/href   : %r", item_new.href)
 
         return item_new
