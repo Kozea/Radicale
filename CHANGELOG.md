@@ -4,6 +4,8 @@
 * Fix: share address book collection as birthday calendar not working on non-DEBUG level
 * Extension: share accept now PATH and USER for matching email addresses as well
 * Adjustment: replace logging/trace_on_debug by new log level "trace"
+* Adjustment: sharing/token: adjust default permissions to "rp"
+* Fix: sharing/propfind+proppatch: permission check related to properties
 
 ## 3.7.0
 
