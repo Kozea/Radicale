@@ -5170,7 +5170,7 @@ permissions: RrWw""")
             assert "NICKNAME-C3" in answer
 
             # create map
-            logging.info("\n*** create token with bday conversion -> ok")
+            logging.info("\n*** create token with bday conversion (default permissions) -> ok")
             json_dict = {}
             json_dict['User'] = "owner"
             json_dict['PathMapped'] = path_mapped
@@ -5199,6 +5199,41 @@ permissions: RrWw""")
             assert "D:sync-token" not in response
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection with token -> permission denied")
+            color="#BBBBBB"
+            _, responses = self.proppatch(path=path_shared, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", check=403)
+
+            # update map
+            logging.info("\n*** update token with bday conversion ("r" permissions) -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "r"
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection with token -> ok")
+            color="#BBBBBB"
+            _, responses = self.proppatch(path=path_shared, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", check=207)
 
             # verify content as owner
             logging.info("\n*** GET collection owner -> ok")
