@@ -5199,6 +5199,15 @@ permissions: RrWw""")
             assert "D:sync-token" not in response
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
 
             # execute PROPPATCH color as user
             logging.info("\n*** PROPPATCH color collection with token -> permission denied")
@@ -5221,6 +5230,19 @@ permissions: RrWw""")
             json_dict['Permissions'] = "r"
             json_dict['Conversion'] = "bday"
             _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** PROPFIND item with token -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
 
             # execute PROPPATCH color as user
             logging.info("\n*** PROPPATCH color collection with token -> ok")
