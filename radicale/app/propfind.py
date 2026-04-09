@@ -313,7 +313,7 @@ def xml_propfind_response(
                     ) and not (
                             "p" in share['Permissions'] or
                             ("p" in raw_permissions and "P" not in share['Permissions']) or
-                            (self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
+                            (not self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
                     logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
                     privileges.append("D:write-properties")
             elif write:
