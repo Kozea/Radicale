@@ -1730,32 +1730,38 @@ Allows creation and management of address books and calendars.</p></li>
 <p>Set the logging level.</p>
 <p>Available levels are:</p>
 <ul>
+<li><code>trace</code> <em>(&gt;= 3.7.1)</em></li>
 <li><code>debug</code></li>
 <li><code>info</code></li>
+<li><code>notice</code> <em>(&gt;= 3.7.1)</em></li>
 <li><code>warning</code></li>
 <li><code>error</code></li>
 <li><code>critical</code></li>
+<li><code>alert</code> <em>(&gt;= 3.7.1)</em></li>
 </ul>
 <p>Default: <code>warning</code> <em>(&lt; 3.2.0)</em> /
 <code>info</code> <em>(&gt;= 3.2.0)</em></p>
 </section>
 <section class="level5" id="limit_content">
 <h5>limit_content <a class="headerlink" href="#limit_content">&para;</a></h5>
-<p><em>(&gt; 3.7.0)</em></p>
+<p><em>(&gt;= 3.7.0)</em></p>
 <p>Limit content of wrapped text (chars)</p>
 <p>Default: <code>3000</code></p>
 </section>
 <section class="level5" id="trace_on_debug">
 <h5>trace_on_debug <a class="headerlink" href="#trace_on_debug">&para;</a></h5>
-<p><em>(&gt; 3.5.4)</em></p>
+<p><em>(&gt; 3.5.4)</em> && <em>(&lt; 3.7.1)</em></p>
 <p>Do not filter debug messages starting with 'TRACE'</p>
 <p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="trace_filter">
 <h5>trace_filter <a class="headerlink" href="#trace_filter">&para;</a></h5>
-<p><em>(&gt; 3.5.4)</em></p>
+<p><em>(&gt; 3.5.4)</em> && <em>(&lt; 3.7.1)</em></p>
 <p>Filter debug messages starting with 'TRACE/<token>'</token></p>
 <p>Prerequisite: <code>trace_on_debug = True</code></p>
+<p><em>(&gt;= 3.7.1)</em></p>
+<p>Filter trace messages starting with '<token>'</token></p>
+<p>Prerequisite: <code>level = trace</code></p>
 <p>Default: (empty)</p>
 </section>
 <section class="level5" id="mask_passwords">
