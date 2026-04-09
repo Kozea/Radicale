@@ -359,11 +359,11 @@ Create a share by mapping a collection of an `Owner` to an `User`.
 | - | - | - |
 | PathOrToken | str | mandatory |
 | PathMapped | str | mandatory |
-| Conversion | str | optional(default:none) |
+| Conversion | str | optional (default:none) |
 | User | str | mandatory |
-| Permissions | str | optional(default:r) |
-| Enabled | bool | optional(owner/default:False) |
-| Hidden | bool | optional(owner/default:True) |
+| Permissions | str | optional (default:r) |
+| Enabled | bool | optional (owner/default:False) |
+| Hidden | bool | optional (owner/default:True) |
 | Properties | optional |
 
  * Output: text/plain|application/json
