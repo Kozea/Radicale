@@ -837,7 +837,9 @@ class EmailConfig:
             return False
 
         if self.dryrun is True:
-            logger.warning("Hook 'email': DRY-RUN _send_email / to_addresses=%r", to_addresses)
+            logger.notice("Hook 'email': DRY-RUN _send_email / to_addresses=%r", to_addresses)
+            logger.notice("Hook 'email': DRY-RUN _send_email / subject=%r", subject)
+            logger.notice("Hook 'email': DRY-RUN _send_email / body=%r", body)
             return True
 
         # Add headers

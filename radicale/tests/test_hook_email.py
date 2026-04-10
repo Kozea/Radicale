@@ -94,7 +94,7 @@ permissions: RrWw""")
                       f"DTEND;VALUE=DATE:{new_date}", event)
 
     def test_add_event_with_future_end_date(self, caplog) -> None:
-        caplog.set_level(logging.WARNING)
+        caplog.set_level(logging.INFO)
         """Add an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -112,7 +112,7 @@ permissions: RrWw""")
         # Should have a log saying the notification item was received
         assert len([log for log in logs if "received notification_item: {'type': 'upsert'," in log]) == 1
         # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
-        assert len([log for log in logs if "skipping notification for event: event1" in log]) == 0
+        assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
 
     def test_add_event_with_past_end_date(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
@@ -210,3 +210,55 @@ permissions: RrWw""")
         assert len([log for log in logs if "received notification_item: {'type': 'delete'," in log]) == 1
         # Should have a log saying that no email is sent due to past end date
         assert len([log for log in logs if "Event end time is in the past, skipping notification for event: event1" in log]) == 1
+
+    def test_add_event_with_future_mass1_end_date(self, caplog) -> None:
+        self.configure({"hook": {"type": "email",
+                                 "mass_email": "True",
+                                 "dryrun": "True"}})
+
+        caplog.set_level(logging.INFO)
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event = self._replace_end_date_in_event(event, self._future_date_timestamp())
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'upsert'," in log]) == 1
+        # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
+        assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
+        assert len([log for log in logs if "Hello everyone" in log]) == 1
+
+    def test_add_event_with_future_mass2_end_date(self, caplog) -> None:
+        self.configure({"hook": {"type": "email",
+                                 "mass_email": "True",
+                                 "dryrun": "True"}})
+
+        caplog.set_level(logging.INFO)
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1a1.ics")
+        event = self._replace_end_date_in_event(event, self._future_date_timestamp())
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'upsert'," in log]) == 1
+        # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
+        assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
+        assert len([log for log in logs if "Hello everyone" in log]) == 0
