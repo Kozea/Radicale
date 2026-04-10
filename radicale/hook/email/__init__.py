@@ -1013,8 +1013,9 @@ class Hook(BaseHook):
             if not previous_item_str:
                 # Dealing with a completely new event, no previous content to compare against.
                 # Email every attendee about the new event.
-                logger.debug("New event detected, sending notifications to all attendees.")
-                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                logger.info("New event detected, sending notifications to all attendees: %s",
+                            email_event.event.uid)
+                email_success = self.email_config.send_added_email(
                     attendees=email_event.event.attendees,
                     event=email_event
                 )
