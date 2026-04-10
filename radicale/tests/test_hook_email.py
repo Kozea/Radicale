@@ -70,14 +70,28 @@ permissions: RrWw""")
         future_date = datetime.now() + timedelta(days=1)
         return future_date.strftime("%Y%m%dT%H%M%S")
 
+    def _future_date(self) -> str:
+        """Return a date for a future date."""
+        future_date = datetime.now() + timedelta(days=1)
+        return future_date.strftime("%Y%m%d")
+
     def _past_date_timestamp(self) -> str:
         past_date = datetime.now() - timedelta(days=1)
         return past_date.strftime("%Y%m%dT%H%M%S")
+
+    def _past_date(self) -> str:
+        past_date = datetime.now() - timedelta(days=1)
+        return past_date.strftime("%Y%m%d")
 
     def _replace_end_date_in_event(self, event: str, new_date: str) -> str:
         """Replace the end date in an event string."""
         return re.sub(r"DTEND;TZID=Europe/Paris:\d{8}T\d{6}",
                       f"DTEND;TZID=Europe/Paris:{new_date}", event)
+
+    def _replace_end_onlydate_in_event(self, event: str, new_date: str) -> str:
+        """Replace the end date in an event string."""
+        return re.sub(r"DTEND;VALUE=DATE:\d{8}",
+                      f"DTEND;VALUE=DATE:{new_date}", event)
 
     def test_add_event_with_future_end_date(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
@@ -146,6 +160,44 @@ permissions: RrWw""")
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         event = self._replace_end_date_in_event(event, self._past_date_timestamp())
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, responses = self.delete(path)
+        assert responses[path] == 200
+        _, answer = self.get("/calendar.ics/")
+        assert "VEVENT" not in answer
+
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'delete'," in log]) == 1
+        # Should have a log saying that no email is sent due to past end date
+        assert len([log for log in logs if "Event end time is in the past, skipping notification for event: event1" in log]) == 1
+
+    def test_delete_event_with_future_end_onlydate(self, caplog) -> None:
+        caplog.set_level(logging.INFO)
+        """Delete an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1917_1.ics")
+        event = self._replace_end_onlydate_in_event(event, self._future_date())
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, responses = self.delete(path)
+        assert responses[path] == 200
+        _, answer = self.get("/calendar.ics/")
+        assert "VEVENT" not in answer
+
+        logs = caplog.messages
+        # Should have a log saying the notification item was received
+        assert len([log for log in logs if "received notification_item: {'type': 'delete'," in log]) == 1
+        # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
+        assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
+
+    def test_delete_event_with_past_onlyend_date(self, caplog) -> None:
+        caplog.set_level(logging.WARNING)
+        """Delete an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue1917_1.ics")
+        event = self._replace_end_onlydate_in_event(event, self._past_date())
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
         _, responses = self.delete(path)
