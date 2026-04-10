@@ -136,7 +136,7 @@ permissions: RrWw""")
         assert len([log for log in logs if "Event end time is in the past, skipping notification for event: event1" in log]) == 1
 
     def test_delete_event_with_future_end_date(self, caplog) -> None:
-        caplog.set_level(logging.WARNING)
+        caplog.set_level(logging.INFO)
         """Delete an event."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
@@ -152,7 +152,7 @@ permissions: RrWw""")
         # Should have a log saying the notification item was received
         assert len([log for log in logs if "received notification_item: {'type': 'delete'," in log]) == 1
         # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
-        assert len([log for log in logs if "skipping notification for event: event1" in log]) == 0
+        assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
 
     def test_delete_event_with_past_end_date(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
