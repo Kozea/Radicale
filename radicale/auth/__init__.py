@@ -275,8 +275,8 @@ class BaseAuth:
                 logger.debug("Login failed cache cleanup start (entries: %d)", cache_failed_cleanup_entries)
                 if cache_failed_cleanup_entries > 0:
                     for digest in cache_failed_cleanup:
-                        (login, age_failed) = cache_failed_cleanup[digest]
-                        logger.debug("Login failed cache entry for user+password expired: '%s' (age: %d > %d sec)", login_cache, age_failed, self._cache_failed_logins_expiry)
+                        (login_expired, age_failed) = cache_failed_cleanup[digest]
+                        logger.debug("Login failed cache entry for user+password expired: '%s' (age: %d > %d sec)", login_expired, age_failed, self._cache_failed_logins_expiry)
                         del self._cache_failed[digest]
                 self._lock.release()
                 logger.debug("Login failed cache investigation finished")
