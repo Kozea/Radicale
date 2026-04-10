@@ -895,7 +895,7 @@ def _read_event(vobject_data: str) -> EmailEvent:
     event: Union[Event, None] = cal.event
 
     return EmailEvent(
-            event=event,  # type: ignore # TODO: Argument "event" to "EmailEvent" has incompatible type "Event | None"; expected "Event"
+        event=event,  # type: ignore # TODO: Argument "event" to "EmailEvent" has incompatible type "Event | None"; expected "Event"
         ics_content=vobject_data,
         ics_file_name="event.ics"
     )
