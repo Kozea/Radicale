@@ -140,6 +140,9 @@ export class CreateEditShareScene {
             let enabled_by_owner = is_conversion ? true : this._enabled_checkbox.checked;
             let hidden_by_owner = is_conversion ? false : this._hidden_checkbox.checked;
             let permissions = is_conversion ? "r" : (this._permissions_rw_radio.checked ? "rw" : "r");
+            if (this._shareType === "token") {
+                permissions = permissions + "p";
+            }
             /** @type {string} */ let conversion_value = conversion;
 
             /** @type {Object<string, string>} */ let properties = {};
