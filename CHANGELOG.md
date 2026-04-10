@@ -6,6 +6,7 @@
 * Adjustment: replace logging/trace_on_debug by new log level "trace"
 * Adjustment: sharing/token: adjust default permissions to "rp"
 * Fix: sharing/propfind+proppatch: permission check related to properties
+* Fix: hook/email: add support for date-only events
 
 ## 3.7.0
 
