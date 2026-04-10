@@ -21,13 +21,13 @@ import json
 import re
 import smtplib
 import ssl
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import vobject
 
@@ -991,9 +991,14 @@ class Hook(BaseHook):
             email_event_end_time = email_event_event.datetime_end  # type: ignore
             # Skip notification if the event end time is more than 1 minute in the past.
             if email_event_end_time and email_event_end_time.time:
-                event_end = email_event_end_time.time  # type: ignore
-                now = datetime.now(
-                    event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
+                event_end = email_event_end_time.time
+                now: Union[datetime, date]
+                if hasattr(event_end, "tzinfo"):
+                    now = datetime.now(
+                        event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
+                else:
+                    now = date.today()
+                logger.trace("event_end=%r now=%r", event_end, now)
                 if event_end < (now - timedelta(minutes=1)):
                     logger.warning("Event end time is in the past, skipping notification for event: %s",
                                    email_event_event.uid)
