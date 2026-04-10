@@ -772,10 +772,18 @@ class EmailConfig:
         """
         if self.send_mass_emails:
             # If mass emails are enabled, we send one email to all attendees
-            body = template.build_message(event=event, from_email=self.from_email,
-                                          mass_email=self.send_mass_emails, attendee=None)
-            subject = template.build_subject(event=event, from_email=self.from_email,
-                                             mass_email=self.send_mass_emails, attendee=None)
+            if len(attendees) == 1:
+                # only one attendee
+                logger.trace("send_mass_emails=True but only 1 attendee, fallback to non-mass")
+                body = template.build_message(event=event, from_email=self.from_email,
+                                              mass_email=False, attendee=attendees[0])
+                subject = template.build_subject(event=event, from_email=self.from_email,
+                                                 mass_email=False, attendee=attendees[0])
+            else:
+                body = template.build_message(event=event, from_email=self.from_email,
+                                              mass_email=self.send_mass_emails, attendee=None)
+                subject = template.build_subject(event=event, from_email=self.from_email,
+                                                 mass_email=self.send_mass_emails, attendee=None)
 
             return self._send_email(subject=subject, body=body, attendees=attendees, ics_attachment=ics_attachment)
         else:
