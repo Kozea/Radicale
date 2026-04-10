@@ -8,6 +8,7 @@
 * Fix: sharing/propfind+proppatch: permission check related to properties
 * Fix: hook/email: add support for date-only events
 * Feature: hook/email: in case of mass-email was enabled but only one attendee fall-back to non-mass-email
+* Fix: prevent login variable overwrite during failed cache cleanup
 
 ## 3.7.0
 
