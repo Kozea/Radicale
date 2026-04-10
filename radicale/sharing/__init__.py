@@ -880,9 +880,9 @@ class BaseSharing:
             else:
                 Permissions = str(Permissions)
                 if Conversion == "bday":
-                    # bday is read-only
+                    # bday is read-only and not supporting "Ee"
                     for permission in Permissions:
-                        if permission not in "rPpEe":
+                        if permission not in "rPp":
                             logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
                             return httputils.METHOD_NOT_ALLOWED
 
@@ -1080,6 +1080,15 @@ class BaseSharing:
                             # unset, do nothing
                             logger.trace("" + api_info + ": clear property %r", prop)
                             del Properties[prop]
+
+            if Permissions is not None and share['Conversion'] is not None:
+                Permissions = str(Permissions)
+                if share['Conversion'] == "bday":
+                    # bday is read-only and not supporting "Ee"
+                    for permission in Permissions:
+                        if permission not in "rPp":
+                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
+                            return httputils.METHOD_NOT_ALLOWED
 
             if user == share['Owner']:
                 if PathMapped is not None:
