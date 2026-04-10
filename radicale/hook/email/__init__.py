@@ -1025,12 +1025,15 @@ class Hook(BaseHook):
                 return
 
             # Dealing with an update to an existing event, compare new and previous content.
-            new_event: Event = read_ics_event(contents=new_item_str)  # type: ignore
+            new_event = read_ics_event(contents=new_item_str)
+            if new_event is None:
+                return
+
             previous_event: Optional[Event] = read_ics_event(contents=previous_item_str)
             if not previous_event:
                 # If we cannot parse the previous event for some reason, simply treat it as a new event.
                 logger.warning("Previous event content could not be parsed, treating as a new event.")
-                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                email_success = self.email_config.send_added_email(
                     attendees=email_event.event.attendees,
                     event=email_event
                 )
