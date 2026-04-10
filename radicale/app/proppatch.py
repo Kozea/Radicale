@@ -124,7 +124,7 @@ class ApplicationPartProppatch(ApplicationBase):
                     ) and not (
                             "p" in share['Permissions'] or
                             ("p" in raw_permissions and "P" not in share['Permissions']) or
-                            (self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
+                            (not self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
                     logger.info("PROPPATCH request on shared %r: write-access", path_orig)
                     if permissions_filter is not None and "e" in permissions_filter:
                         logger.info("PROPPATCH request on shared %r: write-access, overlay enforced, but disabled by share permission 'e'", path_orig)

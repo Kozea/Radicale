@@ -5134,6 +5134,7 @@ permissions: RrWw""")
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
+            self.configure({"sharing": {"permit_properties_overlay": "True"}})
 
             path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
             self.create_addressbook(path_mapped, login="owner:ownerpw")
@@ -5170,7 +5171,7 @@ permissions: RrWw""")
             assert "NICKNAME-C3" in answer
 
             # create map
-            logging.info("\n*** create token with bday conversion -> ok")
+            logging.info("\n*** create token with bday conversion (default permissions) -> ok")
             json_dict = {}
             json_dict['User'] = "owner"
             json_dict['PathMapped'] = path_mapped
@@ -5191,15 +5192,6 @@ permissions: RrWw""")
             assert "Test-FN-C3 (BDAY)" in answer
             assert "Test-FN (BDAY)" in answer
 
-            # check PROPFIND item with token
-            logging.info("\n*** PROPFIND item with token -> calendar")
-            response = self._propfind_allprop(path_shared)
-            logging.debug("response: %r", response)
-            assert "CR:supported-address-data" not in response
-            assert "D:sync-token" not in response
-            assert "C:supported-calendar-component-set" in response
-            assert "D:current-user-privilege-set" in response
-
             # verify content as owner
             logging.info("\n*** GET collection owner -> ok")
             _, headers, answer = self.request("GET", path_shared)
@@ -5209,7 +5201,7 @@ permissions: RrWw""")
             assert 'Content-Disposition' in headers
             assert 'Calendar.ics' in headers['Content-Disposition']
 
-            # create map
+            # create map of ics with conversion -> fail
             logging.info("\n*** create token with bday conversion but unsupported permissions -> fail")
             json_dict = {}
             json_dict['User'] = "owner"
@@ -5219,6 +5211,157 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             json_dict['Conversion'] = "bday"
             _, headers, answer = self._sharing_api_json("token", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+
+            # check PROPFIND item with token
+            logging.info("\n*** PROPFIND item with token -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection with token -> permission denied")
+            color = "#BBBBBB"
+            _, responses = self.proppatch(path=path_shared, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", check=403)
+
+            # update map
+            logging.info("\n*** update token with bday conversion ("r" permissions) -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "r"
+            _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** PROPFIND item with token -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection with token -> ok")
+            color = "#BBBBBB"
+            _, responses = self.proppatch(path=path_shared, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", check=207)
+
+            self.configure({"sharing": {"permit_properties_overlay": "False"}})
+
+            logging.info("\n*** PROPFIND item with token (r) -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection with token -> ok")
+            color = "#BBBBBB"
+            _, responses = self.proppatch(path=path_shared, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", check=403)
+
+            # update map to "rP"
+            logging.info("\n*** update token with bday conversion ('rP' permissions) -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "rP"
+            _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** PROPFIND item with token -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
+
+            # execute PROPPATCH color as user
+            logging.info("\n*** PROPPATCH color collection with token -> ok")
+            color = "#BBBBBB"
+            _, responses = self.proppatch(path=path_shared, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", check=207)
+
+            # update map to "rPe"
+            logging.info("\n*** update token with bday conversion ('rPe' permissions) -> not supported")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "rPe"
+            _, headers, answer = self._sharing_api_json("token", "update", check=405, login="owner:ownerpw", json_dict=json_dict)
+
+            # update map to "rPE"
+            logging.info("\n*** update token with bday conversion ('rPE' permissions) -> not supported")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "rPE"
+            _, headers, answer = self._sharing_api_json("token", "update", check=405, login="owner:ownerpw", json_dict=json_dict)
+
+            # update map Conversion
+            logging.info("\n*** update token remove Conversion -> not supported")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Conversion'] = ""
+            _, headers, answer = self._sharing_api_json("token", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
     def test_sharing_api_token_ics_bday(self) -> None:
         """share-by-token ics with bday conversion (has to fail)."""
