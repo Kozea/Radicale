@@ -21,13 +21,13 @@ import json
 import re
 import smtplib
 import ssl
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import vobject
 
@@ -296,7 +296,7 @@ class VComponent:
             return [None]
         if not isinstance(sub_vobjects, (list, tuple)):
             sub_vobjects = [sub_vobjects]
-        return ([_class(vobject_item=so) for so in sub_vobjects if  # type: ignore
+        return ([_class(vobject_item=so) for so in sub_vobjects if  # type: ignore # TODO: Missing positional argument "component_type" in call to "VComponent"
                  isinstance(so, vobject.base.Component)]
                 or [None])
 
@@ -444,12 +444,12 @@ class Timezone(VComponent):
     @property
     def standard(self) -> Optional[StandardTimezone]:
         """Return the STANDARD subcomponent if it exists."""
-        return self._get_sub_vobjects("standard", StandardTimezone)[0]  # type: ignore
+        return self._get_sub_vobjects("standard", StandardTimezone)[0]  # type: ignore # TODO: got "VComponent | None", expected "StandardTimezone | None"
 
     @property
     def daylight(self) -> Optional[DaylightTimezone]:
         """Return the DAYLIGHT subcomponent if it exists."""
-        return self._get_sub_vobjects("daylight", DaylightTimezone)[0]  # type: ignore
+        return self._get_sub_vobjects("daylight", DaylightTimezone)[0]  # type: ignore # TODO: got "VComponent | None", expected "DaylightTimezone | None"
 
 
 class Event(VComponent):
@@ -513,7 +513,7 @@ class Event(VComponent):
     @property
     def alarms(self) -> List[Alarm]:
         """Return a list of VALARM items in the event."""
-        return self._get_sub_vobjects("valarm", Alarm)  # type: ignore # Can be multiple
+        return self._get_sub_vobjects("valarm", Alarm)  # type: ignore # Can be multiple # TODO: got "list[VComponent | None]", expected "list[Alarm]"
 
     @property
     def attendees(self) -> List[Attendee]:
@@ -541,14 +541,14 @@ class Calendar(VComponent):
     @property
     def event(self) -> Optional[Event]:
         """Return the VEVENT item in the calendar."""
-        return self._get_sub_vobjects("vevent", Event)[0]  # type: ignore
+        return self._get_sub_vobjects("vevent", Event)[0]  # type: ignore # TODO: got "VComponent | None", expected "Event | None"
 
     # TODO: Add VTODO and VJOURNAL support if needed
 
     @property
     def timezone(self) -> Optional[Timezone]:
         """Return the VTIMEZONE item in the calendar."""
-        return self._get_sub_vobjects("vtimezone", Timezone)[0]  # type: ignore
+        return self._get_sub_vobjects("vtimezone", Timezone)[0]  # type: ignore # TODO: got "VComponent | None", expected "Timezone | None"
 
 
 class EmailEvent:
@@ -637,19 +637,20 @@ class MessageTemplate:
         :param attendee: The specific attendee to include in the message, if not a mass email.
         :return: The formatted message body.
         """
+        attendee_name: Union[str, None]
         if mass_email:
             # If this is a mass email, we do not use individual attendee names
             attendee_name = "everyone"
         else:
             assert attendee is not None, "Attendee must be provided for non-mass emails"
-            attendee_name = attendee.name if attendee else "Unknown Name"  # type: ignore
+            attendee_name = attendee.name if attendee else "Unknown Name"
 
         context = {
             "attendee_name": attendee_name,
             "from_email": from_email,
             "organizer_name": event.event.organizer or "Unknown Organizer",
             "event_title": event.event.summary or "No Title",
-            "event_start_time": event.event.datetime_start.time_string(),  # type: ignore
+            "event_start_time": event.event.datetime_start.time_string() if event.event.datetime_start else "No Start Time",
             "event_end_time": event.event.datetime_end.time_string() if event.event.datetime_end else "No End Time",
             "event_location": event.event.location or "No Location Specified",
         }
@@ -666,19 +667,20 @@ class MessageTemplate:
         :param attendee: The specific attendee to include in the message, if not a mass email.
         :return: The formatted message subject.
         """
+        attendee_name: Union[str, None]
         if mass_email:
             # If this is a mass email, we do not use individual attendee names
             attendee_name = "everyone"
         else:
             assert attendee is not None, "Attendee must be provided for non-mass emails"
-            attendee_name = attendee.name if attendee else "Unknown Name"  # type: ignore
+            attendee_name = attendee.name if attendee else "Unknown Name"
 
         context = {
             "attendee_name": attendee_name,
             "from_email": from_email,
             "organizer_name": event.event.organizer or "Unknown Organizer",
             "event_title": event.event.summary or "No Title",
-            "event_start_time": event.event.datetime_start.time_string(),  # type: ignore
+            "event_start_time": event.event.datetime_start.time_string() if event.event.datetime_start else "No Start Time",
             "event_end_time": event.event.datetime_end.time_string() if event.event.datetime_end else "No End Time",
             "event_location": event.event.location or "No Location Specified",
         }
@@ -770,10 +772,18 @@ class EmailConfig:
         """
         if self.send_mass_emails:
             # If mass emails are enabled, we send one email to all attendees
-            body = template.build_message(event=event, from_email=self.from_email,
-                                          mass_email=self.send_mass_emails, attendee=None)
-            subject = template.build_subject(event=event, from_email=self.from_email,
-                                             mass_email=self.send_mass_emails, attendee=None)
+            if len(attendees) == 1:
+                # only one attendee
+                logger.trace("send_mass_emails=True but only 1 attendee, fallback to non-mass")
+                body = template.build_message(event=event, from_email=self.from_email,
+                                              mass_email=False, attendee=attendees[0])
+                subject = template.build_subject(event=event, from_email=self.from_email,
+                                                 mass_email=False, attendee=attendees[0])
+            else:
+                body = template.build_message(event=event, from_email=self.from_email,
+                                              mass_email=self.send_mass_emails, attendee=None)
+                subject = template.build_subject(event=event, from_email=self.from_email,
+                                                 mass_email=self.send_mass_emails, attendee=None)
 
             return self._send_email(subject=subject, body=body, attendees=attendees, ics_attachment=ics_attachment)
         else:
@@ -827,7 +837,9 @@ class EmailConfig:
             return False
 
         if self.dryrun is True:
-            logger.warning("Hook 'email': DRY-RUN _send_email / to_addresses=%r", to_addresses)
+            logger.notice("Hook 'email': DRY-RUN _send_email / to_addresses=%r", to_addresses)
+            logger.notice("Hook 'email': DRY-RUN _send_email / subject=%r", subject)
+            logger.notice("Hook 'email': DRY-RUN _send_email / body=%r", body)
             return True
 
         # Add headers
@@ -890,10 +902,10 @@ def _read_event(vobject_data: str) -> EmailEvent:
     """
     v_cal: vobject.base.Component = vobject.readOne(vobject_data)
     cal: Calendar = Calendar(vobject_item=v_cal)
-    event: Event = cal.event  # type: ignore
+    event: Union[Event, None] = cal.event
 
     return EmailEvent(
-        event=event,
+        event=event,  # type: ignore # TODO: Argument "event" to "EmailEvent" has incompatible type "Event | None"; expected "Event"
         ics_content=vobject_data,
         ics_file_name="event.ics"
     )
@@ -955,6 +967,10 @@ class Hook(BaseHook):
         :type notification_item: HookNotificationItem
         :return: None
         """
+        email_success: bool
+        email_event: EmailEvent
+        new_event: Union[Event, None]
+
         if self.email_config.dryrun:
             logger.warning("Hook 'email': DRY-RUN received notification_item: %r", vars(notification_item))
         else:
@@ -972,7 +988,7 @@ class Hook(BaseHook):
         elif notification_type == HookNotificationItemTypes.UPSERT:
             # Handle upsert notifications
 
-            new_item_str: str = notification_item.new_content  # type: ignore # A serialized vobject.base.Component
+            new_item_str: str = notification_item.new_content  # A serialized vobject.base.Component
             previous_item_str: Optional[str] = notification_item.old_content
 
             if not ics_contents_contains_event(contents=new_item_str):
@@ -980,20 +996,25 @@ class Hook(BaseHook):
                 logger.debug("No event found in the ICS file, skipping notification.")
                 return
 
-            email_event: EmailEvent = _read_event(vobject_data=new_item_str)  # type: ignore
+            email_event = _read_event(vobject_data=new_item_str)
             if not email_event:
                 logger.error("Failed to read event from new content: %s", new_item_str)
                 return
-            email_event_event = email_event.event  # type: ignore
+            email_event_event = email_event.event
             if not email_event_event:
                 logger.error("Event could not be parsed from the new content: %s", new_item_str)
                 return
-            email_event_end_time = email_event_event.datetime_end  # type: ignore
+            email_event_end_time = email_event_event.datetime_end
             # Skip notification if the event end time is more than 1 minute in the past.
             if email_event_end_time and email_event_end_time.time:
-                event_end = email_event_end_time.time  # type: ignore
-                now = datetime.now(
-                    event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
+                event_end = email_event_end_time.time
+                now: Union[datetime, date]
+                if hasattr(event_end, "tzinfo"):
+                    now = datetime.now(
+                        event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
+                else:
+                    now = date.today()
+                logger.trace("event_end=%r now=%r", event_end, now)
                 if event_end < (now - timedelta(minutes=1)):
                     logger.warning("Event end time is in the past, skipping notification for event: %s",
                                    email_event_event.uid)
@@ -1002,8 +1023,9 @@ class Hook(BaseHook):
             if not previous_item_str:
                 # Dealing with a completely new event, no previous content to compare against.
                 # Email every attendee about the new event.
-                logger.debug("New event detected, sending notifications to all attendees.")
-                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                logger.info("New event detected, sending notifications to all attendees: %s",
+                            email_event.event.uid)
+                email_success = self.email_config.send_added_email(
                     attendees=email_event.event.attendees,
                     event=email_event
                 )
@@ -1013,12 +1035,15 @@ class Hook(BaseHook):
                 return
 
             # Dealing with an update to an existing event, compare new and previous content.
-            new_event: Event = read_ics_event(contents=new_item_str)  # type: ignore
+            new_event = read_ics_event(contents=new_item_str)
+            if new_event is None:
+                return
+
             previous_event: Optional[Event] = read_ics_event(contents=previous_item_str)
             if not previous_event:
                 # If we cannot parse the previous event for some reason, simply treat it as a new event.
                 logger.warning("Previous event content could not be parsed, treating as a new event.")
-                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                email_success = self.email_config.send_added_email(
                     attendees=email_event.event.attendees,
                     event=email_event
                 )
@@ -1033,7 +1058,7 @@ class Hook(BaseHook):
 
             # Notify added attendees as "event created"
             if added_attendees:
-                email_success: bool = self.email_config.send_added_email(  # type: ignore
+                email_success = self.email_config.send_added_email(
                     attendees=added_attendees,
                     event=email_event
                 )
@@ -1043,7 +1068,7 @@ class Hook(BaseHook):
 
             # Notify removed attendees as "event deleted"
             if removed_attendees:
-                email_success: bool = self.email_config.send_deleted_email(  # type: ignore
+                email_success = self.email_config.send_deleted_email(
                     attendees=removed_attendees,
                     event=email_event
                 )
@@ -1054,7 +1079,7 @@ class Hook(BaseHook):
             # Notify unaltered attendees as "event updated" if details other than attendees have changed
             if unaltered_attendees and event_details_other_than_attendees_changed(original_event=previous_event,
                                                                                   new_event=new_event):
-                email_success: bool = self.email_config.send_updated_email(  # type: ignore
+                email_success = self.email_config.send_updated_email(
                     attendees=unaltered_attendees,
                     event=email_event
                 )
@@ -1070,16 +1095,16 @@ class Hook(BaseHook):
         elif notification_type == HookNotificationItemTypes.DELETE:
             # Handle delete notifications
 
-            deleted_item_str: str = notification_item.old_content  # type: ignore # A serialized vobject.base.Component
+            deleted_item_str: str = notification_item.old_content  # A serialized vobject.base.Component
 
             if not ics_contents_contains_event(contents=deleted_item_str):
                 # If the ICS file does not contain an event, we do not send any notifications.
                 logger.debug("No event found in the ICS file, skipping notification.")
                 return
 
-            email_event: EmailEvent = _read_event(vobject_data=deleted_item_str)  # type: ignore
+            email_event = _read_event(vobject_data=deleted_item_str)
 
-            email_success: bool = self.email_config.send_deleted_email(  # type: ignore
+            email_success = self.email_config.send_deleted_email(
                 attendees=email_event.event.attendees,
                 event=email_event
             )
