@@ -342,7 +342,7 @@
 
 # Default permissions for token-based sharing
 #   Supported: rwEePp
-#default_permissions_create_token = r
+#default_permissions_create_token = rp
 
 # Default permissions for map-based sharing
 #   Supported: rwEePp
