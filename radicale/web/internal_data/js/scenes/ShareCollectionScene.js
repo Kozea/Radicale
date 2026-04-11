@@ -24,7 +24,7 @@ import {
   delete_share_by_token,
   reload_sharing_list,
 } from "../api/sharing.js";
-import { Collection } from "../models/collection.js";
+import { Collection, Permission } from "../models/collection.js";
 
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
@@ -88,8 +88,8 @@ export class ShareCollectionScene {
     });
     this._cancel_btn.onclick = () => this._oncancel();
 
-    let can_share_by_token = this._collection.permissions && this._collection.permissions.includes("RADICALE:share-token");
-    let can_share_by_map = this._collection.permissions && this._collection.permissions.includes("RADICALE:share-map");
+    let can_share_by_token = this._collection.has_permission(Permission.SHARE_TOKEN);
+    let can_share_by_map = this._collection.has_permission(Permission.SHARE_MAP);
 
     if (can_share_by_token) {
       if (this._share_by_token_btn) {
