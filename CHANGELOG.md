@@ -10,7 +10,6 @@
 * Feature: hook/email: in case of mass-email was enabled but only one attendee fall-back to non-mass-email
 * Fix: prevent login variable overwrite during failed cache cleanup
 * Fix: performance improvement of `path_to_filesystem()` in 3.7.0 caused unexpected issue in case of softlinks are used
-* Improve: hook preparation (check whether enabled, early skip if not VCALENDAR)
 
 ## 3.7.0
 
@@ -29,6 +28,7 @@
 * Add: [logging] limit_content option
 * Add: [headers] Content-Security-Policy is now set to be strict on new configs
 * Improve: [server] max_resource_size is now also checked on storage discover+get to avoid issues with items stored outside using PUT
+* Improve: hook preparation (check whether enabled, early skip if not VCALENDAR)
 
 ## 3.6.1
 
