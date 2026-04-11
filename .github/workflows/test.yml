@@ -1,16 +1,29 @@
 name: Test
-on: [push, pull_request]
-  paths-ignore:
-    - 'docs/**'
-    - '**.md'
-    - 'radicale/web/README.md'
-    - 'radicale/web/internal_data/css/icons/credits.md'
-    - 'Dockerfile'
-    - 'Dockerfile.dev'
-    - 'config'
-    - 'rights'
-    - 'contrib/**'
-    - 'compose.yaml'
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'radicale/web/README.md'
+      - 'radicale/web/internal_data/css/icons/credits.md'
+      - 'Dockerfile'
+      - 'Dockerfile.dev'
+      - 'config'
+      - 'rights'
+      - 'contrib/**'
+      - 'compose.yaml'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'radicale/web/README.md'
+      - 'radicale/web/internal_data/css/icons/credits.md'
+      - 'Dockerfile'
+      - 'Dockerfile.dev'
+      - 'config'
+      - 'rights'
+      - 'contrib/**'
+      - 'compose.yaml'
 
 jobs:
 
