@@ -10,6 +10,7 @@
 * Feature: hook/email: in case of mass-email was enabled but only one attendee fall-back to non-mass-email
 * Fix: prevent login variable overwrite during failed cache cleanup
 * Fix: performance improvement of `path_to_filesystem()` in 3.7.0 caused unexpected issue in case of softlinks are used
+* Improve: hook preparation (check whether enabled, early skip if not VCALENDAR)
 
 ## 3.7.0
 
