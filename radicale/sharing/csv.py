@@ -46,23 +46,23 @@ class Sharing(sharing.BaseSharing):
             logger.info("sharing database filename: %r", sharing_db_file)
 
         if not os.path.exists(folder_db):
-            logger.warning("sharing database folder is not existing: %r (create now)", folder_db)
+            logger.notice("sharing database folder is not existing: %r (create now)", folder_db)
             try:
                 os.mkdir(folder_db)
             except Exception as e:
                 logger.error("sharing database folder cannot be created (check permissions): %r (%r)", folder_db, e)
                 return False
-            logger.info("sharing database folder successfully created: %r", folder_db)
+            logger.notice("sharing database folder successfully created: %r", folder_db)
 
         if not os.path.exists(sharing_db_file):
-            logger.warning("sharing database is not existing: %r", sharing_db_file)
+            logger.notice("sharing database is not existing: %r", sharing_db_file)
             try:
                 if self._create_empty_csv(sharing_db_file) is not True:
                     raise
             except Exception as e:
                 logger.error("sharing database (empty) cannot be created (check permissions): %r (%r)", sharing_db_file, e)
                 return False
-            logger.info("sharing database (empty) successfully created: %r", sharing_db_file)
+            logger.notice("sharing database (empty) successfully created: %r", sharing_db_file)
         else:
             logger.info("sharing database exists: %r", sharing_db_file)
 

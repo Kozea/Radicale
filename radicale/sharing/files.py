@@ -43,34 +43,34 @@ class Sharing(sharing.BaseSharing):
             logger.info("sharing database path: %r", sharing_database_path)
 
         if not os.path.exists(folder_db):
-            logger.warning("sharing database folder is not existing: %r (create now)", folder_db)
+            logger.notice("sharing database folder is not existing: %r (create now)", folder_db)
             try:
                 os.mkdir(folder_db)
             except Exception as e:
                 logger.error("sharing database folder cannot be created (check permissions): %r (%r)", folder_db, e)
                 return False
-            logger.info("sharing database folder successfully created: %r", folder_db)
+            logger.notice("sharing database folder successfully created: %r", folder_db)
 
         if not os.path.exists(sharing_database_path):
-            logger.warning("sharing database path is not existing: %r", sharing_database_path)
+            logger.notice("sharing database path is not existing: %r", sharing_database_path)
             try:
                 os.mkdir(sharing_database_path)
             except Exception as e:
                 logger.error("sharing database path cannot be created (check permissions): %r (%r)", sharing_database_path, e)
                 return False
-            logger.info("sharing database path successfully created: %r", sharing_database_path)
+            logger.notice("sharing database path successfully created: %r", sharing_database_path)
 
         for ShareType in sharing.SHARE_TYPES_V1:
             path = os.path.join(sharing_database_path, ShareType)
             self._sharing_database_path_ShareType[ShareType] = path
             if not os.path.exists(path):
-                logger.warning("sharing database path for %r is not existing: %r", ShareType, path)
+                logger.notice("sharing database path for %r is not existing: %r", ShareType, path)
                 try:
                     os.mkdir(path)
                 except Exception as e:
                     logger.error("sharing database path for %r cannot be created (check permissions): %r (%r)", ShareType, path, e)
                     return False
-                logger.info("sharing database path for %r successfully created: %r", ShareType, path)
+                logger.notice("sharing database path for %r successfully created: %r", ShareType, path)
         return True
 
     def database_get_info(self) -> Union[dict, None]:
