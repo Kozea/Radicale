@@ -1,7 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,11 +26,13 @@ import logging
 import os
 import re
 import shutil
+import sys
 from typing import ClassVar, cast
 
 import pytest
 
 import radicale.tests.custom.storage_simple_sync
+from radicale import logger
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 from radicale.tests.test_base import TestBaseRequests as _TestBaseRequests
@@ -187,6 +189,34 @@ class TestMultiFileSystem(BaseTest):
             _, answer = self.get("/contacts.vcf/%s.vcf" % uid)
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    def test_collection_sharing_by_softlink(self) -> None:
+        """Test collection sharing by softlink."""
+        self.configure({"auth": {"type": "none"}})
+        path_group_col = "/group/calendar-shared.ics/"
+        file_item = "event1.ics"
+        self.mkcalendar(path_group_col, login="group:grouppw")
+        event = get_file_content(file_item)
+        self.put(os.path.join(path_group_col, file_item), event)
+        fs_path_group_col = self.colpath + "/collection-root" + path_group_col
+        fs_path_group_col_rel = ".." + path_group_col
+        fs_path_user = self.colpath + "/collection-root/user"
+        fs_path_user_col = self.colpath + "/collection-root/user/calendar-group.ics"
+        logger.debug("colpath=%r fs_path_group_col=%r", self.colpath, fs_path_group_col)
+        assert os.path.isdir(fs_path_group_col)
+        # create user directory and check
+        logger.debug("create dir fs_path_user=%r", fs_path_user)
+        os.mkdir(fs_path_user)
+        assert os.path.isdir(fs_path_user)
+        # create relative symlink and check
+        logger.debug("create symlink src=%r dst=%r", fs_path_group_col_rel, fs_path_user_col)
+        os.symlink(fs_path_group_col_rel, fs_path_user_col)
+        logger.debug("test exists: fs_path_user_col=%r", fs_path_user_col)
+        assert os.path.exists(fs_path_user_col)
+        logger.debug("test is softlink: fs_path_user_col=%r", fs_path_user_col)
+        assert os.path.islink(fs_path_user_col)
+        self.propfind("/user/", login="user:userpw", HTTP_DEPTH="1")
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")

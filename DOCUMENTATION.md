@@ -1226,7 +1226,7 @@ E.g. `member` for groups with objectclass `groupOfNames`.
 
 Using `ldap_group_members_attribute`, `ldap_group_base` and `ldap_group_filter` is an alternative
 approach to getting the user's groups. Instead of reading them from `ldap_groups_attribute`
-in the user's entry, an additional query is performed to seach for those groups beneath `ldap_group_base`,
+in the user's entry, an additional query is performed to search for those groups beneath `ldap_group_base`,
 that have the user's DN in their `ldap_group_members_attribute` and additionally fulfil `ldap_group_filter`.
 
 As with DN-valued `ldap_groups_attribute`, the value of the RDN is used to determine the group names.
@@ -2279,7 +2279,7 @@ Add a new calendar on the network. Enter your username and the URL of the
 Radicale server (e.g. `http://localhost:5232`). After asking for your password,
 it will list the existing calendars.
 
-##### Adress books with CardBook add-on
+##### Address books with CardBook add-on
 
 Add a new address book on the network with CardDAV. Enter the URL of the
 Radicale server (e.g. `http://localhost:5232`) and your username and password.
