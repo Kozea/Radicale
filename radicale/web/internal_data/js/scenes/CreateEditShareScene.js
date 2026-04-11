@@ -20,7 +20,7 @@
  */
 
 import { Share, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
-import { CollectionType } from "../models/collection.js";
+import { CollectionType, Permission } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
@@ -56,6 +56,9 @@ export class CreateEditShareScene {
         this._hidden_checkbox = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=hidden]"));
         this._permissions_ro_radio = /** @type {HTMLInputElement} */ (get_element_by_id("newshare_attr_permissions_ro"));
         this._permissions_rw_radio = /** @type {HTMLInputElement} */ (get_element_by_id("newshare_attr_permissions_rw"));
+        this._properties_write_allow = /** @type {HTMLInputElement} */ (get_element_by_id("newshare_attr_properties_write_allow"));
+        this._properties_write_deny = /** @type {HTMLInputElement} */ (get_element_by_id("newshare_attr_properties_write_deny"));
+        this._token_write_warning = /** @type {HTMLElement} */ (get_element(this._html_scene, "[data-name=token_write_warning]"));
         this._conversions_details = /** @type {HTMLDetailsElement} */ (get_element(this._html_scene, "[data-name=conversions]"));
         this._conversions_container = get_element(this._html_scene, "[data-name=conversions_container]");
 
@@ -103,16 +106,32 @@ export class CreateEditShareScene {
         return checked ? checked.value : "none";
     }
 
+    _on_permissions_change() {
+        if (this._shareType === "token") {
+            if (this._permissions_rw_radio.checked || this._properties_write_allow.checked) {
+                this._token_write_warning.classList.remove("hidden");
+            } else {
+                this._token_write_warning.classList.add("hidden");
+            }
+        } else {
+            this._token_write_warning.classList.add("hidden");
+        }
+    }
+
     _on_conversion_change() {
         let conversion = this._get_selected_conversion();
         if (conversion != "none") {
             this._permissions_ro_radio.disabled = true;
             this._permissions_rw_radio.disabled = true;
+            this._properties_write_allow.disabled = true;
+            this._properties_write_deny.disabled = true;
             this._enabled_checkbox.checked = true;
             this._hidden_checkbox.checked = false;
         } else {
             this._permissions_ro_radio.disabled = false;
             this._permissions_rw_radio.disabled = false;
+            this._properties_write_allow.disabled = false;
+            this._properties_write_deny.disabled = false;
         }
         if (this._shareType === "map") {
             this._map_validator.validate();
@@ -140,7 +159,10 @@ export class CreateEditShareScene {
             let enabled_by_owner = is_conversion ? true : this._enabled_checkbox.checked;
             let hidden_by_owner = is_conversion ? false : this._hidden_checkbox.checked;
             let permissions = is_conversion ? "r" : (this._permissions_rw_radio.checked ? "rw" : "r");
-            if (this._shareType === "token") {
+            let allowPropertiesWrite = this._properties_write_allow.checked;
+            if (allowPropertiesWrite) {
+                permissions = permissions + "P";
+            } else {
                 permissions = permissions + "p";
             }
             /** @type {string} */ let conversion_value = conversion;
@@ -221,6 +243,12 @@ export class CreateEditShareScene {
         this._cancel_btn.onclick = () => this._oncancel();
         this._form.onsubmit = () => this._onsubmit();
 
+        let onChangeCallback = () => this._on_permissions_change();
+        this._permissions_ro_radio.addEventListener("change", onChangeCallback);
+        this._permissions_rw_radio.addEventListener("change", onChangeCallback);
+        this._properties_write_allow.addEventListener("change", onChangeCallback);
+        this._properties_write_deny.addEventListener("change", onChangeCallback);
+
         /** @type {HTMLHeadingElement} */ let title = /** @type {HTMLHeadingElement} */ (get_element(this._html_scene, "h1"));
         title.textContent = this._edit ? "Edit Share" : "New Share";
         this._submit_btn.textContent = this._edit ? "Save" : "Create";
@@ -229,6 +257,18 @@ export class CreateEditShareScene {
         this._shareuser_input.disabled = this._edit;
         this._enabled_checkbox.checked = (this._edit && this._share && this._share.EnabledByOwner !== null) ? this._share.EnabledByOwner : true;
         this._hidden_checkbox.checked = (this._edit && this._share && this._share.HiddenByOwner !== null) ? this._share.HiddenByOwner : false;
+
+        let hasWriteProperties = this._collection.has_permission(Permission.WRITE_PROPERTIES);
+
+        if (this._edit || this._shareType === "map") {
+            if (hasWriteProperties) {
+                this._properties_write_allow.checked = true;
+            } else {
+                this._properties_write_deny.checked = true;
+            }
+        } else {
+            this._properties_write_deny.checked = true;
+        }
 
         let initial_conversion = (this._edit && this._share && this._share.Conversion) ? this._share.Conversion : "none";
 
@@ -363,6 +403,7 @@ export class CreateEditShareScene {
             this._sharemapfields.classList.add("hidden");
             this._errorHandler.clearError();
         }
+        this._on_permissions_change();
     }
 
     hide() {

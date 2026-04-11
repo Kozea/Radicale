@@ -21,7 +21,7 @@
 
 import { delete_collection } from "../api/api.js";
 import { get_auth_header } from "../api/common.js";
-import { Collection, CollectionType } from "../models/collection.js";
+import { Collection, CollectionType, Permission } from "../models/collection.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { bytesToHumanReadable, get_element, get_element_by_id } from "../utils/misc.js";
@@ -189,10 +189,7 @@ export class CollectionsScene {
             });
 
             let share_option = get_element(node, "[data-name=shareoption]");
-            let can_share = collection.permissions && (
-                collection.permissions.includes("RADICALE:share-map") ||
-                collection.permissions.includes("RADICALE:share-token")
-            );
+            let can_share = collection.has_permission(Permission.SHARE_MAP) || collection.has_permission(Permission.SHARE_TOKEN);
             if (share_option) {
                 if (can_share) {
                     share_option.classList.remove("hidden");

@@ -280,6 +280,14 @@
             name="newshare_permissions"><label for="newshare_attr_permissions_ro">Readonly</label>
           <input type="radio" data-name="permissions" id="newshare_attr_permissions_rw"
             name="newshare_permissions" /><label for="newshare_attr_permissions_rw">Read/Write</label>
+          <br />
+          <input type="radio" data-name="properties_write" id="newshare_attr_properties_write_deny"
+            name="newshare_properties_write"><label for="newshare_attr_properties_write_deny">Deny</label>
+          <input type="radio" data-name="properties_write" id="newshare_attr_properties_write_allow"
+            name="newshare_properties_write"><label for="newshare_attr_properties_write_allow">Allow Properties
+            write</label>
+          <p data-name="token_write_warning" class="red hidden">WARNING: This allows everyone who knows the URL to make
+            changes.</p>
         </details>
         <details data-name="conversions" class="hidden">
           <summary>Conversions</summary>
