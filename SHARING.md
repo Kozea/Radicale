@@ -406,7 +406,7 @@ List shares (optional with filter) either owned or assigned as user.
 ###### form->text ("all")
 
 ```bash
-curl -u user:$userpw -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+curl -u user:$userpw -d "" http://localhost:5232/.sharing/v1/all/list
 ApiVersion=1
 Lines=1
 Status='success'
@@ -417,7 +417,7 @@ Content[0]="map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;T
 ###### form->csv ("map" only)
  
 ```bash
-curl -H "accept: text/csv" -u user:$userpw -d "" http://localhost:5232/.sharing/v1/map/list://localhost:5232/.sharing/v1/map/list
+curl -H "accept: text/csv" -u user:$userpw -d "" http://localhost:5232/.sharing/v1/map/list
 ShareType;PathOrToken;PathMapped;Owner;User;Permissions;EnabledByOwner;EnabledByUser;HiddenByOwner;HiddenByUser;TimestampCreated;TimestampUpdated;Properties
 map;/user/cal1-from-owner/;/owner/testcalendar1/;owner;user;r;True;False;False;True;1772747277;1772747277;
 ```
