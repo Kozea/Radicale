@@ -55,7 +55,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.tox]
 min_version = "4.0"
-envlist = ["py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "flake8", "isort", "mypy", "integ_test", "html5validator"]
+envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "html5validator"]
 
 [tool.tox.env.py]
 extras = ["test"]
