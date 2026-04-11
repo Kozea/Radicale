@@ -10,7 +10,7 @@ With _3.7.0_ major extension was implemented
 
 ## Sharing Implementation
 
-Implemenation of sharing collections is done by using a database to lookup the URI and in case entry exists by mapping to target URI and replacing provided data on request and adjust if required data in response.
+Implementation of sharing collections is done by using a database to lookup the URI and in case entry exists by mapping to target URI and replacing provided data on request and adjust if required data in response.
 
 Permissions are filtered by provided `Permissions`.
 
@@ -198,7 +198,7 @@ Token-based sharing can be accessed after retrieving the token via
 
 Token-URI: `/.token/<Token>`
 
-Note: requests to not enabled or not even defined tokens will resul tin _401 Not Authorized_
+Note: requests to not enabled or not even defined tokens will result in _401 Not Authorized_
 
 #### Permission Control
 

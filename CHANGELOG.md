@@ -20,7 +20,7 @@
 * Cleanup: deprecate config option 'ldap_use_ssl' for good
 * Cleanup: WebUI is now split into smaller javascript files
 * Cleanup: WebUI is now fit for strict content security policy
-* Cleanup: WebUI: Simplfied Caching and Navigation internally
+* Cleanup: WebUI: Simplified Caching and Navigation internally
 * Cleanup: WebUI: Unified error handling
 * Cleanup: Added integration test for verification of end-to-end behavior of WebUI
 * Performance: improve `path_to_filesystem()`
@@ -37,7 +37,7 @@
 * Improve: add workaround to remove empty lines in item to avoid reject by vobject parser
 * Improve: check/enforce RECURRENCE-ID MUST have the same value type as DTSTART in the recurring component (RFC 5545 3.8.4.4)
 * Fix: RECURRENCE-ID comparison on all-day events
-* Fix: format_ut problem on 32-bit systems (got lost inbetween since fixed in 3.5.8)
+* Fix: format_ut problem on 32-bit systems (got lost in between since fixed in 3.5.8)
 * Maintain: Refactor Web UI Javascript into separate files
 * Maintain: code preparation for upcoming "sharing" extension and optimizations
 * Improve: check if hook is enabled before constructing hook notification items
@@ -61,9 +61,9 @@
 * Add: logging of broken contact items during PUT
 * Extend: [auth] imap: add fallback support for LOGIN towards remote IMAP server (replaced in 3.5.0)
 * Fix: improper detection of HTTP_X_FORWARDED_PORT on MOVE
-* Extend: [logging] with profiling log per reqest or regular per request method
+* Extend: [logging] with profiling log per request or regular per request method
 * Add: [logging] option to log response header on debug loglevel
-* Adjust: [logging] header/content debug log indended by space to be skipped by logwatch
+* Adjust: [logging] header/content debug log intended by space to be skipped by logwatch
 * Improve: remove unnecessary open+read for mtime+size cache
 * Extend: add selected XML query properties to request result log line for improved timing analysis incl. logwatch support
 * Add: [server] max_resource_size option
@@ -657,7 +657,7 @@ One feature in this release is **not backward compatible**:
 Now, the first section matching the path and current user in your custom rights
 file is used. In the previous versions, the most permissive rights of all the
 matching sections were applied. This new behaviour gives a simple way to make
-specific rules at the top of the file independant from the generic ones.
+specific rules at the top of the file independent from the generic ones.
 
 Many **improvements in this release are related to security**, you should
 upgrade Radicale as soon as possible:
@@ -670,10 +670,10 @@ upgrade Radicale as soon as possible:
 
 Some bugs have been fixed and little enhancements have been added:
 
-* Assign new items to corret key (by Unrud)
+* Assign new items to correct key (by Unrud)
 * Avoid race condition in PID file creation (by Unrud)
 * Improve the docker version (by cdpb)
-* Encode message and commiter for git commits
+* Encode message and committer for git commits
 * Test with Python 3.5
 
 ## 1.0.1 - Sunflower Again
