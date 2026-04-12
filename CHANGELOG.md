@@ -7,7 +7,7 @@
 * Adjustment: sharing/token: adjust default permissions to "rp"
 * Fix: sharing/propfind+proppatch: permission check related to properties
 * Fix: hook/email: add support for date-only events
-* Feature: hook/email: in case of mass-email was enabled but only one attendee fall-back to non-mass-email
+* Extension: hook/email: in case of mass-email was enabled but only one attendee fall-back to non-mass-email
 * Fix: prevent login variable overwrite during failed cache cleanup
 * Fix: performance improvement of `path_to_filesystem()` in 3.7.0 caused unexpected issue in case of softlinks are used
 * Fix: sharing/delete: trigger storage hook
