@@ -145,6 +145,7 @@ export class LoginScene {
     }
 
     show() {
+        this._errorHandler.clearError();
         this._remove_logout();
         this._fill_form();
         this._form.onsubmit = () => this._onlogin();
