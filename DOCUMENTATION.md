@@ -436,6 +436,10 @@ See also for latest examples: https://github.com/Kozea/Radicale/tree/master/cont
 handle_path /radicale/* {
     uri strip_prefix /radicale
     reverse_proxy localhost:5232 {
+        # replace "HOST" with configured hostname of URL (FQDN) in client
+        header_up Host HOST
+        # replace "PORT" with configured port of URL in client
+        header_up X-Forwarded-Port PORT
     }
 }
 ```
