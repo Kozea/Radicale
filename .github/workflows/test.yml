@@ -12,6 +12,7 @@ on:
       - 'rights'
       - 'contrib/**'
       - 'compose.yaml'
+      - 'setup.py.legacy'
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -24,6 +25,7 @@ on:
       - 'rights'
       - 'contrib/**'
       - 'compose.yaml'
+      - 'setup.py.legacy'
 
 jobs:
 
