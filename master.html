@@ -658,6 +658,10 @@ below.</p>
 <pre><code>handle_path /radicale/* {
     uri strip_prefix /radicale
     reverse_proxy localhost:5232 {
+        # replace "HOST" with configured hostname of URL (FQDN) in client
+        header_up Host HOST
+        # replace "PORT" with configured port of URL in client
+        header_up X-Forwarded-Port PORT
     }
 }</code></pre>
 <p>Example <strong>Apache</strong> configuration extension:</p>
