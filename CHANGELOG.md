@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.7.2.dev
+
 ## 3.7.1
 * Fix: share address book collection as birthday calendar not working on non-DEBUG level
 * Extension: share accept now PATH and USER for matching email addresses as well
