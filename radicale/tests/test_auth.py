@@ -32,6 +32,7 @@ from typing import Iterable, Tuple, Union
 import pytest
 
 from radicale import utils, xmlutils
+from radicale.auth import htpasswd
 from radicale.tests import BaseTest
 
 
@@ -42,7 +43,7 @@ class TestBaseAuthRequests(BaseTest):
 
     """
 
-    BCRYPT_MAX_PWLEN = 72
+    BCRYPT_MAX_PWLEN = htpasswd.Auth.BCRYPT_MAX_PWLEN
 
     # test for available bcrypt module
     try:
