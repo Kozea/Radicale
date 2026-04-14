@@ -26,13 +26,13 @@ import logging
 import os
 import re
 import shutil
-import sys
+import tempfile
 from typing import ClassVar, cast
 
 import pytest
 
 import radicale.tests.custom.storage_simple_sync
-from radicale import logger
+from radicale import logger, pathutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 from radicale.tests.test_base import TestBaseRequests as _TestBaseRequests
@@ -190,7 +190,7 @@ class TestMultiFileSystem(BaseTest):
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
 
-    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    @pytest.mark.skipif(not pathutils.path_supports_symlink(tempfile.mkdtemp()), reason="TEMP is not supporting symlink")
     def test_collection_sharing_by_softlink(self) -> None:
         """Test collection sharing by softlink."""
         self.configure({"auth": {"type": "none"}})
