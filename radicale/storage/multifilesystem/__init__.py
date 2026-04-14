@@ -104,15 +104,16 @@ class Storage(
             logger.warning("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
             raise
         # set mtime_ns for tests
+        mtime_ns = os.stat(path).st_mtime_ns
         try:
-            os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
+            os.utime(path, times=None, ns=(mtime_ns + MTIME_NS_TEST, mtime_ns + MTIME_NS_TEST))
         except Exception as e:
             logger.warning("Storage item mtime resolution test not possible, cannot set utime on file: %r (%s)", path, e)
             os.remove(path)
             raise
-        logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
-        mtime_ns = os.stat(path).st_mtime_ns
-        logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
+        logger.debug("Storage item mtime resoultion test set: %d ns" % MTIME_NS_TEST)
+        mtime_ns = os.stat(path).st_mtime_ns - mtime_ns
+        logger.debug("Storage item mtime resoultion test get: %d ns" % mtime_ns)
         # start analysis
         precision = 1
         mtime_ns_test = MTIME_NS_TEST
