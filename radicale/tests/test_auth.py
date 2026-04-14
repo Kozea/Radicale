@@ -42,6 +42,8 @@ class TestBaseAuthRequests(BaseTest):
 
     """
 
+    BCRYPT_MAX_PWLEN = 72
+
     # test for available bcrypt module
     try:
         import bcrypt
@@ -173,6 +175,21 @@ class TestBaseAuthRequests(BaseTest):
     @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
+    def test_htpasswd_bcrypt_long(self) -> None:
+        import bcrypt
+        m = (
+             # full available len
+             ("tmp", "a" * self.BCRYPT_MAX_PWLEN, True),
+             # longer than valid -> same password
+             ("tmp", "a" * (self.BCRYPT_MAX_PWLEN + 42), True),
+             # shorter that before -> some other password
+             ("tmp", "a" * (self.BCRYPT_MAX_PWLEN - 1), False),
+             )
+        hash = bcrypt.hashpw(("a" * self.BCRYPT_MAX_PWLEN).encode(), bcrypt.gensalt())
+        self._test_htpasswd("bcrypt", "tmp:" + hash.decode('utf-8'), m)
 
     @pytest.mark.skipif(has_argon2 == 0, reason="No argon2 module installed")
     def test_htpasswd_argon2_i(self) -> None:
