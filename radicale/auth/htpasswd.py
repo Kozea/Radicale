@@ -66,6 +66,8 @@ from radicale import auth, config, logger, utils
 
 class Auth(auth.BaseAuth):
 
+    BCRYPT_MAX_PWLEN = 72
+
     _filename: str
     _encoding: str
     _htpasswd: dict             # login -> digest
@@ -176,16 +178,21 @@ class Auth(auth.BaseAuth):
         """Check if ``hash_value`` and ``password`` match, plain method."""
         return ("PLAIN", hmac.compare_digest(hash_value.encode(), password.encode()))
 
-    def _plain_fallback(self, method_orig, hash_value: str, password: str) -> tuple[str, bool]:
+    def _plain_fallback(self, method_orig, hash_value: bytes, password: bytes) -> tuple[str, bool]:
         """Check if ``hash_value`` and ``password`` match, plain method / fallback in case of hash length is not matching on autodetection."""
         info = "PLAIN/fallback as hash length not matching for " + method_orig + ": " + str(len(hash_value))
-        return (info, hmac.compare_digest(hash_value.encode(), password.encode()))
+        return (info, hmac.compare_digest(hash_value, password))
 
     def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> tuple[str, bool]:
-        if self._encryption == "autodetect" and len(hash_value) != 60:
-            return self._plain_fallback("BCRYPT", hash_value, password)
+        pw = password.encode()
+        hv = hash_value.encode()
+        if len(pw) > self.BCRYPT_MAX_PWLEN:
+            pw = pw[:self.BCRYPT_MAX_PWLEN]
+            logger.warning("Bcrypt passwords can not be longer than %d characters, truncated" % self.BCRYPT_MAX_PWLEN)
+        if self._encryption == "autodetect" and len(hv) != 60:
+            return self._plain_fallback("BCRYPT", hv, pw)
         else:
-            return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
+            return ("BCRYPT", bcrypt.checkpw(password=pw, hashed_password=hv))
 
     def _argon2(self, argon2: Any, hash_value: str, password: str) -> tuple[str, bool]:
         return ("ARGON2", argon2.verify(password, hash_value.strip()))
