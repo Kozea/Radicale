@@ -194,13 +194,13 @@ class TestMultiFileSystem(BaseTest):
     def test_collection_sharing_by_softlink(self) -> None:
         """Test collection sharing by softlink."""
         self.configure({"auth": {"type": "none"}})
-        path_group_col = "group/calendar-shared.ics"
+        path_group_col = "/group/calendar-shared.ics/"
         file_item = "event1.ics"
-        self.mkcalendar("/" + path_group_col + "/", login="group:grouppw")
+        self.mkcalendar(path_group_col, login="group:grouppw")
         event = get_file_content(file_item)
-        self.put(os.path.join(path_group_col, file_item), event)
-        fs_path_group_col = os.path.join(self.colpath, "collection-root", path_group_col)
-        fs_path_group_col_rel = os.path.join("..", path_group_col)
+        self.put(path_group_col + file_item, event)
+        fs_path_group_col = os.path.join(self.colpath, "collection-root", "group", "calendar-shared.ics")
+        fs_path_group_col_rel = os.path.join("..", "group", "calendar-shared.ics")
         fs_path_user = os.path.join(self.colpath, "collection-root", "user")
         fs_path_user_col = os.path.join(self.colpath, "collection-root", "user", "calendar-group.ics")
         logger.debug("colpath=%r fs_path_group_col=%r", self.colpath, fs_path_group_col)
