@@ -47,6 +47,26 @@ jobs:
       - name: Test with newest Python on latest Ubuntu
         run: tox -c pyproject.toml -e py
 
+  test-ubuntu-python-newest-with-passlib:
+    name: Test Ubuntu:latest Python:newest passlib
+    needs: lint
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Switch back to passlib
+        run: sed -i 's|libpass[^"]*|passlib|' pyproject.toml
+      - name: Test with newest Python on latest Ubuntu
+        run: tox -c pyproject.toml -e py
+
   test-python-32bit:
     name: Test Ubuntu:latest Python:32-bit
     needs: [lint, test-ubuntu-python-newest, integ-test]
