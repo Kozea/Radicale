@@ -191,6 +191,21 @@ class TestBaseAuthRequests(BaseTest):
         hash = bcrypt.hashpw(("a" * self.BCRYPT_MAX_PWLEN).encode(), bcrypt.gensalt())
         self._test_htpasswd("bcrypt", "tmp:" + hash.decode('utf-8'), m)
 
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
+    def test_bcrypt_hash_long(self) -> None:
+        import bcrypt
+        salt = bcrypt.gensalt()
+        h0 = bcrypt.hashpw(("a" * self.BCRYPT_MAX_PWLEN).encode(), salt)
+        try:
+            h1 = bcrypt.hashpw(("a" * (self.BCRYPT_MAX_PWLEN + 1)).encode(), salt)
+        # bcrypt >= 5, truncated for us
+        except ValueError:
+            return
+
+        # overlong password produced same hash as maxlen
+        assert h0 == h1
+
     @pytest.mark.skipif(has_argon2 == 0, reason="No argon2 module installed")
     def test_htpasswd_argon2_i(self) -> None:
         self._test_htpasswd("argon2", "tmp:$argon2i$v=19$m=65536,t=3,p=4$NgZg7F1rzRkDoNSaMwag9A$qmsvMKEn5zOXHm8e3O5fKzzcRo0UESwaDr/cETe5YPI")
