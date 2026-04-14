@@ -406,19 +406,16 @@ def path_supports_symlink(path):
     return result
 
 
-def path_is_collision_free(path):
-    """Check whether path supports case colliding-free entries."""
+def path_is_collision_free_case_sensitive(path):
+    # Test: case sensitive
     if not os.path.isdir(path):
         raise ValueError("%r is not a path" % (path))
-
-    result = True
-
-    # Test 1: case sensitive
     base_dir = tempfile.mkdtemp(dir=path)
     test_dir = "TESTDIR"
     test_dir_uc = os.path.join(base_dir, test_dir.upper())
     test_dir_lc = os.path.join(base_dir, test_dir.lower())
     os.mkdir(test_dir_uc)
+    result = True
     try:
         os.mkdir(test_dir_lc)
     except FileExistsError:
@@ -426,20 +423,23 @@ def path_is_collision_free(path):
     else:
         # cleanup
         os.rmdir(test_dir_lc)
-    finally:
-        # cleanup
-        os.rmdir(test_dir_uc)
-    if not result:
-        # early exit
-        os.rmdir(base_dir)
-        logger.trace("path_is_collision_free: path=%r result=%s", path, result)
-        return result
+    # cleanup
+    os.rmdir(test_dir_uc)
+    os.rmdir(base_dir)
+    logger.debug("path_is_collision_free (case-sensitive): path=%r result=%s", path, result)
+    return result
 
-    # Test 2: short filename
+
+def path_is_collision_free_no_short_filename(path):
+    """Check whether path supports short-filename collision-free entries."""
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    base_dir = tempfile.mkdtemp(dir=path)
     test_dir = "TESTDIRLONG"
     test_dir_long = os.path.join(base_dir, test_dir)
     test_dir_short = os.path.join(base_dir, test_dir[:6] + "~1")
     os.mkdir(test_dir_long)
+    result = True
     try:
         os.mkdir(test_dir_short)
     except FileExistsError:
@@ -447,10 +447,8 @@ def path_is_collision_free(path):
     else:
         # cleanup
         os.rmdir(test_dir_short)
-    finally:
-        # cleanup
-        os.rmdir(test_dir_long)
-    # final exit
+    # cleanup
+    os.rmdir(test_dir_long)
     os.rmdir(base_dir)
-    logger.trace("path_is_collision_free: path=%r result=%s", path, result)
+    logger.debug("path_is_collision_free (no short-filename): path=%r result=%s", path, result)
     return result
