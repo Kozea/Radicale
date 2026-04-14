@@ -90,6 +90,8 @@ class ApplicationPartMkcalendar(ApplicationBase):
                         return httputils.FORBIDDEN
                     else:
                         return httputils.INTERNAL_SERVER_ERROR
+                elif type(e) is pathutils.CollidingPathError:
+                    return httputils.CONFLICT
                 else:
                     logger.warning(
                         "Bad MKCALENDAR request on %r: %s", path, e, exc_info=True)
