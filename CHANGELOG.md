@@ -1,6 +1,9 @@
 # Changelog
 
 ## 3.7.2.dev
+* Fix: broken storage/mtime granularity detection on vfat
+* Improve: `path_to_filesystem()` by pre-detection of collision-free file system
+* Adjustment: MKCOL/MKCALENDAR return now CONFLICT instead of BADREQUEST of file name collision
 
 ## 3.7.1
 * Fix: share address book collection as birthday calendar not working on non-DEBUG level
