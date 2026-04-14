@@ -167,7 +167,7 @@ class TestBaseAuthRequests(BaseTest):
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10_autodetect(self) -> None:
-        self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
+        self._test_htpasswd("autodetect", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
