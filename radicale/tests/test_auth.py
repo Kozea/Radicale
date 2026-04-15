@@ -31,7 +31,8 @@ from typing import Iterable, Tuple, Union
 
 import pytest
 
-from radicale import utils, xmlutils
+from radicale import xmlutils
+from radicale.auth import htpasswd
 from radicale.tests import BaseTest
 
 
@@ -41,6 +42,8 @@ class TestBaseAuthRequests(BaseTest):
     We should setup auth for each type before creating the Application object.
 
     """
+
+    BCRYPT_MAX_PWLEN = htpasswd.Auth.BCRYPT_MAX_PWLEN
 
     # test for available bcrypt module
     try:
@@ -130,49 +133,68 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("autodetect", "tmp:$6$rounds=2500$A1H/cZUl3CBnsplz$bSKYCDQ/YGR..YhxaZcM1eKmAi/jlnpbENKU8a.9kE95JBIpyUss3.cUyss0xQnhjD4PReN4sAzmdziWmoCsg/")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2a(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
 
-    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed or incompatibe")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_2a_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2a$10$Mj4A9vMecAp/K7.0fMKoVOk1SjgR.RBhl06a52nvzXhxlT3HB7Reu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2b(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2b_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2b$12$7a4z/fdmXlBIfkz0smvzW.1Nds8wpgC/bo2DVOb4OSQKWCDL1A1wu")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2y(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_2y_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2y$05$oD7hbiQFQlvCM7zoalo/T.MssV3VNTRI3w5KDnj8NTUKJNWfVpvRq")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10(self) -> None:
         self._test_htpasswd("bcrypt", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_C10_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:$2y$10$bZsWq06ECzxqi7RmulQvC.T1YHUnLW2E3jn.MU2pvVTGn1dfORt2a")
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
-    @pytest.mark.skipif(not utils.passlib_libpass_supports_bcrypt()[0], reason="bcrypt module incompatible with passlib(libpass) module")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_htpasswd_bcrypt_long(self) -> None:
+        import bcrypt
+        m = (
+             # full available len
+             ("tmp", "a" * self.BCRYPT_MAX_PWLEN, True),
+             # longer than valid -> same password
+             ("tmp", "a" * (self.BCRYPT_MAX_PWLEN + 42), True),
+             # shorter that before -> some other password
+             ("tmp", "a" * (self.BCRYPT_MAX_PWLEN - 1), False),
+             )
+        hash = bcrypt.hashpw(("a" * self.BCRYPT_MAX_PWLEN).encode(), bcrypt.gensalt())
+        self._test_htpasswd("bcrypt", "tmp:" + hash.decode('utf-8'), m)
+
+    @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
+    def test_bcrypt_hash_long(self) -> None:
+        import bcrypt
+        salt = bcrypt.gensalt()
+        h0 = bcrypt.hashpw(("a" * self.BCRYPT_MAX_PWLEN).encode(), salt)
+        try:
+            h1 = bcrypt.hashpw(("a" * (self.BCRYPT_MAX_PWLEN + 1)).encode(), salt)
+        # bcrypt >= 5, truncated for us
+        except ValueError:
+            return
+
+        # overlong password produced same hash as maxlen
+        assert h0 == h1
 
     @pytest.mark.skipif(has_argon2 == 0, reason="No argon2 module installed")
     def test_htpasswd_argon2_i(self) -> None:

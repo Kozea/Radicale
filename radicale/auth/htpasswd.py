@@ -43,7 +43,7 @@ out-of-the-box:
     - SHA256     (htpasswd -2 ...)
     - SHA512     (htpasswd -5 ...)
 
-When bcrypt is installed (bcrypt >= 5.0.0 requires passlib(libpass) >= 1.9.3):
+When bcrypt is installed:
     - BCRYPT     (htpasswd -B ...) -- Requires htpasswd 2.4.x
 
 When argon2 is installed:
@@ -61,10 +61,12 @@ from typing import Any, Tuple
 
 from passlib.hash import apr_md5_crypt, sha256_crypt, sha512_crypt
 
-from radicale import auth, config, logger, utils
+from radicale import auth, config, logger
 
 
 class Auth(auth.BaseAuth):
+
+    BCRYPT_MAX_PWLEN = 72
 
     _filename: str
     _encoding: str
@@ -120,22 +122,12 @@ class Auth(auth.BaseAuth):
                         "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
                         "the bcrypt module (entries found: %d)." % self._htpasswd_bcrypt_use) from e
             else:
-                [bcrypt_usable, info] = utils.passlib_libpass_supports_bcrypt()
-                if bcrypt_usable:
-                    self._has_bcrypt = True
-                    logger.info(info)
-                else:
-                    logger.warning(info)
+                self._has_bcrypt = True
                 if self._encryption == "autodetect":
                     if self._htpasswd_bcrypt_use == 0:
                         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bcrypt module found, but currently not required", self._encryption)
                     else:
                         logger.info("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' and bcrypt module found (bcrypt entries found: %d)", self._encryption, self._htpasswd_bcrypt_use)
-                        if not bcrypt_usable:
-                            raise RuntimeError("The htpasswd encryption 'autodetect' requires the bcrypt module but not usuable")
-                else:
-                    if not bcrypt_usable:
-                        raise RuntimeError("The htpasswd encryption method 'bcrypt' requires the bcrypt module but not usuable")
             if self._encryption == "bcrypt":
                 self._verify = functools.partial(self._bcrypt, bcrypt)
             else:
@@ -176,16 +168,21 @@ class Auth(auth.BaseAuth):
         """Check if ``hash_value`` and ``password`` match, plain method."""
         return ("PLAIN", hmac.compare_digest(hash_value.encode(), password.encode()))
 
-    def _plain_fallback(self, method_orig, hash_value: str, password: str) -> tuple[str, bool]:
+    def _plain_fallback(self, method_orig, hash_value: bytes, password: bytes) -> tuple[str, bool]:
         """Check if ``hash_value`` and ``password`` match, plain method / fallback in case of hash length is not matching on autodetection."""
         info = "PLAIN/fallback as hash length not matching for " + method_orig + ": " + str(len(hash_value))
-        return (info, hmac.compare_digest(hash_value.encode(), password.encode()))
+        return (info, hmac.compare_digest(hash_value, password))
 
     def _bcrypt(self, bcrypt: Any, hash_value: str, password: str) -> tuple[str, bool]:
-        if self._encryption == "autodetect" and len(hash_value) != 60:
-            return self._plain_fallback("BCRYPT", hash_value, password)
+        pw = password.encode()
+        hv = hash_value.encode()
+        if len(pw) > self.BCRYPT_MAX_PWLEN:
+            pw = pw[:self.BCRYPT_MAX_PWLEN]
+            logger.warning("Bcrypt passwords can not be longer than %d characters, truncated" % self.BCRYPT_MAX_PWLEN)
+        if self._encryption == "autodetect" and len(hv) != 60:
+            return self._plain_fallback("BCRYPT", hv, pw)
         else:
-            return ("BCRYPT", bcrypt.checkpw(password=password.encode('utf-8'), hashed_password=hash_value.encode()))
+            return ("BCRYPT", bcrypt.checkpw(password=pw, hashed_password=hv))
 
     def _argon2(self, argon2: Any, hash_value: str, password: str) -> tuple[str, bool]:
         return ("ARGON2", argon2.verify(password, hash_value.strip()))
