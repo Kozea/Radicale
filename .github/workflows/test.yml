@@ -49,7 +49,7 @@ jobs:
 
   test-ubuntu-python-newest-with-passlib:
     name: Test Ubuntu:latest Python:newest passlib
-    needs: lint
+    needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
         os: [ubuntu-latest]
