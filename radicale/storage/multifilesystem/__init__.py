@@ -104,15 +104,16 @@ class Storage(
             logger.warning("Storage item mtime resolution test not possible, cannot write file: %r (%s)", path, e)
             raise
         # set mtime_ns for tests
+        mtime_ns = os.stat(path).st_mtime_ns
         try:
-            os.utime(path, times=None, ns=(MTIME_NS_TEST, MTIME_NS_TEST))
+            os.utime(path, times=None, ns=(mtime_ns + MTIME_NS_TEST, mtime_ns + MTIME_NS_TEST))
         except Exception as e:
             logger.warning("Storage item mtime resolution test not possible, cannot set utime on file: %r (%s)", path, e)
             os.remove(path)
             raise
-        logger.debug("Storage item mtime resoultion test set: %d" % MTIME_NS_TEST)
-        mtime_ns = os.stat(path).st_mtime_ns
-        logger.debug("Storage item mtime resoultion test get: %d" % mtime_ns)
+        logger.debug("Storage item mtime resoultion test set: %d ns" % MTIME_NS_TEST)
+        mtime_ns = os.stat(path).st_mtime_ns - mtime_ns
+        logger.debug("Storage item mtime resoultion test get: %d ns" % mtime_ns)
         # start analysis
         precision = 1
         mtime_ns_test = MTIME_NS_TEST
@@ -171,6 +172,14 @@ class Storage(
             logger.warning("Storage location subfolder: %r does not exist, creating now", self._get_collection_root_folder())
             self._makedirs_synced(self._get_collection_root_folder())
         logger.info("Storage location subfolder permissions: %s", pathutils.path_permissions_as_string(self._get_collection_root_folder()))
+        logger.info("Storage location subfolder softlink support: %s", pathutils.path_supports_symlink(self._get_collection_root_folder()))
+        filesystem_root_folder_is_collision_free_case_sensitive = pathutils.path_is_collision_free_case_sensitive(self._get_collection_root_folder())
+        filesystem_root_folder_is_collision_free_no_short_filename = pathutils.path_is_collision_free_no_short_filename(self._get_collection_root_folder())
+        self._filesystem_root_folder_is_collision_free = filesystem_root_folder_is_collision_free_case_sensitive and filesystem_root_folder_is_collision_free_no_short_filename
+        logger.info("Storage location subfolder is collision free: %s (case-sensitive=%s no-short-filename=%s)",
+                    self._filesystem_root_folder_is_collision_free,
+                    filesystem_root_folder_is_collision_free_case_sensitive,
+                    filesystem_root_folder_is_collision_free_no_short_filename)
         logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)

@@ -27,6 +27,7 @@ import os
 import pathlib
 import posixpath
 import sys
+import tempfile
 import threading
 from tempfile import TemporaryDirectory
 from typing import Iterator, Type, Union
@@ -266,28 +267,45 @@ def is_safe_filesystem_path_component(path: str) -> bool:
         is_safe_path_component(path))
 
 
-def path_to_filesystem(root: str, sane_path: str) -> str:
+def path_to_filesystem(root: str, sane_path: str, path_is_collision_free: bool = False) -> str:
     """Convert `sane_path` to a local filesystem path relative to `root`.
 
     `root` must be a secure filesystem path, it will be prepend to the path.
 
     `sane_path` must be a sanitized path without leading or trailing ``/``.
 
+    `path_is_collision_free` is a toggle whether it was earlier detected as collision-free
+
     Conversion of `sane_path` is done in a secure manner,
     or raises ``ValueError``.
 
     """
+    # logger.trace("path_to_filesystem root=%r sane_path=%r path_is_collision_free=%s", root, sane_path, path_is_collision_free)
     assert sane_path == strip_path(sanitize_path(sane_path))
     safe_path = root
     parts = sane_path.split("/") if sane_path else []
     for part in parts:
         if not is_safe_filesystem_path_component(part):
             raise UnsafePathError(part)
+        safe_path_parent = safe_path
         safe_path = os.path.join(safe_path, part)
         # Check for conflicting files (e.g. case-insensitive file systems
         # or short names on Windows file systems)
-        if (os.path.lexists(safe_path) and not os.path.realpath(safe_path).endswith(part)) and not os.path.islink(safe_path):
-            raise CollidingPathError(part)
+        if not path_is_collision_free:
+            if sys.platform == "win32" and False:  # temporary for testing
+                # logger.trace("path_to_filesystem check (win32): %r", part)
+                # if (os.path.lexists(safe_path) and not os.path.realpath(safe_path).endswith(part)) and not os.path.islink(safe_path):
+                if (os.path.lexists(safe_path) and not os.path.realpath(safe_path).endswith(part)):
+                    raise CollidingPathError(part)
+            else:
+                # logger.trace("path_to_filesystem check (!win32): %r", part)
+                if os.path.lexists(safe_path):
+                    with os.scandir(safe_path_parent) as entries:
+                        if part not in (e.name for e in entries):
+                            raise CollidingPathError(part)
+        else:
+            # logger.trace("path_to_filesystem check (skipped): %r", part)
+            pass
     return safe_path
 
 
@@ -365,3 +383,72 @@ def file_check_size(path: str, limit: int):
             logger.warning("file skipped because size exceeds limit %s > %s: %r", utils.format_unit(size, binary=True), utils.format_unit(limit, binary=True), path)
             return False
     return True
+
+
+def path_supports_symlink(path):
+    """Check whether path supports symlink."""
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    result = True
+    test_dir1 = tempfile.mkdtemp(dir=path)
+    test_dir2 = tempfile.mkdtemp(dir=path)
+    os.rmdir(test_dir2)
+    try:
+        os.symlink(test_dir1, test_dir2)
+    except PermissionError:
+        result = False
+    else:
+        # cleanup
+        os.remove(test_dir2)
+    finally:
+        # cleanup
+        os.rmdir(test_dir1)
+    return result
+
+
+def path_is_collision_free_case_sensitive(path):
+    # Test: case sensitive
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    base_dir = tempfile.mkdtemp(dir=path)
+    test_dir = "TESTDIR"
+    test_dir_uc = os.path.join(base_dir, test_dir.upper())
+    test_dir_lc = os.path.join(base_dir, test_dir.lower())
+    os.mkdir(test_dir_uc)
+    result = True
+    try:
+        os.mkdir(test_dir_lc)
+    except FileExistsError:
+        result = False
+    else:
+        # cleanup
+        os.rmdir(test_dir_lc)
+    # cleanup
+    os.rmdir(test_dir_uc)
+    os.rmdir(base_dir)
+    logger.debug("path_is_collision_free (case-sensitive): path=%r result=%s", path, result)
+    return result
+
+
+def path_is_collision_free_no_short_filename(path):
+    """Check whether path supports short-filename collision-free entries."""
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    base_dir = tempfile.mkdtemp(dir=path)
+    test_dir = "TESTDIRLONG"
+    test_dir_long = os.path.join(base_dir, test_dir)
+    test_dir_short = os.path.join(base_dir, test_dir[:6] + "~1")
+    os.mkdir(test_dir_long)
+    result = True
+    try:
+        os.mkdir(test_dir_short)
+    except FileExistsError:
+        result = False
+    else:
+        # cleanup
+        os.rmdir(test_dir_short)
+    # cleanup
+    os.rmdir(test_dir_long)
+    os.rmdir(base_dir)
+    logger.debug("path_is_collision_free (no short-filename): path=%r result=%s", path, result)
+    return result

@@ -94,6 +94,8 @@ class ApplicationPartMkcol(ApplicationBase):
                         return httputils.FORBIDDEN
                     else:
                         return httputils.INTERNAL_SERVER_ERROR
+                elif type(e) is pathutils.CollidingPathError:
+                    return httputils.CONFLICT
                 else:
                     logger.warning(
                         "Bad MKCOL request on %r (type:%s): %s", path, collection_type, e, exc_info=True)

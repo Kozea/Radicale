@@ -26,13 +26,13 @@ import logging
 import os
 import re
 import shutil
-import sys
+import tempfile
 from typing import ClassVar, cast
 
 import pytest
 
 import radicale.tests.custom.storage_simple_sync
-from radicale import logger
+from radicale import logger, pathutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 from radicale.tests.test_base import TestBaseRequests as _TestBaseRequests
@@ -190,7 +190,7 @@ class TestMultiFileSystem(BaseTest):
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
 
-    @pytest.mark.skipif(sys.platform == 'win32', reason="Not supported on Windows")
+    @pytest.mark.skipif(not pathutils.path_supports_symlink(tempfile.mkdtemp()), reason="TEMP is not supporting symlink")
     def test_collection_sharing_by_softlink(self) -> None:
         """Test collection sharing by softlink."""
         self.configure({"auth": {"type": "none"}})
@@ -198,11 +198,11 @@ class TestMultiFileSystem(BaseTest):
         file_item = "event1.ics"
         self.mkcalendar(path_group_col, login="group:grouppw")
         event = get_file_content(file_item)
-        self.put(os.path.join(path_group_col, file_item), event)
-        fs_path_group_col = self.colpath + "/collection-root" + path_group_col
-        fs_path_group_col_rel = ".." + path_group_col
-        fs_path_user = self.colpath + "/collection-root/user"
-        fs_path_user_col = self.colpath + "/collection-root/user/calendar-group.ics"
+        self.put(path_group_col + file_item, event)
+        fs_path_group_col = os.path.join(self.colpath, "collection-root", "group", "calendar-shared.ics")
+        fs_path_group_col_rel = os.path.join("..", "group", "calendar-shared.ics")
+        fs_path_user = os.path.join(self.colpath, "collection-root", "user")
+        fs_path_user_col = os.path.join(self.colpath, "collection-root", "user", "calendar-group.ics")
         logger.debug("colpath=%r fs_path_group_col=%r", self.colpath, fs_path_group_col)
         assert os.path.isdir(fs_path_group_col)
         # create user directory and check
@@ -217,6 +217,73 @@ class TestMultiFileSystem(BaseTest):
         logger.debug("test is softlink: fs_path_user_col=%r", fs_path_user_col)
         assert os.path.islink(fs_path_user_col)
         self.propfind("/user/", login="user:userpw", HTTP_DEPTH="1")
+
+    def test_colliding_items_by_file_case_insensitive(self, caplog) -> None:
+        """Test for colliding files on file systems."""
+        caplog.set_level(logging.WARNING)
+        self.configure({"logging": {"request_content_on_debug": "False"}})
+        fs_collision_free = pathutils.path_is_collision_free_case_sensitive(self.colpath)
+        file_item = "EvEnT1.iCs"
+        path_coll = "/calendar.ics/"
+        self.mkcalendar(path_coll)
+        event = get_file_content(file_item.lower())
+        path_item = os.path.join(path_coll, file_item)
+        path_uc = os.path.join(path_coll, file_item.upper())
+        path_lc = os.path.join(path_coll, file_item.lower())
+        self.put(path_item, event)
+        self.put(path_uc, event, check=409)
+        if not fs_collision_free:
+            logs = caplog.messages
+            assert len([log for log in logs if "File name collision" in log]) == 1
+        self.put(path_lc, event, check=409)
+        if not fs_collision_free:
+            logs = caplog.messages
+            assert len([log for log in logs if "File name collision" in log]) == 2
+
+    def test_colliding_items_by_dir_case_insensitive(self, caplog) -> None:
+        """Test for colliding dirs on file systems."""
+        caplog.set_level(logging.WARNING)
+        self.configure({"logging": {"request_content_on_debug": "False"}})
+        fs_collision_free = pathutils.path_is_collision_free_case_sensitive(self.colpath)
+        path_coll = "/CaLeNdAr.ics/"
+        self.mkcalendar(path_coll)
+        if fs_collision_free:
+            self.mkcalendar(path_coll.lower(), check=201)
+        else:
+            self.mkcalendar(path_coll.lower(), check=409)
+            logs = caplog.messages
+            assert len([log for log in logs if "File name collision" in log]) == 1
+        if fs_collision_free:
+            self.mkcalendar(path_coll.upper(), check=201)
+        else:
+            self.mkcalendar(path_coll.upper(), check=409)
+            logs = caplog.messages
+            assert len([log for log in logs if "File name collision" in log]) == 2
+
+    def test_colliding_items_by_dir_shortname(self, caplog) -> None:
+        """Test for colliding dirs (shortname) on file systems."""
+        caplog.set_level(logging.WARNING)
+        self.configure({"logging": {"request_content_on_debug": "False"}})
+        fs_collision_free = pathutils.path_is_collision_free_no_short_filename(self.colpath)
+        fs_collision_free_case_sensitive = pathutils.path_is_collision_free_case_sensitive(self.colpath)
+        path_coll = "/calendarlongname.ics/"
+        path_coll_short = "/calend~1.ics/"
+        self.mkcalendar(path_coll)
+        if fs_collision_free:
+            self.mkcalendar(path_coll_short.lower(), check=201)
+            if not fs_collision_free_case_sensitive:
+                # cleanup to avoid collision below
+                self.delete(path_coll_short.lower())
+        else:
+            self.mkcalendar(path_coll_short.lower(), check=409)
+            logs = caplog.messages
+            assert len([log for log in logs if "File name collision" in log]) == 1
+        if fs_collision_free:
+            self.mkcalendar(path_coll_short.upper(), check=201)
+        else:
+            self.mkcalendar(path_coll_short.upper(), check=409)
+            logs = caplog.messages
+            assert len([log for log in logs if "File name collision" in log]) == 2
 
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
