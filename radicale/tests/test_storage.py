@@ -222,7 +222,7 @@ class TestMultiFileSystem(BaseTest):
         """Test for colliding files on file systems."""
         caplog.set_level(logging.WARNING)
         self.configure({"logging": {"request_content_on_debug": "False"}})
-        fs_collision_free = pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp())
+        fs_collision_free = pathutils.path_is_collision_free_case_sensitive(self.colpath)
         file_item = "EvEnT1.iCs"
         path_coll = "/calendar.ics/"
         self.mkcalendar(path_coll)
@@ -244,7 +244,7 @@ class TestMultiFileSystem(BaseTest):
         """Test for colliding dirs on file systems."""
         caplog.set_level(logging.WARNING)
         self.configure({"logging": {"request_content_on_debug": "False"}})
-        fs_collision_free = pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp())
+        fs_collision_free = pathutils.path_is_collision_free_case_sensitive(self.colpath)
         path_coll = "/CaLeNdAr.ics/"
         self.mkcalendar(path_coll)
         if fs_collision_free:
@@ -264,12 +264,16 @@ class TestMultiFileSystem(BaseTest):
         """Test for colliding dirs (shortname) on file systems."""
         caplog.set_level(logging.WARNING)
         self.configure({"logging": {"request_content_on_debug": "False"}})
-        fs_collision_free = pathutils.path_is_collision_free_no_short_filename(tempfile.mkdtemp())
+        fs_collision_free = pathutils.path_is_collision_free_no_short_filename(self.colpath)
+        fs_collision_free_case_sensitive = pathutils.path_is_collision_free_case_sensitive(self.colpath)
         path_coll = "/calendarlongname.ics/"
         path_coll_short = "/calend~1.ics/"
         self.mkcalendar(path_coll)
         if fs_collision_free:
             self.mkcalendar(path_coll_short.lower(), check=201)
+            if not fs_collision_free_case_sensitive:
+                # cleanup to avoid collision below
+                self.delete(path_coll_short.lower())
         else:
             self.mkcalendar(path_coll_short.lower(), check=409)
             logs = caplog.messages
