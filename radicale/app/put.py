@@ -209,7 +209,7 @@ class ApplicationPartPut(ApplicationBase):
             vobject_items = radicale_item.read_components(content or "")
         except Exception as e:
             logger.warning(
-                "Bad PUT request on %r (read_components): %s", path, e, exc_info=True)
+                "Bad PUT request on %r (read_components using vobject): %s", path, e, exc_info=True)
             if self._log_bad_put_request_content:
                 logger.warning("Bad PUT request content of %r:\n%s", path, utils.textwrap_str(content))
                 if logger.isEnabledFor(logging.DEBUG):
