@@ -90,6 +90,8 @@ export class LoginScene {
                 this._errorHandler.setError(error1);
                 pop_scene();
             } else if (principal_collection) {
+                // clear error on successful login
+                this._errorHandler.clearError();
                 // show collections
                 let saved_user = this._user;
                 this._user = "";
@@ -145,7 +147,6 @@ export class LoginScene {
     }
 
     show() {
-        this._errorHandler.clearError();
         this._remove_logout();
         this._fill_form();
         this._form.onsubmit = () => this._onlogin();

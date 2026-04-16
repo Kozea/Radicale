@@ -53,3 +53,32 @@ def test_login_logout_login(page: Page, radicale_server: str, config: Config) ->
     # 3. Second login
     login(page, radicale_server, config)
     expect(page.locator("#collectionsscene")).to_be_visible()
+
+
+def test_login_wrong_password_shows_error(
+    page: Page, radicale_server: str, config: Config
+) -> None:
+    page.goto(radicale_server)
+
+    # 1. Login with wrong password
+    page.fill('#loginscene input[data-name="user"]', "admin")
+    page.fill('#loginscene input[data-name="password"]', "wrongpassword")
+    page.click('button:has-text("Next")')
+
+    # Expect error message to be shown
+    expect(page.locator('#loginscene [data-name="error"]')).to_be_visible()
+
+    # 2. Login with right password
+    page.fill('#loginscene input[data-name="password"]', "admi$pass#word")
+    page.click('button:has-text("Next")')
+
+    # Expect successful login
+    expect(page.locator("#collectionsscene")).to_be_visible()
+
+    # 3. Logout
+    page.click('#logoutview a[data-name="logout"]')
+    expect(page.locator("#loginscene")).to_be_visible()
+    expect(page.locator("#collectionsscene")).to_be_hidden()
+
+    # Expect error message is NOT shown
+    expect(page.locator('#loginscene [data-name="error"]')).not_to_be_visible()
