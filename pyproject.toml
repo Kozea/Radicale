@@ -87,6 +87,87 @@ deps = [
 ]
 commands = [["pytest", "-r", "s", "--log-level", "5", "."]]
 
+[tool.tox.env.py_filesystem_vfat]
+allowlist_externals = [ "sudo", "dd", "mkfs.vfat", "mkdir", "rm", "rmdir", "chmod" ]
+extras = ["test"]
+deps = [
+    "pytest"
+]
+commands_pre = [
+    # create 64 MByte disk image
+    ["dd", "if=/dev/zero", "of=/tmp/vfat.img", "bs=1M", "count=64"],
+    # create file system
+    ["mkfs.vfat", "/tmp/vfat.img", "-n", "VFAT"],
+    # unconditionally create mount point
+    ["mkdir", "-p", "/tmp/vfat"],
+    # mount image
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/vfat.img", "/tmp/vfat"],
+]
+setenv = { TEMP = "/tmp/vfat" }
+commands = [["pytest", "-r", "s", "."]]
+commands_post = [
+    # umount image
+    ["sudo", "/usr/bin/umount", "-d", "/tmp/vfat"],
+    # remove mount point
+    ["rmdir", "/tmp/vfat"],
+    # remove image
+    ["rm", "/tmp/vfat.img"]
+]
+
+[tool.tox.env.py_filesystem_hfsp]
+allowlist_externals = [ "sudo", "dd", "mkfs.hfsplus", "mkdir", "rm", "rmdir", "chmod" ]
+extras = ["test"]
+deps = [
+    "pytest"
+]
+commands_pre = [
+    # create 64 MByte disk image
+    ["dd", "if=/dev/zero", "of=/tmp/hfsp.img", "bs=1M", "count=64"],
+    # create file system
+    ["mkfs.hfsplus", "/tmp/hfsp.img", "-v", "HFSP"],
+    # unconditionally create mount point
+    ["mkdir", "-p", "/tmp/hfsp"],
+    # mount image
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/hfsp.img", "/tmp/hfsp"],
+]
+setenv = { TEMP = "/tmp/hfsp" }
+commands = [["pytest", "-r", "s", "."]]
+commands_post = [
+    # umount image
+    ["sudo", "/usr/bin/umount", "-d", "/tmp/hfsp"],
+    # remove mount point
+    ["rmdir", "/tmp/hfsp"],
+    # remove image
+    ["rm", "/tmp/hfsp.img"]
+]
+
+[tool.tox.env.py_filesystem_ntfs]
+allowlist_externals = [ "sudo", "dd", "mkfs.ntfs", "mkdir", "rm", "rmdir", "chmod" ]
+extras = ["test"]
+deps = [
+    "pytest"
+]
+commands_pre = [
+    # create 64 MByte disk image
+    ["dd", "if=/dev/zero", "of=/tmp/ntfs.img", "bs=1M", "count=64"],
+    # create file system
+    ["mkfs.ntfs", "/tmp/ntfs.img", "-L", "NTFS", "-F"],
+    # unconditionally create mount point
+    ["mkdir", "-p", "/tmp/ntfs"],
+    # mount image
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/ntfs.img", "/tmp/ntfs"],
+]
+setenv = { TEMP = "/tmp/ntfs" }
+commands = [["pytest", "-r", "s", "."]]
+commands_post = [
+    # umount image
+    ["sudo", "/usr/bin/umount", "-d", "/tmp/ntfs"],
+    # remove mount point
+    ["rmdir", "/tmp/ntfs"],
+    # remove image
+    ["rm", "/tmp/ntfs.img"]
+]
+
 [tool.tox.env.flake8]
 deps = ["flake8==7.1.0"]
 commands = [["flake8", "."]]
