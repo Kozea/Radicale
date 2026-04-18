@@ -540,9 +540,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                                     except ValueError as e:
                                         logger.warning("Failed to create predefined collection %r: %s", name_coll, e)
                         except ValueError as e:
-                            logger.warning("Failed to create principal "
-                                           "collection %r: %s", user, e)
-                            user = ""
+                            logger.error("Failed to create principal "
+                                         "collection for user %r: ValueError %s", user, e)
+                            return response(*httputils.INTERNAL_SERVER_ERROR)
+                        except OSError as e:
+                            logger.error("Failed to create principal "
+                                         "collection for user %r: OSerror %s", user, e)
+                            return response(*httputils.INTERNAL_SERVER_ERROR)
                 else:
                     logger.warning("Access to principal path %r denied by "
                                    "rights backend", principal_path)
