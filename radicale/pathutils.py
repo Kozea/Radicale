@@ -407,7 +407,7 @@ def path_supports_symlink(path):
 
 
 def path_is_collision_free_case_sensitive(path):
-    # Test: case sensitive
+    """Check whether path supports case sensitive entries."""
     if not os.path.isdir(path):
         raise ValueError("%r is not a path" % (path))
     base_dir = tempfile.mkdtemp(dir=path)
@@ -451,4 +451,77 @@ def path_is_collision_free_no_short_filename(path):
     os.rmdir(test_dir_long)
     os.rmdir(base_dir)
     logger.debug("path_is_collision_free (no short-filename): path=%r result=%s", path, result)
+    return result
+
+
+def path_supports_unicode(path):
+    """Check whether path supports unicode."""
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    base_dir = tempfile.mkdtemp(dir=path)
+    part = "TEST😀"
+    test_dir = os.path.join(base_dir, part)
+    result = True
+    try:
+        os.mkdir(test_dir)
+    except OSError:
+        result = False
+    else:
+        with os.scandir(base_dir) as entries:
+            if part not in (e.name for e in entries):
+                result = False
+        # cleanup
+        os.rmdir(test_dir)
+    # cleanup
+    os.rmdir(base_dir)
+    logger.debug("path_supports_unicode: path=%r result=%s", path, result)
+    return result
+
+
+def path_supports_trailing_whitespace(path):
+    """Check whether path supports trailing whitespace."""
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    base_dir = tempfile.mkdtemp(dir=path)
+    part = "TEST "
+    test_dir = os.path.join(base_dir, part)
+    result = True
+    try:
+        os.mkdir(test_dir)
+    except OSError:
+        result = False
+    else:
+        with os.scandir(base_dir) as entries:
+            if part not in (e.name for e in entries):
+                result = False
+        # cleanup
+        os.rmdir(test_dir)
+    # cleanup
+    os.rmdir(base_dir)
+    logger.debug("path_supports_trailing_whitespace: path=%r result=%s", path, result)
+    return result
+
+
+def path_supports_problematic_chars(path):
+    """Check whether path supports problematic chars."""
+    if not os.path.isdir(path):
+        raise ValueError("%r is not a path" % (path))
+    base_dir = tempfile.mkdtemp(dir=path)
+    result = True
+    for char in ['*', '?']:
+        part = "TES" + char + "T"
+        test_dir = os.path.join(base_dir, part)
+        try:
+            os.mkdir(test_dir)
+        except OSError:
+            result = False
+        else:
+            with os.scandir(base_dir) as entries:
+                if part not in (e.name for e in entries):
+                    result = False
+            # cleanup
+            os.rmdir(test_dir)
+    # cleanup
+    os.rmdir(base_dir)
+    logger.debug("path_supports_problematic chars: path=%r result=%s", path, result)
     return result
