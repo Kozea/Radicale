@@ -5,6 +5,9 @@
 * Improve: `path_to_filesystem()` by pre-detection of collision-free file system
 * Adjustment: MKCOL/MKCALENDAR return now CONFLICT instead of BADREQUEST of file name collision
 * Improve: [auth] catch bcrypt>=5.0.0 enforced max password length early and support legacy "passlib" as well as "libpass" (rework 3.6.0, "packaging" not needed anymore)
+* Improve: application will stop on startup if TEMP is provided but not existing or not writable
+* Extension: tox with new optional test cases to test with LinuxOS vfat, hfsplus, ntfs filesystems
+* Adjust: respond with 500 in case principal collection cannot be created (e.g. filesystem issues)
 
 ## 3.7.1
 * Fix: share address book collection as birthday calendar not working on non-DEBUG level
