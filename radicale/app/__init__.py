@@ -100,6 +100,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
         """
         super().__init__(configuration)
+        if 'TEMP' in os.environ:
+            if not os.path.isdir(os.environ['TEMP']):
+                raise RuntimeError("TEMP found in environment, but directory is not existing: %r" % os.environ['TEMP'])
+            if not os.access(os.environ['TEMP'], os.W_OK):
+                raise RuntimeError("TEMP found in environment, but not writable: %r" % os.environ['TEMP'])
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._delay_on_error = configuration.get("server", "delay_on_error")
         logger.info("delay_on_error set to: %.3f seconds", self._delay_on_error)
