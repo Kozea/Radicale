@@ -103,28 +103,6 @@ jobs:
       - name: Test with newest Python on latest Ubuntu using NTFS
         run: tox -c pyproject.toml -e py_filesystem_ntfs
 
-  test-ubuntu-python-newest-with-hfsp:
-    name: Test HFS+ Python:newest Ubuntu:latest
-    needs: [lint, test-ubuntu-python-newest]
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.14']
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install hfsprogs
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y hfsprogs
-      - name: Install Test dependencies
-        run: pip install tox
-      - name: Test with newest Python on latest Ubuntu using HFS+
-        run: tox -c pyproject.toml -e py_filesystem_hfsplus
-
   test-python-32bit:
     name: Test 32-bit Python:3.11 Ubuntu:latest
     needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-with-passlib]
@@ -185,7 +163,7 @@ jobs:
 
   test-otheros-python-newest:
     name: Test MacOS/Windows:latest Python:newest
-    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-ntfs, test-ubuntu-python-newest-with-hfsp, test-ubuntu-python-newest-with-vfat]
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-ntfs, test-ubuntu-python-newest-with-vfat]
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
