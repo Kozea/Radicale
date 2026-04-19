@@ -119,11 +119,11 @@ jobs:
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu using HFS+
-        run: tox -c pyproject.toml -e py_filesystem_hfsp
+        run: tox -c pyproject.toml -e py_filesystem_hfs
 
   test-python-32bit:
     name: Test 32-bit Python:3.11 Ubuntu:latest
-    needs: [lint, test-ubuntu-python-newest, integ-test]
+    needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-with-passlib]
     strategy:
       matrix:
         os: [ubuntu-latest]
