@@ -9,19 +9,19 @@
 $if(math)$
 $math$
 $endif$
-<link href="assets/all.css" media="all" rel="stylesheet">
-<link href="assets/screen.css" media="screen" rel="stylesheet">
-<link href="assets/screen-narrow.css" media="screen and (max-width: 50em)" rel="stylesheet">
-<link href="assets/print.css" media="print" rel="stylesheet">
-<noscript><link href="assets/screen-noscript.css" media="screen" rel="stylesheet"></noscript>
+<link href="../../assets/all.css" media="all" rel="stylesheet">
+<link href="../../assets/screen.css" media="screen" rel="stylesheet">
+<link href="../../assets/screen-narrow.css" media="screen and (max-width: 50em)" rel="stylesheet">
+<link href="../../assets/print.css" media="print" rel="stylesheet">
+<noscript><link href="../../assets/screen-noscript.css" media="screen" rel="stylesheet"></noscript>
 <link href="https://github.com/Kozea/Radicale/releases.atom" type="application/atom+xml" rel="alternate" title="Radicale Releases">
-<link href="assets/icon.png" type="image/png" rel="icon">
+<link href="../../assets/icon.png" type="image/png" rel="icon">
 <title>Radicale $branch$ Documentation</title>
 <meta name="description" content="Free and Open-Source CalDAV and CardDAV Server">
-<script src="assets/navigation.js"></script>
-<script src="assets/document-branches.js"></script>
-<script src="assets/narrow-menu.js"></script>
-<script src="assets/navigation-scroll-fix.js"></script>
+<script src="../../assets/navigation.js"></script>
+<script src="../../assets/document-branches.js"></script>
+<script src="../../assets/narrow-menu.js"></script>
+<script src="../../assets/navigation-scroll-fix.js"></script>
 
 <header>
 <div class="logoContainer">
@@ -31,7 +31,7 @@ Radicale
 <span>$branch$</span>
 <select style="display: none;">
 $for(branches)$
-<option value="$it.href$"$if(it.default)$ selected$endif$>$it.name$</option>
+<option value="../$it.href$"$if(it.default)$ selected$endif$>$it.name$</option>
 $endfor$
 </select>
 </span>

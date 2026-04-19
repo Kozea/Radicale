@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<meta charset="utf-8">
+<meta content="pandoc" name="generator">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  div.columns{display: flex; gap: min(4vw, 1.5em);}
+  div.column{flex: auto; overflow-x: auto;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  /* The extra [class] is a hack that increases specificity enough to
+     override a similar rule in reveal.js */
+  ul.task-list[class]{list-style: none;}
+  ul.task-list li input[type="checkbox"] {
+    font-size: inherit;
+    width: 0.8em;
+    margin: 0 0.8em 0.2em -1.6em;
+    vertical-align: middle;
+  }
+  .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  /* CSS for syntax highlighting */
+  pre > code.sourceCode { white-space: pre; position: relative; }
+  pre > code.sourceCode > span { line-height: 1.25; }
+  pre > code.sourceCode > span:empty { height: 1.2em; }
+  .sourceCode { overflow: visible; }
+  code.sourceCode > span { color: inherit; text-decoration: inherit; }
+  div.sourceCode { margin: 1em 0; }
+  pre.sourceCode { margin: 0; }
+  @media screen {
+  div.sourceCode { overflow: auto; }
+  }
+  @media print {
+  pre > code.sourceCode { white-space: pre-wrap; }
+  pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+  }
+  pre.numberSource code
+    { counter-reset: source-line 0; }
+  pre.numberSource code > span
+    { position: relative; left: -4em; counter-increment: source-line; }
+  pre.numberSource code > span > a:first-child::before
+    { content: counter(source-line);
+      position: relative; left: -1em; text-align: right; vertical-align: baseline;
+      border: none; display: inline-block;
+      -webkit-touch-callout: none; -webkit-user-select: none;
+      -khtml-user-select: none; -moz-user-select: none;
+      -ms-user-select: none; user-select: none;
+      padding: 0 4px; width: 4em;
+      color: #aaaaaa;
+    }
+  pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+  div.sourceCode
+    {   }
+  @media screen {
+  pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+  }
+  code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+  code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+  code span.at { color: #7d9029; } /* Attribute */
+  code span.bn { color: #40a070; } /* BaseN */
+  code span.bu { color: #008000; } /* BuiltIn */
+  code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+  code span.ch { color: #4070a0; } /* Char */
+  code span.cn { color: #880000; } /* Constant */
+  code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+  code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+  code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+  code span.dt { color: #902000; } /* DataType */
+  code span.dv { color: #40a070; } /* DecVal */
+  code span.er { color: #ff0000; font-weight: bold; } /* Error */
+  code span.ex { } /* Extension */
+  code span.fl { color: #40a070; } /* Float */
+  code span.fu { color: #06287e; } /* Function */
+  code span.im { color: #008000; font-weight: bold; } /* Import */
+  code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+  code span.op { color: #666666; } /* Operator */
+  code span.ot { color: #007020; } /* Other */
+  code span.pp { color: #bc7a00; } /* Preprocessor */
+  code span.sc { color: #4070a0; } /* SpecialChar */
+  code span.ss { color: #bb6688; } /* SpecialString */
+  code span.st { color: #4070a0; } /* String */
+  code span.va { color: #19177c; } /* Variable */
+  code span.vs { color: #4070a0; } /* VerbatimString */
+  code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+<link href="../../assets/all.css" media="all" rel="stylesheet">
+<link href="../../assets/screen.css" media="screen" rel="stylesheet">
+<link href="../../assets/screen-narrow.css" media="screen and (max-width: 50em)" rel="stylesheet">
+<link href="../../assets/print.css" media="print" rel="stylesheet">
+<noscript><link href="../../assets/screen-noscript.css" media="screen" rel="stylesheet"></noscript>
+<link href="https://github.com/Kozea/Radicale/releases.atom" rel="alternate" title="Radicale Releases" type="application/atom+xml">
+<link href="../../assets/icon.png" rel="icon" type="image/png">
+<title>Radicale v3 Documentation</title>
+<meta content="Free and Open-Source CalDAV and CardDAV Server" name="description">
+<script src="../../assets/navigation.js"></script>
+<script src="../../assets/document-branches.js"></script>
+<script src="../../assets/narrow-menu.js"></script>
+<script src="../../assets/navigation-scroll-fix.js"></script>
+<header>
+<div class="logoContainer">
+<h1>
+Radicale
+<span class="documentBranch">
+<span>v3</span>
+<select style="display: none;">
+<option value="../master/index.html">master</option>
+<option selected value="../v3/index.html">v3</option>
+<option value="../v2/index.html">v2</option>
+<option value="../v1/index.html">v1</option>
+</select>
+</span>
+</h1>
+<p>Free and Open-Source CalDAV and CardDAV Server</p>
+</div>
+<div class="linkContainer">
+<ul>
+<li><a href="https://community.kozea.fr">Made with ❤ by Kozea Community</a></li>
+<li><a href="https://github.com/Kozea/Radicale">Fork me on GitHub</a></li>
+</ul>
+</div>
+</header>
+<main>
+<div class="navButtonContainer" style="display: none;">
+<button data-name="nav-open">Contents</button>
+</div>
+<nav>
+<div class="navContainer">
+<div class="navButtonContainer" style="display: none;">
+<button data-name="nav-close">Close</button>
+</div>
+<h2>Contents</h2>
+<ul>
+<li class="level2"><a href="./index.html" id="toc-translations-of-this-page">Translations of this page</a></li>
+<li class="level2"><a href="./index.html" id="toc-getting-started">Getting
+started</a>
+<ul>
+<li class="level4"><a href="./index.html#about-radicale" id="toc-about-radicale">About
+Radicale</a></li>
+<li class="level4"><a href="./index.html#installation" id="toc-installation">Installation</a></li>
+<li class="level4"><a href="./index.html#whats-new" id="toc-whats-new">What's New?</a></li>
+</ul></li>
+<li class="level2"><a href="./tutorials.html" id="toc-tutorials">Tutorials</a>
+<ul>
+<li class="level3"><a href="./tutorials.html#simple-5-minute-setup" id="toc-simple-5-minute-setup">Simple 5-minute setup</a>
+<ul>
+<li class="level4"><a href="./tutorials.html#linux--bsd" id="toc-linux--bsd">Linux / *BSD</a></li>
+<li class="level4"><a href="./tutorials.html#windows" id="toc-windows">Windows</a></li>
+</ul></li>
+<li class="level3"><a href="./tutorials.html#basic-configuration" id="toc-basic-configuration">Basic
+Configuration</a>
+<ul>
+<li class="level4"><a href="./tutorials.html#authentication" id="toc-authentication">Authentication</a></li>
+<li class="level4"><a href="./tutorials.html#addresses" id="toc-addresses">Addresses</a></li>
+<li class="level4"><a href="./tutorials.html#storage" id="toc-storage">Storage</a></li>
+<li class="level4"><a href="./tutorials.html#limits" id="toc-limits">Limits</a></li>
+</ul></li>
+<li class="level3"><a href="./tutorials.html#running-as-a-service" id="toc-running-as-a-service">Running as a service</a>
+<ul>
+<li class="level4"><a href="./tutorials.html#linux-with-systemd-system-wide" id="toc-linux-with-systemd-system-wide">Linux with systemd
+system-wide</a></li>
+<li class="level4"><a href="./tutorials.html#linux-with-systemd-as-a-user" id="toc-linux-with-systemd-as-a-user">Linux with systemd as a
+user</a></li>
+<li class="level4"><a href="./tutorials.html#windows-with-nssm---the-non-sucking-service-manager" id="toc-windows-with-nssm---the-non-sucking-service-manager">Windows
+with "NSSM - the Non-Sucking Service Manager"</a></li>
+</ul></li>
+<li class="level3"><a href="./tutorials.html#reverse-proxy" id="toc-reverse-proxy">Reverse Proxy</a>
+<ul>
+<li class="level4"><a href="./tutorials.html#manage-user-accounts-with-the-reverse-proxy" id="toc-manage-user-accounts-with-the-reverse-proxy">Manage user
+accounts with the reverse proxy</a></li>
+<li class="level4"><a href="./tutorials.html#secure-connection-between-radicale-and-the-reverse-proxy" id="toc-secure-connection-between-radicale-and-the-reverse-proxy">Secure
+connection between Radicale and the reverse proxy</a></li>
+</ul></li>
+<li class="level3"><a href="./tutorials.html#wsgi-server" id="toc-wsgi-server">WSGI Server</a>
+<ul>
+<li class="level4"><a href="./tutorials.html#manage-user-accounts-with-the-wsgi-server" id="toc-manage-user-accounts-with-the-wsgi-server">Manage user accounts
+with the WSGI server</a></li>
+</ul></li>
+<li class="level3"><a href="./tutorials.html#versioning-collections-with-git" id="toc-versioning-collections-with-git">Versioning collections with
+Git</a></li>
+</ul></li>
+<li class="level2"><a href="./documentation.html" id="toc-documentation">Documentation</a>
+<ul>
+<li class="level3"><a href="./documentation.html#options" id="toc-options">Options</a>
+<ul>
+<li class="level4"><a href="./documentation.html#general-options" id="toc-general-options">General
+Options</a></li>
+<li class="level4"><a href="./documentation.html#configuration-options" id="toc-configuration-options">Configuration Options</a></li>
+</ul></li>
+<li class="level3"><a href="./documentation.html#configuration" id="toc-configuration">Configuration</a>
+<ul>
+<li class="level4"><a href="./documentation.html#server" id="toc-server">[server]</a></li>
+<li class="level4"><a href="./documentation.html#encoding" id="toc-encoding">[encoding]</a></li>
+<li class="level4"><a href="./documentation.html#auth" id="toc-auth">[auth]</a></li>
+<li class="level4"><a href="./documentation.html#rights" id="toc-rights">[rights]</a></li>
+<li class="level4"><a href="./documentation.html#storage-1" id="toc-storage-1">[storage]</a></li>
+<li class="level4"><a href="./documentation.html#web" id="toc-web">[web]</a></li>
+<li class="level4"><a href="./documentation.html#logging" id="toc-logging">[logging]</a></li>
+<li class="level4"><a href="./documentation.html#headers" id="toc-headers">[headers]</a></li>
+<li class="level4"><a href="./documentation.html#hook-1" id="toc-hook-1">[hook]</a></li>
+<li class="level4"><a href="./documentation.html#reporting" id="toc-reporting">[reporting]</a></li>
+<li class="level4"><a href="./documentation.html#sharing" id="toc-sharing">[sharing]</a></li>
+</ul></li>
+</ul></li>
+<li class="level2"><a href="./supported-clients.html" id="toc-supported-clients">Supported
+Clients</a>
+<ul>
+<li class="level4"><a href="./supported-clients.html#davx⁵" id="toc-davx⁵">DAVx⁵</a></li>
+<li class="level4"><a href="./supported-clients.html#onecalendar" id="toc-onecalendar">OneCalendar</a></li>
+<li class="level4"><a href="./supported-clients.html#gnome-calendar-contacts" id="toc-gnome-calendar-contacts">GNOME Calendar, Contacts</a></li>
+<li class="level4"><a href="./supported-clients.html#evolution" id="toc-evolution">Evolution</a></li>
+<li class="level4"><a href="./supported-clients.html#kde-pim-applications" id="toc-kde-pim-applications">KDE
+PIM Applications</a></li>
+<li class="level4"><a href="./supported-clients.html#thunderbird" id="toc-thunderbird">Thunderbird</a></li>
+<li class="level4"><a href="./supported-clients.html#infcloud-caldavzap-and-carddavmate" id="toc-infcloud-caldavzap-and-carddavmate">InfCloud, CalDavZAP and
+CardDavMATE</a></li>
+<li class="level4"><a href="./supported-clients.html#command-line" id="toc-command-line">Command line</a></li>
+<li class="level3"><a href="./supported-clients.html#authorization-and-rights" id="toc-authorization-and-rights">Authorization and Rights</a></li>
+<li class="level3"><a href="./supported-clients.html#storage-2" id="toc-storage-2">Storage</a>
+<ul>
+<li class="level4"><a href="./supported-clients.html#layout" id="toc-layout">Layout</a></li>
+<li class="level4"><a href="./supported-clients.html#locking" id="toc-locking">Locking</a></li>
+<li class="level4"><a href="./supported-clients.html#manually-creating-collections" id="toc-manually-creating-collections">Manually creating
+collections</a></li>
+</ul></li>
+<li class="level3"><a href="./supported-clients.html#logging-overview" id="toc-logging-overview">Logging
+overview</a></li>
+<li class="level3"><a href="./supported-clients.html#architecture" id="toc-architecture">Architecture</a>
+<ul>
+<li class="level4"><a href="./supported-clients.html#protocol-overview" id="toc-protocol-overview">Protocol
+overview</a></li>
+<li class="level4"><a href="./supported-clients.html#code-architecture" id="toc-code-architecture">Code
+Architecture</a></li>
+</ul></li>
+<li class="level3"><a href="./supported-clients.html#plugins" id="toc-plugins">Plugins</a>
+<ul>
+<li class="level4"><a href="./supported-clients.html#getting-started-with-plugin-development" id="toc-getting-started-with-plugin-development">Getting started with
+plugin development</a></li>
+<li class="level4"><a href="./supported-clients.html#authentication-plugins" id="toc-authentication-plugins">Authentication plugins</a></li>
+<li class="level4"><a href="./supported-clients.html#rights-management-plugins" id="toc-rights-management-plugins">Rights management plugins</a></li>
+<li class="level4"><a href="./supported-clients.html#web-plugins" id="toc-web-plugins">Web plugins</a></li>
+<li class="level4"><a href="./supported-clients.html#storage-plugins" id="toc-storage-plugins">Storage
+plugins</a></li>
+</ul></li>
+</ul></li>
+<li class="level2"><a href="./contribute.html" id="toc-contribute">Contribute</a>
+<ul>
+<li class="level4"><a href="./contribute.html#report-bugs" id="toc-report-bugs">Report Bugs</a></li>
+<li class="level4"><a href="./contribute.html#hack" id="toc-hack">Hack</a></li>
+<li class="level4"><a href="./contribute.html#documentation-1" id="toc-documentation-1">Documentation</a></li>
+</ul></li>
+<li class="level2"><a href="./download.html" id="toc-download">Download</a>
+<ul>
+<li class="level4"><a href="./download.html#pypi" id="toc-pypi">PyPI</a></li>
+<li class="level4"><a href="./download.html#git-repository" id="toc-git-repository">Git
+Repository</a></li>
+<li class="level4"><a href="./download.html#source-packages" id="toc-source-packages">Source
+Packages</a></li>
+<li class="level4"><a href="./download.html#docker" id="toc-docker">Docker</a></li>
+<li class="level4"><a href="./download.html#linux-distribution-packages" id="toc-linux-distribution-packages">Linux Distribution
+Packages</a></li>
+</ul></li>
+<li class="level2"><a href="./about.html" id="toc-about">About</a>
+<ul>
+<li class="level4"><a href="./about.html#main-goals" id="toc-main-goals">Main Goals</a></li>
+<li class="level4"><a href="./about.html#what-radicale-will-never-be" id="toc-what-radicale-will-never-be">What Radicale Will Never
+Be</a></li>
+<li class="level4"><a href="./about.html#technical-choices" id="toc-technical-choices">Technical
+Choices</a></li>
+<li class="level4"><a href="./about.html#history" id="toc-history">History</a></li>
+</ul></li>
+</ul>
+</div>
+</nav>
+<div class="documentContainer">
+
+
+
+
+
+
+
+<section class="level2" id="about">
+<h2>About <a class="headerlink" href="#about">&para;</a></h2>
+<section class="level4" id="main-goals">
+<h4>Main Goals <a class="headerlink" href="#main-goals">&para;</a></h4>
+<p>Radicale is a complete calendar and contact storing and manipulating
+solution. It can store multiple calendars and multiple address
+books.</p>
+<p>Calendar and contact manipulation is available from both local and
+distant accesses, possibly limited through authentication policies.</p>
+<p>It aims to be a lightweight solution, easy to use, easy to install,
+easy to configure. As a consequence, it requires few software
+dependencies and is preconfigured to work out-of-the-box.</p>
+<p>Radicale is written in Python. It runs on most of the UNIX-like
+platforms (Linux, *BSD, macOS) and Windows. It is free and open-source
+software.</p>
+</section>
+<section class="level4" id="what-radicale-will-never-be">
+<h4>What Radicale Will Never Be <a class="headerlink" href="#what-radicale-will-never-be">&para;</a></h4>
+<p>Radicale is a server, not a client. No interfaces will be created to
+work with the server.</p>
+<p>CalDAV and CardDAV are not perfect protocols. We think that their
+main problem is their complexity, that is why we decided not to
+implement the whole standard but just enough to understand some of its
+client-side implementations.</p>
+<p>CalDAV and CardDAV are the best open standards available, and they
+are quite widely used by both clients and servers. We decided to use it,
+and we will not use another one.</p>
+</section>
+<section class="level4" id="technical-choices">
+<h4>Technical Choices <a class="headerlink" href="#technical-choices">&para;</a></h4>
+<p>Important global development choices have been decided before writing
+code. They are very useful to understand why the Radicale Project is
+different from other CalDAV and CardDAV servers, and why features are
+included or not in the code.</p>
+<section class="level5" id="oriented-to-calendar-and-contact-user-agents">
+<h5>Oriented to Calendar and Contact User Agents <a class="headerlink" href="#oriented-to-calendar-and-contact-user-agents">&para;</a></h5>
+<p>Calendar and contact servers work with calendar and contact clients,
+using a defined protocol. CalDAV and CardDAV are good protocols,
+covering lots of features and use cases, but it is quite hard to
+implement fully.</p>
+<p>Some calendar servers have been created to follow the CalDAV and
+CardDAV RFCs as much as possible: <a href="http://www.davical.org/">Davical</a>, <a href="http://sabre.io/baikal/">Ba&iuml;kal</a> and <a href="http://trac.calendarserver.org/">Darwin Calendar Server</a>, for
+example, are much more respectful of CalDAV and CardDAV and can be used
+with many clients. They are very good choices if you want to develop and
+test new CalDAV clients, or if you have a possibly heterogeneous list of
+user agents.</p>
+<p>Even if it tries it best to follow the RFCs, Radicale does not and
+<strong>will not</strong> blindly implement the CalDAV and CardDAV
+standards. It is mainly designed to support the CalDAV and CardDAV
+implementations of different clients.</p>
+</section>
+<section class="level5" id="simple">
+<h5>Simple <a class="headerlink" href="#simple">&para;</a></h5>
+<p>Radicale is designed to be simple to install, simple to configure,
+simple to use.</p>
+<p>The installation is very easy, particularly with Linux: one
+dependency, no superuser rights needed, no configuration required, no
+database. Installing and launching the main script out-of-the-box, as a
+normal user, are often the only steps to have a simple remote calendar
+and contact access.</p>
+<p>Contrary to other servers that are often complicated, require high
+privileges or need a strong configuration, the Radicale Server can
+(sometimes, if not often) be launched in a couple of minutes, if you
+follow the <a href="./tutorials.html#simple-5-minute-setup">tutorial</a>.</p>
+</section>
+<section class="level5" id="lazy">
+<h5>Lazy <a class="headerlink" href="#lazy">&para;</a></h5>
+<p>The CalDAV RFC defines what must be done, what can be done and what
+cannot be done. Many violations of the protocol are totally defined and
+behaviors are given in such cases.</p>
+<p>Radicale often assumes that the clients are perfect and that protocol
+violations do not exist. That is why most of the errors in client
+requests have undetermined consequences for the lazy server that can
+reply good answers, bad answers, or even no answer.</p>
+</section>
+</section>
+<section class="level4 last" id="history">
+<h4>History <a class="headerlink" href="#history">&para;</a></h4>
+<p>Radicale has been started as a (free topic) stupid school project
+replacing another (assigned topic) even more stupid school project.</p>
+<p>At the beginning, it was just a proof-of-concept. The main goal was
+to write a small, dirty and simple CalDAV server working with Lightning,
+using no external libraries. That's how we created a piece of code
+that's (quite) easy to understand, to use and to hack.</p>
+<p>The <a href="https://github.com/Kozea/Radicale/commit/b1591aea">first
+lines</a> have been added to the SVN (!) repository as I was drinking
+(many) beers at the very end of 2008 (Python 2.6 and 3.0 were just
+released). It's now packaged for a growing number of Linux
+distributions.</p>
+<p>And that was fun going from here to there thanks to you!</p>
+</section>
+</section>
+</div>
+</main>
+</html>
