@@ -426,7 +426,7 @@ def path_is_collision_free_case_sensitive(path):
     # cleanup
     os.rmdir(test_dir_uc)
     os.rmdir(base_dir)
-    logger.debug("path_is_collision_free (case-sensitive): path=%r result=%s", path, result)
+    logger.trace("path_is_collision_free (case-sensitive): path=%r result=%s", path, result)
     return result
 
 
@@ -450,7 +450,7 @@ def path_is_collision_free_no_short_filename(path):
     # cleanup
     os.rmdir(test_dir_long)
     os.rmdir(base_dir)
-    logger.debug("path_is_collision_free (no short-filename): path=%r result=%s", path, result)
+    logger.trace("path_is_collision_free (no short-filename): path=%r result=%s", path, result)
     return result
 
 
@@ -474,7 +474,7 @@ def path_supports_unicode(path):
         os.rmdir(test_dir)
     # cleanup
     os.rmdir(base_dir)
-    logger.debug("path_supports_unicode: path=%r result=%s", path, result)
+    logger.trace("path_supports_unicode: path=%r result=%s", path, result)
     return result
 
 
@@ -498,7 +498,7 @@ def path_supports_trailing_whitespace(path):
         os.rmdir(test_dir)
     # cleanup
     os.rmdir(base_dir)
-    logger.debug("path_supports_trailing_whitespace: path=%r result=%s", path, result)
+    logger.trace("path_supports_trailing_whitespace: path=%r result=%s", path, result)
     return result
 
 
@@ -523,5 +523,5 @@ def path_supports_problematic_chars(path):
             os.rmdir(test_dir)
     # cleanup
     os.rmdir(base_dir)
-    logger.debug("path_supports_problematic chars: path=%r result=%s", path, result)
+    logger.trace("path_supports_problematic chars: path=%r result=%s", path, result)
     return result
