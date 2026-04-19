@@ -123,7 +123,7 @@ jobs:
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu using HFS+
-        run: tox -c pyproject.toml -e py_filesystem_hfs
+        run: tox -c pyproject.toml -e py_filesystem_hfsplus
 
   test-python-32bit:
     name: Test 32-bit Python:3.11 Ubuntu:latest
