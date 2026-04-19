@@ -284,7 +284,7 @@ class BaseAuth:
             digest_failed = login + ":" + self._cache_digest(login, password, str(self._cache_failed_logins_salt_ns))
             if self._cache_failed.get(digest_failed):
                 # login+password found in cache "failed" -> shortcut return
-                (time_ns_cache, login_cache) = self._cache_failed[digest]
+                (time_ns_cache, login_cache) = self._cache_failed[digest_failed]
                 age_failed = int((time_ns - time_ns_cache) / 10**9)
                 logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login_cache, age_failed)
                 self._sleep_for_constant_exec_time(time_ns_begin)
