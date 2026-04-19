@@ -116,12 +116,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Update system
-        run: |
-          apt-get update
       - name: Install hfsprogs
         run: |
-          apt-get install -y hfsprogs
+          sudo apt-get update
+          sudo apt-get install -y hfsprogs
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu using HFS+
