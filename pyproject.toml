@@ -129,35 +129,7 @@ commands_pre = [
     # unconditionally create mount point
     ["mkdir", "-p", "/tmp/hfsp"],
     # mount image
-    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/hfsp.img", "/tmp/hfsp"],
-]
-setenv = { TEMP = "/tmp/hfsp" }
-commands = [["pytest", "-r", "s", "."]]
-commands_post = [
-    # umount image
-    ["sudo", "/usr/bin/umount", "-d", "/tmp/hfsp"],
-    # remove mount point
-    ["rmdir", "/tmp/hfsp"],
-    # remove image
-    ["rm", "/tmp/hfsp.img"]
-]
-
-[tool.tox.env.py_filesystem_hfs]
-# Ubuntu
-allowlist_externals = [ "sudo", "dd", "mkfs.hfs", "mkdir", "rm", "rmdir", "chmod" ]
-extras = ["test"]
-deps = [
-    "pytest"
-]
-commands_pre = [
-    # create 64 MByte disk image
-    ["dd", "if=/dev/zero", "of=/tmp/hfsp.img", "bs=1M", "count=64"],
-    # create file system
-    ["mkfs.hfs", "/tmp/hfsp.img", "-v", "HFSP"],
-    # unconditionally create mount point
-    ["mkdir", "-p", "/tmp/hfsp"],
-    # mount image
-    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/hfsp.img", "/tmp/hfsp"],
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/hfsp.img", "/tmp/hfsp", "-t", "hfsplus"],
 ]
 setenv = { TEMP = "/tmp/hfsp" }
 commands = [["pytest", "-r", "s", "."]]
