@@ -30,7 +30,7 @@ on:
 jobs:
 
   test-ubuntu-python-newest:
-    name: Test Ubuntu:latest Python:newest
+    name: Test Python:newest Ubuntu:latest
     needs: lint
     strategy:
       matrix:
@@ -48,7 +48,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-newest-with-passlib:
-    name: Test Ubuntu:latest Python:newest passlib
+    name: Test passlib Python:newest Ubuntu:latest
     needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
@@ -64,12 +64,48 @@ jobs:
         run: pip install tox
       - name: Switch back to passlib
         run: sed -i 's|libpass[^"]*|passlib|' pyproject.toml
-      - name: Test with newest Python on latest Ubuntu
+      - name: Test with newest Python on latest Ubuntu using passlib
         run: tox -c pyproject.toml -e py
 
+  test-ubuntu-python-newest-with-vfat:
+    name: Test VFAT Python:newest Ubuntu:latest
+    needs: [lint, test-ubuntu-python-newest]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with newest Python on latest Ubuntu using VFAT
+        run: tox -c pyproject.toml -e py_filesystem_vfat
+
+  test-ubuntu-python-newest-with-ntfs:
+    name: Test NTFS Python:newest Ubuntu:latest
+    needs: [lint, test-ubuntu-python-newest]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with newest Python on latest Ubuntu using NTFS
+        run: tox -c pyproject.toml -e py_filesystem_ntfs
+
   test-python-32bit:
-    name: Test Ubuntu:latest Python:32-bit
-    needs: [lint, test-ubuntu-python-newest, integ-test]
+    name: Test 32-bit Python:3.11 Ubuntu:latest
+    needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-with-passlib]
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -102,13 +138,13 @@ jobs:
           python3 -m venv venv
           . venv/bin/activate
           pip install --upgrade pip
-      - name: Test 32-bit
+      - name: Test with 32-bit Python on latest Ubuntu
         run: |
           . venv/bin/activate
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-ubuntu-python-oldest:
-    name: Test Ubuntu:latest Python:oldest
+    name: Test Python:oldest Ubuntu:latest
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
@@ -127,7 +163,7 @@ jobs:
 
   test-otheros-python-newest:
     name: Test MacOS/Windows:latest Python:newest
-    needs: [lint, test-ubuntu-python-newest, test-python-32bit]
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-ntfs, test-ubuntu-python-newest-with-vfat]
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
@@ -229,7 +265,7 @@ jobs:
   js-test:
     name: JS Type Check
     runs-on: ubuntu-latest
-    needs: test-ubuntu-python-newest
+    needs: [test-ubuntu-python-newest]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

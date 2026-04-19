@@ -31,7 +31,7 @@ from typing import Iterable, Tuple, Union
 
 import pytest
 
-from radicale import xmlutils
+from radicale import pathutils, xmlutils
 from radicale.auth import htpasswd
 from radicale.tests import BaseTest
 
@@ -64,7 +64,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def _test_htpasswd(self, htpasswd_encryption: str, htpasswd_content: str,
                        test_matrix: Union[str, Iterable[Tuple[str, str, bool]]]
-                       = "ascii", delay: float = 0) -> None:
+                       = "ascii", delay: float = 0, check: int = 207) -> None:
         """Test htpasswd authentication with user "tmp" and password "bepo" for
            ``test_matrix`` "ascii" or user "😀" and password "🔑" for
            ``test_matrix`` "unicode"."""
@@ -88,7 +88,7 @@ class TestBaseAuthRequests(BaseTest):
         elif isinstance(test_matrix, str):
             raise ValueError("Unknown test matrix %r" % test_matrix)
         for user, password, valid in test_matrix:
-            self.propfind("/", check=207 if valid else 401,
+            self.propfind("/", check=check if valid else 401,
                           login="%s:%s" % (user, password))
 
     def test_htpasswd_plain(self) -> None:
@@ -102,7 +102,11 @@ class TestBaseAuthRequests(BaseTest):
             ("tmp", "be:po", True), ("tmp", "bepo", False)))
 
     def test_htpasswd_plain_unicode(self) -> None:
-        self._test_htpasswd("plain", "😀:🔑", "unicode")
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 500
+        else:
+            check = 207
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
 
     def test_htpasswd_md5(self) -> None:
         self._test_htpasswd("md5", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
@@ -111,8 +115,12 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("autodetect", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
 
     def test_htpasswd_md5_unicode(self):
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 500
+        else:
+            check = 207
         self._test_htpasswd(
-            "md5", "😀:$apr1$w4ev89r1$29xO8EvJmS2HEAadQ5qy11", "unicode")
+            "md5", "😀:$apr1$w4ev89r1$29xO8EvJmS2HEAadQ5qy11", "unicode", check=check)
 
     def test_htpasswd_sha256(self) -> None:
         self._test_htpasswd("sha256", "tmp:$5$i4Ni4TQq6L5FKss5$ilpTjkmnxkwZeV35GB9cYSsDXTALBn6KtWRJAzNlCL/")
@@ -166,7 +174,11 @@ class TestBaseAuthRequests(BaseTest):
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_unicode(self) -> None:
-        self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode")
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 500
+        else:
+            check = 207
+        self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode", check=check)
 
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_long(self) -> None:
@@ -280,12 +292,23 @@ class TestBaseAuthRequests(BaseTest):
             else:
                 raise
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="leading and trailing "
-                        "whitespaces not allowed in file names")
     def test_htpasswd_whitespace_user(self) -> None:
         for user in (" tmp", "tmp ", " tmp "):
+            if not pathutils.path_supports_trailing_whitespace(self.colpath) and user.endswith(' '):
+                check = 500
+            else:
+                check = 207
             self._test_htpasswd("plain", "%s:bepo" % user, (
-                (user, "bepo", True), ("tmp", "bepo", False)))
+                (user, "bepo", True), ("tmp", "bepo", False)), check=check)
+
+    def test_htpasswd_problem_user(self) -> None:
+        for user in ("tm*p", "tm?p"):
+            if not pathutils.path_supports_problematic_chars(self.colpath):
+                check = 500
+            else:
+                check = 207
+            self._test_htpasswd("plain", "%s:bepo" % user, (
+                (user, "bepo", True), ("tmp", "bepo", False)), check=check)
 
     def test_htpasswd_whitespace_password(self) -> None:
         for password in (" bepo", "bepo ", " bepo "):

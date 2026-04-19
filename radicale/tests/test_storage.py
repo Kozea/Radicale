@@ -190,6 +190,26 @@ class TestMultiFileSystem(BaseTest):
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
 
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
+    def test_collection_storage_dummy_case_sensitivity(self) -> None:
+        """Test collection storage case sensitivity."""
+
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_no_short_filename(tempfile.mkdtemp()), reason="TEMP has short filename")
+    def test_collection_storage_dummy_no_short_filename(self) -> None:
+        """Test collection storage no short filename."""
+
+    @pytest.mark.skipif(not pathutils.path_supports_unicode(tempfile.mkdtemp()), reason="TEMP is not supporting unicode")
+    def test_collection_storage_dummy_no_support_of_unicode(self) -> None:
+        """Test collection storage no support of unicode."""
+
+    @pytest.mark.skipif(not pathutils.path_supports_trailing_whitespace(tempfile.mkdtemp()), reason="TEMP is not supporting trailing whitespace")
+    def test_collection_storage_dummy_no_support_of_trailing_whitespace(self) -> None:
+        """Test collection storage no support of trailing space."""
+
+    @pytest.mark.skipif(not pathutils.path_supports_problematic_chars(tempfile.mkdtemp()), reason="TEMP is not supporting problematic chars")
+    def test_collection_storage_dummy_no_support_of_problematic_chars(self) -> None:
+        """Test collection storage no support of problematic chars."""
+
     @pytest.mark.skipif(not pathutils.path_supports_symlink(tempfile.mkdtemp()), reason="TEMP is not supporting symlink")
     def test_collection_sharing_by_softlink(self) -> None:
         """Test collection sharing by softlink."""

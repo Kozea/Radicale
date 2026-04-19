@@ -100,6 +100,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
         """
         super().__init__(configuration)
+        if 'TEMP' in os.environ:
+            if not os.path.isdir(os.environ['TEMP']):
+                raise RuntimeError("TEMP found in environment, but directory is not existing: %r" % os.environ['TEMP'])
+            if not os.access(os.environ['TEMP'], os.W_OK):
+                raise RuntimeError("TEMP found in environment, but not writable: %r" % os.environ['TEMP'])
         self._mask_passwords = configuration.get("logging", "mask_passwords")
         self._delay_on_error = configuration.get("server", "delay_on_error")
         logger.info("delay_on_error set to: %.3f seconds", self._delay_on_error)
@@ -535,9 +540,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                                     except ValueError as e:
                                         logger.warning("Failed to create predefined collection %r: %s", name_coll, e)
                         except ValueError as e:
-                            logger.warning("Failed to create principal "
-                                           "collection %r: %s", user, e)
-                            user = ""
+                            logger.error("Failed to create principal "
+                                         "collection for user %r: ValueError %s", user, e)
+                            return response(*httputils.INTERNAL_SERVER_ERROR)
+                        except OSError as e:
+                            logger.error("Failed to create principal "
+                                         "collection for user %r: OSerror %s", user, e)
+                            return response(*httputils.INTERNAL_SERVER_ERROR)
                 else:
                     logger.warning("Access to principal path %r denied by "
                                    "rights backend", principal_path)

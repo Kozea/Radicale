@@ -110,7 +110,7 @@ class Storage(
         except Exception as e:
             logger.warning("Storage item mtime resolution test not possible, cannot set utime on file: %r (%s)", path, e)
             os.remove(path)
-            raise
+            raise ValueError  # do not raise a hard PermissionError
         logger.debug("Storage item mtime resoultion test set: %d ns" % MTIME_NS_TEST)
         mtime_ns = os.stat(path).st_mtime_ns - mtime_ns
         logger.debug("Storage item mtime resoultion test get: %d ns" % mtime_ns)
@@ -180,6 +180,9 @@ class Storage(
                     self._filesystem_root_folder_is_collision_free,
                     filesystem_root_folder_is_collision_free_case_sensitive,
                     filesystem_root_folder_is_collision_free_no_short_filename)
+        logger.info("Storage location subfolder suppports unicode: %s", pathutils.path_supports_unicode(self._get_collection_root_folder()))
+        logger.info("Storage location subfolder suppports trailing whitespace: %s", pathutils.path_supports_trailing_whitespace(self._get_collection_root_folder()))
+        logger.info("Storage location subfolder suppports problematic chars: %s", pathutils.path_supports_problematic_chars(self._get_collection_root_folder()))
         logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
