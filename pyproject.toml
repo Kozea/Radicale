@@ -114,7 +114,8 @@ commands_post = [
     ["rm", "/tmp/vfat.img"]
 ]
 
-[tool.tox.env.py_filesystem_hfsp]
+[tool.tox.env.py_filesystem_hfsplus]
+# Fedora
 allowlist_externals = [ "sudo", "dd", "mkfs.hfsplus", "mkdir", "rm", "rmdir", "chmod" ]
 extras = ["test"]
 deps = [
@@ -125,6 +126,34 @@ commands_pre = [
     ["dd", "if=/dev/zero", "of=/tmp/hfsp.img", "bs=1M", "count=64"],
     # create file system
     ["mkfs.hfsplus", "/tmp/hfsp.img", "-v", "HFSP"],
+    # unconditionally create mount point
+    ["mkdir", "-p", "/tmp/hfsp"],
+    # mount image
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/hfsp.img", "/tmp/hfsp"],
+]
+setenv = { TEMP = "/tmp/hfsp" }
+commands = [["pytest", "-r", "s", "."]]
+commands_post = [
+    # umount image
+    ["sudo", "/usr/bin/umount", "-d", "/tmp/hfsp"],
+    # remove mount point
+    ["rmdir", "/tmp/hfsp"],
+    # remove image
+    ["rm", "/tmp/hfsp.img"]
+]
+
+[tool.tox.env.py_filesystem_hfs]
+# Ubuntu
+allowlist_externals = [ "sudo", "dd", "mkfs.hfs", "mkdir", "rm", "rmdir", "chmod" ]
+extras = ["test"]
+deps = [
+    "pytest"
+]
+commands_pre = [
+    # create 64 MByte disk image
+    ["dd", "if=/dev/zero", "of=/tmp/hfsp.img", "bs=1M", "count=64"],
+    # create file system
+    ["mkfs.hfs", "/tmp/hfsp.img", "-v", "HFSP"],
     # unconditionally create mount point
     ["mkdir", "-p", "/tmp/hfsp"],
     # mount image
@@ -155,7 +184,7 @@ commands_pre = [
     # unconditionally create mount point
     ["mkdir", "-p", "/tmp/ntfs"],
     # mount image
-    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/ntfs.img", "/tmp/ntfs"],
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=0000", "/tmp/ntfs.img", "/tmp/ntfs"],
 ]
 setenv = { TEMP = "/tmp/ntfs" }
 commands = [["pytest", "-r", "s", "."]]
