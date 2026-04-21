@@ -58,6 +58,14 @@
 # script name to strip from URI if called by reverse proxy
 #script_name = (default taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)
 
+# validate user type
+# Value: none|minimal|unicodeletter|strict
+#validate_user_type = minimal
+
+# validate path value
+# Value: none|minimal|unicodeletter|strict
+#validate_path_type = minimal
+
 
 [encoding]
 

@@ -29,6 +29,7 @@ from urllib.parse import parse_qs
 
 from radicale import (config, httputils, pathutils, rights, storage, types,
                       utils)
+from radicale.app.base import ApplicationBase
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
@@ -135,7 +136,7 @@ def load(configuration: "config.Configuration") -> "BaseSharing":
     return utils.load_plugin(INTERNAL_TYPES, "sharing", "Sharing", BaseSharing, configuration)
 
 
-class BaseSharing:
+class BaseSharing(ApplicationBase):
 
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
@@ -157,6 +158,8 @@ class BaseSharing:
         self._rights = rights.load(configuration)
         self._storage = storage.load(configuration)
         self._auth_delay = configuration.get("auth", "delay")
+        self._validate_user_value = configuration.get("server", "validate_user_value")
+        self._validate_path_value = configuration.get("server", "validate_path_value")
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")

@@ -86,6 +86,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _profiling_per_request: bool = False
     _profiling_per_request_method: bool = False
     _limit_content: int
+    _validate_user_value: str
+    _validate_path_value: str
     profiler_per_request_method: dict[str, cProfile.Profile] = {}
     profiler_per_request_method_counter: dict[str, int] = {}
     profiler_per_request_method_starttime: datetime.datetime
@@ -158,6 +160,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             self._extra_headers[key] = configuration.get("headers", key)
         self._strict_preconditions = configuration.get("storage", "strict_preconditions")
         logger.info("strict preconditions check: %s", self._strict_preconditions)
+        # Format checks
+        self._validate_user_value = configuration.get("server", "validate_user_value")
+        self._validate_path_value = configuration.get("server", "validate_path_value")
+        logger.info("validate user value: %r", self._validate_user_value)
+        logger.info("validate path value: %r", self._validate_path_value)
         # Profiling options
         self._profiling = configuration.get("logging", "profiling")
         self._profiling_per_request_min_duration = configuration.get("logging", "profiling_per_request_min_duration")

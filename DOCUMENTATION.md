@@ -1617,6 +1617,33 @@ Strict preconditions check on PUT in case item already exists [RFC6352#9.2](http
 
 Default: `False`
 
+##### validate_user_value
+
+_(>= 3.7.2)_
+
+Validate user value content
+
+Available types are:
+* `none`
+* `minimal` (control and some special chars)
+* `unicodeletter` (unicode letters)
+* `strict` (reduced ASCII set)
+
+Default: `minimum`
+
+##### validate_path_type
+
+_(>= 3.7.2)_
+
+Validate path value content
+
+* `none`
+* `minimal` (control and some special chars)
+* `unicodeletter` (unicode letters)
+* `strict` (reduced ASCII set)
+
+Default: `minimum`
+
 ##### hook
 
 Command that is run after changes to storage. See the

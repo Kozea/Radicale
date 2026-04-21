@@ -44,6 +44,8 @@ class ApplicationBase:
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
     _strict_preconditions: bool
+    _validate_user_value: str
+    _validate_path_format: str
     _hook: hook.BaseHook
 
     def __init__(self, configuration: config.Configuration) -> None:
@@ -58,6 +60,8 @@ class ApplicationBase:
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
         self._limit_content = configuration.get("logging", "limit_content")
+        self._validate_user_value = configuration.get("server", "validate_user_value")
+        self._validate_path_value = configuration.get("server", "validate_path_value")
         self._hook = hook.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron
