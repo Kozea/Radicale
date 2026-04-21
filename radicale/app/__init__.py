@@ -354,14 +354,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 message = "%s response status for %r%s in %.3f seconds: %s" % (
                             request_method, unsafe_path, depthinfo,
                             time_delta_seconds, status_text)
-            if status < 400:
-                logger.info(message)
-            elif status == 401 or status == 404 or status == 412 or status == 409:
-                logger.notice(message)
+            logger_method = logger.info  # default
+            if status == 401 or status == 404 or status == 412 or status == 409 or request_method in ["PROPPATCH", "MKCALENDAR", "MKCOL"]:
+                logger_method = logger.notice
             elif status < 500:
-                logger.error(message)
+                logger_method = logger.error
             else:
-                logger.critical(message)
+                logger_method = logger.critical
+            logger_method(message)
 
             # Profiling end
             if self._profiling_per_request:
