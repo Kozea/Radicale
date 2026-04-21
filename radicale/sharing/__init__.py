@@ -138,6 +138,7 @@ class BaseSharing(ApplicationBase):
     _rights: rights.BaseRights
     _auth_delay: float
     _enabled: bool = False
+    _encoding: str
     default_permissions_create_token: str
     default_permissions_create_map: str
     sharing_db_type: str
@@ -154,6 +155,7 @@ class BaseSharing(ApplicationBase):
         self._rights = rights.load(configuration)
         self._storage = storage.load(configuration)
         self._auth_delay = configuration.get("auth", "delay")
+        self._encoding = configuration.get("encoding", "stock")
         self._validate_user_value = configuration.get("server", "validate_user_value")
         self._validate_path_value = configuration.get("server", "validate_path_value")
         # Sharing
