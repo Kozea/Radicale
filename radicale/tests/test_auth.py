@@ -94,6 +94,14 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_plain(self) -> None:
         self._test_htpasswd("plain", "tmp:bepo")
 
+    def test_htpasswd_blacklist_plain(self) -> None:
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ("tm" + chr(9) + "p", "be:po", True), ("tm" + chr(9) + "p", "bepo", False)), check=401)
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ("tm'p", "be:po", True), ("tm'p", "bepo", False)), check=401)
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ('tm"p', "be:po", True), ('tm"p', "bepo", False)), check=401)
+
     def test_htpasswd_plain_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:bepo")
 
@@ -106,6 +114,39 @@ class TestBaseAuthRequests(BaseTest):
             check = 500
         else:
             check = 207
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
+
+    def test_htpasswd_strict_plain_unicode(self) -> None:
+        """user with unicode chars is not permitted"""
+        self.configure({"server": {"validate_user_value": "strict"}})
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 500
+        else:
+            check = 401
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
+
+    def test_htpasswd_minimal_plain_unicode(self) -> None:
+        """user with unicode chars is permitted"""
+        self.configure({"server": {"validate_user_value": "minimal"}})
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 500
+        else:
+            check = 207
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
+
+    def test_htpasswd_minimal_plain_special(self) -> None:
+        """user with special chars is not permitted"""
+        self.configure({"server": {"validate_user_value": "minimal"}})
+        check = 401
+        self._test_htpasswd("plain", "*?*:bepo", "ascii", check=check)
+
+    def test_htpasswd_unicode_plain_unicode(self) -> None:
+        """user with unicode symbols is not permitted"""
+        self.configure({"server": {"validate_user_value": "unicodeletter"}})
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 500
+        else:
+            check = 401
         self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
 
     def test_htpasswd_md5(self) -> None:
@@ -301,12 +342,23 @@ class TestBaseAuthRequests(BaseTest):
             self._test_htpasswd("plain", "%s:bepo" % user, (
                 (user, "bepo", True), ("tmp", "bepo", False)), check=check)
 
-    def test_htpasswd_problem_user(self) -> None:
+    def test_htpasswd_problem_user_none(self) -> None:
+        self.configure({"server": {"validate_user_value": "none"}})
         for user in ("tm*p", "tm?p"):
             if not pathutils.path_supports_problematic_chars(self.colpath):
                 check = 500
             else:
                 check = 207
+            self._test_htpasswd("plain", "%s:bepo" % user, (
+                (user, "bepo", True), ("tmp", "bepo", False)), check=check)
+
+    def test_htpasswd_problem_user_minimal(self) -> None:
+        self.configure({"server": {"validate_user_value": "minimal"}})
+        for user in ("tm*p", "tm?p"):
+            if not pathutils.path_supports_problematic_chars(self.colpath):
+                check = 500
+            else:
+                check = 401
             self._test_htpasswd("plain", "%s:bepo" % user, (
                 (user, "bepo", True), ("tmp", "bepo", False)), check=check)
 
