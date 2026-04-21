@@ -60,11 +60,11 @@
 
 # validate user type
 # Value: none|minimal|unicodeletter|strict
-#validate_user_type = minimal
+#validate_user_value = minimal
 
 # validate path value
 # Value: none|minimal|unicodeletter|strict
-#validate_path_type = minimal
+#validate_path_value = minimal
 
 
 [encoding]
