@@ -17,7 +17,9 @@
 
 import io
 import logging
+import re
 import sys
+import unicodedata
 import xml.etree.ElementTree as ET
 from typing import Optional, Union
 
@@ -29,6 +31,18 @@ from radicale.rights import intersect
 # HACK: https://github.com/tiran/defusedxml/issues/54
 import defusedxml.ElementTree as DefusedET  # isort:skip
 sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
+
+USER_PATTERN_STRICT: str = "a-zA-Z0-9@\\.\\-_"
+PATH_PATTERN_STRICT: str = USER_PATTERN_STRICT + "\\/"  # / as separator
+
+USER_PATTERN_STRICT_RE: str = "^[" + USER_PATTERN_STRICT + "]+$"
+PATH_PATTERN_STRICT_RE: str = "^[" + PATH_PATTERN_STRICT + "]+$"
+
+USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?']
+PATH_BLACKLIST_MINIMAL: list = USER_BLACKLIST_MINIMAL
+
+USER_WHITELIST_UNICODE: list = ["-", ".", "@"]  # from USER_PATTERN_STRICT
+PATH_WHITELIST_UNICODE: list = ["-", ".", "@", "/"]  # from PATH_PATTERN_STRICT
 
 
 class ApplicationBase:
@@ -102,6 +116,52 @@ class ApplicationBase:
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._xml_response(xmlutils.webdav_error(human_tag))
         return status, headers, content, None
+
+    def _check_format(self,
+                      string: str,
+                      blacklist_minimal: list[str],
+                      whitelist_unicode: list[str],
+                      validation_type: str,
+                      ) -> bool:
+        check_minimal = (validation_type == "minimal")
+        check_unicode = (validation_type == "unicodeletter")
+        logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode=%s)", string, validation_type, check_minimal, check_unicode)
+        for c in string:
+            if c <= chr(31) or (c >= chr(127) and c <= chr(159)):
+                # ASCII: control char
+                return False
+            if unicodedata.category(c)[0] == "C":
+                # Unicode: control
+                return False
+            if check_minimal:
+                if c in blacklist_minimal:
+                    logger.trace("_check_format found %r", c)
+                    return False
+            elif check_unicode:
+                if c not in whitelist_unicode:
+                    if unicodedata.category(c)[0] != "L":
+                        return False
+        return True
+
+    def _check_user_format(self, user: str) -> bool:
+        if self._validate_user_value == "strict":
+            return (re.search(USER_PATTERN_STRICT_RE, user) is not None)
+        else:
+            return self._check_format(user,
+                                      USER_BLACKLIST_MINIMAL,
+                                      USER_WHITELIST_UNICODE,
+                                      self._validate_user_value,
+                                      )
+
+    def _check_path_format(self, path: str) -> bool:
+        if self._validate_path_value == "strict":
+            return (re.search(PATH_PATTERN_STRICT_RE, path) is not None)
+        else:
+            return self._check_format(path,
+                                      PATH_BLACKLIST_MINIMAL,
+                                      PATH_WHITELIST_UNICODE,
+                                      self._validate_path_value,
+                                      )
 
 
 class Access:

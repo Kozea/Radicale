@@ -82,6 +82,9 @@ class ApplicationPartMove(ApplicationBase):
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
+        if not self._check_path_format(to_path):
+            logger.warning("request contains invalid path: %r (not compliant to %r)", to_path, self._validate_path_value)
+            return httputils.BAD_REQUEST
         if not (to_path + "/").startswith(base_prefix + "/"):
             logger.warning("Destination %r from MOVE request on %r doesn't "
                            "start with base prefix", to_path, path)

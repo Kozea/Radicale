@@ -466,6 +466,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching (may cause authentication issues using internal WebUI)", base_prefix, path)
                 else:
                     logger.debug("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
+        if not self._check_path_format(path):
+            logger.error("request contains invalid path: %r (not compliant to %r)", path, self._validate_path_value)
+            return response(*httputils.BAD_REQUEST)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % request_method, None)
@@ -496,7 +499,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
+        if login and not self._check_user_format(login):
+            info = "not compliant to %r" % self._validate_user_value
+            user = ""
+        else:
+            (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
         if self.configuration.get("auth", "type") == "ldap":
             try:
                 logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))

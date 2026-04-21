@@ -122,10 +122,6 @@ API_TYPES_V1: dict[str, type] = {
 
 TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
-PATH_PATTERN: str = "([a-zA-Z0-9/.\\-@]+)"  # TODO: extend or find better source
-
-USER_PATTERN: str = "([a-zA-Z0-9@.]+)"  # TODO: extend or find better source
-
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
 
 CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
@@ -727,20 +723,20 @@ class BaseSharing(ApplicationBase):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 else:
-                    if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
-                        logger.warning(api_info + ": unsupported " + key)
+                    if not self._check_path_format(request_data[key]):
+                        logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_path_value)
                         return httputils.bad_request("Invalid value for PathOrToken")
                     if not request_data[key].endswith("/"):
                         return httputils.bad_request("PathOrToken not ending with /")
             elif key == "PathMapped":
-                if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
-                    logger.warning(api_info + ": unsupported " + key)
+                if not self._check_path_format(request_data[key]):
+                    logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_path_value)
                     return httputils.bad_request("Invalid value for PathMapped")
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathMapped not ending with /")
             elif key == "User":
-                if not re.search('^' + USER_PATTERN + '$', request_data[key]):
-                    logger.warning(api_info + ": unsupported " + key)
+                if not self._check_user_format(request_data[key]):
+                    logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_user_value)
                     return httputils.bad_request("Invalid value for User")
 
         # check for optional parameters
