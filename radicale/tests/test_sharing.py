@@ -1427,6 +1427,12 @@ class TestSharingApiSanity(BaseTest):
             json_dict['PathOrToken'] = path_shared
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
+            logging.info("\n*** update map by owner: PathOrToken (json->json) -> 404 (is primary key, therefore not found)")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared2
+            _, headers, answer = self._sharing_api_json("map", "update", check=404, login="owner:ownerpw", json_dict=json_dict)
+
             logging.info("\n*** update map by owner: PathMapped(owner2) (json->json) -> 403")
             json_dict = {}
             json_dict['PathMapped'] = path_mapped_o2
