@@ -9,7 +9,7 @@
 * Extension: tox with new optional test cases to test with LinuxOS vfat, hfsplus, ntfs filesystems
 * Adjust: respond with 500 in case principal collection cannot be created (e.g. filesystem issues)
 * Improve: sharing supports now unicode
-* Add: [server] new options validate_user_type validate_path_type for ability to block unwanted values
+* Add: [server] new options validate_user_value/validate_path_value for ability to block unwanted values
 * Adjust: several log levels incl. final result depending on status code
 * Fix: sharing/csv: quote handling and honor stock encoding
 * Extension: sharing: add ICAL:calendar-order to property overlay whitelist
