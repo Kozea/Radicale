@@ -3316,6 +3316,8 @@ permissions: RrWw""")
         json_dict: dict
 
         path_owner1 = "/owner1/calendarPGo1.ics/"
+        path_owner1 = "/owner1/calendarPGo1.ics/"
+        path_owner2 = "/owner2/calendarPGo1.ics/"
         path_owner1_rw = "/owner1/calendarPGo1rw.ics/"
         path_owner1_RrWw = "/owner1/calendarPGo1RrWw.ics/"
         path_user1_r = "/user1/calendarPGu1-r.ics/"
@@ -3333,6 +3335,15 @@ permissions: RrWw""")
 
             # create map
             self.configure({"sharing": {"default_permissions_create_map": "r"}})
+
+            logging.info("\n*** create map user1/owner1 with path of owner 2-> 403")
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner2
+            json_dict['PathOrToken'] = path_user1_r
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1 r -> 200")
             json_dict = {}
