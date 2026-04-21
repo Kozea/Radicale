@@ -853,6 +853,12 @@ class BaseSharing(ApplicationBase):
                 logger.warning(api_info + ": missing PathMapped")
                 return httputils.bad_request("Missing PathMapped")
 
+            # check access Permissions
+            access = Access(self._rights, user, PathMapped, None)
+            if not access.check("r"):
+                logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
+                return httputils.NOT_ALLOWED
+
             if Conversion is None:
                 Conversion = "none"
 
@@ -903,12 +909,6 @@ class BaseSharing(ApplicationBase):
                 HiddenByUser = Hidden
 
             if ShareType == "token":
-                # check access Permissions
-                access = Access(self._rights, user, PathMapped)
-                if not access.check("r"):
-                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
-                    return httputils.NOT_ALLOWED
-
                 if self.permit_create_token is False:
                     if "t" not in access.permissions:
                         logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explict grant misses 't')", PathMapped, user)
@@ -971,12 +971,6 @@ class BaseSharing(ApplicationBase):
                 if len(shares) > 0:
                     logger.warning(api_info + ": share already exists with PathMapped=%r User=%r Conversion=%r", PathMapped, User, Conversion)
                     return httputils.CONFLICT
-
-                # check access Permissions
-                access = Access(self._rights, user, PathMapped, None)  # PathMapped is mandatory
-                if not access.check("r") and "i" not in access.permissions:
-                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
-                    return httputils.NOT_ALLOWED
 
                 if self.permit_create_map is False:
                     if "m" not in access.permissions:
