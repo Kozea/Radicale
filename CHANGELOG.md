@@ -8,6 +8,11 @@
 * Improve: application will stop on startup if TEMP is provided but not existing or not writable
 * Extension: tox with new optional test cases to test with LinuxOS vfat, hfsplus, ntfs filesystems
 * Adjust: respond with 500 in case principal collection cannot be created (e.g. filesystem issues)
+* Improve: sharing supports now unicode
+* Add: [server] new options validate_user_type validate_path_type for ability to block unwanted values
+* Adjust: several log levels incl. final result depending on status code
+* Fix: sharing/csv: quote handling and honor stock encoding
+* Extension: sharing: add ICAL:calendar-order to property overlay whitelist
 
 ## 3.7.1
 * Fix: share address book collection as birthday calendar not working on non-DEBUG level
