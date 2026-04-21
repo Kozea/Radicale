@@ -122,7 +122,7 @@ API_TYPES_V1: dict[str, type] = {
 
 TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
-OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
+OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
 CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
 
