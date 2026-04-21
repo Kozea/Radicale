@@ -1040,7 +1040,7 @@ class BaseSharing(ApplicationBase):
                 else:
                     answer['PathOrToken'] = token
 
-            logger.info(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
+            logger.notice(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
 
         # action: update
         elif action == "update":
@@ -1172,6 +1172,8 @@ class BaseSharing(ApplicationBase):
                 logger.warning(api_info + ": %r not successful", request_data['PathOrToken'])
                 return httputils.bad_request("Internal Error")
 
+            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
+
         # action: delete
         elif action == "delete":
             logger.trace("" + api_info + ": start")
@@ -1211,6 +1213,8 @@ class BaseSharing(ApplicationBase):
             else:
                 logger.warning(api_info + ": %r by user %r not successful", request_data['PathOrToken'], request_data['User'])
                 return httputils.bad_request("Internal Error")
+
+            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
 
         # action: info
         elif action == "info":
@@ -1299,6 +1303,8 @@ class BaseSharing(ApplicationBase):
             else:
                 logger.warning(api_info + ": %r by user %s not successful", request_data['PathOrToken'], user)
                 return httputils.bad_request("Internal Error")
+
+            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
 
         else:
             # default

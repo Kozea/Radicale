@@ -614,9 +614,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
             if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
                 if path.startswith("/.token"):
-                    logger.info("Access to %r denied", path)
+                    logger.notice("Access to %r denied", path)
                 else:
-                    logger.info("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
+                    logger.notice("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
         else:
             status, headers, answer, xml_request = httputils.NOT_ALLOWED
 
