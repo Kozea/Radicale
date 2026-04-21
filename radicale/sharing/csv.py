@@ -435,7 +435,14 @@ class Sharing(sharing.BaseSharing):
                                 if row[fieldname] is None or row[fieldname] == '':
                                     row[fieldname] = {}
                                 else:
-                                    field = row[fieldname].lstrip('"').rstrip('"').replace("'", '"')
+                                    field = row[fieldname].lstrip('"').rstrip('"')
+                                    logger.trace("json prep quote replacer match (before): %s", field)
+                                    field = field.replace('"', '\\"').replace("\\'", "'")  # escape "
+                                    field = field.replace("{'", '{"')  # replace for JSON start {' -> {"
+                                    field = field.replace("'}", '"}')  # replace for JSON end '} -> "}
+                                    field = field.replace("': '", '": "')  # replace for JSON entry/value ': ' -> ": "
+                                    field = field.replace("', '", '", "')  # replace for JSON delimiter ', ' -> ", "
+                                    logger.trace("json prep quote replacer match (after) : %s", field)
                                     try:
                                         row[fieldname] = json.loads(field)
                                     except Exception as e:
