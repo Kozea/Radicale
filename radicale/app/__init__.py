@@ -345,15 +345,23 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             else:
                 flags_text = ""
             if answer is not None:
-                logger.info("%s response status for %r%s in %.3f seconds %s %s bytes%s: %s",
+                message = "%s response status for %r%s in %.3f seconds %s %s bytes%s: %s" % (
                             request_method, unsafe_path, depthinfo,
                             time_delta_seconds, content_encoding, str(len(answer)),
                             flags_text,
                             status_text)
             else:
-                logger.info("%s response status for %r%s in %.3f seconds: %s",
+                message = "%s response status for %r%s in %.3f seconds: %s" % (
                             request_method, unsafe_path, depthinfo,
                             time_delta_seconds, status_text)
+            if status < 400:
+                logger.info(message)
+            elif status == 401 or status == 404 or status == 412 or status == 409:
+                logger.notice(message)
+            elif status < 500:
+                logger.error(message)
+            else:
+                logger.critical(message)
 
             # Profiling end
             if self._profiling_per_request:
