@@ -289,22 +289,14 @@ def path_to_filesystem(root: str, sane_path: str, path_is_collision_free: bool =
             raise UnsafePathError(part)
         safe_path_parent = safe_path
         safe_path = os.path.join(safe_path, part)
-        # Check for conflicting files (e.g. case-insensitive file systems
-        # or short names on Windows file systems)
         if not path_is_collision_free:
-            if sys.platform == "win32" and False:  # temporary for testing
-                # logger.trace("path_to_filesystem check (win32): %r", part)
-                # if (os.path.lexists(safe_path) and not os.path.realpath(safe_path).endswith(part)) and not os.path.islink(safe_path):
-                if (os.path.lexists(safe_path) and not os.path.realpath(safe_path).endswith(part)):
-                    raise CollidingPathError(part)
-            else:
-                # logger.trace("path_to_filesystem check (!win32): %r", part)
-                if os.path.lexists(safe_path):
-                    with os.scandir(safe_path_parent) as entries:
-                        if part not in (e.name for e in entries):
-                            raise CollidingPathError(part)
+            # Check for conflicting files (e.g. case-insensitive file systems
+            # or short names on Windows file systems)
+            if os.path.lexists(safe_path):
+                with os.scandir(safe_path_parent) as entries:
+                    if part not in (e.name for e in entries):
+                        raise CollidingPathError(part)
         else:
-            # logger.trace("path_to_filesystem check (skipped): %r", part)
             pass
     return safe_path
 
