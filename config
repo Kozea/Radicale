@@ -424,6 +424,7 @@
 # This may become the default in future versions, override if you need a different CSP.
 Content-Security-Policy = default-src 'self'; object-src 'none'
 
+
 [hook]
 
 # Hook types
