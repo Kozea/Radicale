@@ -312,4 +312,10 @@ export class CollectionsScene {
     }
 
     is_transient() { return false; }
+
+    title_object() {
+        if (this._principal_collection.displayname && this._principal_collection.displayname.length > 0)
+            return this._principal_collection.displayname;
+        else return this._user;
+    }
 }

@@ -25,6 +25,7 @@ import {
   reload_sharing_list,
 } from "../api/sharing.js";
 import { Collection, Permission } from "../models/collection.js";
+import { extract_title } from "../utils/collection_utils.js";
 
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
@@ -126,6 +127,11 @@ export class ShareCollectionScene {
   }
 
   is_transient() { return false; }
+
+  title_object() {
+    return extract_title(this._collection);
+  }
+
 }
 
 /**

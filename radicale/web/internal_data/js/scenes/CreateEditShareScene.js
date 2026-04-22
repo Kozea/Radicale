@@ -21,6 +21,7 @@
 
 import { Share, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
 import { CollectionType, Permission } from "../models/collection.js";
+import { extract_title } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
@@ -416,4 +417,9 @@ export class CreateEditShareScene {
     }
 
     is_transient() { return false; }
+
+    title_object() {
+        return extract_title(this._collection);
+    }
+
 }

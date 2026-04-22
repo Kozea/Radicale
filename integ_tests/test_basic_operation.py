@@ -19,6 +19,7 @@ Integration test for basic operations
 """
 
 import pathlib
+import re
 from typing import Any, Generator
 
 import pytest
@@ -44,7 +45,7 @@ def test_index_html_loads(page: Page, radicale_server: str, config: Config) -> N
     console_msgs: list[str] = []
     page.on("console", lambda msg: console_msgs.append(msg.text))
     page.goto(radicale_server)
-    expect(page).to_have_title("Radicale Web Interface")
+    expect(page).to_have_title(re.compile("Radicale Web Interface - .* - Login"))
     # There should be no errors on the console, except for the expected 401/403 from auto-login check
     errors = [
         msg

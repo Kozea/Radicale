@@ -19,23 +19,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { get_element_by_id } from "../utils/misc.js";
-import { Scene } from "./scene_manager.js";
-
 /**
- * @implements {Scene}
+ * @param {import("../models/collection.js").Collection} collection
+ * @returns str
  */
-export class LoadingScene {
-    constructor() {
-        this.html_scene = get_element_by_id("loadingscene");
-    }
-    show() {
-        this.html_scene.classList.remove("hidden");
-    }
-    hide() {
-        this.html_scene.classList.add("hidden");
-    }
-    release() { }
-    is_transient() { return true; }
-    title_object() { return "Loading..."}
+export function extract_title(collection) {
+    if (collection.displayname && collection.displayname.length > 0) {
+        return collection.displayname;
+    } else
+        return collection.href;
 }

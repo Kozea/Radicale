@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { SERVER } from "../constants.js";
+
 /**
  * @interface
  */
@@ -41,6 +43,9 @@ export class Scene {
      * @returns boolean
      */
     is_transient() { return false; }
+
+    /** @returns str */
+    title_object() { return ""; }
 }
 
 
@@ -53,6 +58,18 @@ let scene_stack = [];
 let history_array = [];
 let current_history_index = -1;
 let is_navigating_history = false;
+
+function update_window_title() {
+    let title_parts = ["Radicale Web Interface", SERVER];
+
+    if (scene_stack.length > 0) {
+        let title = scene_stack[scene_stack.length - 1].title_object();
+        if (title) {
+            title_parts.push(title);
+        }
+    }
+    document.title = title_parts.join(" - ");
+}
 
 function record_history() {
     if (is_navigating_history) return;
@@ -120,6 +137,7 @@ if (typeof window !== "undefined" && window.history) {
                 }
 
                 current_history_index = new_index;
+                update_window_title();
             } finally {
                 is_navigating_history = false;
             }
@@ -141,6 +159,7 @@ export function push_scene(scene) {
     scene_stack.push(scene);
     scene.show();
     record_history();
+    update_window_title();
 }
 
 /**
@@ -154,6 +173,7 @@ function pop_and_release() {
     if (scene) {
         scene.release();
     }
+    update_window_title();
 }
 
 /**
@@ -168,6 +188,7 @@ export function replace_scene(scene) {
     scene_stack.push(scene);
     scene.show();
     record_history();
+    update_window_title();
 }
 
 /**
@@ -183,6 +204,7 @@ export function pop_scene() {
         scene_stack[scene_stack.length - 1].show();
     }
     record_history();
+    update_window_title();
 }
 
 /**
@@ -202,6 +224,7 @@ export function pop_to_parent() {
         scene_stack[scene_stack.length - 1].show();
     }
     record_history();
+    update_window_title();
 }
 
 /**
@@ -222,6 +245,7 @@ export function pop_to_root() {
         scene_stack[0].show(); // Ensure the root scene is visible
     }
     record_history();
+    update_window_title();
 }
 
 /**
