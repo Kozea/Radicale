@@ -65,7 +65,7 @@ class StoragePartCreateCollection(StorageBase):
 
         # Path should already be sanitized
         sane_path = pathutils.strip_path(href)
-        filesystem_path = pathutils.path_to_filesystem(folder, sane_path, self._filesystem_root_folder_is_collision_free)
+        filesystem_path = pathutils.path_to_filesystem(folder, sane_path, self._is_collision_free)
         logger.debug("Create collection: %r" % filesystem_path)
 
         if not props:

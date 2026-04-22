@@ -163,12 +163,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
         # Format checks
         self._validate_user_value = configuration.get("server", "validate_user_value")
         self._validate_path_value = configuration.get("server", "validate_path_value")
-        if not self._storage._filesystem_root_folder_supports_unicode:
+        if not self._storage._supports_unicode:
             if self._validate_user_value not in ["strict", "no-unicode"]:
                 self._validate_user_value = "no-unicode"
             if self._validate_path_value not in ["strict", "no-unicode"]:
                 self._validate_path_value = "no-unicode"
-            if not self._storage._filesystem_root_folder_supports_problematic_chars or not self._storage._filesystem_root_folder_supports_trailing_whitespace:
+            if not self._storage._supports_problematic_chars or not self._storage._supports_trailing_whitespace:
                 if self._validate_user_value not in ["strict"]:
                     self._validate_user_value = "strict"
                 if self._validate_path_value not in ["strict"]:

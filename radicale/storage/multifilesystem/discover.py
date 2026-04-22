@@ -52,7 +52,7 @@ class StoragePartDiscover(StorageBase):
         # Create the root collection
         self._makedirs_synced(folder)
         try:
-            filesystem_path = pathutils.path_to_filesystem(folder, sane_path, self._filesystem_root_folder_is_collision_free)
+            filesystem_path = pathutils.path_to_filesystem(folder, sane_path, self._is_collision_free)
         except ValueError as e:
             # Path is unsafe
             logger.warning("Unsafe path %r requested from storage: %s",
@@ -110,7 +110,7 @@ class StoragePartDiscover(StorageBase):
             href = base64.b64encode(group.encode('utf-8')).decode('ascii')
             logger.debug(f"searching for group calendar {group} {href}")
             sane_child_path = f"GROUPS/{href}"
-            if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._filesystem_root_folder_is_collision_free)):
+            if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
                 continue
             child_path = f"/GROUPS/{href}/"
             with child_context_manager(sane_child_path, None):

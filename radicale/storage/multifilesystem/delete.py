@@ -46,7 +46,7 @@ class CollectionPartDelete(CollectionPartHistory, CollectionBase):
             # Delete an item
             if not pathutils.is_safe_filesystem_path_component(href):
                 raise pathutils.UnsafePathError(href)
-            path = pathutils.path_to_filesystem(self._filesystem_path, href, self._filesystem_root_folder_is_collision_free)
+            path = pathutils.path_to_filesystem(self._filesystem_path, href, self._is_collision_free)
             if not os.path.isfile(path):
                 raise storage.ComponentNotFoundError(href)
             os.remove(path)
