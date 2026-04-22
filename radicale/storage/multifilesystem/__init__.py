@@ -177,13 +177,15 @@ class Storage(
         filesystem_root_folder_is_collision_free_no_short_filename = pathutils.path_is_collision_free_no_short_filename(self._get_collection_root_folder())
         self._filesystem_root_folder_is_collision_free = filesystem_root_folder_is_collision_free_case_sensitive and filesystem_root_folder_is_collision_free_no_short_filename
         self._filesystem_root_folder_supports_unicode = pathutils.path_supports_unicode(self._get_collection_root_folder())
+        self._filesystem_root_folder_supports_trailing_whitespace = pathutils.path_supports_trailing_whitespace(self._get_collection_root_folder())
+        self._filesystem_root_folder_supports_problematic_chars = pathutils.path_supports_problematic_chars(self._get_collection_root_folder())
         logger.info("Storage location subfolder is collision free: %s (case-sensitive=%s no-short-filename=%s)",
                     self._filesystem_root_folder_is_collision_free,
                     filesystem_root_folder_is_collision_free_case_sensitive,
                     filesystem_root_folder_is_collision_free_no_short_filename)
         logger.info("Storage location subfolder supports unicode: %s", self._filesystem_root_folder_supports_unicode)
-        logger.info("Storage location subfolder supports trailing whitespace: %s", pathutils.path_supports_trailing_whitespace(self._get_collection_root_folder()))
-        logger.info("Storage location subfolder supports problematic chars: %s", pathutils.path_supports_problematic_chars(self._get_collection_root_folder()))
+        logger.info("Storage location subfolder supports trailing whitespace: %s", self._filesystem_root_folder_supports_trailing_whitespace)
+        logger.info("Storage location subfolder supports problematic chars: %s", self._filesystem_root_folder_supports_problematic_chars)
         logger.info("Storage cache subfolder usage for 'item': %s", self._use_cache_subfolder_for_item)
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)

@@ -124,23 +124,28 @@ class ApplicationBase:
                       validation_type: str,
                       ) -> bool:
         check_minimal = (validation_type == "minimal")
-        check_unicode = (validation_type == "unicodeletter")
-        logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode=%s)", string, validation_type, check_minimal, check_unicode)
+        check_unicode_letter = (validation_type == "unicode-letter")
+        check_no_unicode = (validation_type == "no-unicode")
+        logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
         for c in string:
             if c <= chr(31) or (c >= chr(127) and c <= chr(159)):
                 # ASCII: control char
                 return False
             if unicodedata.category(c)[0] == "C":
+                # https://unicodeplus.com/category
                 # Unicode: control
                 return False
             if check_minimal:
                 if c in blacklist_minimal:
                     logger.trace("_check_format found %r", c)
                     return False
-            elif check_unicode:
+            elif check_unicode_letter:
                 if c not in whitelist_unicode:
                     if unicodedata.category(c)[0] != "L":
                         return False
+            elif check_no_unicode:
+                if ord(c) > 255:
+                    return False
         return True
 
     def _check_user_format(self, user: str) -> bool:
