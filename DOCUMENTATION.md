@@ -1626,7 +1626,8 @@ Validate user value content
 Available types are:
 * `none`
 * `minimal` (control and some special chars)
-* `unicodeletter` (unicode letters)
+* `unicode-letter` (unicode letters)
+* `no-unicode` (no unicode)
 * `strict` (reduced ASCII set)
 
 Default: `minimum`
@@ -1639,7 +1640,8 @@ Validate path value content
 
 * `none`
 * `minimal` (control and some special chars)
-* `unicodeletter` (unicode letters)
+* `unicode-letter` (unicode letters)
+* `no-unicode` (no unicode)
 * `strict` (reduced ASCII set)
 
 Default: `minimum`

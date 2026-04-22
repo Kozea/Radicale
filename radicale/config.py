@@ -48,7 +48,7 @@ DEFAULT_CONFIG_PATH: str = os.pathsep.join([
 
 PROFILING: Sequence[str] = ("per_request", "per_request_method", "none")
 
-VALIDATE_TYPES: Sequence[str] = ("none", "minimal", "unicodeletter", "strict")
+VALIDATE_TYPES: Sequence[str] = ("none", "minimal", "unicode-letter", "unicode-none", "strict")
 
 
 def positive_int(value: Any) -> int:

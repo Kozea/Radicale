@@ -59,11 +59,11 @@
 #script_name = (default taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)
 
 # validate user type
-# Value: none|minimal|unicodeletter|strict
+# Value: none|minimal|unicode-letter|no-unicode|strict
 #validate_user_value = minimal
 
 # validate path value
-# Value: none|minimal|unicodeletter|strict
+# Value: none|minimal|unicode-letter|no-unicode|strict
 #validate_path_value = minimal
 
 
