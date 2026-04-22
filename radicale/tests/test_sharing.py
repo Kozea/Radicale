@@ -24,11 +24,13 @@ import datetime
 import json
 import logging
 import os
+import pytest
 import re
 import sys
+import tempfile
 from typing import Dict, Sequence, Tuple, Union
 
-from radicale import sharing, xmlutils
+from radicale import pathutils, sharing, xmlutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -5541,6 +5543,7 @@ permissions: RrWw""")
             description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
             assert description == description_user
 
+    @pytest.mark.skipif(not pathutils.path_supports_unicode(tempfile.mkdtemp()), reason="TEMP is not supporting unicode")
     def test_sharing_api_map_user_unicode(self) -> None:
         """share-by-map API usage tests related to properties overlay using unicode."""
         self.configure({"auth": {"type": "htpasswd",
@@ -5590,6 +5593,7 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="us😀er:user😀pw", json_dict=json_dict)
 
+    @pytest.mark.skipif(not pathutils.path_supports_unicode(tempfile.mkdtemp()), reason="TEMP is not supporting unicode")
     def test_sharing_api_map_path_unicode(self) -> None:
         """share-by-map API usage tests related to properties overlay using unicode."""
         self.configure({"auth": {"type": "htpasswd",
