@@ -33,7 +33,7 @@ import defusedxml.ElementTree as DefusedET  # isort:skip
 sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
 
 USER_PATTERN_STRICT: str = "a-zA-Z0-9@\\.\\-_"
-PATH_PATTERN_STRICT: str = USER_PATTERN_STRICT + "\\/"  # / as separator
+PATH_PATTERN_STRICT: str = USER_PATTERN_STRICT + "\\/~"  # / as separator
 
 USER_PATTERN_STRICT_RE: str = "^[" + USER_PATTERN_STRICT + "]+$"
 PATH_PATTERN_STRICT_RE: str = "^[" + PATH_PATTERN_STRICT + "]+$"
@@ -41,8 +41,8 @@ PATH_PATTERN_STRICT_RE: str = "^[" + PATH_PATTERN_STRICT + "]+$"
 USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?']
 PATH_BLACKLIST_MINIMAL: list = USER_BLACKLIST_MINIMAL
 
-USER_WHITELIST_UNICODE: list = ["-", ".", "@"]  # from USER_PATTERN_STRICT
-PATH_WHITELIST_UNICODE: list = ["-", ".", "@", "/"]  # from PATH_PATTERN_STRICT
+USER_WHITELIST_UNICODE: list = ["-", ".", "@", "_"]  # from USER_PATTERN_STRICT
+PATH_WHITELIST_UNICODE: list = ["-", ".", "@", "_", "/", "~"]  # from PATH_PATTERN_STRICT
 
 
 class ApplicationBase:
