@@ -24,11 +24,12 @@ import datetime
 import json
 import logging
 import os
-import pytest
 import re
 import sys
 import tempfile
 from typing import Dict, Sequence, Tuple, Union
+
+import pytest
 
 from radicale import pathutils, sharing, xmlutils
 from radicale.tests import BaseTest
