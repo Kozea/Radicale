@@ -27,6 +27,7 @@ import {
 import { Collection, Permission } from "../models/collection.js";
 import { extract_title } from "../utils/collection_utils.js";
 
+import { update_title_and_description } from "../utils/collection_utils.js";
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissionsOrConversion } from "../utils/permissions.js";
@@ -60,6 +61,7 @@ export class ShareCollectionScene {
     this._errorHandler = new ErrorHandler(this._error_form);
 
     this._title = get_element(this._html_scene, "[data-name=title]");
+    this._description = get_element(this._html_scene, "[data-name=description]");
   }
 
   _oncancel() {
@@ -114,7 +116,7 @@ export class ShareCollectionScene {
       if (this._share_by_map_div) this._share_by_map_div.classList.add("hidden");
     }
 
-    this._title.textContent = this._collection.displayname || this._collection.href;
+    update_title_and_description(this._collection, this._title, this._description);
     update_share_list(this._user, this._password, this._collection, this._errorHandler);
   }
 

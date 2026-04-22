@@ -29,3 +29,21 @@ export function extract_title(collection) {
     } else
         return collection.href;
 }
+
+/**
+ * @param {import("../models/collection.js").Collection} collection
+ * @param {HTMLElement} title_element
+ * @param {HTMLElement} description_element
+ */
+export function update_title_and_description(
+    collection,
+    title_element,
+    description_element) {
+    title_element.textContent = collection.displayname || collection.href;
+    if (collection.description && collection.description.length > 0) {
+        description_element.classList.remove("hidden");
+        description_element.textContent = collection.description;
+    } else {
+        description_element.classList.add("hidden");
+    }
+}

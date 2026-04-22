@@ -47,7 +47,7 @@ def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> 
     page.locator('input[data-name="sharehref"]').fill("mapped")
     if permissions == "rw":
         page.check("#newshare_attr_permissions_rw")
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
