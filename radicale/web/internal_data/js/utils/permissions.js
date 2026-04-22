@@ -35,18 +35,16 @@ export function displayPermissionsOrConversion(conversion, permissions, node) {
     rwElement.classList.add("hidden");
   } else {
     permissions = (permissions || "").toLowerCase();
-    if (permissions === "rw") {
+    if (permissions.includes('w')) {
       rwElement.classList.remove("hidden");
       rwElement.setAttribute("title", "Read and write");
       roElement.classList.add("hidden");
       conversionElement.classList.add("hidden");
-    } else if (permissions === "r") {
+    } else {
       roElement.classList.remove("hidden");
       roElement.setAttribute("title", "Read-only");
       rwElement.classList.add("hidden");
       conversionElement.classList.add("hidden");
-    } else {
-      console.warn("Unknown permissions", permissions);
     }
   }
 }

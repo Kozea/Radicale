@@ -63,6 +63,16 @@ def test_create_and_delete_share_by_key(
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
         )
     ).to_be_visible()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']"
+        )
+    ).to_be_hidden()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='conversion']"
+        )
+    ).to_be_hidden()
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
     page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
@@ -79,6 +89,16 @@ def test_create_and_delete_share_by_key(
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_visible()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
+        )
+    ).to_be_hidden()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='conversion']"
+        )
+    ).to_be_hidden()
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
     page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
@@ -386,6 +406,11 @@ def test_create_and_delete_share_by_bday(
     expect(
         page.locator(
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']"
+        )
+    ).to_be_hidden()
+    expect(
+        page.locator(
+            "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_hidden()
 
