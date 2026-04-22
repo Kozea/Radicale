@@ -101,7 +101,7 @@ commands_pre = [
     # unconditionally create mount point
     ["mkdir", "-p", "/tmp/vfat"],
     # mount image
-    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000", "/tmp/vfat.img", "/tmp/vfat"],
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000,utf8=no", "/tmp/vfat.img", "/tmp/vfat"],
 ]
 setenv = { TEMP = "/tmp/vfat" }
 commands = [["pytest", "-r", "s", "."]]
@@ -112,6 +112,33 @@ commands_post = [
     ["rmdir", "/tmp/vfat"],
     # remove image
     ["rm", "/tmp/vfat.img"]
+]
+
+[tool.tox.env.py_filesystem_vfat_utf8]
+allowlist_externals = [ "sudo", "dd", "mkfs.vfat", "mkdir", "rm", "rmdir", "chmod" ]
+extras = ["test"]
+deps = [
+    "pytest"
+]
+commands_pre = [
+    # create 64 MByte disk image
+    ["dd", "if=/dev/zero", "of=/tmp/vfat8.img", "bs=1M", "count=64"],
+    # create file system
+    ["mkfs.vfat", "/tmp/vfat8.img", "-n", "VFAT"],
+    # unconditionally create mount point
+    ["mkdir", "-p", "/tmp/vfat8"],
+    # mount image
+    ["sudo", "/usr/bin/mount", "-o", "loop,umask=000,utf8", "/tmp/vfat8.img", "/tmp/vfat8"],
+]
+setenv = { TEMP = "/tmp/vfat8" }
+commands = [["pytest", "-r", "s", "."]]
+commands_post = [
+    # umount image
+    ["sudo", "/usr/bin/umount", "-d", "/tmp/vfat8"],
+    # remove mount point
+    ["rmdir", "/tmp/vfat8"],
+    # remove image
+    ["rm", "/tmp/vfat8.img"]
 ]
 
 [tool.tox.env.py_filesystem_hfsplus]

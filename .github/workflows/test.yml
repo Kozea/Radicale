@@ -85,6 +85,24 @@ jobs:
       - name: Test with newest Python on latest Ubuntu using VFAT
         run: tox -c pyproject.toml -e py_filesystem_vfat
 
+  test-ubuntu-python-newest-with-vfat_utf8:
+    name: Test VFAT UTF-8 Python:newest Ubuntu:latest
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-vfat]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with newest Python on latest Ubuntu using VFAT UTF-8
+        run: tox -c pyproject.toml -e py_filesystem_vfat_utf8
+
   test-ubuntu-python-newest-with-ntfs:
     name: Test NTFS Python:newest Ubuntu:latest
     needs: [lint, test-ubuntu-python-newest]
