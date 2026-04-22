@@ -335,7 +335,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_htpasswd_whitespace_user(self) -> None:
         for user in (" tmp", "tmp ", " tmp "):
-            if not pathutils.path_supports_trailing_whitespace(self.colpath) and (user.endswith(' ') or user.startswith(' ')):
+            if not pathutils.path_supports_trailing_whitespace(self.colpath) and user.endswith(' '):
                 check = 401
             else:
                 check = 207

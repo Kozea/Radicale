@@ -127,6 +127,8 @@ class ApplicationBase:
         check_unicode_letter = (validation_type == "unicode-letter")
         check_no_unicode = (validation_type == "no-unicode")
         logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
+        if not self._storage._supports_trailing_whitespace and string.endswith(' '):
+            return False
         for c in string:
             if c <= chr(31) or (c >= chr(127) and c <= chr(159)):
                 # ASCII: control char
@@ -135,15 +137,15 @@ class ApplicationBase:
                 # https://unicodeplus.com/category
                 # Unicode: control
                 return False
-            if check_minimal:
+            if check_minimal or not self._storage._supports_problematic_chars:
                 if c in blacklist_minimal:
                     logger.trace("_check_format found %r", c)
                     return False
-            elif check_unicode_letter:
+            if check_unicode_letter:
                 if c not in whitelist_unicode:
                     if unicodedata.category(c)[0] != "L":
                         return False
-            elif check_no_unicode:
+            if check_no_unicode:
                 if ord(c) > 255:
                     return False
         return True

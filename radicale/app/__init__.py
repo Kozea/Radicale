@@ -168,18 +168,6 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self._validate_user_value = "no-unicode"
             if self._validate_path_value not in ["strict", "no-unicode"]:
                 self._validate_path_value = "no-unicode"
-            if not self._storage._supports_problematic_chars or not self._storage._supports_trailing_whitespace:
-                if self._validate_user_value not in ["strict"]:
-                    self._validate_user_value = "strict"
-                if self._validate_path_value not in ["strict"]:
-                    self._validate_path_value = "strict"
-            logger.notice("validate user value: %r (enforced by limited support of collection storage)", self._validate_user_value)
-            logger.notice("validate path value: %r (enforced by limited support of collection storage)", self._validate_path_value)
-        elif not self._storage._supports_problematic_chars or not self._storage._supports_trailing_whitespace:
-            if self._validate_user_value not in ["strict"]:
-                self._validate_user_value = "strict"
-            if self._validate_path_value not in ["strict"]:
-                self._validate_path_value = "strict"
             logger.notice("validate user value: %r (enforced by limited support of collection storage)", self._validate_user_value)
             logger.notice("validate path value: %r (enforced by limited support of collection storage)", self._validate_path_value)
         else:
