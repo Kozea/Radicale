@@ -33,6 +33,7 @@ class CollectionBase(storage.BaseCollection):
     _encoding: str
     _filesystem_path: str
     _filesystem_root_folder_is_collision_free: bool
+    _filesystem_root_folder_supports_unicode: bool
 
     def __init__(self, storage_: "multifilesystem.Storage", path: str,
                  filesystem_path: Optional[str] = None) -> None:
@@ -44,6 +45,7 @@ class CollectionBase(storage.BaseCollection):
         self._encoding = storage_.configuration.get("encoding", "stock")
         self._skip_broken_item = storage_.configuration.get("storage", "skip_broken_item")
         self._filesystem_root_folder_is_collision_free = storage_._filesystem_root_folder_is_collision_free
+        self._filesystem_root_folder_supports_unicode = storage_._filesystem_root_folder_supports_unicode
         if filesystem_path is None:
             filesystem_path = pathutils.path_to_filesystem(folder, self.path, self._filesystem_root_folder_is_collision_free)
         self._filesystem_path = filesystem_path
@@ -82,6 +84,7 @@ class StorageBase(storage.BaseStorage):
     _config_umask: int
     _max_resource_size: int
     _filesystem_root_folder_is_collision_free: bool = False
+    _filesystem_root_folder_supports_unicode: bool = False
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
