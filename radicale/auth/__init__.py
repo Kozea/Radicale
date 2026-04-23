@@ -306,6 +306,7 @@ class BaseAuth:
                         result_from_cache = True
                 else:
                     logger.debug("Login successful cache entry for user+password not matching: '%s'", login)
+                    digest = ""
             else:
                 # login not found in cache, caculate always to avoid timing attacks
                 digest = self._cache_digest(login, password, str(time_ns))
