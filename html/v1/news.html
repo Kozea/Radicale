@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<meta charset="utf-8">
+<meta content="pandoc" name="generator">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  div.columns{display: flex; gap: min(4vw, 1.5em);}
+  div.column{flex: auto; overflow-x: auto;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  /* The extra [class] is a hack that increases specificity enough to
+     override a similar rule in reveal.js */
+  ul.task-list[class]{list-style: none;}
+  ul.task-list li input[type="checkbox"] {
+    font-size: inherit;
+    width: 0.8em;
+    margin: 0 0.8em 0.2em -1.6em;
+    vertical-align: middle;
+  }
+  .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  /* CSS for syntax highlighting */
+  pre > code.sourceCode { white-space: pre; position: relative; }
+  pre > code.sourceCode > span { line-height: 1.25; }
+  pre > code.sourceCode > span:empty { height: 1.2em; }
+  .sourceCode { overflow: visible; }
+  code.sourceCode > span { color: inherit; text-decoration: inherit; }
+  div.sourceCode { margin: 1em 0; }
+  pre.sourceCode { margin: 0; }
+  @media screen {
+  div.sourceCode { overflow: auto; }
+  }
+  @media print {
+  pre > code.sourceCode { white-space: pre-wrap; }
+  pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+  }
+  pre.numberSource code
+    { counter-reset: source-line 0; }
+  pre.numberSource code > span
+    { position: relative; left: -4em; counter-increment: source-line; }
+  pre.numberSource code > span > a:first-child::before
+    { content: counter(source-line);
+      position: relative; left: -1em; text-align: right; vertical-align: baseline;
+      border: none; display: inline-block;
+      -webkit-touch-callout: none; -webkit-user-select: none;
+      -khtml-user-select: none; -moz-user-select: none;
+      -ms-user-select: none; user-select: none;
+      padding: 0 4px; width: 4em;
+      color: #aaaaaa;
+    }
+  pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+  div.sourceCode
+    {   }
+  @media screen {
+  pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+  }
+  code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+  code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+  code span.at { color: #7d9029; } /* Attribute */
+  code span.bn { color: #40a070; } /* BaseN */
+  code span.bu { color: #008000; } /* BuiltIn */
+  code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+  code span.ch { color: #4070a0; } /* Char */
+  code span.cn { color: #880000; } /* Constant */
+  code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+  code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+  code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+  code span.dt { color: #902000; } /* DataType */
+  code span.dv { color: #40a070; } /* DecVal */
+  code span.er { color: #ff0000; font-weight: bold; } /* Error */
+  code span.ex { } /* Extension */
+  code span.fl { color: #40a070; } /* Float */
+  code span.fu { color: #06287e; } /* Function */
+  code span.im { color: #008000; font-weight: bold; } /* Import */
+  code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+  code span.op { color: #666666; } /* Operator */
+  code span.ot { color: #007020; } /* Other */
+  code span.pp { color: #bc7a00; } /* Preprocessor */
+  code span.sc { color: #4070a0; } /* SpecialChar */
+  code span.ss { color: #bb6688; } /* SpecialString */
+  code span.st { color: #4070a0; } /* String */
+  code span.va { color: #19177c; } /* Variable */
+  code span.vs { color: #4070a0; } /* VerbatimString */
+  code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+<link href="../../assets/all.css" media="all" rel="stylesheet">
+<link href="../../assets/screen.css" media="screen" rel="stylesheet">
+<link href="../../assets/screen-narrow.css" media="screen and (max-width: 50em)" rel="stylesheet">
+<link href="../../assets/print.css" media="print" rel="stylesheet">
+<noscript><link href="../../assets/screen-noscript.css" media="screen" rel="stylesheet"></noscript>
+<link href="https://github.com/Kozea/Radicale/releases.atom" rel="alternate" title="Radicale Releases" type="application/atom+xml">
+<link href="../../assets/icon.png" rel="icon" type="image/png">
+<title>Radicale v1 Documentation</title>
+<meta content="Free and Open-Source CalDAV and CardDAV Server" name="description">
+<script src="../../assets/navigation.js"></script>
+<script src="../../assets/document-branches.js"></script>
+<script src="../../assets/narrow-menu.js"></script>
+<script src="../../assets/navigation-scroll-fix.js"></script>
+<header>
+<div class="logoContainer">
+<h1>
+Radicale
+<span class="documentBranch">
+<span>v1</span>
+<select style="display: none;">
+<option value="../master/index.html">master</option>
+<option value="../v3/index.html">v3</option>
+<option value="../v2/index.html">v2</option>
+<option selected value="../v1/index.html">v1</option>
+</select>
+</span>
+</h1>
+<p>Free and Open-Source CalDAV and CardDAV Server</p>
+</div>
+<div class="linkContainer">
+<ul>
+<li><a href="https://community.kozea.fr">Made with ❤ by Kozea Community</a></li>
+<li><a href="https://github.com/Kozea/Radicale">Fork me on GitHub</a></li>
+</ul>
+</div>
+</header>
+<main>
+<div class="navButtonContainer" style="display: none;">
+<button data-name="nav-open">Contents</button>
+</div>
+<nav>
+<div class="navContainer">
+<div class="navButtonContainer" style="display: none;">
+<button data-name="nav-close">Close</button>
+</div>
+<h2>Contents</h2>
+<ul>
+<li class="level2"><a href="./index.html" id="toc-a-simple-calendar-and-contact-server">A Simple Calendar and
+Contact Server</a>
+<ul>
+<li class="level4"><a href="./index.html#presentation" id="toc-presentation">Presentation</a></li>
+<li class="level4"><a href="./index.html#technical-description" id="toc-technical-description">Technical Description</a></li>
+<li class="level4"><a href="./index.html#main-features" id="toc-main-features">Main
+Features</a></li>
+<li class="level4"><a href="./index.html#supported-clients" id="toc-supported-clients">Supported
+Clients</a></li>
+</ul></li>
+<li class="level2"><a href="./documentation.html" id="toc-documentation">Documentation</a>
+<ul>
+<li class="level4"><a href="./documentation.html#user-documentation" id="toc-user-documentation">User
+documentation</a></li>
+<li class="level4"><a href="./documentation.html#project-description" id="toc-project-description">Project
+description</a></li>
+<li class="level4"><a href="./documentation.html#technical-choices" id="toc-technical-choices">Technical
+choices</a></li>
+<li class="level3"><a href="./documentation.html#user-documentation-1" id="toc-user-documentation-1">User
+Documentation</a>
+<ul>
+<li class="level4"><a href="./documentation.html#installation" id="toc-installation">Installation</a></li>
+<li class="level4"><a href="./documentation.html#simple-usage" id="toc-simple-usage">Simple Usage</a></li>
+<li class="level4"><a href="./documentation.html#complex-configuration" id="toc-complex-configuration">Complex Configuration</a></li>
+<li class="level4"><a href="./documentation.html#python-versions-and-os-support" id="toc-python-versions-and-os-support">Python Versions and OS
+Support</a></li>
+</ul></li>
+<li class="level3"><a href="./documentation.html#project-description-1" id="toc-project-description-1">Project Description</a>
+<ul>
+<li class="level4"><a href="./documentation.html#main-goals" id="toc-main-goals">Main Goals</a></li>
+<li class="level4"><a href="./documentation.html#what-radicale-is" id="toc-what-radicale-is">What Radicale
+Is</a></li>
+<li class="level4"><a href="./documentation.html#what-radicale-is-not-and-will-not-be" id="toc-what-radicale-is-not-and-will-not-be">What Radicale Is not and
+will not Be</a></li>
+</ul></li>
+<li class="level3"><a href="./documentation.html#technical-choices-1" id="toc-technical-choices-1">Technical Choices</a>
+<ul>
+<li class="level4"><a href="./documentation.html#global-technical-choices" id="toc-global-technical-choices">Global Technical Choices</a></li>
+<li class="level4"><a href="./documentation.html#architectures" id="toc-architectures">Architectures</a></li>
+</ul></li>
+</ul></li>
+<li class="level2"><a href="./contribute.html" id="toc-contribute">Contribute</a>
+<ul>
+<li class="level4"><a href="./contribute.html#chat-with-us-on-irc" id="toc-chat-with-us-on-irc">Chat
+with Us on IRC</a></li>
+<li class="level4"><a href="./contribute.html#report-bugs" id="toc-report-bugs">Report Bugs</a></li>
+<li class="level4"><a href="./contribute.html#hack" id="toc-hack">Hack</a></li>
+</ul></li>
+<li class="level2"><a href="./download.html" id="toc-download">Download</a>
+<ul>
+<li class="level4"><a href="./download.html#pypi" id="toc-pypi">PyPI</a></li>
+<li class="level4"><a href="./download.html#git-repository" id="toc-git-repository">Git
+Repository</a></li>
+<li class="level4"><a href="./download.html#source-packages" id="toc-source-packages">Source
+Packages</a></li>
+<li class="level4"><a href="./download.html#linux-distribution-packages" id="toc-linux-distribution-packages">Linux Distribution
+Packages</a></li>
+</ul></li>
+<li class="level2"><a href="./news.html" id="toc-news">News</a>
+<ul>
+<li class="level3"><a href="./news.html#may-19-2020---radicale-117" id="toc-may-19-2020---radicale-117">May 19, 2020 - Radicale 1.1.7</a>
+<ul>
+<li class="level4"><a href="./news.html#117---third-law-of-nature" id="toc-117---third-law-of-nature">1.1.7 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#jul-24-2017---radicale-116" id="toc-jul-24-2017---radicale-116">Jul 24, 2017 - Radicale 1.1.6</a>
+<ul>
+<li class="level4"><a href="./news.html#116---third-law-of-nature" id="toc-116---third-law-of-nature">1.1.6 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#jul-24-2017---radicale-115" id="toc-jul-24-2017---radicale-115">Jul 24, 2017 - Radicale 1.1.5</a>
+<ul>
+<li class="level4"><a href="./news.html#115---third-law-of-nature" id="toc-115---third-law-of-nature">1.1.5 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#jun-25-2017---radicale-114" id="toc-jun-25-2017---radicale-114">Jun 25, 2017 - Radicale 1.1.4</a>
+<ul>
+<li class="level4"><a href="./news.html#114---third-law-of-nature" id="toc-114---third-law-of-nature">1.1.4 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#may-27-2017---radicale-113" id="toc-may-27-2017---radicale-113">May 27, 2017 - Radicale 1.1.3</a>
+<ul>
+<li class="level4"><a href="./news.html#113---third-law-of-nature" id="toc-113---third-law-of-nature">1.1.3 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#april-19-2017---radicale-112" id="toc-april-19-2017---radicale-112">April 19, 2017 - Radicale
+1.1.2</a>
+<ul>
+<li class="level4"><a href="./news.html#112---third-law-of-nature" id="toc-112---third-law-of-nature">1.1.2 - Third Law of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#december-31-2015---radicale-11" id="toc-december-31-2015---radicale-11">December 31, 2015 - Radicale
+1.1</a>
+<ul>
+<li class="level4"><a href="./news.html#11---law-of-nature" id="toc-11---law-of-nature">1.1 - Law
+of Nature</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#september-14-2015---radicale-10-whats-next" id="toc-september-14-2015---radicale-10-whats-next">September 14, 2015 -
+Radicale 1.0, what's next?</a>
+<ul>
+<li class="level4"><a href="./news.html#10---sunflower" id="toc-10---sunflower">1.0 -
+Sunflower</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#january-12-2015---radicale-010" id="toc-january-12-2015---radicale-010">January 12, 2015 - Radicale
+0.10</a>
+<ul>
+<li class="level4"><a href="./news.html#010---lovely-endless-grass" id="toc-010---lovely-endless-grass">0.10 - Lovely Endless Grass</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#july-12-2013---radicale-08" id="toc-july-12-2013---radicale-08">July 12, 2013 - Radicale 0.8</a>
+<ul>
+<li class="level4"><a href="./news.html#08---rainbow" id="toc-08---rainbow">0.8 - Rainbow</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#august-3-2012---radicale-071" id="toc-august-3-2012---radicale-071">August 3, 2012 - Radicale
+0.7.1</a>
+<ul>
+<li class="level4"><a href="./news.html#071---waterfalls" id="toc-071---waterfalls">0.7.1 -
+Waterfalls</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#march-22-2012---radicale-07" id="toc-march-22-2012---radicale-07">March 22, 2012 - Radicale 0.7</a>
+<ul>
+<li class="level4"><a href="./news.html#07---eternal-sunshine" id="toc-07---eternal-sunshine">0.7
+- Eternal Sunshine</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#january-5-2012---radicale-064-news-from-calypso" id="toc-january-5-2012---radicale-064-news-from-calypso">January 5, 2012
+- Radicale 0.6.4, News from Calypso</a>
+<ul>
+<li class="level4"><a href="./news.html#064---tulips" id="toc-064---tulips">0.6.4 -
+Tulips</a></li>
+<li class="level4"><a href="./news.html#calypso" id="toc-calypso">Calypso</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#november-3-2011---radicale-063" id="toc-november-3-2011---radicale-063">November 3, 2011 - Radicale
+0.6.3</a>
+<ul>
+<li class="level4"><a href="./news.html#063---red-roses" id="toc-063---red-roses">0.6.3 - Red
+Roses</a></li>
+<li class="level4"><a href="./news.html#whats-new-since-062" id="toc-whats-new-since-062">What's
+New Since 0.6.2?</a></li>
+<li class="level4"><a href="./news.html#time-for-a-stable-release" id="toc-time-for-a-stable-release">Time for a Stable Release!</a></li>
+<li class="level4"><a href="./news.html#whats-next" id="toc-whats-next">What's Next?</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#september-27-2011---radicale-062" id="toc-september-27-2011---radicale-062">September 27, 2011 - Radicale
+0.6.2</a>
+<ul>
+<li class="level4"><a href="./news.html#062---seeds" id="toc-062---seeds">0.6.2 - Seeds</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#august-28-2011---radicale-061-changes-future" id="toc-august-28-2011---radicale-061-changes-future">August 28, 2011 -
+Radicale 0.6.1, Changes, Future</a>
+<ul>
+<li class="level4"><a href="./news.html#061---growing-up" id="toc-061---growing-up">0.6.1 -
+Growing Up</a></li>
+<li class="level4"><a href="./news.html#github-mailing-list-new-website" id="toc-github-mailing-list-new-website">GitHub, Mailing List, New
+Website</a></li>
+<li class="level4"><a href="./news.html#future-features" id="toc-future-features">Future
+Features</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#august-1-2011---radicale-06-released" id="toc-august-1-2011---radicale-06-released">August 1, 2011 - Radicale
+0.6 Released</a>
+<ul>
+<li class="level4"><a href="./news.html#06---sapling" id="toc-06---sapling">0.6 - Sapling</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#july-2-2011---feature-freeze-for-06" id="toc-july-2-2011---feature-freeze-for-06">July 2, 2011 - Feature
+Freeze for 0.6</a></li>
+<li class="level3"><a href="./news.html#may-1-2011---ready-for-wsgi" id="toc-may-1-2011---ready-for-wsgi">May 1, 2011 - Ready for
+WSGI</a></li>
+<li class="level3"><a href="./news.html#april-30-2011---apple-ical-support" id="toc-april-30-2011---apple-ical-support">April 30, 2011 - Apple iCal
+Support</a></li>
+<li class="level3"><a href="./news.html#april-25-2011---two-features-and-one-new-roadmap" id="toc-april-25-2011---two-features-and-one-new-roadmap">April 25, 2011
+- Two Features and One New Roadmap</a>
+<ul>
+<li class="level4"><a href="./news.html#ldap-authentication-1" id="toc-ldap-authentication-1">LDAP
+Authentication</a></li>
+<li class="level4"><a href="./news.html#journal-entries" id="toc-journal-entries">Journal
+Entries</a></li>
+<li class="level4"><a href="./news.html#new-roadmap" id="toc-new-roadmap">New Roadmap</a></li>
+<li class="level4"><a href="./news.html#bugs" id="toc-bugs">Bugs</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#april-10-2011---new-features" id="toc-april-10-2011---new-features">April 10, 2011 - New
+Features</a></li>
+<li class="level3"><a href="./news.html#april-2-2011---radicale-05-released" id="toc-april-2-2011---radicale-05-released">April 2, 2011 - Radicale
+0.5 Released</a>
+<ul>
+<li class="level4"><a href="./news.html#05---historical-artifacts" id="toc-05---historical-artifacts">0.5 - Historical Artifacts</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#february-3-2011---jabber-room-and-iphone-support" id="toc-february-3-2011---jabber-room-and-iphone-support">February 3,
+2011 - Jabber Room and iPhone Support</a></li>
+<li class="level3"><a href="./news.html#october-21-2010---news-from-radicale" id="toc-october-21-2010---news-from-radicale">October 21, 2010 - News
+from Radicale</a></li>
+<li class="level3"><a href="./news.html#august-8-2010---radicale-04-released" id="toc-august-8-2010---radicale-04-released">August 8, 2010 - Radicale
+0.4 Released</a>
+<ul>
+<li class="level4"><a href="./news.html#04---hot-days-back" id="toc-04---hot-days-back">0.4 - Hot
+Days Back</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#july-4-2010---three-features-added-last-week" id="toc-july-4-2010---three-features-added-last-week">July 4, 2010 -
+Three Features Added Last Week</a></li>
+<li class="level3"><a href="./news.html#june-14-2010---radicale-03-released" id="toc-june-14-2010---radicale-03-released">June 14, 2010 - Radicale
+0.3 Released</a>
+<ul>
+<li class="level4"><a href="./news.html#03---dancing-flowers" id="toc-03---dancing-flowers">0.3 -
+Dancing Flowers</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#may-31-2010---may-news" id="toc-may-31-2010---may-news">May 31, 2010 - May News</a>
+<ul>
+<li class="level4"><a href="./news.html#news-from-contributors" id="toc-news-from-contributors">News from contributors</a></li>
+<li class="level4"><a href="./news.html#news-from-software" id="toc-news-from-software">News from
+software</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#april-19-2010---evolution-supported" id="toc-april-19-2010---evolution-supported">April 19, 2010 - Evolution
+Supported</a></li>
+<li class="level3"><a href="./news.html#april-13-2010---radicale-02-released" id="toc-april-13-2010---radicale-02-released">April 13, 2010 - Radicale
+0.2 Released</a>
+<ul>
+<li class="level4"><a href="./news.html#02---snowflakes" id="toc-02---snowflakes">0.2 -
+Snowflakes</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#january-21-2010---https-and-authentication" id="toc-january-21-2010---https-and-authentication">January 21, 2010 -
+HTTPS and Authentication</a></li>
+<li class="level3"><a href="./news.html#january-15-2010---ready-for-python-3" id="toc-january-15-2010---ready-for-python-3">January 15, 2010 - Ready
+for Python 3</a></li>
+<li class="level3"><a href="./news.html#january-11-2010---twisted-no-longer-required" id="toc-january-11-2010---twisted-no-longer-required">January 11, 2010 -
+Twisted no Longer Required</a></li>
+<li class="level3"><a href="./news.html#december-31-2009---lightning-and-sunbird-10b2pre-support" id="toc-december-31-2009---lightning-and-sunbird-10b2pre-support">December
+31, 2009 - Lightning and Sunbird 1.0b2pre Support</a></li>
+<li class="level3"><a href="./news.html#december-9-2009---thunderbird-3-released" id="toc-december-9-2009---thunderbird-3-released">December 9, 2009 -
+Thunderbird 3 released</a></li>
+<li class="level3"><a href="./news.html#september-1-2009---radicale-01-released" id="toc-september-1-2009---radicale-01-released">September 1, 2009 -
+Radicale 0.1 Released</a>
+<ul>
+<li class="level4"><a href="./news.html#01---crazy-vegetables" id="toc-01---crazy-vegetables">0.1
+- Crazy Vegetables</a></li>
+</ul></li>
+<li class="level3"><a href="./news.html#july-28-2009---radicale-on-gitorious" id="toc-july-28-2009---radicale-on-gitorious">July 28, 2009 - Radicale
+on Gitorious</a></li>
+<li class="level3"><a href="./news.html#july-27-2009---radicale-ready-to-launch" id="toc-july-27-2009---radicale-ready-to-launch">July 27, 2009 -
+Radicale Ready to Launch</a></li>
+</ul></li>
+<li class="level2"><a href="./footnotes.html" id="toc-footnotes">Footnotes</a>
+<ul>
+<li class="level4"><a href="./footnotes.html#1" id="toc-1">1</a></li>
+<li class="level4"><a href="./footnotes.html#2" id="toc-2">2</a></li>
+<li class="level4"><a href="./footnotes.html#3" id="toc-3">3</a></li>
+<li class="level4"><a href="./footnotes.html#4" id="toc-4">4</a></li>
+<li class="level4"><a href="./footnotes.html#5" id="toc-5">5</a></li>
+<li class="level4"><a href="./footnotes.html#6" id="toc-6">6</a></li>
+<li class="level4"><a href="./footnotes.html#7" id="toc-7">7</a></li>
+<li class="level4"><a href="./footnotes.html#8" id="toc-8">8</a></li>
+<li class="level4"><a href="./footnotes.html#9" id="toc-9">9</a></li>
+<li class="level4"><a href="./footnotes.html#10" id="toc-10">10</a></li>
+</ul></li>
+</ul>
+</div>
+</nav>
+<div class="documentContainer">
+
+
+
+
+<section class="level2" id="news">
+<h2>News <a class="headerlink" href="#news">&para;</a></h2>
+<section class="level3" id="may-19-2020---radicale-117">
+<h3>May 19, 2020 - Radicale 1.1.7 <a class="headerlink" href="#may-19-2020---radicale-117">&para;</a></h3>
+<p>Radicale 1.1.7 is out!</p>
+<section class="level4" id="117---third-law-of-nature">
+<h4>1.1.7 - Third Law of Nature <a class="headerlink" href="#117---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Fix error in <code>--export-storage</code></li>
+<li>Include documentation in source archive</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="jul-24-2017---radicale-116">
+<h3>Jul 24, 2017 - Radicale 1.1.6 <a class="headerlink" href="#jul-24-2017---radicale-116">&para;</a></h3>
+<p>Radicale 1.1.6 is out!</p>
+<section class="level4" id="116---third-law-of-nature">
+<h4>1.1.6 - Third Law of Nature <a class="headerlink" href="#116---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Improve logging for <code>--export-storage</code></li>
+</ul>
+</section>
+</section>
+<section class="level3" id="jul-24-2017---radicale-115">
+<h3>Jul 24, 2017 - Radicale 1.1.5 <a class="headerlink" href="#jul-24-2017---radicale-115">&para;</a></h3>
+<p>Radicale 1.1.5 is out!</p>
+<section class="level4" id="115---third-law-of-nature">
+<h4>1.1.5 - Third Law of Nature <a class="headerlink" href="#115---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Improve logging for <code>--export-storage</code></li>
+</ul>
+</section>
+</section>
+<section class="level3" id="jun-25-2017---radicale-114">
+<h3>Jun 25, 2017 - Radicale 1.1.4 <a class="headerlink" href="#jun-25-2017---radicale-114">&para;</a></h3>
+<p>Radicale 1.1.4 is out!</p>
+<section class="level4" id="114---third-law-of-nature">
+<h4>1.1.4 - Third Law of Nature <a class="headerlink" href="#114---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Use shutil.move for <code>--export-storage</code></li>
+</ul>
+</section>
+</section>
+<section class="level3" id="may-27-2017---radicale-113">
+<h3>May 27, 2017 - Radicale 1.1.3 <a class="headerlink" href="#may-27-2017---radicale-113">&para;</a></h3>
+<p>Radicale 1.1.3 is out!</p>
+<section class="level4" id="113---third-law-of-nature">
+<h4>1.1.3 - Third Law of Nature <a class="headerlink" href="#113---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Add a <code>--export-storage=FOLDER</code> command-line argument (by
+Unrud, see <a href="https://github.com/Kozea/Radicale/pull/606">#606</a>)</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="april-19-2017---radicale-112">
+<h3>April 19, 2017 - Radicale 1.1.2 <a class="headerlink" href="#april-19-2017---radicale-112">&para;</a></h3>
+<p>Radicale 1.1.2 is out!</p>
+<section class="level4" id="112---third-law-of-nature">
+<h4>1.1.2 - Third Law of Nature <a class="headerlink" href="#112---third-law-of-nature">&para;</a></h4>
+<ul>
+<li>Security fix: Add a random timer to avoid timing oracles and simple
+bruteforce attacks when using the htpasswd authentication method.</li>
+<li>Various minor fixes.</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="december-31-2015---radicale-11">
+<h3>December 31, 2015 - Radicale 1.1 <a class="headerlink" href="#december-31-2015---radicale-11">&para;</a></h3>
+<p>Radicale 1.1 is out!</p>
+<section class="level4" id="11---law-of-nature">
+<h4>1.1 - Law of Nature <a class="headerlink" href="#11---law-of-nature">&para;</a></h4>
+<p>One feature in this release is <strong>not backward
+compatible</strong>:</p>
+<ul>
+<li>Use the first matching section for rights (inspired from daald)</li>
+</ul>
+<p>Now, the first section matching the path and current user in your
+custom rights file is used. In the previous versions, the most
+permissive rights of all the matching sections were applied. This new
+behaviour gives a simple way to make specific rules at the top of the
+file independant from the generic ones.</p>
+<p>Many <strong>improvements in this release are related to
+security</strong>, you should upgrade Radicale as soon as possible:</p>
+<ul>
+<li>Improve the regex used for well-known URIs (by Unrud)</li>
+<li>Prevent regex injection in rights management (by Unrud)</li>
+<li>Prevent crafted HTTP request from calling arbitrary functions (by
+Unrud)</li>
+<li>Improve URI sanitation and conversion to filesystem path (by
+Unrud)</li>
+<li>Decouple the daemon from its parent environment (by Unrud)</li>
+</ul>
+<p>Some bugs have been fixed and little enhancements have been
+added:</p>
+<ul>
+<li>Assign new items to corret key (by Unrud)</li>
+<li>Avoid race condition in PID file creation (by Unrud)</li>
+<li>Improve the docker version (by cdpb)</li>
+<li>Encode message and commiter for git commits</li>
+<li>Test with Python 3.5</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="september-14-2015---radicale-10-whats-next">
+<h3>September 14, 2015 - Radicale 1.0, what's next? <a class="headerlink" href="#september-14-2015---radicale-10-whats-next">&para;</a></h3>
+<p>Radicale 1.0 is out!</p>
+<section class="level4" id="10---sunflower">
+<h4>1.0 - Sunflower <a class="headerlink" href="#10---sunflower">&para;</a></h4>
+<ul>
+<li>Enhanced performances (by Mathieu Dupuy)</li>
+<li>Add MD5-APR1 and BCRYPT for htpasswd-based authentication (by
+Jan-Philip Gehrcke)</li>
+<li>Use PAM service (by Stephen Paul Weber)</li>
+<li>Don't discard PROPPATCH on empty collections (Markus
+Unterwaditzer)</li>
+<li>Write the path of the collection in the git message (Matthew
+Monaco)</li>
+<li>Tests launched on Travis</li>
+</ul>
+<p>As explained in a previous <a href="http://librelist.com/browser//radicale/2015/8/21/radicale-1-0-is-coming-what-s-next/">mail</a>,
+this version is called 1.0 because:</p>
+<ul>
+<li>there are no big changes since 0.10 but some small changes are
+really useful,</li>
+<li>simple tests are now automatically launched on Travis, and more can
+be added in the future (<a href="https://travis-ci.org/Kozea/Radicale">https://travis-ci.org/Kozea/Radicale</a>).</li>
+</ul>
+<p>This version will be maintained with only simple bug fixes on a
+separate git branch called <code>1.0.x</code>.</p>
+<p>Now that this milestone is reached, it's time to think about the
+future. When Radicale has been created, it was just a proof-of-concept.
+The main goal was to write a small, stupid and simple CalDAV server
+working with Lightning, using no external libraries. That's how we
+created a piece of code that's (quite) easy to understand, to use and to
+hack.</p>
+<p>The first lines have been added to the SVN (!) repository as I was
+drinking beers at the very end of 2008. It's now packaged for a growing
+number of Linux distributions.</p>
+<p>And that was fun going from here to there thanks to you. So&hellip;
+<strong>Thank you, you're amazing</strong>. I'm so glad I've spent
+endless hours fixing stupid bugs, arguing about databases and meeting
+invitations, reading incredibly interesting RFCs and debugging with the
+fabulous clients from Apple. I mean: that really, really was really,
+really cool :).</p>
+<p>During these years, a lot of things have changed and many users now
+rely on Radicale in production. For example, I use it to manage medical
+calendars, with thousands requests per day. Many people are happy to
+install Radicale on their small home servers, but are also frustrated by
+performance and unsupported specifications when they're trying to use it
+seriously.</p>
+<p>So, now is THE FUTURE! I think that Radicale 2.0 should:</p>
+<ul>
+<li>rely on a few external libraries for simple critical points (dealing
+with HTTP and iCal for example),</li>
+<li>be thread-safe,</li>
+<li>be small,</li>
+<li>be documented in a different way (for example by splitting the
+client part from the server part, and by adding use cases),</li>
+<li>let most of the "auth" modules outside in external modules,</li>
+<li>have more and more tests,</li>
+<li>have reliable and faster filesystem and database storage
+mechanisms,</li>
+<li>get a new design :).</li>
+</ul>
+<p>I'd also secretly love to drop the Python 2.x support.</p>
+<p>These ideas are not all mine (except from the really, really, really
+important "design" point :p), they have been proposed by many developers
+and users. I've just tried to gather them and keep points that seem
+important to me.</p>
+<p>Other points have been discussed with many users and contibutors,
+including:</p>
+<ul>
+<li>support of other clients, including Windows and BlackBerry
+phones,</li>
+<li>server-side meeting invitations,</li>
+<li>different storage system as default (or even unique?).</li>
+</ul>
+<p>I'm not a huge fan of these features, either because I can't do
+anything about them, or because I think that they're Really Bad Ideas&reg;&trade;.
+But I'm ready to talk about them, because, well, I may not be always
+right!</p>
+<p>Need to talk about this? You know how to <a href="./contribute.html">contact us</a>!</p>
+</section>
+</section>
+<section class="level3" id="january-12-2015---radicale-010">
+<h3>January 12, 2015 - Radicale 0.10 <a class="headerlink" href="#january-12-2015---radicale-010">&para;</a></h3>
+<p>Radicale 0.10 is out!</p>
+<section class="level4" id="010---lovely-endless-grass">
+<h4>0.10 - Lovely Endless Grass <a class="headerlink" href="#010---lovely-endless-grass">&para;</a></h4>
+<ul>
+<li>Support well-known URLs (by Mathieu Dupuy)</li>
+<li>Fix collection discovery (by Markus Unterwaditzer)</li>
+<li>Reload logger config on SIGHUP (by &Eacute;lie Bouttier)</li>
+<li>Remove props files when deleting a collection (by Vincent Untz)</li>
+<li>Support salted SHA1 passwords (by Marc Kleine-Budde)</li>
+<li>Don't spam the logs about non-SSL IMAP connections to localhost (by
+Giel van Schijndel)</li>
+</ul>
+<p>This version should bring some interesting discovery and
+auto-configuration features, mostly with Apple clients.</p>
+<p>Lots of love and kudos for the people who have spent hours to test
+features and report issues, that was long but really useful (and some of
+you have been really patient :p).</p>
+<p>Issues are welcome, I'm sure that you'll find horrible, terrible,
+crazy bugs faster than me. I'll release a version 0.10.1 if needed.</p>
+<p>What's next? It's time to fix and improve the storage methods. A real
+API for the storage modules is a good beginning, many pull requests are
+already ready to be discussed and merged, and we will probably get some
+good news about performance this time. Who said "databases, please"?</p>
+</section>
+</section>
+<section class="level3" id="july-12-2013---radicale-08">
+<h3>July 12, 2013 - Radicale 0.8 <a class="headerlink" href="#july-12-2013---radicale-08">&para;</a></h3>
+<p>Radicale 0.8 is out!</p>
+<section class="level4" id="08---rainbow">
+<h4>0.8 - Rainbow <a class="headerlink" href="#08---rainbow">&para;</a></h4>
+<ul>
+<li>New authentication and rights management modules (by Matthias
+Jordan)</li>
+<li>Experimental database storage</li>
+<li>Command-line option for custom configuration file (by Mark
+Adams)</li>
+<li>Root URL not at the root of a domain (by Clint Adams, Fabrice
+Bellet, Vincent Untz)</li>
+<li>Improved support for iCal, CalDAVSync, CardDAVSync, CalDavZAP and
+CardDavMATE</li>
+<li>Empty PROPFIND requests handled (by Christoph Polcin)</li>
+<li>Colon allowed in passwords</li>
+<li>Configurable realm message</li>
+</ul>
+<p>This version brings some of the biggest changes since Radicale's
+creation, including an experimental support of database storage, clean
+authentication modules, and rights management finally designed for real
+users.</p>
+<p>So, dear user, be careful: <strong>this version changes important
+things in the configuration file, so check twice that everything is OK
+when you update to 0.8, or you can have big problems</strong>.</p>
+<p>More and more clients are supported, as a lot of bug fixes and
+features have been added for this purpose. And before you ask: yes, 2
+web-based clients, <a href="http://www.inf-it.com/open-source/clients/">CalDavZAP and
+CardDavMATE</a>, are now supported!</p>
+<p>Even if there has been a lot of time to test these new features, I am
+pretty sure that some really annoying bugs have been left in this
+version. We will probably release minor versions with bugfixes during
+the next weeks, and it will not take one more year to reach 0.8.1.</p>
+<p>The documentation has been updated, but some parts are missing and
+some may be out of date. You can <a href="https://github.com/Kozea/Radicale/issues">report bugs</a> or even
+<a href="https://github.com/Kozea/Radicale/blob/website/pages/user_documentation.rst">write
+documentation directly on GitHub</a> if you find something strange (and
+you probably will).</p>
+<p>If anything is not clear, or if the way rights work is a bit
+complicated to understand, or if you are so happy because everything
+works so well, you can <a href="./contribute.html">share your
+thoughts</a>!</p>
+<p>It has been a real pleasure to work on this version, with brilliant
+ideas and interesting bug reports from the community. I'd really like to
+thank all the people reporting bugs, chatting on IRC, sending mails and
+proposing pull requests: you are awesome.</p>
+</section>
+</section>
+<section class="level3" id="august-3-2012---radicale-071">
+<h3>August 3, 2012 - Radicale 0.7.1 <a class="headerlink" href="#august-3-2012---radicale-071">&para;</a></h3>
+<p>Radicale 0.7.1 is out!</p>
+<section class="level4" id="071---waterfalls">
+<h4>0.7.1 - Waterfalls <a class="headerlink" href="#071---waterfalls">&para;</a></h4>
+<ul>
+<li>Many address books fixes</li>
+<li>New IMAP ACL (by Daniel Aleksandersen)</li>
+<li>PAM ACL fixed (by Daniel Aleksandersen)</li>
+<li>Courier ACL fixed (by Benjamin Frank)</li>
+<li>Always set display name to collections (by Oskari Timperi)</li>
+<li>Various DELETE responses fixed</li>
+</ul>
+<p>It's been a long time since the last version&hellip; As usual, many people
+have contributed to this new version, that's a pleasure to get these
+pull requests.</p>
+<p>Most of the commits are bugfixes, especially about ACL backends and
+address books. Many clients (including aCal and SyncEvolution) will be
+much happier with this new version than with the previous one.</p>
+<p>By the way, one main new feature has been added: a new IMAP ACL
+backend, by Daniel. And about authentication, exciting features are
+coming soon, stay tuned!</p>
+<p>Next time, as many mails have come from angry and desperate coders,
+tests will be <em>finally</em> added to help them to add features and
+fix bugs. And after that, who knows, it may be time to release Radicale
+1.0&hellip;</p>
+</section>
+</section>
+<section class="level3" id="march-22-2012---radicale-07">
+<h3>March 22, 2012 - Radicale 0.7 <a class="headerlink" href="#march-22-2012---radicale-07">&para;</a></h3>
+<p>Radicale 0.7 is out, at least!</p>
+<section class="level4" id="07---eternal-sunshine">
+<h4>0.7 - Eternal Sunshine <a class="headerlink" href="#07---eternal-sunshine">&para;</a></h4>
+<ul>
+<li>Repeating events</li>
+<li>Collection deletion</li>
+<li>Courier and PAM authentication methods</li>
+<li>CardDAV support</li>
+<li>Custom LDAP filters supported</li>
+</ul>
+<p><strong>A lot</strong> of people have reported bugs, proposed new
+features, added useful code and tested many clients. Thank you Lynn,
+Ron, Bill, Patrick, Hidde, Gerhard, Martin, Brendan, Vladimir, and
+everybody I've forgotten.</p>
+</section>
+</section>
+<section class="level3" id="january-5-2012---radicale-064-news-from-calypso">
+<h3>January 5, 2012 - Radicale 0.6.4, News from Calypso <a class="headerlink" href="#january-5-2012---radicale-064-news-from-calypso">&para;</a></h3>
+<p>New year, new release. Radicale 0.6.4 has a really short
+changelog:</p>
+<section class="level4" id="064---tulips">
+<h4>0.6.4 - Tulips <a class="headerlink" href="#064---tulips">&para;</a></h4>
+<ul>
+<li>Fix the installation with Python 3.1</li>
+</ul>
+<p>The bug was in fact caused by a <a href="http://bugs.python.org/issue9561">bug in Python 3.1</a>,
+everything should be OK now.</p>
+</section>
+<section class="level4" id="calypso">
+<h4>Calypso <a class="headerlink" href="#calypso">&para;</a></h4>
+<p>After a lot of changes in Radicale, Keith Packard has decided to
+launch a fork called <a href="http://keithp.com/blogs/calypso/">Calypso</a>, with nice features
+such as a Git storage mechanism and a CardDAV support.</p>
+<p>There are lots of differences between the two projects, but the final
+goal for Radicale is to provide these new features as soon as possible.
+Thanks to the work of Keith and other people on GitHub, a basic CardDAV
+support has been added in the <a href="https://github.com/Kozea/Radicale/tree/carddav">carddav branch</a>
+and already works with Evolution. Korganizer also works with existing
+address books, and CardDAV-Sync will be tested soon. If you want to test
+other clients, please let us know!</p>
+</section>
+</section>
+<section class="level3" id="november-3-2011---radicale-063">
+<h3>November 3, 2011 - Radicale 0.6.3 <a class="headerlink" href="#november-3-2011---radicale-063">&para;</a></h3>
+<p>Radicale version 0.6.3 has been released, with bugfixes that could be
+interesting for you!</p>
+<section class="level4" id="063---red-roses">
+<h4>0.6.3 - Red Roses <a class="headerlink" href="#063---red-roses">&para;</a></h4>
+<ul>
+<li>MOVE requests fixed</li>
+<li>Faster REPORT answers</li>
+<li>Executable script moved into the package</li>
+</ul>
+</section>
+<section class="level4" id="whats-new-since-062">
+<h4>What's New Since 0.6.2? <a class="headerlink" href="#whats-new-since-062">&para;</a></h4>
+<p>The MOVE requests were suffering a little bug that is fixed now.
+These requests are only sent by Apple clients, Mac users will be
+happy.</p>
+<p>The REPORT request were really, really slow (several minutes for
+large calendars). This was caused by an awful algorithm parsing the
+entire calendar for each event in the calendar. The calendar is now only
+parsed three times, and the events are found in a Python list, turning
+minutes into seconds! Much better, but far from perfection&hellip;</p>
+<p>Finally, the executable script parsing the command line options and
+starting the HTTP servers has been moved from the
+<code>radicale.py</code> file into the <code>radicale</code> package.
+Two executable are now present in the archive: the good old
+<code>radicale.py</code>, and <code>bin/radicale</code>. The second one
+is only used by <code>setup.py</code>, where the hack used to rename
+<code>radicale.py</code> into <code>radicale</code> has therefore been
+removed. As a consequence, you can now launch Radicale with the simple
+<code>python -m radicale</code> command, without relying on an
+executable.</p>
+</section>
+<section class="level4" id="time-for-a-stable-release">
+<h4>Time for a Stable Release! <a class="headerlink" href="#time-for-a-stable-release">&para;</a></h4>
+<p>The next release may be a stable release, symbolically called 1.0.
+Guess what's missing? Tests, of course!</p>
+<p>A non-regression testing suite, based on the clients' requests, will
+soon be added to Radicale. We're now thinking about a smart solution to
+store the tests, to represent the expected answers and to launch the
+requests. We've got crazy ideas, so be prepared: you'll definitely
+<em>want</em> to write tests during the next weeks!</p>
+<p>Repeating events, PAM and Courier authentication methods have already
+been added in master. You'll find them in the 1.0 release!</p>
+</section>
+<section class="level4" id="whats-next">
+<h4>What's Next? <a class="headerlink" href="#whats-next">&para;</a></h4>
+<p>Being stable is one thing, being cool is another one. If you want
+some cool new features, you may be interested in:</p>
+<ul>
+<li>WebDAV and CardDAV support</li>
+<li>Filters and rights management</li>
+<li>Multiple storage backends, such as databases and git</li>
+<li>Freebusy periods</li>
+<li>Email alarms</li>
+</ul>
+<p>Issues have been reported in the bug tracker, you can follow there
+the latest news about these features. Your beloved text editor is
+waiting for you!</p>
+</section>
+</section>
+<section class="level3" id="september-27-2011---radicale-062">
+<h3>September 27, 2011 - Radicale 0.6.2 <a class="headerlink" href="#september-27-2011---radicale-062">&para;</a></h3>
+<p>0.6.2 is out with minor bugfixes.</p>
+<section class="level4" id="062---seeds">
+<h4>0.6.2 - Seeds <a class="headerlink" href="#062---seeds">&para;</a></h4>
+<ul>
+<li>iPhone and iPad support fixed</li>
+<li>Backslashes replaced by slashes in PROPFIND answers on Windows</li>
+<li>PyPI archive set as default download URL</li>
+</ul>
+</section>
+</section>
+<section class="level3" id="august-28-2011---radicale-061-changes-future">
+<h3>August 28, 2011 - Radicale 0.6.1, Changes, Future <a class="headerlink" href="#august-28-2011---radicale-061-changes-future">&para;</a></h3>
+<p>As previously imagined, a new 0.6.1 version has been released, mainly
+fixing obvious bugs.</p>
+<section class="level4" id="061---growing-up">
+<h4>0.6.1 - Growing Up <a class="headerlink" href="#061---growing-up">&para;</a></h4>
+<ul>
+<li>Example files included in the tarball</li>
+<li>htpasswd support fixed</li>
+<li>Redirection loop bug fixed</li>
+<li>Testing message on GET requests</li>
+</ul>
+<p>The changelog is really small, so there should be no real new
+problems since 0.6. The example files for logging, FastCGI and WSGI are
+now included in the tarball, for the pleasure of our dear packagers!</p>
+<p>A new branch has been created for various future bug fixes. You can
+expect to get more 0.6.x versions, making this branch a kind of "stable"
+branch with no big changes.</p>
+</section>
+<section class="level4" id="github-mailing-list-new-website">
+<h4>GitHub, Mailing List, New Website <a class="headerlink" href="#github-mailing-list-new-website">&para;</a></h4>
+<p>A lot of small changes occurred during the last weeks.</p>
+<p>If you're interested in code and new features, please note that we
+moved the project from Gitorious to <code>GitHub</code>. Being hosted by
+Gitorious was a nice experience, but the service was not that good and
+we were missing some useful features such as git hooks. Moreover, GitHub
+is really popular, we're sure that we'll meet a lot of kind users and
+coders there.</p>
+<p>We've also created a <code>mailing-list on Librelist</code> to keep a
+public trace of the mails we're receiving. It a bit empty now, but we're
+sure that you'll soon write us some kind words. For example, you can
+tell us what you think of our new website!</p>
+</section>
+<section class="level4" id="future-features">
+<h4>Future Features <a class="headerlink" href="#future-features">&para;</a></h4>
+<p>In the next weeks, new exciting features are coming in the master
+branch! Some of them are almost ready:</p>
+<ul>
+<li>Henry-Nicolas has added the support for the PAM and
+Courier-Authdaemon authentication mechanisms.</li>
+<li>An anonymous called Keith Packard has prepared some small changes,
+such as one file per event, cache and git versioning. Yes. Really.</li>
+</ul>
+<p>As you can find in the <a href="http://redmine.kozea.fr/versions/">Radicale Roadmap</a>, tests,
+rights and filters are expected for 0.7.</p>
+</section>
+</section>
+<section class="level3" id="august-1-2011---radicale-06-released">
+<h3>August 1, 2011 - Radicale 0.6 Released <a class="headerlink" href="#august-1-2011---radicale-06-released">&para;</a></h3>
+<p>Time for a new release with <strong>a lot</strong> of new exciting
+features!</p>
+<section class="level4" id="06---sapling">
+<h4>0.6 - Sapling <a class="headerlink" href="#06---sapling">&para;</a></h4>
+<ul>
+<li>WSGI support</li>
+<li>IPv6 support</li>
+<li>Smart, verbose and configurable logs</li>
+<li>Apple iCal 4 and iPhone support (by &Lstrok;ukasz Langa)</li>
+<li>CalDAV-Sync support (by Marten Gajda)</li>
+<li>aCal support</li>
+<li>KDE KOrganizer support</li>
+<li>LDAP auth backend (by Corentin Le Bail)</li>
+<li>Public and private calendars (by Ren&eacute; Neumann)</li>
+<li>PID file</li>
+<li>MOVE requests management</li>
+<li>Journal entries support</li>
+<li>Drop Python 2.5 support</li>
+</ul>
+<p>Well, it's been a little longer than expected, but for good reasons:
+a lot of features have been added, and a lot of clients are known to
+work with Radicale, thanks to kind contributors. That's definitely good
+news! But&hellip;</p>
+<p>Testing all the clients is really painful, moreover for the ones from
+Apple (I have no Mac nor iPhone of my own). We should seriously think of
+automated tests, even if it's really hard to maintain, and maybe not
+that useful. If you're interested in tests, you can look at <a href="http://repo.or.cz/w/davical.git/tree/HEAD:/testing/tests/regression-suite">the
+wonderful regression suite of DAViCal</a>.</p>
+<p>The new features, for example the WSGI support, are also poorly
+documented. If you have some Apache or lighttpd configuration working
+with Radicale, you can make the world a little bit better by writing a
+paragraph or two in the <a href="https://gitorious.org/radicale/website">Radicale
+documentation</a>. It's simple plain text, don't be afraid!</p>
+<p>Because of all these changes, Radicale 0.6 may be a little bit buggy;
+a 0.6.1 will probably be released soon, fixing small problems with
+clients and features. Get ready to report bugs, I'm sure that you can
+find one (and fix it)!</p>
+</section>
+</section>
+<section class="level3" id="july-2-2011---feature-freeze-for-06">
+<h3>July 2, 2011 - Feature Freeze for 0.6 <a class="headerlink" href="#july-2-2011---feature-freeze-for-06">&para;</a></h3>
+<p>According to the <a href="http://redmine.kozea.fr/projects/radicale/roadmap">roadmap</a>, a
+lot of features have been added since Radicale 0.5, much more than
+expected. It's now time to test Radicale with your favourite client and
+to report bugs before we release the next stable version!</p>
+<p>Last week, the iCal and iPhone support written by &Lstrok;ukasz has been
+fixed in order to restore the broken Lightning support. After two
+afternoons of tests with R&eacute;mi, we managed to access the same calendar
+with Lightning, iCal, iPhone and Evolution, and finally discovered that
+CalDAV could also be a perfect instant messaging protocol between a Mac,
+a PC and a phone.</p>
+<p>After that, we've had the nice surprise to see events displayed
+without a problem (but after some strange steps of configuration) by
+aCal on Salem's Android phone.</p>
+<p>It was Friday, fun fun fun fun.</p>
+<p>So, that's it: Radicale supports Lightning, Evolution, Kontact, aCal
+for Android, iPhone and iCal. Of course, before releasing a new
+tarball:</p>
+<ul>
+<li><a href="./documentation.html#starting-the-client">documentation</a> is needed for the
+new clients that are not documented yet (Kontact, aCal and iPhone);</li>
+<li>tests are welcome, particularly for the Apple clients that I can't
+test anymore;</li>
+<li>no more features will be added, they'll wait in separate branches
+for the 0.7 development.</li>
+</ul>
+<p>Please <a href="http://redmine.kozea.fr/projects/radicale/issues">report bugs</a>
+if anything goes wrong during your tests, or just let us know <a href="./contribute.html">by Jabber or by mail</a> if everything is OK.</p>
+</section>
+<section class="level3" id="may-1-2011---ready-for-wsgi">
+<h3>May 1, 2011 - Ready for WSGI <a class="headerlink" href="#may-1-2011---ready-for-wsgi">&para;</a></h3>
+<p>Here it is! Radicale is now ready to be launched behind your
+favourite HTTP server (Apache, Lighttpd, Nginx or Tomcat for example).
+That's really good news, because:</p>
+<ul>
+<li>Real HTTP servers are much more efficient and reliable than the
+default Python server used in Radicale;</li>
+<li>All the authentication backends available for your server will be
+available for Radicale;</li>
+<li>Thanks to <a href="http://trac.saddi.com/flup">flup</a>, Radicale
+can be interfaced with all the servers supporting CGI, AJP, FastCGI or
+SCGI;</li>
+<li>Radicale works very well without any additional server, without any
+dependencies, without configuration, just as it was working before;</li>
+<li>This one more feature removes useless code, less is definitely
+more.</li>
+</ul>
+<p>The WSGI support has only be tested as a stand-alone executable and
+behind Lighttpd, you should definitely try if it works with you
+favourite server too!</p>
+<p>No more features will be added before (quite) a long time, because a
+lot of documentation and test is waiting for us. If you want to write
+tutorials for some CalDAV clients support (iCal, Android, iPhone), HTTP
+servers support or logging management, feel free to fork the <a href="https://gitorious.org/radicale/website">documentation git
+repository</a> and ask for a merge. It's plain text, I'm sure you can do
+it!</p>
+</section>
+<section class="level3" id="april-30-2011---apple-ical-support">
+<h3>April 30, 2011 - Apple iCal Support <a class="headerlink" href="#april-30-2011---apple-ical-support">&para;</a></h3>
+<p>After a long, long work, the iCal support has finally been added to
+Radicale! Well, this support is only for iCal&nbsp;4 and is highly
+experimental, but you can test it right now with the git master branch.
+Bug reports are welcome!</p>
+<p>Dear MacOS users, you can thank all the gentlemen who sended a lot of
+debugging iformation. Special thanks to Andrew from DAViCal, who helped
+us a lot with his tips and his tests, and R&eacute;mi Hainaud who lent his
+laptop for the final tests.</p>
+<p>The default server address is <code>localhost:5232/user/</code>,
+where calendars can be added. Multiple calendars and owner-less
+calendars are not tested yet, but they should work quite well. More
+documentation will be added during the next days. It will then be time
+to release the Radicale&nbsp;0.6 version, and work on the WSGI support.</p>
+</section>
+<section class="level3" id="april-25-2011---two-features-and-one-new-roadmap">
+<h3>April 25, 2011 - Two Features and One New Roadmap <a class="headerlink" href="#april-25-2011---two-features-and-one-new-roadmap">&para;</a></h3>
+<p>Two features have just reached the master branch, and the roadmap has
+been refreshed.</p>
+<section class="level4" id="ldap-authentication-1">
+<h4>LDAP Authentication <a class="headerlink" href="#ldap-authentication-1">&para;</a></h4>
+<p>Thanks to Corentin, the LDAP authentication is now included in
+Radicale. The support is experimental and may suffer unstable connexions
+and security problems. If you are interested in this feature (a lot of
+people seem to be), you can try it and give some feedback.</p>
+<p>No SSL support is included yet, but this may be quite easy to add. By
+the way, serious authentication methods will rely on a "real" HTTP
+server, as soon as Radicale supports WSGI.</p>
+</section>
+<section class="level4" id="journal-entries">
+<h4>Journal Entries <a class="headerlink" href="#journal-entries">&para;</a></h4>
+<p>Mehmet asked for the journal entries (aka. notes or memos) support,
+that's done! This also was an occasion to clean some code in the iCal
+parser, and to add a much better management of multi-lines entries.
+People experiencing crazy <code>X-RADICALE-NAME</code> entries can now
+clean their files, Radicale won't pollute them again.</p>
+</section>
+<section class="level4" id="new-roadmap">
+<h4>New Roadmap <a class="headerlink" href="#new-roadmap">&para;</a></h4>
+<p>Except from htpasswd and LDAP, most of the authentication backends
+(database, SASL, PAM, user groups) are not really easy to include in
+Radicale. The easiest solution to solve this problem is to give Radicale
+a CGI support, to put it behind a solid server such as Apache. Of
+course, CGI is not enough: a WSGI support is quite better, with the
+FastCGI, AJP and SCGI backends offered by <a href="http://trac.saddi.com/flup/">flup</a>. Quite exciting, isn't
+it?</p>
+<p>That's why it was important to add new versions on the roadmap. The
+0.6 version is now waiting for the Apple iCal support, and of course for
+some tests to kill the last remaining bugs. The only 0.7 feature will be
+WSGI, allowing many new authentication methods and a real multithread
+support.</p>
+<p>After that, 0.8 may add CalDAV rights and filters, while 1.0 will
+draw thousands of rainbows and pink unicorns (WebDAV sync, CardDAV,
+Freebusy). A lot of funky work is waiting for you, hackers!</p>
+</section>
+<section class="level4" id="bugs">
+<h4>Bugs <a class="headerlink" href="#bugs">&para;</a></h4>
+<p>Many bugs have also been fixed, most of them due to the owner-less
+calendars support. Radicale 0.6 may be out in a few weeks, you should
+spend some time testing the master branch and filling the bug
+tracker.</p>
+</section>
+</section>
+<section class="level3" id="april-10-2011---new-features">
+<h3>April 10, 2011 - New Features <a class="headerlink" href="#april-10-2011---new-features">&para;</a></h3>
+<p>Radicale 0.5 was released only 8 days ago, but 3 new features have
+already been added to the master branch:</p>
+<ul>
+<li>IPv6 support, with multiple addresses/ports support</li>
+<li>Logs and debug mode</li>
+<li>Owner-less calendars</li>
+</ul>
+<p>Most of the code has been written by Necoro and Corentin, and that
+was not easy at all: Radicale is now multithreaded! For sure, you can
+find many bugs and report them on the <a href="http://redmine.kozea.fr/projects/radicale/issues">bug tracker</a>.
+And if you're fond of logging, you can even add a default configuration
+file and more debug messages in the source.</p>
+</section>
+<section class="level3" id="april-2-2011---radicale-05-released">
+<h3>April 2, 2011 - Radicale 0.5 Released <a class="headerlink" href="#april-2-2011---radicale-05-released">&para;</a></h3>
+<p>Radicale 0.5 is out! Here is what's new:</p>
+<section class="level4" id="05---historical-artifacts">
+<h4>0.5 - Historical Artifacts <a class="headerlink" href="#05---historical-artifacts">&para;</a></h4>
+<ul>
+<li>Calendar depth</li>
+<li>iPhone support</li>
+<li>MacOS and Windows support</li>
+<li>HEAD requests management</li>
+<li>htpasswd user from calendar path</li>
+</ul>
+<p>iPhone support, but no iCal support for 0.5, despite our hard work,
+sorry! After 1 month with no more activity on the dedicated bug, it was
+time to forget it and hack on new awesome features. Thanks for your
+help, dear Apple users, I keep the hope that one day, Radicale will work
+with you!</p>
+<p>So, what's next? As promised, some cool git branches will soon be
+merged, with LDAP support, logging, IPv6 and anonymous calendars. Sounds
+pretty cool, heh? Talking about new features, more and more people are
+asking for a CardDAV support in Radicale. <a href="https://www.gitorious.org/~deepdiver/radicale/deepdivers-radicale">A
+git branch</a> and <a href="http://redmine.kozea.fr/issues/247">a
+feature request</a> are open, feel free to hack and discuss.</p>
+</section>
+</section>
+<section class="level3" id="february-3-2011---jabber-room-and-iphone-support">
+<h3>February 3, 2011 - Jabber Room and iPhone Support <a class="headerlink" href="#february-3-2011---jabber-room-and-iphone-support">&para;</a></h3>
+<p>After a lot of help and testing work from Andrew, Bj&ouml;rn, Anders,
+Dorian and Pete (and other ones we could have forgotten), a simple
+iPhone support has been added in the git repository. If you are
+interested, you can test this feature <em>right now</em> by <a href="./download.html#git-repository">downloading the latest git version</a> (a tarball
+is even available too if you don't want or know how to use git).</p>
+<p>No documentation has been written yet, but using the right URL in the
+configuration should be enough to synchronize your calendars. If you
+have any problems, you can ask by joining our new Jabber room: <a href="mailto:radicale@room.jabber.kozea.fr">radicale@room.jabber.kozea.fr</a>.</p>
+<p>Radicale 0.5 will be released as soon as the iCal support is ready.
+If you have an Apple computer, Python skills and some time to spend,
+we'd be glad to help you debugging Radicale.</p>
+</section>
+<section class="level3" id="october-21-2010---news-from-radicale">
+<h3>October 21, 2010 - News from Radicale <a class="headerlink" href="#october-21-2010---news-from-radicale">&para;</a></h3>
+<p>During the last weeks, Radicale has not been idle, even if no news
+have been posted since August. Thanks to Pete, Pierre-Philipp and
+Andrew, we're trying to add a better support on MacOS, Windows and
+mobile devices like iPhone and Android-based phones.</p>
+<p>All the tests on Windows have been successful: launching Radicale and
+using Lightning as client works without any problems. On Android too,
+some testers have reported clients working with Radicale. These were the
+good news.</p>
+<p>The bad news come from Apple: both iPhone and MacOS default clients
+are not working yet, despite the latest enhancements given to the
+PROPFIND requests. The problems are quite hard to debug due to our lack
+of Apple hardware, but Pete is helping us in this difficult quest!
+Radicale 0.5 will be out as soon as these two clients are working.</p>
+<p>Some cool stuff is coming next, with calendar collections and groups,
+and a simple web-based CalDAV client in early development. Stay
+tuned!</p>
+</section>
+<section class="level3" id="august-8-2010---radicale-04-released">
+<h3>August 8, 2010 - Radicale 0.4 Released <a class="headerlink" href="#august-8-2010---radicale-04-released">&para;</a></h3>
+<p>Radicale 0.4 is out! Here is what's new:</p>
+<section class="level4" id="04---hot-days-back">
+<h4>0.4 - Hot Days Back <a class="headerlink" href="#04---hot-days-back">&para;</a></h4>
+<ul>
+<li>Personal calendars</li>
+<li>HEAD requests</li>
+<li>Last-Modified HTTP header</li>
+<li><code>no-ssl</code> and <code>foreground</code> options</li>
+<li>Default configuration file</li>
+</ul>
+<p>This release has mainly been released to help our dear packagers to
+include a default configuration file and to write init scripts. Big
+thanks to Necoro for his work on the new Gentoo ebuild!</p>
+</section>
+</section>
+<section class="level3" id="july-4-2010---three-features-added-last-week">
+<h3>July 4, 2010 - Three Features Added Last Week <a class="headerlink" href="#july-4-2010---three-features-added-last-week">&para;</a></h3>
+<p>Some features have been added in the git repository during the last
+weeks, thanks to Jerome and Mariusz!</p>
+<ul>
+<li><p>Personal Calendars<br>
+Calendars accessed through the htpasswd ACL module can now be personal.
+Thanks to the <code>personal</code> option, a user called
+<code>bob</code> can access calendars at <code>/bob/*</code> but not to
+the <code>/alice/*</code> ones.</p></li>
+<li><p>HEAD Requests<br>
+Radicale can now answer HEAD requests. HTTP headers can be retrieved
+thanks to this request, without getting contents given by the GET
+requests.</p></li>
+<li><p>Last-Modified HTTP header<br>
+The Last-Modified header gives the last time when the calendar has been
+modified. This is used by some clients to cache the calendars and not
+retrieving them if they have not been modified.</p></li>
+</ul>
+</section>
+<section class="level3" id="june-14-2010---radicale-03-released">
+<h3>June 14, 2010 - Radicale 0.3 Released <a class="headerlink" href="#june-14-2010---radicale-03-released">&para;</a></h3>
+<p>Radicale 0.3 is out! Here is what&rsquo;s new:</p>
+<section class="level4" id="03---dancing-flowers">
+<h4>0.3 - Dancing Flowers <a class="headerlink" href="#03---dancing-flowers">&para;</a></h4>
+<ul>
+<li>Evolution support</li>
+<li>Version management</li>
+</ul>
+<p>The website changed a little bit too, with some small HTML5 and CSS3
+features such as articles, sections, transitions, opacity, box shadows
+and rounded corners. If you&rsquo;re reading this website with Internet
+Explorer, you should consider using a standard-compliant browser!</p>
+<p>Radicale is now included in Squeeze, the testing branch of Debian. A
+<a href="http://bugs.gentoo.org/show_bug.cgi?id=322811">Radicale ebuild
+for Gentoo</a> has been proposed too. If you want to package Radicale
+for another distribution, you&rsquo;re welcome!</p>
+<p>Next step is 0.5, with calendar collections, and Windows and MacOS
+support.</p>
+</section>
+</section>
+<section class="level3" id="may-31-2010---may-news">
+<h3>May 31, 2010 - May News <a class="headerlink" href="#may-31-2010---may-news">&para;</a></h3>
+<section class="level4" id="news-from-contributors">
+<h4>News from contributors <a class="headerlink" href="#news-from-contributors">&para;</a></h4>
+<p>Jonas Smedegaard packaged Radicale for Debian last week. Two
+packages, called <code>radicale</code> for the daemon and
+<code>python-radicale</code> for the module, have been added to Sid, the
+unstable branch of Debian. Thank you, Jonas!</p>
+<p>Sven Guckes corrected some of the strange-English-sentences present
+on this website. Thank you, Sven!</p>
+</section>
+<section class="level4" id="news-from-software">
+<h4>News from software <a class="headerlink" href="#news-from-software">&para;</a></h4>
+<p>A simple <code>VERSION</code> has been added in the library: you can
+now play with <code>radicale.VERSION</code> and
+<code>$radicale --version</code>.</p>
+<p>After playing with the version (should not be too long), you may
+notice that the next version is called 0.3, and not 0.5 as previously
+decided. The 0.3 main goal is to offer the support for Evolution as soon
+as possible, without waiting for the 0.5. After more than a month of
+test, we corrected all the bugs we found and everything seems to be
+fine; we can imagine that a brand new tarball will be released during
+the first days of June.</p>
+</section>
+</section>
+<section class="level3" id="april-19-2010---evolution-supported">
+<h3>April 19, 2010 - Evolution Supported <a class="headerlink" href="#april-19-2010---evolution-supported">&para;</a></h3>
+<p>Radicale now supports another CalDAV client: <a href="http://projects.gnome.org/evolution/">Evolution, the default mail,
+addressbook and calendaring client for Gnome</a>. This feature was quite
+easy to add, as it required less than 20 new lines of code in the
+requests handler.</p>
+<p>If you are interested, just clone the <a href="http://www.gitorious.org/radicale/radicale">git
+repository</a>.</p>
+</section>
+<section class="level3" id="april-13-2010---radicale-02-released">
+<h3>April 13, 2010 - Radicale 0.2 Released <a class="headerlink" href="#april-13-2010---radicale-02-released">&para;</a></h3>
+<p>Radicale 0.2 is out! Here is what&rsquo;s new:</p>
+<section class="level4" id="02---snowflakes">
+<h4>0.2 - Snowflakes <a class="headerlink" href="#02---snowflakes">&para;</a></h4>
+<ul>
+<li>Sunbird pre-1.0 support</li>
+<li>SSL connection</li>
+<li>Htpasswd authentication</li>
+<li>Daemon mode</li>
+<li>User configuration</li>
+<li>Twisted dependency removed</li>
+<li>Python 3 support</li>
+<li>Real URLs for PUT and DELETE</li>
+<li>Concurrent modification reported to users</li>
+<li>Many bugs fixed by Roger Wenham</li>
+</ul>
+<p>First of all, we would like to thank Roger Wenham for his bugfixes
+and his supercool words.</p>
+<p>You may have noticed that Sunbird 1.0 has not been released, but
+according to the Mozilla developers, 1.0pre is something like a final
+version.</p>
+<p>You may have noticed too that Radicale can be <a href="http://pypi.python.org/pypi/Radicale/0.2">downloaded from
+PyPI</a>. Of course, it is also available on the <a href="./download.html">download page</a>.</p>
+</section>
+</section>
+<section class="level3" id="january-21-2010---https-and-authentication">
+<h3>January 21, 2010 - HTTPS and Authentication <a class="headerlink" href="#january-21-2010---https-and-authentication">&para;</a></h3>
+<p>HTTPS connections and authentication have been added to Radicale this
+week. Command-line options and personal configuration files are also
+ready for test. According to the TODO file included in the package, the
+next version will finally be 0.2, when sunbird 1.0 is out. Go, Mozilla
+hackers, go!</p>
+<ul>
+<li><p>HTTPS connection<br>
+HTTPS connections are now available using the standard TLS mechanisms.
+Give Radicale a private key and a certificate, and your data are now
+safe.</p></li>
+<li><p>Authentication<br>
+A simple authentication architecture is now available, allowing
+different methods thanks to different modules. The first two modules are
+<code>fake</code> (no authentication) and <code>htpasswd</code>
+(authentication with an <code>htpasswd</code> file created by the Apache
+tool). More methods such as LDAP are coming soon!</p></li>
+</ul>
+</section>
+<section class="level3" id="january-15-2010---ready-for-python-3">
+<h3>January 15, 2010 - Ready for Python 3 <a class="headerlink" href="#january-15-2010---ready-for-python-3">&para;</a></h3>
+<p>Dropping Twisted dependency was the first step leading to another big
+feature: Radicale now works with Python 3! The code was given a small
+cleanup, with some simplifications mainly about encoding. Before the
+0.1.1 release, feel free to test the git repository, all Python versions
+from 2.5 should be OK.</p>
+</section>
+<section class="level3" id="january-11-2010---twisted-no-longer-required">
+<h3>January 11, 2010 - Twisted no Longer Required <a class="headerlink" href="#january-11-2010---twisted-no-longer-required">&para;</a></h3>
+<p>Good news! Radicale 0.1.1 will support Sunbird 1.0, but it has
+another great feature: it has no external dependency! Twisted is no
+longer required for the git version, removing about 50 lines of
+code.</p>
+</section>
+<section class="level3" id="december-31-2009---lightning-and-sunbird-10b2pre-support">
+<h3>December 31, 2009 - Lightning and Sunbird 1.0b2pre Support <a class="headerlink" href="#december-31-2009---lightning-and-sunbird-10b2pre-support">&para;</a></h3>
+<p>Lightning/Sunbird 1.0b2pre is out, adding minor changes in CalDAV
+support. A <a href="http://www.gitorious.org/radicale/radicale/commit/330283e">new
+commit</a> makes Radicale work with versions 0.9, 1.0b1 et 1.0b2.
+Moreover, etags are now quoted according to the <a href="http://www.faqs.org/rfcs/rfc2616.html" title="RFC 2616">RFC
+2616</a>.</p>
+</section>
+<section class="level3" id="december-9-2009---thunderbird-3-released">
+<h3>December 9, 2009 - Thunderbird 3 released <a class="headerlink" href="#december-9-2009---thunderbird-3-released">&para;</a></h3>
+<p><a href="http://www.mozillamessaging.com/thunderbird/3.0/releasenotes/">Thunderbird
+3 is out</a>, and Lightning/Sunbird 1.0 should be released in a few
+days. The <a href="http://gitorious.org/radicale/radicale/commit/6545bc8">last commit
+in git</a> should make Radicale work with versions 0.9 and 1.0b1pre.
+Radicale 0.1.1 will soon be released adding support for version 1.0.</p>
+</section>
+<section class="level3" id="september-1-2009---radicale-01-released">
+<h3>September 1, 2009 - Radicale 0.1 Released <a class="headerlink" href="#september-1-2009---radicale-01-released">&para;</a></h3>
+<p>First Radicale release! Here is the changelog:</p>
+<section class="level4" id="01---crazy-vegetables">
+<h4>0.1 - Crazy Vegetables <a class="headerlink" href="#01---crazy-vegetables">&para;</a></h4>
+<ul>
+<li>First release</li>
+<li>Lightning/Sunbird 0.9 compatibility</li>
+<li>Easy installer</li>
+</ul>
+<p>You can download this version on the <a href="./download.html">download
+page</a>.</p>
+</section>
+</section>
+<section class="level3" id="july-28-2009---radicale-on-gitorious">
+<h3>July 28, 2009 - Radicale on Gitorious <a class="headerlink" href="#july-28-2009---radicale-on-gitorious">&para;</a></h3>
+<p>Radicale code has been released on Gitorious! Take a look at the <a href="http://www.gitorious.org/radicale">Radicale main page on
+Gitorious</a> to view and download source code.</p>
+</section>
+<section class="level3" id="july-27-2009---radicale-ready-to-launch">
+<h3>July 27, 2009 - Radicale Ready to Launch <a class="headerlink" href="#july-27-2009---radicale-ready-to-launch">&para;</a></h3>
+<p>The Radicale Project is launched. The code has been cleaned up and
+will be available soon&hellip;</p>
+</section>
+</section>
+
+</div>
+</main>
+</html>

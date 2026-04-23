@@ -14,7 +14,8 @@ window.addEventListener("DOMContentLoaded", function() {
     let sections = [[document.querySelector("main"), null]];
     for (let section of document.querySelectorAll("section")) {
         let id = section.getAttribute("id");
-        let link = nav.querySelector("a[href=\\#" + id.replace(/\//g, "\\/") + "]");
+        let filename = window.location.pathname.split('/').pop();
+        let link = nav.querySelector("a[href='./" + filename + "#" + id.replace(/\//g, "\\/") + "']");
         if (link) {
             link = link.parentElement;
             link.classList.remove("active");
