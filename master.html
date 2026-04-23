@@ -1674,6 +1674,33 @@ seconds).</p>
 <p>Strict preconditions check on PUT in case item already exists <a href="https://www.rfc-editor.org/rfc/rfc6352#section-9.2">RFC6352#9.2</a></p>
 <p>Default: <code>False</code></p>
 </section>
+<section class="level5" id="validate_user_value">
+<h5>validate_user_value <a class="headerlink" href="#validate_user_value">&para;</a></h5>
+<p><em>(&gt;= 3.7.2)</em></p>
+<p>Validate user value content</p>
+<p>Available types are:</p>
+<ul>
+<li><code>none</code></li>
+<li><code>minimal</code> (control and some special chars)</li>
+<li><code>unicode-letter</code> (unicode letters)</li>
+<li><code>no-unicode</code> (no unicode)</li>
+<li><code>strict</code> (reduced ASCII set)</li>
+</ul>
+<p>Default: <code>minimum</code></p>
+</section>
+<section class="level5" id="validate_path_type">
+<h5>validate_path_type <a class="headerlink" href="#validate_path_type">&para;</a></h5>
+<p><em>(&gt;= 3.7.2)</em></p>
+<p>Validate path value content</p>
+<ul>
+<li><code>none</code></li>
+<li><code>minimal</code> (control and some special chars)</li>
+<li><code>unicode-letter</code> (unicode letters)</li>
+<li><code>no-unicode</code> (no unicode)</li>
+<li><code>strict</code> (reduced ASCII set)</li>
+</ul>
+<p>Default: <code>minimum</code></p>
+</section>
 <section class="level5" id="hook">
 <h5>hook <a class="headerlink" href="#hook">&para;</a></h5>
 <p>Command that is run after changes to storage. See the <a href="#versioning-collections-with-git">Versioning collections with
