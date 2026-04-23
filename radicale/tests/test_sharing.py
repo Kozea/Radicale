@@ -48,6 +48,10 @@ class TestSharingApiSanity(BaseTest):
         encoding: str = self.configuration.get("encoding", "stock")
         htpasswd = ["owner:ownerpw", "user:userpw",
                     "owner1:owner1pw", "user1:user1pw",
+                    "owner@domain.example:owner@pw", "user@domain.example:user@pw",
+                    "owner.surename@domain.example:owner@pw", "user.surename@domain.example:user@pw",
+                    "owner-surename@domain.example:owner@pw", "user-surename@domain.example:user@pw",
+                    "owner_surename@domain.example:owner@pw", "user_surename@domain.example:user@pw",
                     "us😀er:user😀pw",
                     "owner2:owner2pw", "user2:user2pw"]
         htpasswd_content = "\n".join(htpasswd)
@@ -1097,6 +1101,51 @@ class TestSharingApiSanity(BaseTest):
             json_dict['PathOrToken'] = path_owner
             json_dict['PathMapped'] = path_owner
             _, headers, answer = self._sharing_api_json("map", "create", 409, login="owner:ownerpw", json_dict=json_dict)
+
+    def test_sharing_api_map_basic_email(self) -> None:
+        """share-by-map API basic tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        for (owner, user) in [
+                ("owner@domain.example", "user@domain.example"),
+                ("owner.surename@domain.example", "user.surename@domain.example"),
+                ("owner-surename@domain.example", "user-surename@domain.example"),
+                ("owner_surename@domain.example", "user_surename@domain.example"),
+                ]:
+
+            path_owner = "/" + owner + "/calendar.ics/"
+            path_user = "/" + user + "/calendar-owner.ics/"
+            self.mkcalendar(path_owner, login=owner + ":owner@pw")
+
+            for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+                self.configure({"sharing": {"permit_create_map": "True"}})
+
+                logging.info("\n*** test: %s", db_type)
+                self.configure({"sharing": {"type": db_type}})
+
+                logging.info("\n*** create map with PathMapped, User, PathOrToken (json) -> 200")
+                json_dict = {}
+                json_dict['User'] = user
+                json_dict['PathOrToken'] = path_user
+                json_dict['PathMapped'] = path_owner
+                _, headers, answer = self._sharing_api_json("map", "create", 200, login=owner + ":owner@pw", json_dict=json_dict)
+
+                logging.info("\n*** create map with PathMapped, User, PathOrToken (json) -> 200")
+                json_dict = {}
+                json_dict['PathOrToken'] = path_user
+                _, headers, answer = self._sharing_api_json("map", "enable", 200, login=user + ":user@pw", json_dict=json_dict)
+
 
     def test_sharing_api_map_usage(self) -> None:
         """share-by-map API usage tests."""
