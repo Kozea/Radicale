@@ -5674,7 +5674,7 @@ permissions: RrWw""")
             self.mkcalendar(path_mapped, login="owner:ownerpw")
 
             # create map
-            logging.info("\n*** create map user/owner:rP -> ok")
+            logging.info("\n*** create map user/owner:rP -> failed")
             json_dict = {}
             json_dict['User'] = "us😁er"
             json_dict['PathMapped'] = path_mapped
