@@ -216,6 +216,9 @@ PIM Applications</a></li>
 <li class="level4"><a href="#infcloud-caldavzap-and-carddavmate" id="toc-infcloud-caldavzap-and-carddavmate">InfCloud, CalDavZAP and
 CardDavMATE</a></li>
 <li class="level4"><a href="#command-line" id="toc-command-line">Command line</a></li>
+</ul></li>
+<li class="level2"><a href="#internals" id="toc-internals">Internals</a>
+<ul>
 <li class="level3"><a href="#authorization-and-rights" id="toc-authorization-and-rights">Authorization and Rights</a></li>
 <li class="level3"><a href="#storage-2" id="toc-storage-2">Storage</a>
 <ul>
@@ -2380,6 +2383,9 @@ books that are direct children of the path <code>/USERNAME/</code>.</p>
 <p>Note: requires config/option
 <code>permit_delete_collection = True</code></p>
 </section>
+</section>
+<section class="level2" id="internals">
+<h2>Internals <a class="headerlink" href="#internals">&para;</a></h2>
 <section class="level3" id="authorization-and-rights">
 <h3>Authorization and Rights <a class="headerlink" href="#authorization-and-rights">&para;</a></h3>
 <p>This section describes the format of the rights file for the
@@ -2653,6 +2659,8 @@ use.</p></li>
 <li><p><code>storage</code> : This module contains the classes
 representing collections in Radicale and the code for storing and
 loading them in the filesystem.</p></li>
+<li><p><code>sharing</code> : This module contains the classes
+representing collection sharing. <em>(&gt;= 3.7.0)</em></p></li>
 <li><p><code>web</code> : This module contains the web
 interface.</p></li>
 <li><p><code>utils</code> : Contains general helper functions.</p></li>
