@@ -29,7 +29,6 @@ from urllib.parse import parse_qs
 
 from radicale import (config, httputils, pathutils, rights, storage, types,
                       utils)
-from radicale.app.base import ApplicationBase
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
@@ -132,7 +131,7 @@ def load(configuration: "config.Configuration") -> "BaseSharing":
     return utils.load_plugin(INTERNAL_TYPES, "sharing", "Sharing", BaseSharing, configuration)
 
 
-class BaseSharing(ApplicationBase):
+class BaseSharing:
 
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
@@ -509,6 +508,7 @@ class BaseSharing(ApplicationBase):
     # *** POST API ***
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str) -> types.WSGIResponse:
         # Late import to avoid circular dependency in config
+        from radicale.app import base as app_base
         from radicale.app.base import Access
 
         """POST request.
@@ -725,19 +725,19 @@ class BaseSharing(ApplicationBase):
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 else:
-                    if not self._check_path_format(request_data[key]):
+                    if not app_base._check_path_format(self._storage, request_data[key], self._validate_path_value):
                         logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_path_value)
                         return httputils.bad_request("Invalid value for PathOrToken")
                     if not request_data[key].endswith("/"):
                         return httputils.bad_request("PathOrToken not ending with /")
             elif key == "PathMapped":
-                if not self._check_path_format(request_data[key]):
+                if not app_base._check_path_format(self._storage, request_data[key], self._validate_path_value):
                     logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_path_value)
                     return httputils.bad_request("Invalid value for PathMapped")
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathMapped not ending with /")
             elif key == "User":
-                if not self._check_user_format(request_data[key]):
+                if not app_base._check_user_format(self._storage, request_data[key], self._validate_user_value):
                     logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_user_value)
                     return httputils.bad_request("Invalid value for User")
 

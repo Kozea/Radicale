@@ -42,6 +42,7 @@ from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
 
 from radicale import config, httputils, log, pathutils, types, utils
+from radicale.app import base as app_base
 from radicale.app.base import ApplicationBase
 from radicale.app.delete import ApplicationPartDelete
 from radicale.app.get import ApplicationPartGet
@@ -482,7 +483,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching (may cause authentication issues using internal WebUI)", base_prefix, path)
                 else:
                     logger.debug("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
-        if not self._check_path_format(path):
+        if not app_base._check_path_format(self._storage, path, self._validate_path_value):
             logger.error("request contains invalid path: %r (not compliant to %r)", path, self._validate_path_value)
             return response(*httputils.BAD_REQUEST)
 
@@ -515,7 +516,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        if login and not self._check_user_format(login):
+        if login and not app_base._check_user_format(self._storage, login, self._validate_user_value):
             info = "not compliant to %r" % self._validate_user_value
             user = ""
         else:

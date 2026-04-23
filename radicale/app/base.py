@@ -45,6 +45,70 @@ USER_WHITELIST_UNICODE: list = ["-", ".", "@", "_"]  # from USER_PATTERN_STRICT
 PATH_WHITELIST_UNICODE: list = ["-", ".", "@", "_", "/", "~"]  # from PATH_PATTERN_STRICT
 
 
+def _check_format(self: storage.BaseStorage,
+                  string: str,
+                  blacklist_minimal: list[str],
+                  whitelist_unicode: list[str],
+                  validation_type: str,
+                  ) -> bool:
+    check_minimal = (validation_type == "minimal")
+    check_unicode_letter = (validation_type == "unicode-letter")
+    check_no_unicode = (validation_type == "no-unicode")
+    logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
+    if not self._supports_trailing_whitespace and string.endswith(' '):
+        return False
+    for c in string:
+        if c <= chr(31) or (c >= chr(127) and c <= chr(159)):
+            # ASCII: control char
+            return False
+        if unicodedata.category(c)[0] == "C":
+            # https://unicodeplus.com/category
+            # Unicode: control
+            return False
+        if check_minimal or not self._supports_problematic_chars:
+            if c in blacklist_minimal:
+                logger.trace("_check_format found %r", c)
+                return False
+        if check_unicode_letter:
+            if c not in whitelist_unicode:
+                if unicodedata.category(c)[0] != "L":
+                    return False
+        if check_no_unicode:
+            if ord(c) > 255:
+                return False
+    return True
+
+
+def _check_user_format(self: storage.BaseStorage,
+                       user: str,
+                       validation_type: str
+                       ) -> bool:
+    if validation_type == "strict":
+        return (re.search(USER_PATTERN_STRICT_RE, user) is not None)
+    else:
+        return _check_format(self,
+                             user,
+                             USER_BLACKLIST_MINIMAL,
+                             USER_WHITELIST_UNICODE,
+                             validation_type,
+                             )
+
+
+def _check_path_format(self: storage.BaseStorage,
+                       path: str,
+                       validation_type: str
+                       ) -> bool:
+    if validation_type == "strict":
+        return (re.search(PATH_PATTERN_STRICT_RE, path) is not None)
+    else:
+        return _check_format(self,
+                             path,
+                             PATH_BLACKLIST_MINIMAL,
+                             PATH_WHITELIST_UNICODE,
+                             validation_type,
+                             )
+
+
 class ApplicationBase:
 
     configuration: config.Configuration
@@ -116,59 +180,6 @@ class ApplicationBase:
         headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
         content = self._xml_response(xmlutils.webdav_error(human_tag))
         return status, headers, content, None
-
-    def _check_format(self,
-                      string: str,
-                      blacklist_minimal: list[str],
-                      whitelist_unicode: list[str],
-                      validation_type: str,
-                      ) -> bool:
-        check_minimal = (validation_type == "minimal")
-        check_unicode_letter = (validation_type == "unicode-letter")
-        check_no_unicode = (validation_type == "no-unicode")
-        logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
-        if not self._storage._supports_trailing_whitespace and string.endswith(' '):
-            return False
-        for c in string:
-            if c <= chr(31) or (c >= chr(127) and c <= chr(159)):
-                # ASCII: control char
-                return False
-            if unicodedata.category(c)[0] == "C":
-                # https://unicodeplus.com/category
-                # Unicode: control
-                return False
-            if check_minimal or not self._storage._supports_problematic_chars:
-                if c in blacklist_minimal:
-                    logger.trace("_check_format found %r", c)
-                    return False
-            if check_unicode_letter:
-                if c not in whitelist_unicode:
-                    if unicodedata.category(c)[0] != "L":
-                        return False
-            if check_no_unicode:
-                if ord(c) > 255:
-                    return False
-        return True
-
-    def _check_user_format(self, user: str) -> bool:
-        if self._validate_user_value == "strict":
-            return (re.search(USER_PATTERN_STRICT_RE, user) is not None)
-        else:
-            return self._check_format(user,
-                                      USER_BLACKLIST_MINIMAL,
-                                      USER_WHITELIST_UNICODE,
-                                      self._validate_user_value,
-                                      )
-
-    def _check_path_format(self, path: str) -> bool:
-        if self._validate_path_value == "strict":
-            return (re.search(PATH_PATTERN_STRICT_RE, path) is not None)
-        else:
-            return self._check_format(path,
-                                      PATH_BLACKLIST_MINIMAL,
-                                      PATH_WHITELIST_UNICODE,
-                                      self._validate_path_value,
-                                      )
 
 
 class Access:

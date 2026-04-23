@@ -25,6 +25,7 @@ from http import client
 from urllib.parse import unquote, urlparse
 
 from radicale import httputils, pathutils, storage, types
+from radicale.app import base as app_base
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
@@ -82,7 +83,7 @@ class ApplicationPartMove(ApplicationBase):
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
-        if not self._check_path_format(to_path):
+        if not app_base._check_path_format(self._storage, to_path, self._validate_path_value):
             logger.warning("request contains invalid path: %r (not compliant to %r)", to_path, self._validate_path_value)
             return httputils.BAD_REQUEST
         if not (to_path + "/").startswith(base_prefix + "/"):
