@@ -2390,6 +2390,8 @@ curl -u user -X DELETE 'http://localhost:5232/user/calendar'
 
 Note: requires config/option `permit_delete_collection = True`
 
+## Internals
+
 ### Authorization and Rights
 
 This section describes the format of the rights file for the `from_file`
@@ -2653,6 +2655,9 @@ The ``radicale`` package offers the following modules.
 * `storage`
   : This module contains the classes representing collections in Radicale and
   the code for storing and loading them in the filesystem.
+
+* `sharing`
+  : This module contains the classes representing collection sharing. _(>= 3.7.0)_
 
 * `web`
   : This module contains the web interface.
