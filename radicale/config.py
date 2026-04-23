@@ -48,6 +48,8 @@ DEFAULT_CONFIG_PATH: str = os.pathsep.join([
 
 PROFILING: Sequence[str] = ("per_request", "per_request_method", "none")
 
+VALIDATE_TYPES: Sequence[str] = ("none", "minimal", "unicode-letter", "unicode-none", "strict")
+
 
 def positive_int(value: Any) -> int:
     value = int(value)
@@ -81,6 +83,12 @@ def rights_permission(value: Any) -> str:
 def logging_level(value: Any) -> str:
     if value not in log.LOG_LEVEL_OPTIONS:
         raise ValueError("unsupported level: %r" % value)
+    return value
+
+
+def validate_types(value: Any) -> str:
+    if value not in VALIDATE_TYPES:
+        raise ValueError("unsupported validation type: %r" % value)
     return value
 
 
@@ -221,6 +229,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "script name to strip from URI if called by reverse proxy (default taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)",
             "type": str}),
+        ("validate_user_value", {
+            "value": "minimal",
+            "help": "validate user value (" + "|".join(VALIDATE_TYPES) + ")",
+            "type": validate_types}),
+        ("validate_path_value", {
+            "value": "minimal",
+            "help": "validate path value (" + "|".join(VALIDATE_TYPES) + ")",
+            "type": validate_types}),
         ("_internal_server", {
             "value": "False",
             "help": "the internal server is used",

@@ -365,7 +365,7 @@ class ApplicationPartPut(ApplicationBase):
                     errno_match = re.search("\\[Errno ([0-9]+)\\]", str(e))
                     if errno_match:
                         logger.error(
-                            "Failed PUT request on %r (upload): %s", path, e, exc_info=True)
+                            "Failed PUT request on %r (upload): %s", path, e, exc_info=False)
                         errno_e = int(errno_match.group(1))
                         if errno_e == errno.ENOSPC:
                             return httputils.INSUFFICIENT_STORAGE

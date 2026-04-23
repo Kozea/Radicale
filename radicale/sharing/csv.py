@@ -400,7 +400,7 @@ class Sharing(sharing.BaseSharing):
         logger.debug("sharing database load begin: %r", file)
         self._sharing_cache = []
         with self._storage.acquire_lock("r", None):
-            with open(file, 'r', newline='') as csvfile:
+            with open(file, 'r', newline='', encoding=self._encoding) as csvfile:
                 reader = csv.DictReader(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
                 self._lines = 0
                 for row in reader:
@@ -435,7 +435,14 @@ class Sharing(sharing.BaseSharing):
                                 if row[fieldname] is None or row[fieldname] == '':
                                     row[fieldname] = {}
                                 else:
-                                    field = row[fieldname].lstrip('"').rstrip('"').replace("'", '"')
+                                    field = row[fieldname].lstrip('"').rstrip('"')
+                                    logger.trace("json prep quote replacer match (before): %s", field)
+                                    field = field.replace('"', '\\"').replace("\\'", "'")  # escape "
+                                    field = field.replace("{'", '{"')  # replace for JSON start {' -> {"
+                                    field = field.replace("'}", '"}')  # replace for JSON end '} -> "}
+                                    field = field.replace("': '", '": "')  # replace for JSON entry/value ': ' -> ": "
+                                    field = field.replace("', '", '", "')  # replace for JSON delimiter ', ' -> ", "
+                                    logger.trace("json prep quote replacer match (after) : %s", field)
                                     try:
                                         row[fieldname] = json.loads(field)
                                     except Exception as e:
@@ -453,7 +460,7 @@ class Sharing(sharing.BaseSharing):
         return True
 
     def _write_csv(self, file: str) -> bool:
-        with open(file, 'w', newline='') as csvfile:
+        with open(file, 'w', newline='', encoding=self._encoding) as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=sharing.DB_FIELDS_V1, delimiter=';')
             writer.writerows(self._sharing_cache)
         return True

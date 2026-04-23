@@ -17,7 +17,9 @@
 
 import io
 import logging
+import re
 import sys
+import unicodedata
 import xml.etree.ElementTree as ET
 from typing import Optional, Union
 
@@ -29,6 +31,82 @@ from radicale.rights import intersect
 # HACK: https://github.com/tiran/defusedxml/issues/54
 import defusedxml.ElementTree as DefusedET  # isort:skip
 sys.modules["xml.etree"].ElementTree = ET  # type:ignore[attr-defined]
+
+USER_PATTERN_STRICT: str = "a-zA-Z0-9@\\.\\-_"
+PATH_PATTERN_STRICT: str = USER_PATTERN_STRICT + "\\/~"  # / as separator
+
+USER_PATTERN_STRICT_RE: str = "^[" + USER_PATTERN_STRICT + "]+$"
+PATH_PATTERN_STRICT_RE: str = "^[" + PATH_PATTERN_STRICT + "]+$"
+
+USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?']
+PATH_BLACKLIST_MINIMAL: list = USER_BLACKLIST_MINIMAL
+
+USER_WHITELIST_UNICODE: list = ["-", ".", "@", "_"]  # from USER_PATTERN_STRICT
+PATH_WHITELIST_UNICODE: list = ["-", ".", "@", "_", "/", "~"]  # from PATH_PATTERN_STRICT
+
+
+def _check_format(self: storage.BaseStorage,
+                  string: str,
+                  blacklist_minimal: list[str],
+                  whitelist_unicode: list[str],
+                  validation_type: str,
+                  ) -> bool:
+    check_minimal = (validation_type == "minimal")
+    check_unicode_letter = (validation_type == "unicode-letter")
+    check_no_unicode = (validation_type == "no-unicode")
+    logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
+    if not self._supports_trailing_whitespace and string.endswith(' '):
+        return False
+    for c in string:
+        if c <= chr(31) or (c >= chr(127) and c <= chr(159)):
+            # ASCII: control char
+            return False
+        if unicodedata.category(c)[0] == "C":
+            # https://unicodeplus.com/category
+            # Unicode: control
+            return False
+        if check_minimal or not self._supports_problematic_chars:
+            if c in blacklist_minimal:
+                logger.trace("_check_format found %r", c)
+                return False
+        if check_unicode_letter:
+            if c not in whitelist_unicode:
+                if unicodedata.category(c)[0] != "L":
+                    return False
+        if check_no_unicode:
+            if ord(c) > 255:
+                return False
+    return True
+
+
+def _check_user_format(self: storage.BaseStorage,
+                       user: str,
+                       validation_type: str
+                       ) -> bool:
+    if validation_type == "strict":
+        return (re.search(USER_PATTERN_STRICT_RE, user) is not None)
+    else:
+        return _check_format(self,
+                             user,
+                             USER_BLACKLIST_MINIMAL,
+                             USER_WHITELIST_UNICODE,
+                             validation_type,
+                             )
+
+
+def _check_path_format(self: storage.BaseStorage,
+                       path: str,
+                       validation_type: str
+                       ) -> bool:
+    if validation_type == "strict":
+        return (re.search(PATH_PATTERN_STRICT_RE, path) is not None)
+    else:
+        return _check_format(self,
+                             path,
+                             PATH_BLACKLIST_MINIMAL,
+                             PATH_WHITELIST_UNICODE,
+                             validation_type,
+                             )
 
 
 class ApplicationBase:
@@ -44,6 +122,8 @@ class ApplicationBase:
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
     _strict_preconditions: bool
+    _validate_user_value: str
+    _validate_path_format: str
     _hook: hook.BaseHook
 
     def __init__(self, configuration: config.Configuration) -> None:
@@ -58,6 +138,8 @@ class ApplicationBase:
         self._response_content_on_debug = configuration.get("logging", "response_content_on_debug")
         self._request_content_on_debug = configuration.get("logging", "request_content_on_debug")
         self._limit_content = configuration.get("logging", "limit_content")
+        self._validate_user_value = configuration.get("server", "validate_user_value")
+        self._validate_path_value = configuration.get("server", "validate_path_value")
         self._hook = hook.load(configuration)
 
     def _read_xml_request_body(self, environ: types.WSGIEnviron

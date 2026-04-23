@@ -121,11 +121,7 @@ API_TYPES_V1: dict[str, type] = {
 
 TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
-PATH_PATTERN: str = "([a-zA-Z0-9/.\\-@]+)"  # TODO: extend or find better source
-
-USER_PATTERN: str = "([a-zA-Z0-9@.]+)"  # TODO: extend or find better source
-
-OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname")
+OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
 CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
 
@@ -141,6 +137,7 @@ class BaseSharing:
     _rights: rights.BaseRights
     _auth_delay: float
     _enabled: bool = False
+    _encoding: str
     default_permissions_create_token: str
     default_permissions_create_map: str
     sharing_db_type: str
@@ -157,6 +154,9 @@ class BaseSharing:
         self._rights = rights.load(configuration)
         self._storage = storage.load(configuration)
         self._auth_delay = configuration.get("auth", "delay")
+        self._encoding = configuration.get("encoding", "stock")
+        self._validate_user_value = configuration.get("server", "validate_user_value")
+        self._validate_path_value = configuration.get("server", "validate_path_value")
         # Sharing
         self.sharing_collection_by_map = configuration.get("sharing", "collection_by_map")
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
@@ -508,6 +508,7 @@ class BaseSharing:
     # *** POST API ***
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str) -> types.WSGIResponse:
         # Late import to avoid circular dependency in config
+        from radicale.app import base as app_base
         from radicale.app.base import Access
 
         """POST request.
@@ -724,20 +725,20 @@ class BaseSharing:
                         logger.warning(api_info + ": unsupported " + key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 else:
-                    if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
-                        logger.warning(api_info + ": unsupported " + key)
+                    if not app_base._check_path_format(self._storage, request_data[key], self._validate_path_value):
+                        logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_path_value)
                         return httputils.bad_request("Invalid value for PathOrToken")
                     if not request_data[key].endswith("/"):
                         return httputils.bad_request("PathOrToken not ending with /")
             elif key == "PathMapped":
-                if not re.search('^' + PATH_PATTERN + '$', request_data[key]):
-                    logger.warning(api_info + ": unsupported " + key)
+                if not app_base._check_path_format(self._storage, request_data[key], self._validate_path_value):
+                    logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_path_value)
                     return httputils.bad_request("Invalid value for PathMapped")
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathMapped not ending with /")
             elif key == "User":
-                if not re.search('^' + USER_PATTERN + '$', request_data[key]):
-                    logger.warning(api_info + ": unsupported " + key)
+                if not app_base._check_user_format(self._storage, request_data[key], self._validate_user_value):
+                    logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_user_value)
                     return httputils.bad_request("Invalid value for User")
 
         # check for optional parameters
@@ -852,6 +853,12 @@ class BaseSharing:
                 logger.warning(api_info + ": missing PathMapped")
                 return httputils.bad_request("Missing PathMapped")
 
+            # check access Permissions
+            access = Access(self._rights, user, PathMapped, None)
+            if not access.check("r"):
+                logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
+                return httputils.NOT_ALLOWED
+
             if Conversion is None:
                 Conversion = "none"
 
@@ -902,12 +909,6 @@ class BaseSharing:
                 HiddenByUser = Hidden
 
             if ShareType == "token":
-                # check access Permissions
-                access = Access(self._rights, user, PathMapped)
-                if not access.check("r"):
-                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
-                    return httputils.NOT_ALLOWED
-
                 if self.permit_create_token is False:
                     if "t" not in access.permissions:
                         logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False but explict grant misses 't')", PathMapped, user)
@@ -970,12 +971,6 @@ class BaseSharing:
                 if len(shares) > 0:
                     logger.warning(api_info + ": share already exists with PathMapped=%r User=%r Conversion=%r", PathMapped, User, Conversion)
                     return httputils.CONFLICT
-
-                # check access Permissions
-                access = Access(self._rights, user, PathMapped, None)  # PathMapped is mandatory
-                if not access.check("r") and "i" not in access.permissions:
-                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
-                    return httputils.NOT_ALLOWED
 
                 if self.permit_create_map is False:
                     if "m" not in access.permissions:
@@ -1041,7 +1036,7 @@ class BaseSharing:
                 else:
                     answer['PathOrToken'] = token
 
-            logger.info(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
+            logger.notice(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
 
         # action: update
         elif action == "update":
@@ -1173,6 +1168,8 @@ class BaseSharing:
                 logger.warning(api_info + ": %r not successful", request_data['PathOrToken'])
                 return httputils.bad_request("Internal Error")
 
+            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
+
         # action: delete
         elif action == "delete":
             logger.trace("" + api_info + ": start")
@@ -1212,6 +1209,8 @@ class BaseSharing:
             else:
                 logger.warning(api_info + ": %r by user %r not successful", request_data['PathOrToken'], request_data['User'])
                 return httputils.bad_request("Internal Error")
+
+            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
 
         # action: info
         elif action == "info":
@@ -1300,6 +1299,8 @@ class BaseSharing:
             else:
                 logger.warning(api_info + ": %r by user %s not successful", request_data['PathOrToken'], user)
                 return httputils.bad_request("Internal Error")
+
+            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
 
         else:
             # default

@@ -60,7 +60,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     raise pathutils.UnsafePathError(href)
                 path = pathutils.path_to_filesystem(self._filesystem_path,
                                                     href,
-                                                    self._filesystem_root_folder_is_collision_free)
+                                                    self._is_collision_free)
             except ValueError as e:
                 logger.debug(
                     "Can't translate name %r safely to filesystem in %r: %s",

@@ -58,6 +58,14 @@
 # script name to strip from URI if called by reverse proxy
 #script_name = (default taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)
 
+# validate user type
+# Value: none|minimal|unicode-letter|no-unicode|strict
+#validate_user_value = minimal
+
+# validate path value
+# Value: none|minimal|unicode-letter|no-unicode|strict
+#validate_path_value = minimal
+
 
 [encoding]
 
@@ -423,6 +431,7 @@
 # Set CSP to disallow execution of unknown javascript
 # This may become the default in future versions, override if you need a different CSP.
 Content-Security-Policy = default-src 'self'; object-src 'none'
+
 
 [hook]
 

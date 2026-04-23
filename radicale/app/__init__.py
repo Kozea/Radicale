@@ -42,6 +42,7 @@ from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
 
 from radicale import config, httputils, log, pathutils, types, utils
+from radicale.app import base as app_base
 from radicale.app.base import ApplicationBase
 from radicale.app.delete import ApplicationPartDelete
 from radicale.app.get import ApplicationPartGet
@@ -86,6 +87,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _profiling_per_request: bool = False
     _profiling_per_request_method: bool = False
     _limit_content: int
+    _validate_user_value: str
+    _validate_path_value: str
     profiler_per_request_method: dict[str, cProfile.Profile] = {}
     profiler_per_request_method_counter: dict[str, int] = {}
     profiler_per_request_method_starttime: datetime.datetime
@@ -158,6 +161,19 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             self._extra_headers[key] = configuration.get("headers", key)
         self._strict_preconditions = configuration.get("storage", "strict_preconditions")
         logger.info("strict preconditions check: %s", self._strict_preconditions)
+        # Format checks
+        self._validate_user_value = configuration.get("server", "validate_user_value")
+        self._validate_path_value = configuration.get("server", "validate_path_value")
+        if not self._storage._supports_unicode:
+            if self._validate_user_value not in ["strict", "no-unicode"]:
+                self._validate_user_value = "no-unicode"
+            if self._validate_path_value not in ["strict", "no-unicode"]:
+                self._validate_path_value = "no-unicode"
+            logger.notice("validate user value: %r (enforced by limited support of collection storage)", self._validate_user_value)
+            logger.notice("validate path value: %r (enforced by limited support of collection storage)", self._validate_path_value)
+        else:
+            logger.info("validate user value: %r", self._validate_user_value)
+            logger.info("validate path value: %r", self._validate_path_value)
         # Profiling options
         self._profiling = configuration.get("logging", "profiling")
         self._profiling_per_request_min_duration = configuration.get("logging", "profiling_per_request_min_duration")
@@ -338,15 +354,23 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             else:
                 flags_text = ""
             if answer is not None:
-                logger.info("%s response status for %r%s in %.3f seconds %s %s bytes%s: %s",
+                message = "%s response status for %r%s in %.3f seconds %s %s bytes%s: %s" % (
                             request_method, unsafe_path, depthinfo,
                             time_delta_seconds, content_encoding, str(len(answer)),
                             flags_text,
                             status_text)
             else:
-                logger.info("%s response status for %r%s in %.3f seconds: %s",
+                message = "%s response status for %r%s in %.3f seconds: %s" % (
                             request_method, unsafe_path, depthinfo,
                             time_delta_seconds, status_text)
+            logger_method = logger.info  # default
+            if status == 401 or status == 404 or status == 412 or status == 409 or request_method in ["PROPPATCH", "MKCALENDAR", "MKCOL"]:
+                logger_method = logger.notice
+            elif status >= 500 and status < 500:
+                logger_method = logger.error
+            elif status >= 500:
+                logger_method = logger.critical
+            logger_method(message)
 
             # Profiling end
             if self._profiling_per_request:
@@ -459,6 +483,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     logger.warning("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching (may cause authentication issues using internal WebUI)", base_prefix, path)
                 else:
                     logger.debug("Called by reverse proxy, cannot remove base prefix %r from path: %r as not matching", base_prefix, path)
+        if not app_base._check_path_format(self._storage, path, self._validate_path_value):
+            logger.error("request contains invalid path: %r (not compliant to %r)", path, self._validate_path_value)
+            return response(*httputils.BAD_REQUEST)
 
         # Get function corresponding to method
         function = getattr(self, "do_%s" % request_method, None)
@@ -489,7 +516,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
+        if login and not app_base._check_user_format(self._storage, login, self._validate_user_value):
+            info = "not compliant to %r" % self._validate_user_value
+            user = ""
+        else:
+            (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
         if self.configuration.get("auth", "type") == "ldap":
             try:
                 logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))
@@ -600,9 +631,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
             if (status, headers, answer, xml_request) == httputils.NOT_ALLOWED:
                 if path.startswith("/.token"):
-                    logger.info("Access to %r denied", path)
+                    logger.notice("Access to %r denied", path)
                 else:
-                    logger.info("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
+                    logger.notice("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
         else:
             status, headers, answer, xml_request = httputils.NOT_ALLOWED
 

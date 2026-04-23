@@ -39,7 +39,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                ) -> Tuple[radicale_item.Item, Optional[radicale_item.Item]]:
         if not pathutils.is_safe_filesystem_path_component(href):
             raise pathutils.UnsafePathError(href)
-        path = pathutils.path_to_filesystem(self._filesystem_path, href, self._filesystem_root_folder_is_collision_free)
+        path = pathutils.path_to_filesystem(self._filesystem_path, href, self._is_collision_free)
         old_item = self._get(href, verify_href=False)
         try:
             with self._atomic_write(path, newline="") as fo:  # type: ignore

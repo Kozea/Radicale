@@ -26,9 +26,12 @@ import logging
 import os
 import re
 import sys
+import tempfile
 from typing import Dict, Sequence, Tuple, Union
 
-from radicale import sharing, xmlutils
+import pytest
+
+from radicale import pathutils, sharing, xmlutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -45,6 +48,7 @@ class TestSharingApiSanity(BaseTest):
         encoding: str = self.configuration.get("encoding", "stock")
         htpasswd = ["owner:ownerpw", "user:userpw",
                     "owner1:owner1pw", "user1:user1pw",
+                    "us😀er:user😀pw",
                     "owner2:owner2pw", "user2:user2pw"]
         htpasswd_content = "\n".join(htpasswd)
         with open(self.htpasswd_file_path, "w", encoding=encoding) as f:
@@ -1391,6 +1395,7 @@ class TestSharingApiSanity(BaseTest):
         json_dict: dict
 
         path_shared = "/user/calendarUP-shared-by-owner.ics/"
+        path_shared2 = "/user/calendarUP-shared-by-owner2.ics/"
         path_mapped = "/owner/calendarUP.ics/"
         path_mapped2 = "/owner/calendarUP2.ics/"
         path_mapped_o2 = "/owner2/calendarUP3.ics/"
@@ -1424,6 +1429,12 @@ class TestSharingApiSanity(BaseTest):
             json_dict['PathMapped'] = path_mapped2
             json_dict['PathOrToken'] = path_shared
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map by owner: PathOrToken (json->json) -> 404 (is primary key, therefore not found)")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared2
+            _, headers, answer = self._sharing_api_json("map", "update", check=404, login="owner:ownerpw", json_dict=json_dict)
 
             logging.info("\n*** update map by owner: PathMapped(owner2) (json->json) -> 403")
             json_dict = {}
@@ -3308,6 +3319,8 @@ permissions: RrWw""")
         json_dict: dict
 
         path_owner1 = "/owner1/calendarPGo1.ics/"
+        path_owner1 = "/owner1/calendarPGo1.ics/"
+        path_owner2 = "/owner2/calendarPGo1.ics/"
         path_owner1_rw = "/owner1/calendarPGo1rw.ics/"
         path_owner1_RrWw = "/owner1/calendarPGo1RrWw.ics/"
         path_user1_r = "/user1/calendarPGu1-r.ics/"
@@ -3325,6 +3338,15 @@ permissions: RrWw""")
 
             # create map
             self.configure({"sharing": {"default_permissions_create_map": "r"}})
+
+            logging.info("\n*** create map user1/owner1 with path of owner 2-> 403")
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_owner2
+            json_dict['PathOrToken'] = path_user1_r
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
 
             logging.info("\n*** create map user1/owner1 r -> 200")
             json_dict = {}
@@ -5400,3 +5422,310 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             json_dict['Conversion'] = "bday"
             _, headers, answer = self._sharing_api_json("token", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+
+    def test_sharing_api_map_properies_overlay_unicode(self) -> None:
+        """share-by-map API usage tests related to properties overlay using unicode."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # check PROPFIND as owner
+            logging.info("\n*** PROPFIND collection owner -> ok")
+            _, responses = self.propfind(path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <current-user-principal />
+    </prop>
+</propfind>""", login="owner:ownerpw")
+            logging.info("response: %r", responses)
+            response = responses[path_mapped]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["D:current-user-principal"]
+            assert status == 200 and len(prop) == 1
+            element = prop.find(xmlutils.make_clark("D:href"))
+            assert element is not None and element.text == "/owner/"
+
+            description_owner = "Test-Uni😀code-Single'Quote-UmÄlaut-Double\"Quote"
+            description_user = 'Test-Uni😁code-Single\'Quote-Sßz-Double"quote'
+
+            # execute PROPPATCH as owner
+            logging.info("\n*** PROPPATCH collection owner -> ok")
+            self._proppatch_calendar_description(path_mapped, login="owner:ownerpw", description=description_owner)
+
+            # verify PROPPATCH by owner
+            logging.info("\n*** PROPFIND collection owner (verify collection change) -> ok")
+            description = self._propfind_calendar_description(path_mapped, login="owner:ownerpw")
+            assert description == description_owner
+
+            # create map
+            logging.info("\n*** create map user/owner:rP -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify PROPFIND as user
+            logging.info("\n*** PROPFIND collection user")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == description_owner
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection user -> ok")
+            self._proppatch_calendar_description(path_shared_r, login="user:userpw", description=description_user)
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#FFFFFF")
+
+            logging.info("\n*** list (json->json)")
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+            assert answer_dict['Lines'] == 1
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == description_user
+
+            # verify overlay not visible by owner
+            logging.info("\n*** PROPFIND collection owner (no collection change) -> ok")
+            description = self._propfind_calendar_description(path_mapped, login="owner:ownerpw")
+            assert description == description_owner
+
+            # check properties file
+            collection_props_path = os.path.join(self.colpath, "collection-root", path_mapped.removeprefix('/'), ".Radicale.props")
+            logging.info("collection_props path: %r", collection_props_path)
+            with open(collection_props_path) as f:
+                props = json.load(f)
+            logging.info("collection_props: %r", props)
+            assert props['C:calendar-description'] == description_owner
+
+            # reconfigure to trigger restart and reparsing of database
+            self.configure({"auth": {"type": "htpasswd"}})
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == description_user
+
+    @pytest.mark.skipif(not pathutils.path_supports_unicode(tempfile.mkdtemp()), reason="TEMP is not supporting unicode")
+    def test_sharing_api_map_user_unicode(self) -> None:
+        """share-by-map API usage tests related to properties overlay using unicode."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_shared_r = "/us😀er/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map user/owner:rP -> ok")
+            json_dict = {}
+            json_dict['User'] = "us😀er"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "us😀er"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="us😀er:user😀pw", json_dict=json_dict)
+
+    @pytest.mark.skipif(not pathutils.path_supports_unicode(tempfile.mkdtemp()), reason="TEMP is not supporting unicode")
+    def test_sharing_api_map_path_unicode(self) -> None:
+        """share-by-map API usage tests related to properties overlay using unicode."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendar😀PFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendar😁PFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map user/owner:rP -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+    def test_sharing_api_map_strict_user_unicode(self) -> None:
+        """share-by-map API usage tests related to properties overlay using unicode in user."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "server": {"validate_user_value": "strict"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map user/owner:rP -> failed")
+            json_dict = {}
+            json_dict['User'] = "us😁er"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+    def test_sharing_api_map_strict_path_unicode(self) -> None:
+        """share-by-map API usage tests related to properties overlay using unicode in user."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "True",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "server": {"validate_path_value": "strict"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            logging.info("\n*** create collection, already rejected in early state")
+            path_mapped = "/owner/calendar😀PFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw", check=400)
+
+            logging.info("\n*** create collection")
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_shared_r = "/user/calendar😁PFP-shared-by-owner-r-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map user/owner:rP -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)

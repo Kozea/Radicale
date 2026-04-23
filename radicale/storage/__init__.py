@@ -302,6 +302,11 @@ class BaseCollection:
 
 class BaseStorage:
 
+    _is_collision_free: bool = False
+    _supports_unicode: bool = False
+    _supports_trailing_whitespace: bool = False
+    _supports_problematic_chars: bool = False
+
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseStorage.
 

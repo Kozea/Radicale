@@ -33,7 +33,7 @@ import defusedxml.ElementTree as DefusedET
 import pytest
 import vobject
 
-from radicale import storage, utils, xmlutils
+from radicale import pathutils, storage, utils, xmlutils
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -622,6 +622,56 @@ permissions: RrWw""")
                      HTTP_DESTINATION="http://127.0.0.1/"+path2)
         self.get(path1, check=404)
         self.get(path2)
+
+    def test_move_unicode(self) -> None:
+        """Move a item."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar.ics/event😀1.ics"
+        path2 = "/calendar.ics/event😁2.ics"
+        if not pathutils.path_supports_unicode(self.colpath):
+            check_put = 400
+            check_move = 400
+            check_get1 = 400
+            check_get2 = 400
+        else:
+            check_put = 201
+            check_move = 201
+            check_get1 = 200
+            check_get2 = 404
+        self.put(path1, event, check=check_put)
+        self.get(path1, check=check_get1)
+        self.get(path2, check=check_get2)
+        self.request("MOVE", path1, check=check_move,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=check_get2)
+        self.get(path2, check=check_get1)
+
+    def test_move_strict_unicode_dst(self) -> None:
+        """Move a item."""
+        self.configure({"server": {"validate_path_value": "strict"}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar.ics/event1.ics"
+        path2 = "/calendar.ics/event😁2.ics"
+        self.put(path1, event)
+        self.request("MOVE", path1, check=400,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=200)
+        self.get(path2, check=400)
+
+    def test_move_strict_unicode_src(self) -> None:
+        """Move a item."""
+        self.configure({"server": {"validate_path_value": "strict"}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path1 = "/calendar.ics/event😀1.ics"
+        path2 = "/calendar.ics/event2.ics"
+        self.put(path1, event, check=400)
+        self.request("MOVE", path1, check=400,
+                     HTTP_DESTINATION="http://127.0.0.1/"+path2)
+        self.get(path1, check=400)
+        self.get(path2, check=404)
 
     def test_move_between_collections(self) -> None:
         """Move a item."""

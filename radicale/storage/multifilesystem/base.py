@@ -32,7 +32,6 @@ class CollectionBase(storage.BaseCollection):
     _path: str
     _encoding: str
     _filesystem_path: str
-    _filesystem_root_folder_is_collision_free: bool
 
     def __init__(self, storage_: "multifilesystem.Storage", path: str,
                  filesystem_path: Optional[str] = None) -> None:
@@ -43,9 +42,12 @@ class CollectionBase(storage.BaseCollection):
         self._path = pathutils.strip_path(path)
         self._encoding = storage_.configuration.get("encoding", "stock")
         self._skip_broken_item = storage_.configuration.get("storage", "skip_broken_item")
-        self._filesystem_root_folder_is_collision_free = storage_._filesystem_root_folder_is_collision_free
+        self._is_collision_free = storage_._is_collision_free
+        self._supports_unicode = storage_._supports_unicode
+        self._supports_trailing_whitespace = storage_._supports_trailing_whitespace
+        self._supports_problematic_chars = storage_._supports_problematic_chars
         if filesystem_path is None:
-            filesystem_path = pathutils.path_to_filesystem(folder, self.path, self._filesystem_root_folder_is_collision_free)
+            filesystem_path = pathutils.path_to_filesystem(folder, self.path, self._is_collision_free)
         self._filesystem_path = filesystem_path
 
     # TODO: better fix for "mypy"
@@ -81,7 +83,6 @@ class StorageBase(storage.BaseStorage):
     _folder_umask: str
     _config_umask: int
     _max_resource_size: int
-    _filesystem_root_folder_is_collision_free: bool = False
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)

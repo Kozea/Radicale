@@ -127,13 +127,13 @@ class ApplicationPartProppatch(ApplicationBase):
                             (not self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
                     logger.info("PROPPATCH request on shared %r: write-access", path_orig)
                     if permissions_filter is not None and "e" in permissions_filter:
-                        logger.info("PROPPATCH request on shared %r: write-access, overlay enforced, but disabled by share permission 'e'", path_orig)
+                        logger.notice("PROPPATCH request on shared %r: write-access, overlay enforced, but disabled by share permission 'e'", path_orig)
                     elif "e" in raw_permissions:
-                        logger.info("PROPPATCH request on shared %r: write-access, overlay enforced, but disabled by rights permission 'e'", path_orig)
+                        logger.notice("PROPPATCH request on shared %r: write-access, overlay enforced, but disabled by rights permission 'e'", path_orig)
                     else:
                         share_overlay = True
                 else:
-                    logger.info("PROPPATCH request on shared %r: no write-access", path_orig)
+                    logger.notice("PROPPATCH request on shared %r: no write-access", path_orig)
                     return httputils.NOT_ALLOWED
             else:
                 return httputils.NOT_ALLOWED
@@ -144,9 +144,9 @@ class ApplicationPartProppatch(ApplicationBase):
                 logger.trace("PROPPATCH/xml_proppatch: write-access/sharing: %r", path_orig)
                 if self._sharing.enforce_properties_overlay:
                     if permissions_filter is not None and "e" in permissions_filter:
-                        logger.info("PROPPATCH request on shared %r: write-permissions, overlay enforced, but disabled by share permission 'e'", path_orig)
+                        logger.notice("PROPPATCH request on shared %r: write-permissions, overlay enforced, but disabled by share permission 'e'", path_orig)
                     elif "e" in raw_permissions:
-                        logger.info("PROPPATCH request on shared %r: write-permissions, overlay enforced, but disabled by rights permission 'e'", path_orig)
+                        logger.notice("PROPPATCH request on shared %r: write-permissions, overlay enforced, but disabled by rights permission 'e'", path_orig)
                     else:
                         share_overlay = True
                 else:

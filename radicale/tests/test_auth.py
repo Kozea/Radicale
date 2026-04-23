@@ -94,6 +94,14 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_plain(self) -> None:
         self._test_htpasswd("plain", "tmp:bepo")
 
+    def test_htpasswd_blacklist_plain(self) -> None:
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ("tm" + chr(9) + "p", "be:po", True), ("tm" + chr(9) + "p", "bepo", False)), check=401)
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ("tm'p", "be:po", True), ("tm'p", "bepo", False)), check=401)
+        self._test_htpasswd("plain", "tmp:be:po", (
+            ('tm"p', "be:po", True), ('tm"p', "bepo", False)), check=401)
+
     def test_htpasswd_plain_autodetect(self) -> None:
         self._test_htpasswd("autodetect", "tmp:bepo")
 
@@ -103,9 +111,42 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_htpasswd_plain_unicode(self) -> None:
         if not pathutils.path_supports_unicode(self.colpath):
-            check = 500
+            check = 401
         else:
             check = 207
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
+
+    def test_htpasswd_strict_plain_unicode(self) -> None:
+        """user with unicode chars is not permitted"""
+        self.configure({"server": {"validate_user_value": "strict"}})
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 401
+        else:
+            check = 401
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
+
+    def test_htpasswd_minimal_plain_unicode(self) -> None:
+        """user with unicode chars is permitted"""
+        self.configure({"server": {"validate_user_value": "minimal"}})
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 401
+        else:
+            check = 207
+        self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
+
+    def test_htpasswd_minimal_plain_special(self) -> None:
+        """user with special chars is not permitted"""
+        self.configure({"server": {"validate_user_value": "minimal"}})
+        check = 401
+        self._test_htpasswd("plain", "*?*:bepo", "ascii", check=check)
+
+    def test_htpasswd_unicode_plain_unicode(self) -> None:
+        """user with unicode symbols is not permitted"""
+        self.configure({"server": {"validate_user_value": "unicode-letter"}})
+        if not pathutils.path_supports_unicode(self.colpath):
+            check = 401
+        else:
+            check = 401
         self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
 
     def test_htpasswd_md5(self) -> None:
@@ -116,7 +157,7 @@ class TestBaseAuthRequests(BaseTest):
 
     def test_htpasswd_md5_unicode(self):
         if not pathutils.path_supports_unicode(self.colpath):
-            check = 500
+            check = 401
         else:
             check = 207
         self._test_htpasswd(
@@ -175,7 +216,7 @@ class TestBaseAuthRequests(BaseTest):
     @pytest.mark.skipif(has_bcrypt == 0, reason="No bcrypt module installed")
     def test_htpasswd_bcrypt_unicode(self) -> None:
         if not pathutils.path_supports_unicode(self.colpath):
-            check = 500
+            check = 401
         else:
             check = 207
         self._test_htpasswd("bcrypt", "😀:$2y$10$Oyz5aHV4MD9eQJbk6GPemOs4T6edK6U9Sqlzr.W1mMVCS8wJUftnW", "unicode", check=check)
@@ -295,16 +336,27 @@ class TestBaseAuthRequests(BaseTest):
     def test_htpasswd_whitespace_user(self) -> None:
         for user in (" tmp", "tmp ", " tmp "):
             if not pathutils.path_supports_trailing_whitespace(self.colpath) and user.endswith(' '):
-                check = 500
+                check = 401
             else:
                 check = 207
             self._test_htpasswd("plain", "%s:bepo" % user, (
                 (user, "bepo", True), ("tmp", "bepo", False)), check=check)
 
-    def test_htpasswd_problem_user(self) -> None:
+    def test_htpasswd_problem_user_none(self) -> None:
+        self.configure({"server": {"validate_user_value": "none"}})
         for user in ("tm*p", "tm?p"):
             if not pathutils.path_supports_problematic_chars(self.colpath):
-                check = 500
+                check = 401
+            else:
+                check = 207
+            self._test_htpasswd("plain", "%s:bepo" % user, (
+                (user, "bepo", True), ("tmp", "bepo", False)), check=check)
+
+    def test_htpasswd_problem_user_minimal(self) -> None:
+        self.configure({"server": {"validate_user_value": "none"}})
+        for user in ("tm*p", "tm?p"):
+            if not pathutils.path_supports_problematic_chars(self.colpath):
+                check = 401
             else:
                 check = 207
             self._test_htpasswd("plain", "%s:bepo" % user, (
