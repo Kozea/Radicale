@@ -21,6 +21,7 @@
 
 import { Share, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
 import { CollectionType, Permission } from "../models/collection.js";
+import { extract_title, update_title_and_description } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
@@ -47,7 +48,9 @@ export class CreateEditShareScene {
         this._edit = !!share;
         this._pathMapped = collection.href;
 
-        this._html_scene = get_element_by_id("newshare");
+        this._html_scene = get_element_by_id("createeditsharescene");
+        this._title = get_element(this._html_scene, "[data-name=title]");
+        this._description = get_element(this._html_scene, "[data-name=description]");
         this._form = /** @type {HTMLFormElement} */ (get_element(this._html_scene, "form"));
         this._sharemapfields = get_element(this._html_scene, "[data-name=sharemapfields]");
         this._shareuser_input = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=shareuser]"));
@@ -404,6 +407,8 @@ export class CreateEditShareScene {
             this._errorHandler.clearError();
         }
         this._on_permissions_change();
+
+        update_title_and_description(this._collection, this._title, this._description);
     }
 
     hide() {
@@ -416,4 +421,9 @@ export class CreateEditShareScene {
     }
 
     is_transient() { return false; }
+
+    title_object() {
+        return extract_title(this._collection);
+    }
+
 }

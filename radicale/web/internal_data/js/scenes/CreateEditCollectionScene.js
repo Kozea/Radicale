@@ -22,6 +22,7 @@
 import { create_collection, edit_collection } from "../api/api.js";
 import { COLOR_RE } from "../constants.js";
 import { Collection, CollectionType } from "../models/collection.js";
+import { extract_title } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_color, validate_href } from "../utils/form_validator.js";
@@ -224,4 +225,9 @@ export class CreateEditCollectionScene {
             this._create_edit_req = null;
         }
     }
+
+    title_object() {
+        return extract_title(this._collection);
+    }
+
 }

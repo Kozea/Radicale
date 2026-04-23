@@ -196,4 +196,7 @@ export class LoginScene {
         }
         this._remove_logout();
     }
+
+    title_object() { return "Login" }
+
 }

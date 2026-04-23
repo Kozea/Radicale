@@ -241,4 +241,6 @@ export class UploadCollectionScene {
             this._upload_req = null;
         }
     }
+
+    title_object() { return ""; }
 }

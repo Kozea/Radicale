@@ -153,4 +153,6 @@ export class DeleteConfirmationScene {
             this._delete_req = null;
         }
     }
+
+    title_object() { return ""; }
 }

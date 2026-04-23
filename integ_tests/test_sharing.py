@@ -54,7 +54,7 @@ def test_create_and_delete_share_by_key(
     ).to_have_count(0)
 
     page.click('button[data-name="sharebytoken"]')
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
@@ -63,6 +63,16 @@ def test_create_and_delete_share_by_key(
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
         )
     ).to_be_visible()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']"
+        )
+    ).to_be_hidden()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='conversion']"
+        )
+    ).to_be_hidden()
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
     page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
@@ -70,7 +80,7 @@ def test_create_and_delete_share_by_key(
     ).to_have_count(0)
     page.click('button[data-name="sharebytoken"]')
     page.click('label[for="newshare_attr_permissions_rw"]')
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharetokenrowtemplate']:not(.hidden)")
     ).to_have_count(1)
@@ -79,6 +89,16 @@ def test_create_and_delete_share_by_key(
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_visible()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
+        )
+    ).to_be_hidden()
+    expect(
+        page.locator(
+            "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='conversion']"
+        )
+    ).to_be_hidden()
     page.click('tr:not(.hidden) button[data-name="delete"]', strict=True)
     page.click('#deleteconfirmationscene button[data-name="delete"]')
     expect(
@@ -101,7 +121,7 @@ def test_create_and_delete_share_by_map(
     page.click('button[data-name="sharebymap"]')
     page.locator('input[data-name="shareuser"]').fill("max")
     page.locator('input[data-name="sharehref"]').fill("1234")
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
@@ -119,7 +139,7 @@ def test_create_and_delete_share_by_map(
     page.click('label[for="newshare_attr_permissions_rw"]')
     page.locator('input[data-name="shareuser"]').fill("max")
     page.locator('input[data-name="sharehref"]').fill("1234")
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
@@ -184,7 +204,7 @@ def test_share_with_property_overrides(
     page.click('label[for="newshare_attr_color_enabled"]')
     page.locator('input[data-name="color_override"]').fill("#00ff00")
 
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
 
     # Verify the share was created
     expect(
@@ -229,7 +249,7 @@ def test_share_journal_no_overrides(
     expect(page.locator('input[data-name="color_override_enabled"]')).to_be_hidden()
 
     # Create the share
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
 
     # Verify the share was created
     expect(
@@ -247,7 +267,7 @@ def test_edit_share_by_token(
 
     # Create RO share
     page.click('button[data-name="sharebytoken"]')
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator(
             "tr[data-name='sharetokenrowtemplate']:not(.hidden) span[data-name='ro']"
@@ -256,9 +276,9 @@ def test_edit_share_by_token(
 
     # Edit to RW
     page.click('tr:not(.hidden) button[data-name="edit"]')
-    expect(page.locator("#newshare h1")).to_have_text("Edit Share")
+    expect(page.locator("#createeditsharescene h1")).to_have_text("Edit Share")
     page.click('label[for="newshare_attr_permissions_rw"]')
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
 
     # Verify RW
     expect(
@@ -280,7 +300,7 @@ def test_edit_share_by_map(
     page.click('button[data-name="sharebymap"]')
     page.locator('input[data-name="shareuser"]').fill("max")
     page.locator('input[data-name="sharehref"]').fill("mapped")
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator(
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']"
@@ -289,14 +309,14 @@ def test_edit_share_by_map(
 
     # Edit map share
     page.click('tr:not(.hidden) button[data-name="edit"]')
-    expect(page.locator("#newshare h1")).to_have_text("Edit Share")
+    expect(page.locator("#createeditsharescene h1")).to_have_text("Edit Share")
     expect(page.locator('input[data-name="shareuser"]')).to_be_disabled()
     expect(page.locator('input[data-name="sharehref"]')).to_be_disabled()
 
     # Change permissions and enabled status
     page.click('label[for="newshare_attr_permissions_rw"]')
-    page.uncheck('#newshare input[data-name="enabled"]')
-    page.click('#newshare button[data-name="submit"]')
+    page.uncheck('#createeditsharescene input[data-name="enabled"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
 
     # Verify changes
     expect(
@@ -307,8 +327,10 @@ def test_edit_share_by_map(
     # If disabled, it might not show up or show differently, but our current UI doesn't visually distinguish enabled/disabled in the list yet
     # Let's verify by re-opening edit scene
     page.click('tr:not(.hidden) button[data-name="edit"]')
-    expect(page.locator('#newshare input[data-name="enabled"]')).not_to_be_checked()
-    page.click('#newshare button[data-name="cancel"]')
+    expect(
+        page.locator('#createeditsharescene input[data-name="enabled"]')
+    ).not_to_be_checked()
+    page.click('#createeditsharescene button[data-name="cancel"]')
 
 
 def test_share_by_map_validation(
@@ -324,21 +346,21 @@ def test_share_by_map_validation(
     # Try empty user
     page.locator('input[data-name="shareuser"]').fill("")
     page.locator('input[data-name="sharehref"]').fill("1234")
-    page.click('#newshare button[data-name="submit"]')
-    expect(page.locator('#newshare [data-name="error"]:not(.hidden)')).to_contain_text(
-        "Share User is empty"
-    )
+    page.click('#createeditsharescene button[data-name="submit"]')
+    expect(
+        page.locator('#createeditsharescene [data-name="error"]:not(.hidden)')
+    ).to_contain_text("Share User is empty")
 
     # Try logged in user
     page.locator('input[data-name="shareuser"]').fill("admin")
-    page.click('#newshare button[data-name="submit"]')
-    expect(page.locator('#newshare [data-name="error"]:not(.hidden)')).to_contain_text(
-        "Share User cannot be admin"
-    )
+    page.click('#createeditsharescene button[data-name="submit"]')
+    expect(
+        page.locator('#createeditsharescene [data-name="error"]:not(.hidden)')
+    ).to_contain_text("Share User cannot be admin")
 
     # Valid user
     page.locator('input[data-name="shareuser"]').fill("max")
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
 
     # Verify success
     expect(
@@ -377,7 +399,7 @@ def test_create_and_delete_share_by_bday(
     expect(page.locator("input#newshare_attr_permissions_ro")).to_be_disabled()
     expect(page.locator("input#newshare_attr_permissions_rw")).to_be_disabled()
 
-    page.click('#newshare button[data-name="submit"]')
+    page.click('#createeditsharescene button[data-name="submit"]')
     expect(
         page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
     ).to_have_count(1)
@@ -386,6 +408,11 @@ def test_create_and_delete_share_by_bday(
     expect(
         page.locator(
             "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='ro']"
+        )
+    ).to_be_hidden()
+    expect(
+        page.locator(
+            "tr[data-name='sharemaprowtemplate']:not(.hidden) span[data-name='rw']"
         )
     ).to_be_hidden()
 
@@ -438,7 +465,7 @@ def test_bday_section_hidden_for_calendar(
     expect(page.locator("#sharecollectionscene")).to_be_visible()
     page.click('button[data-name="sharebymap"]')
     expect(page.locator("details[data-name='conversions']")).to_be_hidden()
-    page.click('#newshare button[data-name="cancel"]')
+    page.click('#createeditsharescene button[data-name="cancel"]')
 
 
 def test_bday_section_visible_for_addressbook(
@@ -462,7 +489,7 @@ def test_bday_section_visible_for_addressbook(
     expect(page.locator("#sharecollectionscene")).to_be_visible()
     page.click('button[data-name="sharebymap"]')
     expect(page.locator("details[data-name='conversions']")).to_be_visible()
-    page.click('#newshare button[data-name="cancel"]')
+    page.click('#createeditsharescene button[data-name="cancel"]')
 
 
 @pytest.fixture

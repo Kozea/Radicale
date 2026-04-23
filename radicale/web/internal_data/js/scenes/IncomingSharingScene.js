@@ -24,8 +24,8 @@ import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissionsOrConversion } from "../utils/permissions.js";
-import { Scene, pop_scene } from "./scene_manager.js";
 import { UrlTextHandler } from "../utils/url_text.js";
+import { Scene, pop_scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -166,4 +166,6 @@ export class IncomingSharingScene {
         });
         this._nodes = [];
     }
+
+    title_object() { return ""; }
 }
