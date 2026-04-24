@@ -19,14 +19,17 @@ main {
 
 .container {
     height: auto;
-    min-height: 450px;
-    width: 350px;
+    min-height: 500px;
+    width: 95%;
+    max-width: 450px;
+    box-sizing: border-box;
     transition: .2s;
     overflow: hidden;
-    padding: 20px 40px;
-    background: #fff;
+    padding: 1ex 1em 1ex 1em;
+    background: rgb(250, 250, 250);
     border: 1px solid #dadce0;
     border-radius: 8px;
+    box-shadow: 2px 2px 3px #0000001a;
     display: block;
     flex-shrink: 0;
     margin: 0 auto;
@@ -39,12 +42,55 @@ main {
     color: #484848;
 }
 
-.container h2 {
-    margin: 0;
+table {
     width: 100%;
+    border-collapse: collapse;
+    margin: 1ex 0;
+}
+
+th,
+td {
     text-align: left;
-    color: #484848;
-    font-size: 14pt;
+    font-size: 0.8em;
+    padding: 0.2ex 0.2em;
+}
+
+tr {
+    border-bottom: 1px solid #dadce0;
+}
+
+tr:last-child {
+    border-bottom: none;
+}
+
+th {
+    font-size: 0.8em;
+    color: #666;
+    font-weight: normal;
+    text-transform: uppercase;
+}
+
+td.fill {
+    width: 100%;
+}
+
+details {
+    border: 1px solid #dadce0;
+    border-radius: 0.7ex;
+    padding: 0.5ex 0.7ex;
+    margin-bottom: 1ex;
+    background: white;
+}
+
+summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.2ex 0;
+    outline: none;
+}
+
+summary:hover {
+    color: #2494fe;
 }
 
 #loginscene .infcloudlink {
@@ -394,6 +440,7 @@ select {
     padding-left: 15px;
     padding-right: 15px;
     outline: none !important;
+    box-sizing: border-box;
 }
 
 input.inline {
@@ -402,7 +449,7 @@ input.inline {
 
 input[type=text],
 input[type=password] {
-    width: calc(100% - 30px);
+    width: 100%;
 }
 
 input:active,
@@ -421,13 +468,22 @@ input:focus-visible {
     clear: both;
 }
 
+td .url-input-wrapper input {
+    min-height: 4ex;
+}
+
 .url-input-wrapper input {
     flex: 1;
-    min-width: 0;
-    padding-right: 45px !important;
+    min-width: 40px;
+    min-height: 6ex;
+    padding-left: 0.5em;
+    padding-top: 0.5ex;
+    padding-bottom: 0.5ex;
+    padding-right: 22px !important;
     box-sizing: border-box;
     width: 100% !important;
     margin-bottom: 0 !important;
+    height: 2ex;
 }
 
 #collectionsscene article .url-input-wrapper {
@@ -436,7 +492,7 @@ input:focus-visible {
 
 .copy-btn {
     flex: none;
-    margin-left: -38px;
+    margin-left: -30px;
     background: transparent;
     border: none;
     color: #2494fe;
@@ -539,6 +595,9 @@ button.inline {
     padding-right: 1px;
     min-width: 2em;
     margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @media only screen and (max-width: 600px) {
@@ -547,22 +606,10 @@ button.inline {
         flex-wrap: nowrap;
     }
 
-    #collectionsscene article {
-        height: auto;
-        min-height: 375px;
-    }
-
-    .container {
-        max-width: 280px !important;
-    }
-
     #collectionsscene ul {
         visibility: visible !important;
     }
 
-    #logoutview span {
-        padding: 0 5px;
-    }
 }
 
 .pill {
@@ -573,12 +620,12 @@ button.inline {
     line-height: 1;
     text-align: center;
     white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: 0.375rem;
+    vertical-align: middle;
+    border-radius: 0.7ex;
     background-color: #6c757d;
     color: #fff;
     margin: 0 2px;
-    width: 1.4em;
+    min-width: 1.3em;
 }
 
 .hidden {
