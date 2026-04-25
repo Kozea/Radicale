@@ -388,9 +388,9 @@ def _expand(
         max_occurrence: int = 0,
 ) -> Tuple[ET.Element, int]:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
-    logger.info("Expanding event %s", item.href)
-    logger.debug(f"Expand range: {start} to {end}")
-    logger.debug(f"Time range: {time_range_start} to {time_range_end}")
+    logger.debug("Expanding event %s", item.href)
+    logger.trace(f"Expand range: {start} to {end}")
+    logger.trace(f"Time range: {time_range_start} to {time_range_end}")
 
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to
