@@ -27,6 +27,7 @@ import os
 import re
 import sys
 import tempfile
+import urllib
 from typing import Dict, Sequence, Tuple, Union
 
 import pytest
@@ -1112,6 +1113,7 @@ class TestSharingApiSanity(BaseTest):
                                     "collection_by_map": "True",
                                     "collection_by_token": "True"},
                         "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "owner_only"}})
 
@@ -1125,7 +1127,8 @@ class TestSharingApiSanity(BaseTest):
                 ]:
 
             path_owner = "/" + owner + "/calendar.ics/"
-            path_user = "/" + user + "/calendar-owner.ics/"
+            path_user_base = "/" + user + "/"
+            path_user = path_user_base + "calendar-owner.ics/"
             self.mkcalendar(path_owner, login=owner + ":owner@pw")
 
             for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
@@ -1139,13 +1142,28 @@ class TestSharingApiSanity(BaseTest):
                 json_dict['User'] = user
                 json_dict['PathOrToken'] = path_user
                 json_dict['PathMapped'] = path_owner
+                json_dict['Enabled'] = True
+                json_dict['Hidden'] = False
                 _, headers, answer = self._sharing_api_json("map", "create", 200, login=owner + ":owner@pw", json_dict=json_dict)
 
-                logging.info("\n*** create map with PathMapped, User, PathOrToken (json) -> 200")
+                logging.info("\n*** enable+unhide (json) -> 200")
                 json_dict = {}
                 json_dict['PathOrToken'] = path_user
-                _, headers, answer = self._sharing_api_json("map", "enable", 200, login=user + ":user@pw", json_dict=json_dict)
+                json_dict['Enabled'] = True
+                json_dict['Hidden'] = False
+                _, headers, answer = self._sharing_api_json("map", "update", 200, login=user + ":user@pw", json_dict=json_dict)
 
+                # check PROPFIND as user
+                logging.info("\n*** PROPFIND collection user -> ok")
+                _, responses = self.propfind(path_user_base, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login=user + ":user@pw", HTTP_DEPTH="1")
+                assert len(responses) == 2
+                logging.info("response: %r", responses)
+                response = responses[urllib.parse.quote(path_user)]
+                assert isinstance(response, dict)
 
     def test_sharing_api_map_usage(self) -> None:
         """share-by-map API usage tests."""
