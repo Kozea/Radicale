@@ -132,3 +132,17 @@ export function get_element(node, selector) {
     }
     return /** @type {HTMLElement} */ (element);
 }
+
+/**
+ * Trim a string to the given maximum number of characters
+ *
+ * @param {string} str
+ * @param {number} max
+ * @returns {str}
+ */
+export function trim_to_max(str, max) {
+    if (str.length > max - 2) {
+        return str.substring(0, max) + "...";
+    }
+    return str;
+}
