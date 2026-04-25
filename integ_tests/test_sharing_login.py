@@ -128,7 +128,7 @@ def test_incoming_shares(
     ).to_be_checked()
 
     # 6. Verify "shared by admin" and button visibility in the collection article
-    page.click('#incomingsharingscene button[data-name="cancel"]')
+    page.click('#incomingsharingscene button[data-name="close"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
 
     article = page.locator("article:not(.hidden)").first
@@ -179,5 +179,5 @@ def test_no_incoming_shares_message(
         page.locator('#incomingsharingscene [data-name="nosharesmessage"]')
     ).to_have_text("No incoming shares")
 
-    page.click('#incomingsharingscene button[data-name="cancel"]')
+    page.click('#incomingsharingscene button[data-name="close"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
