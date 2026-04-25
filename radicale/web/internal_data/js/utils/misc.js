@@ -58,7 +58,7 @@ export function random_hex(length) {
 export function cleanHREFinput(href_form) {
     let currentTxtVal = href_form.value.trim().toLowerCase();
     //Clean the HREF to remove not permitted chars
-    currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_\.])./g, '');
+    currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_\.\@])./g, '');
     //Clean the HREF to remove leading . (would result in hidden directory)
     currentTxtVal = currentTxtVal.replace(/^\./, '');
     href_form.value = currentTxtVal;

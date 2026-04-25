@@ -202,7 +202,7 @@ export class CollectionsScene {
             let transformed_from = get_element(node, "[data-name=transformed-from]");
             let share = (shares || []).find(
                 s => (s.ShareType === "map") &&
-                    (s.PathOrToken || "").replace(/\/+$/, "") === (collection.href || "").replace(/\/+$/, ""));
+                    decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "") === decodeURIComponent(collection.href || "").replace(/\/+$/, ""));
             if (share) {
                 if (share.Owner !== this._user) {
                     share_info.classList.remove("hidden");

@@ -170,7 +170,7 @@ export class Share {
  * @param {function(Array<Share>, ?string):void} callback
  */
 export function reload_sharing_list(user, password, collection, callback) {
-    let body = collection ? { PathMapped: collection.href } : {};
+    let body = collection ? { PathMapped: decodeURIComponent(collection.href) } : {};
     return call_sharing_api(
         user,
         password,
@@ -241,7 +241,7 @@ export function add_share_by_token(
         password,
         "token/create",
         {
-            PathMapped: share.PathMapped,
+            PathMapped: decodeURIComponent(share.PathMapped),
             Permissions: share.Permissions,
             Enabled: share.EnabledByOwner,
             Hidden: share.HiddenByOwner,
@@ -280,13 +280,13 @@ export function add_share_by_map(
         password,
         "map/create",
         {
-            PathMapped: share.PathMapped,
+            PathMapped: decodeURIComponent(share.PathMapped),
             Permissions: share.Permissions,
             Enabled: share.EnabledByOwner,
             Hidden: share.HiddenByOwner,
             Properties: share.Properties,
             User: share.User,
-            PathOrToken: share.PathOrToken,
+            PathOrToken: decodeURIComponent(share.PathOrToken),
             Conversion: share.Conversion,
         },
         function (response) {
@@ -320,7 +320,7 @@ export function delete_share_by_token(
         user,
         password,
         "token/delete",
-        { PathOrToken: share.PathOrToken },
+        { PathOrToken: decodeURIComponent(share.PathOrToken) },
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
@@ -352,7 +352,7 @@ export function delete_share_by_map(
         user,
         password,
         "map/delete",
-        { PathOrToken: share.PathOrToken },
+        { PathOrToken: decodeURIComponent(share.PathOrToken) },
         function (response) {
             let json_response = JSON.parse(response);
             if (json_response["Status"] !== "success") {
@@ -384,7 +384,7 @@ export function update_share_by_token(
         password,
         "token/update",
         {
-            PathOrToken: share.PathOrToken,
+            PathOrToken: decodeURIComponent(share.PathOrToken),
             Permissions: share.Permissions,
             Enabled: share.EnabledByOwner,
             Hidden: share.HiddenByOwner,
@@ -423,8 +423,8 @@ export function update_share_by_map(
         password,
         "map/update",
         {
-            PathOrToken: share.PathOrToken,
-            PathMapped: share.PathMapped,
+            PathOrToken: decodeURIComponent(share.PathOrToken),
+            PathMapped: decodeURIComponent(share.PathMapped),
             User: share.User,
             Permissions: share.Permissions,
             Enabled: share.EnabledByOwner,
@@ -466,7 +466,7 @@ export function update_incoming_share(
         password,
         share.ShareType + "/update",
         {
-            PathOrToken: share.PathOrToken,
+            PathOrToken: decodeURIComponent(share.PathOrToken),
             Enabled: share.EnabledByUser,
             Hidden: share.HiddenByUser,
         },

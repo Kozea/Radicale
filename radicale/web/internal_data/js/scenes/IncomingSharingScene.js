@@ -97,10 +97,10 @@ export class IncomingSharingScene {
         });
         this._nodes = [];
 
-        let prefix = "/" + this._user + "/";
+        let prefix = "/" + decodeURIComponent(this._user) + "/";
         let filtered_shares = shares.filter(
             share => (share.ShareType === "map")
-                && share.PathOrToken.startsWith(prefix));
+                && decodeURIComponent(share.PathOrToken).startsWith(prefix));
 
         if (filtered_shares.length === 0) {
             this._table.classList.add("hidden");

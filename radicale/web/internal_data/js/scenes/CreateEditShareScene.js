@@ -46,7 +46,7 @@ export class CreateEditShareScene {
         this._shareType = shareType;
         this._share = share;
         this._edit = !!share;
-        this._pathMapped = collection.href;
+        this._pathMapped = decodeURIComponent(collection.href);
 
         this._html_scene = get_element_by_id("createeditsharescene");
         this._title = get_element(this._html_scene, "[data-name=title]");
