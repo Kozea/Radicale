@@ -385,6 +385,16 @@ class TestBaseAuthRequests(BaseTest):
         self._test_htpasswd("plain", "tmp:bepo", (
             ("tmp", "bepo", True), ("tmp@domain.example", "bepo", True), ("tmp1", "bepo", False)))
 
+    def test_htpasswd_email_encoding_url_true(self) -> None:
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "tmp@domain.example:bepo", (
+            ("tmp", "bepo", False), ("tmp%40domain.example", "bepo", True), ("tmp@domain.example", "bepo", True)))
+
+    def test_htpasswd_email_encoding_url_false(self) -> None:
+        self.configure({"auth": {"urldecode_username": "False"}})
+        self._test_htpasswd("plain", "tmp@domain.example:bepo", (
+            ("tmp", "bepo", False), ("tmp%40domain.example", "bepo", False), ("tmp@domain.example", "bepo", True)))
+
     def test_remote_user(self) -> None:
         self.configure({"auth": {"type": "remote_user"}})
         _, responses = self.propfind("/", """\
