@@ -19,7 +19,8 @@
 /**
  * Utilities for resource URL boxes
  */
-import { SERVER } from "../constants.js";
+
+import { completeHref } from "./misc.js";
 
 /**
  * Handles the display of URLs in input fields.
@@ -107,14 +108,8 @@ export class UrlTextHandler {
      * @param {string} href The href to set.
      */
     setHref(href) {
-        if (href.startsWith("/")) {
-            this._element.value = SERVER + href;
-        } else if (!href.includes("://")) {
-            // Handle cases where the href might not start with a slash
-            this._element.value = SERVER + "/" + href;
-        } else {
-            this._element.value = href;
-        }
+        this._element.value = completeHref(href);
+
         this._update_username_index();
         this._updateScroll();
     }
