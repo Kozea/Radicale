@@ -22,13 +22,14 @@
 import { get_principal } from "../api/api.js";
 import { ROOT_PATH, SERVER } from "../constants.js";
 import { Collection } from "../models/collection.js";
+import { extract_title, extractUsernameFromPrincipalCollection } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_non_empty } from "../utils/form_validator.js";
 import { get_element, get_element_by_id } from "../utils/misc.js";
 import { CollectionsScene } from "./CollectionsScene.js";
 import { LoadingScene } from "./LoadingScene.js";
-import { Scene, is_current_scene, pop_scene, pop_to_root, push_scene, replace_scene } from "./scene_manager.js";
+import { is_current_scene, pop_scene, pop_to_root, push_scene, replace_scene, Scene } from "./scene_manager.js";
 
 /**
  * @implements {Scene}
@@ -77,7 +78,6 @@ export class LoginScene {
         }
         this._logout_btn.onclick = () => this._onlogout();
         this._refresh_btn.onclick = () => this._refresh();
-        this._logout_user_form.textContent = this._user + "'s Collections";
         // Fetch principal
         let loading_scene = new LoadingScene();
         push_scene(loading_scene);
@@ -90,13 +90,16 @@ export class LoginScene {
                 this._errorHandler.setError(error1);
                 pop_scene();
             } else if (principal_collection) {
+                this._logout_user_form.textContent = extract_title(principal_collection) + "'s Collections";
+
                 // clear error on successful login
                 this._errorHandler.clearError();
                 // show collections
                 let saved_user = this._user;
+                let username_from_principal = extractUsernameFromPrincipalCollection(principal_collection);
                 this._user = "";
                 let collections_scene = new CollectionsScene(
-                    saved_user, p_password, principal_collection, (/** @type {?string} */ error1) => {
+                    username_from_principal, p_password, principal_collection, (/** @type {?string} */ error1) => {
                         this._errorHandler.setError(error1);
                         this._user = saved_user;
                     });
@@ -164,14 +167,7 @@ export class LoginScene {
                 // Authenticated! Now it's safe to call get_principal
                 get_principal(null, null, (/** @type {?Collection} */ principal_collection, error) => {
                     if (!error && principal_collection) {
-                        let authenticated_user = principal_collection.displayname;
-                        if (!authenticated_user) {
-                            let href = principal_collection.href.replace(/\/+$/, "");
-                            if (href && href !== ROOT_PATH.replace(/\/+$/, "")) {
-                                authenticated_user = href.substring(href.lastIndexOf("/") + 1);
-                            }
-                        }
-                        this._perform_login(authenticated_user, null);
+                        this._perform_login(extractUsernameFromPrincipalCollection(principal_collection), null);
                     }
                 });
             }
