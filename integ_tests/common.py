@@ -47,12 +47,22 @@ class Config:
     auth_type: AuthType
     sharing_type: SharingType
     extra_config: str = ""
+    admin_username: str = "admin"
+    user_username: str = "max"
 
 
 SHARING_HTPASSWD = Config(
     name="sharing_htpasswd",
     auth_type=AuthType.HTPASSWD,
     sharing_type=SharingType.SHARING,
+)
+
+SHARING_HTPASSWD_USERSWITHDOMAIN = Config(
+    name="sharing_htpasswd_userswithdomain",
+    auth_type=AuthType.HTPASSWD,
+    sharing_type=SharingType.SHARING,
+    admin_username="admin@domain.tld",
+    user_username="max@domain.tld",
 )
 
 SHARING_XREMOTE = Config(
@@ -122,12 +132,8 @@ database_path = {sharing_path}
 
     if config.auth_type == AuthType.HTPASSWD:
         with open(user_path, "w") as f:
-            f.write(
-                """admin:admi$pass#word
-max:maxpassword
-
-"""
-            )
+            f.write(f"{config.admin_username}:admi$pass#word\n")
+            f.write(f"{config.user_username}:userpassword\n")
 
     env = os.environ.copy()
     # Ensure the radicale package is in PYTHONPATH
@@ -182,7 +188,7 @@ def login(
     page.goto(radicale_server)
 
     if config.auth_type == AuthType.HTPASSWD:
-        page.fill('#loginscene input[data-name="user"]', "admin")
+        page.fill('#loginscene input[data-name="user"]', config.admin_username)
         page.fill('#loginscene input[data-name="password"]', "admi$pass#word")
         page.click('button:has-text("Next")')
 

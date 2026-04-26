@@ -25,25 +25,38 @@ from typing import Any, Generator
 import pytest
 from playwright.sync_api import Page, expect
 
-from integ_tests.common import (SHARING_HTPASSWD, create_collection, login,
+from integ_tests.common import (SHARING_HTPASSWD,
+                                SHARING_HTPASSWD_USERSWITHDOMAIN, Config,
+                                create_collection, login,
                                 start_radicale_server)
 
 
+@pytest.fixture(params=[SHARING_HTPASSWD, SHARING_HTPASSWD_USERSWITHDOMAIN])
+def radicale_server_config(request: pytest.FixtureRequest) -> Config:
+    return request.param
+
+
 @pytest.fixture
-def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
-    yield from start_radicale_server(tmp_path, SHARING_HTPASSWD)
+def radicale_server(
+    tmp_path: pathlib.Path, radicale_server_config: Config
+) -> Generator[str, Any, None]:
+    yield from start_radicale_server(tmp_path, radicale_server_config)
 
 
 @pytest.mark.parametrize("permissions", ["ro", "rw"])
-def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> None:
+def test_incoming_shares(
+    page: Page, radicale_server: str, radicale_server_config: Config, permissions: str
+) -> None:
     # 1. Admin logs in and creates a map share for 'max'
-    login(page, radicale_server, SHARING_HTPASSWD)
+    login(page, radicale_server, radicale_server_config)
     create_collection(page, radicale_server)
 
     page.hover("article:not(.hidden)")
     page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
     page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill("max")
+    page.locator('input[data-name="shareuser"]').fill(
+        radicale_server_config.user_username
+    )
     page.locator('input[data-name="sharehref"]').fill("mapped")
     if permissions == "rw":
         page.check("#newshare_attr_permissions_rw")
@@ -57,8 +70,10 @@ def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> 
     page.click('a[data-name="logout"]')
 
     # 3. Max logs in
-    page.fill('#loginscene input[data-name="user"]', "max")
-    page.fill('#loginscene input[data-name="password"]', "maxpassword")
+    page.fill(
+        '#loginscene input[data-name="user"]', radicale_server_config.user_username
+    )
+    page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
 
     # 4. Max sees the incoming share
@@ -113,12 +128,14 @@ def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> 
     ).to_be_checked()
 
     # 6. Verify "shared by admin" and button visibility in the collection article
-    page.click('#incomingsharingscene button[data-name="cancel"]')
+    page.click('#incomingsharingscene button[data-name="close"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
 
     article = page.locator("article:not(.hidden)").first
     expect(article.locator('[data-name="shared-by"]')).to_be_visible()
-    expect(article.locator('[data-name="shared-by-owner"]')).to_have_text("admin")
+    expect(article.locator('[data-name="shared-by-owner"]')).to_have_text(
+        radicale_server_config.admin_username
+    )
 
     # Action buttons are only visible on mouseover
     article.hover()
@@ -138,11 +155,15 @@ def test_incoming_shares(page: Page, radicale_server: str, permissions: str) -> 
     expect(page.locator('#incomingsharingscene span[data-name="error"]')).to_be_hidden()
 
 
-def test_no_incoming_shares_message(page: Page, radicale_server: str) -> None:
+def test_no_incoming_shares_message(
+    page: Page, radicale_server: str, radicale_server_config: Config
+) -> None:
     # 1. Max logs in
     page.goto(radicale_server)
-    page.fill('#loginscene input[data-name="user"]', "max")
-    page.fill('#loginscene input[data-name="password"]', "maxpassword")
+    page.fill(
+        '#loginscene input[data-name="user"]', radicale_server_config.user_username
+    )
+    page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
 
     # 2. Max goes to incoming shares scene
@@ -158,5 +179,5 @@ def test_no_incoming_shares_message(page: Page, radicale_server: str) -> None:
         page.locator('#incomingsharingscene [data-name="nosharesmessage"]')
     ).to_have_text("No incoming shares")
 
-    page.click('#incomingsharingscene button[data-name="cancel"]')
+    page.click('#incomingsharingscene button[data-name="close"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()

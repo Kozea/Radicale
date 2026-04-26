@@ -56,9 +56,9 @@ export function random_hex(length) {
  * @param {HTMLInputElement} href_form A valid Input element or an onchange Event of an Input element.
  */
 export function cleanHREFinput(href_form) {
-    let currentTxtVal = href_form.value.trim().toLowerCase();
+    let currentTxtVal = href_form.value.trim()
     //Clean the HREF to remove not permitted chars
-    currentTxtVal = currentTxtVal.replace(/(?![0-9a-z\-\_\.])./g, '');
+    currentTxtVal = currentTxtVal.replace(/(?![0-9a-zA-Z\-\_\.\@])./g, '');
     //Clean the HREF to remove leading . (would result in hidden directory)
     currentTxtVal = currentTxtVal.replace(/^\./, '');
     href_form.value = currentTxtVal;

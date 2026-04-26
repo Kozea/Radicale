@@ -40,7 +40,7 @@ export class IncomingSharingScene {
         this._password = password;
 
         this._html_scene = get_element_by_id("incomingsharingscene");
-        this._cancel_btn = get_element(this._html_scene, "[data-name=cancel]");
+        this._close_btn = get_element(this._html_scene, "[data-name=close]");
         this._error_element = get_element(this._html_scene, "[data-name=error]");
         this._tbody = get_element(this._html_scene, "tbody[data-name=incomingsharesbody]");
         this._template = get_element(this._tbody, "[data-name=incomingsharerowtemplate]");
@@ -97,10 +97,10 @@ export class IncomingSharingScene {
         });
         this._nodes = [];
 
-        let prefix = "/" + this._user + "/";
+        let prefix = "/" + decodeURIComponent(this._user) + "/";
         let filtered_shares = shares.filter(
             share => (share.ShareType === "map")
-                && share.PathOrToken.startsWith(prefix));
+                && decodeURIComponent(share.PathOrToken).startsWith(prefix));
 
         if (filtered_shares.length === 0) {
             this._table.classList.add("hidden");
@@ -144,14 +144,14 @@ export class IncomingSharingScene {
 
     show() {
         this._html_scene.classList.remove("hidden");
-        this._cancel_btn.onclick = () => pop_scene();
+        this._close_btn.onclick = () => pop_scene();
         this._error_handler.clearError();
         collectionsCache.getIncomingShares(this._user, this._password, this._error_handler.setError, (shares) => this._render_shares(shares));
     }
 
     hide() {
         this._html_scene.classList.add("hidden");
-        this._cancel_btn.onclick = null;
+        this._close_btn.onclick = null;
         this._error_handler.clearError();
     }
 

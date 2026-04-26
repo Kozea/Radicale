@@ -226,9 +226,13 @@ function add_share_rows(user, password, collection, shares, errorHandler) {
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
+    let decodedHref = decodeURIComponent(collection.href).replace(/\/+$/, "") + "/";
+    let decodedPathMapped = decodeURIComponent(pathmapped).replace(/\/+$/, "") + "/";
+    let decodedPathOrToken = decodeURIComponent(pathortoken).replace(/\/+$/, "") + "/";
+
     if (
-      collection.href.includes(pathmapped) ||
-      collection.href.includes(pathortoken)
+      decodedHref.includes(decodedPathMapped) ||
+      decodedHref.includes(decodedPathOrToken)
     ) {
       if (share["ShareType"] === "token") {
         add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token, errorHandler);
