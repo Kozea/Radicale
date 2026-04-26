@@ -19,6 +19,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { CollectionType } from "../models/collection.js";
+
+
+/**
+ * Extracts the username from the principal collection
+ * 
+ * @param {import("../models/collection.js").Collection} principal_collection
+ * @returns str
+ */
+export function extractUsernameFromPrincipalCollection(principal_collection) {
+    // href is usually /username/
+    let href = decodeURIComponent(principal_collection.href);
+    if (href.endsWith("/")) {
+        href = href.substring(0, href.length - 1);
+    }
+    return href.substring(href.lastIndexOf("/") + 1);
+}
+
 /**
  * @param {import("../models/collection.js").Collection} collection
  * @returns str
@@ -26,8 +44,10 @@
 export function extract_title(collection) {
     if (collection.displayname && collection.displayname.length > 0) {
         return collection.displayname;
+    } else if (collection.type = CollectionType.PRINCIPAL) {
+        return extractUsernameFromPrincipalCollection(collection)
     } else
-        return collection.href;
+        return decodeURIComponent(collection.href);
 }
 
 /**
