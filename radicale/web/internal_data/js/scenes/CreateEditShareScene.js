@@ -137,6 +137,19 @@ export class CreateEditShareScene {
             this._properties_write_deny.disabled = false;
         }
         if (this._shareType === "map") {
+
+            // Default to share-to-self for conversions, but only if the 
+            // share user has not yet been set.
+            if (conversion != "none") {
+                if (this._shareuser_input.value === "") {
+                    this._shareuser_input.value = this._user;
+                }
+            } else {
+                if (this._shareuser_input.value === this._user) {
+                    this._shareuser_input.value = "";
+                }
+            }
+
             this._map_validator.validate();
         }
     }
