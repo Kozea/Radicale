@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { ROOT_PATH, SERVER } from "../constants.js";
+
 /**
  * Escape string for usage in XML
  * @param {string} s
@@ -72,6 +74,22 @@ export function onCleanHREFinput(event) {
     if (event.target instanceof HTMLInputElement) {
         cleanHREFinput(event.target);
     }
+}
+
+/**
+ * Make sure HREF is complete including server and prefix.
+ * @param {string} href 
+ */
+export function completeHref(href) {
+    let full_href = href;
+    if (!href.includes("://")) {
+        if (!href.startsWith("/")) {
+            full_href = "/" + href;
+        }
+        // ROOT_PATH ends in / and href starts with /, so remove the duplicate /
+        full_href = SERVER + ROOT_PATH + full_href.substring(1);
+    }
+    return full_href;
 }
 
 /**
