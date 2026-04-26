@@ -22,7 +22,7 @@
 import { update_incoming_share } from "../api/sharing.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
-import { get_element, get_element_by_id } from "../utils/misc.js";
+import { get_element, get_element_by_id, trim_to_max } from "../utils/misc.js";
 import { displayPermissionsOrConversion } from "../utils/permissions.js";
 import { UrlTextHandler } from "../utils/url_text.js";
 import { Scene, pop_scene } from "./scene_manager.js";
@@ -122,7 +122,7 @@ export class IncomingSharingScene {
             let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
 
             new UrlTextHandler(pathortoken, copy_btn).setHref(share.PathOrToken);
-            owner_td.textContent = share.Owner;
+            owner_td.textContent = trim_to_max(share.Owner, 12);
             displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
 
             let enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
