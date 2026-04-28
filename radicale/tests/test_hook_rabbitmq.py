@@ -123,13 +123,14 @@ permissions: RrWw""")
         with open(htpasswd_file_path, "w", encoding=encoding) as f:
             f.write("owner:ownerpw\nuser:userpw")
 
-        self.configure({"auth": {"type": "htpasswd",
-                                  "htpasswd_filename": htpasswd_file_path,
-                                  "htpasswd_encryption": "plain"},
-                        "rights": {"type": "owner_only"},
-                        "sharing": {"type": "csv",
-                                    "collection_by_map": "True",
-                                    "permit_create_map": "True"}})
+        self.configure({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": "plain"},
+            "rights": {"type": "owner_only"},
+            "sharing": {"type": "csv",
+                        "collection_by_map": "True",
+                        "permit_create_map": "True"}})
 
         path_owner = "/owner/calendar.ics/"
         path_shared = "/user/calendar-shared.ics/"
