@@ -19,6 +19,7 @@ Radicale tests related to hook 'rabbitmq'
 
 """
 
+import json
 import logging
 import os
 
@@ -112,3 +113,52 @@ permissions: RrWw""")
                 found = True
         if (found is False):
             raise ValueError("Logging misses expected log line")
+
+    @pytest.mark.skipif(has_pika == 0, reason="No pika module installed")
+    def test_shared_event_actor(self, caplog) -> None:
+        caplog.set_level(logging.WARNING)
+
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        encoding: str = self.configuration.get("encoding", "stock")
+        with open(htpasswd_file_path, "w", encoding=encoding) as f:
+            f.write("owner:ownerpw\nuser:userpw")
+
+        self.configure({"auth": {"type": "htpasswd",
+                                  "htpasswd_filename": htpasswd_file_path,
+                                  "htpasswd_encryption": "plain"},
+                        "rights": {"type": "owner_only"},
+                        "sharing": {"type": "csv",
+                                    "collection_by_map": "True",
+                                    "permit_create_map": "True"}})
+
+        path_owner = "/owner/calendar.ics/"
+        path_shared = "/user/calendar-shared.ics/"
+
+        self.mkcalendar(path_owner, login="owner:ownerpw")
+        self.request("POST", "/.sharing/v1/map/create",
+                     data=json.dumps({"User": "user",
+                                      "PathMapped": path_owner,
+                                      "PathOrToken": path_shared,
+                                      "Permissions": "rw",
+                                      "Enabled": True}),
+                     content_type="application/json", accept="application/json",
+                     login="owner:ownerpw", check=200)
+        self.request("POST", "/.sharing/v1/map/enable",
+                     data=json.dumps({"PathOrToken": path_shared}),
+                     content_type="application/json", accept="application/json",
+                     login="user:userpw", check=200)
+
+        caplog.clear()
+        event = get_file_content("event1.ics")
+        path = path_shared + "event1.ics"
+
+        self.put(path, event, login="user:userpw")
+        assert any("notification_item: {'type': 'upsert'" in line and
+                   "'actor': 'user'" in line
+                   for line in caplog.messages)
+
+        caplog.clear()
+        self.request("DELETE", path, login="user:userpw", check=200)
+        assert any("notification_item: {'type': 'delete'" in line and
+                   "'actor': 'user'" in line
+                   for line in caplog.messages)

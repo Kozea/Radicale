@@ -57,6 +57,7 @@ class ApplicationPartDelete(ApplicationBase):
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
                   path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage DELETE request."""
+        actor = user
         permissions_filter = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
@@ -99,7 +100,8 @@ class ApplicationPartDelete(ApplicationBase):
                                 content_type=i.name,
                                 uid=i.uid,
                                 old_content=i.serialize(),  # type: ignore
-                                new_content=None
+                                new_content=None,
+                                actor=actor,
                             )
                         )
                 xml_answer = xml_delete(base_prefix, path, item)
@@ -116,6 +118,7 @@ class ApplicationPartDelete(ApplicationBase):
                             uid=item.uid,
                             old_content=item.serialize(),  # type: ignore
                             new_content=None,
+                            actor=actor,
                         )
                     )
                 xml_answer = xml_delete(
