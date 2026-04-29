@@ -61,9 +61,10 @@ def _cleanup(path):
 class HookNotificationItem:
 
     def __init__(self, notification_item_type, path, content=None, content_type=None, uid=None, new_content=None,
-                 old_content=None):
+                 old_content=None, actor=None):
         self.type = notification_item_type.value
         self.point = _cleanup(path)
+        self.actor = actor
         self._content_legacy = content
         self.content_type = content_type
         self.uid = uid

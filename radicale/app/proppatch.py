@@ -99,6 +99,7 @@ class ApplicationPartProppatch(ApplicationBase):
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
                      path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
+        actor = user
         permissions_filter = None
         share = None
         share_overlay = False
@@ -220,7 +221,8 @@ class ApplicationPartProppatch(ApplicationBase):
                             content_type=None, # Can't easily determine content type, won't trigger email hook
                             uid=None,
                             old_content=None,
-                            new_content=content
+                            new_content=content,
+                            actor=actor,
                         )
                         self._hook.notify(hook_notification_item)
             except ValueError as e:

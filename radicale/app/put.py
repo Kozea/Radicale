@@ -181,6 +181,7 @@ class ApplicationPartPut(ApplicationBase):
     def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str,
                path: str, user: str, remote_host: str, remote_useragent: str) -> types.WSGIResponse:
         """Manage PUT request."""
+        actor = user
         permissions_filter = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
@@ -320,6 +321,7 @@ class ApplicationPartPut(ApplicationBase):
                                     uid=None,
                                     old_content=existing_item.serialize(),
                                     new_content=item.serialize(),
+                                    actor=actor,
                                 )
                             else:  # We assume the item is new because it was not in the replaced_items
                                 hook_notification_item = HookNotificationItem(
@@ -329,7 +331,8 @@ class ApplicationPartPut(ApplicationBase):
                                     content_type=item.name,
                                     uid=None,
                                     old_content=None,
-                                    new_content=item.serialize()
+                                    new_content=item.serialize(),
+                                    actor=actor,
                                 )
                             self._hook.notify(hook_notification_item)
                 except ValueError as e:
@@ -358,6 +361,7 @@ class ApplicationPartPut(ApplicationBase):
                             uid=None,
                             old_content=replaced_item.serialize() if replaced_item else None,
                             new_content=prepared_item.serialize(),
+                            actor=actor,
                         )
                         self._hook.notify(hook_notification_item)
                 except ValueError as e:
