@@ -216,6 +216,9 @@ PIM Applications</a></li>
 <li class="level4"><a href="#infcloud-caldavzap-and-carddavmate" id="toc-infcloud-caldavzap-and-carddavmate">InfCloud, CalDavZAP and
 CardDavMATE</a></li>
 <li class="level4"><a href="#command-line" id="toc-command-line">Command line</a></li>
+</ul></li>
+<li class="level2"><a href="#internals" id="toc-internals">Internals</a>
+<ul>
 <li class="level3"><a href="#authorization-and-rights" id="toc-authorization-and-rights">Authorization and Rights</a></li>
 <li class="level3"><a href="#storage-2" id="toc-storage-2">Storage</a>
 <ul>
@@ -658,6 +661,10 @@ below.</p>
 <pre><code>handle_path /radicale/* {
     uri strip_prefix /radicale
     reverse_proxy localhost:5232 {
+        # replace "HOST" with configured hostname of URL (FQDN) in client
+        header_up Host HOST
+        # replace "PORT" with configured port of URL in client
+        header_up X-Forwarded-Port PORT
     }
 }</code></pre>
 <p>Example <strong>Apache</strong> configuration extension:</p>
@@ -1161,9 +1168,7 @@ user2:password2</code></pre></li>
 <li><p><code>bcrypt</code><br>
 This uses a modified version of the Blowfish stream cipher, which is
 considered very secure. The installation of Python's
-<strong>bcrypt</strong> module is required for this to work. Also
-consider version of passlib(libpass): bcrypt &gt;= 5.0.0 requires
-passlib(libpass) &gt;= 1.9.3</p></li>
+<strong>bcrypt</strong> module is required for this to work.</p></li>
 <li><p><code>md5</code><br>
 Use an iterated MD5 digest of the password with salt (nowadays
 insecure).</p></li>
@@ -1671,6 +1676,33 @@ seconds).</p>
 <p><em>(&gt;= 3.5.8)</em></p>
 <p>Strict preconditions check on PUT in case item already exists <a href="https://www.rfc-editor.org/rfc/rfc6352#section-9.2">RFC6352#9.2</a></p>
 <p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="validate_user_value">
+<h5>validate_user_value <a class="headerlink" href="#validate_user_value">&para;</a></h5>
+<p><em>(&gt;= 3.7.2)</em></p>
+<p>Validate user value content</p>
+<p>Available types are:</p>
+<ul>
+<li><code>none</code></li>
+<li><code>minimal</code> (control and some special chars)</li>
+<li><code>unicode-letter</code> (unicode letters)</li>
+<li><code>no-unicode</code> (no unicode)</li>
+<li><code>strict</code> (reduced ASCII set)</li>
+</ul>
+<p>Default: <code>minimum</code></p>
+</section>
+<section class="level5" id="validate_path_type">
+<h5>validate_path_type <a class="headerlink" href="#validate_path_type">&para;</a></h5>
+<p><em>(&gt;= 3.7.2)</em></p>
+<p>Validate path value content</p>
+<ul>
+<li><code>none</code></li>
+<li><code>minimal</code> (control and some special chars)</li>
+<li><code>unicode-letter</code> (unicode letters)</li>
+<li><code>no-unicode</code> (no unicode)</li>
+<li><code>strict</code> (reduced ASCII set)</li>
+</ul>
+<p>Default: <code>minimum</code></p>
 </section>
 <section class="level5" id="hook">
 <h5>hook <a class="headerlink" href="#hook">&para;</a></h5>
@@ -2351,6 +2383,9 @@ books that are direct children of the path <code>/USERNAME/</code>.</p>
 <p>Note: requires config/option
 <code>permit_delete_collection = True</code></p>
 </section>
+</section>
+<section class="level2" id="internals">
+<h2>Internals <a class="headerlink" href="#internals">&para;</a></h2>
 <section class="level3" id="authorization-and-rights">
 <h3>Authorization and Rights <a class="headerlink" href="#authorization-and-rights">&para;</a></h3>
 <p>This section describes the format of the rights file for the
@@ -2624,6 +2659,8 @@ use.</p></li>
 <li><p><code>storage</code> : This module contains the classes
 representing collections in Radicale and the code for storing and
 loading them in the filesystem.</p></li>
+<li><p><code>sharing</code> : This module contains the classes
+representing collection sharing. <em>(&gt;= 3.7.0)</em></p></li>
 <li><p><code>web</code> : This module contains the web
 interface.</p></li>
 <li><p><code>utils</code> : Contains general helper functions.</p></li>
