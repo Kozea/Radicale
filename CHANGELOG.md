@@ -14,6 +14,7 @@
 * Fix: sharing/csv: quote handling and honor stock encoding
 * Extension: sharing: add ICAL:calendar-order to property overlay whitelist
 * Extension: extend hook data with 'actor' to keep original 'user' before mapping a share
+* Improve: WebUI (general and relating to sharing)
 
 ## 3.7.1
 * Fix: share address book collection as birthday calendar not working on non-DEBUG level
