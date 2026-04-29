@@ -42,6 +42,7 @@ export function get_principal(user, password, callback) {
             if (xml) {
                 let principal_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|current-user-principal > *|href");
                 let displayname_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|displayname");
+                let version_element = xml.querySelector("*|multistatus:root > *|response:first-of-type > *|propstat > *|prop > *|version");
                 if (principal_element) {
                     callback(new Collection(
                         principal_element.textContent,
@@ -52,7 +53,8 @@ export function get_principal(user, password, callback) {
                         0,
                         0,
                         "",
-                        []), null,);
+                        [],
+                        version_element ? version_element.textContent : ""), null,);
                 } else {
                     callback(null, "No valid XML received")
                 }
@@ -64,10 +66,11 @@ export function get_principal(user, password, callback) {
         }
     };
     request.send('<?xml version="1.0" encoding="utf-8" ?>' +
-        '<propfind xmlns="DAV:">' +
+        '<propfind xmlns="DAV:" xmlns:RADICALE="http://radicale.org/ns/">' +
         '<prop>' +
         '<current-user-principal />' +
         '<displayname />' +
+        '<RADICALE:version />' +
         '</prop>' +
         '</propfind>');
     return request;
@@ -259,7 +262,7 @@ function _parse_collection(response, collection_href) {
     }
 
     if (href.endsWith("/") && href !== collection_href && type) {
-        return new Collection(href, type, displayname, description, sane_color, count, size, source, permissions);
+        return new Collection(href, type, displayname, description, sane_color, count, size, source, permissions, "");
     }
     return null;
 }

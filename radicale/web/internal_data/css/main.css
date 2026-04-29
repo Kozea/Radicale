@@ -179,6 +179,17 @@ summary:hover {
     float: left;
 }
 
+#logoutview .version {
+    float: right !important;
+    width: auto !important;
+    margin-right: 10px;
+    position: relative;
+    right: 25px;
+    font-size: 0.8em;
+    color: #999;
+    line-height: 2.2em;
+}
+
 #collectionsscene {
     display: flex;
     flex-direction: row;

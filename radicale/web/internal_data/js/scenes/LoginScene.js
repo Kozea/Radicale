@@ -44,6 +44,7 @@ export class LoginScene {
         this._logout_view = get_element_by_id("logoutview");
         this._logout_user_form = get_element(this._logout_view, "[data-name=user]");
         this._logout_btn = get_element(this._logout_view, "[data-name=logout]");
+        this._logout_version_form = get_element(this._logout_view, "[data-name=version]");
         this._refresh_btn = get_element(this._logout_view, "[data-name=refresh]");
 
         this._user = "";
@@ -91,6 +92,11 @@ export class LoginScene {
                 pop_scene();
             } else if (principal_collection) {
                 this._logout_user_form.textContent = extract_title(principal_collection) + "'s Collections";
+                if (principal_collection.version) {
+                    this._logout_version_form.textContent = "Radicale v" + principal_collection.version;
+                } else {
+                    this._logout_version_form.textContent = "";
+                }
 
                 // clear error on successful login
                 this._errorHandler.clearError();

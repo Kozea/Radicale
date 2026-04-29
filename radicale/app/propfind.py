@@ -168,6 +168,8 @@ def xml_propfind_response(
         props = []
         # Should list all properties that can be retrieved by the code below
         props.append(xmlutils.make_clark("D:principal-collection-set"))
+        if user:
+            props.append(xmlutils.make_clark("RADICALE:version"))
         props.append(xmlutils.make_clark("D:current-user-principal"))
         props.append(xmlutils.make_clark("D:current-user-privilege-set"))
         props.append(xmlutils.make_clark("D:supported-report-set"))
@@ -465,6 +467,11 @@ def xml_propfind_response(
                     child_element = ET.Element(xmlutils.make_clark("D:href"))
                     child_element.text = collection.get_meta('CS:source')
                     element.append(child_element)
+                else:
+                    is404 = True
+            elif tag == xmlutils.make_clark("RADICALE:version"):
+                if user:
+                    element.text = utils.package_version("radicale")
                 else:
                     is404 = True
             else:
