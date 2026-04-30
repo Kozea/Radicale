@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.7.3.dev
+
 ## 3.7.2
 * Fix: broken storage/mtime granularity detection on vfat
 * Improve: `path_to_filesystem()` by pre-detection of collision-free file system
