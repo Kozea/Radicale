@@ -2310,6 +2310,40 @@ permissions: RrWw""")
         element = prop.find(xmlutils.make_clark("D:href"))
         assert element is not None and element.text == "/user/"
 
+    def test_version_exposure_authenticated(self) -> None:
+        """Test if the version is returned for authenticated users."""
+        self.configure({"auth": {"type": "none"}})
+        status, responses = self.propfind("/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:" xmlns:R="http://radicale.org/ns/">
+    <prop>
+        <R:version />
+    </prop>
+</propfind>""", login="user:")
+        assert status == 207
+        response = responses["/"]
+        assert not isinstance(response, int)
+        status_code, prop = response["RADICALE:version"]
+        assert status_code == 200
+        assert prop.text == utils.package_version("radicale")
+
+    def test_version_exposure_unauthenticated(self) -> None:
+        """Test if the version is hidden for unauthenticated users."""
+        self.configure({"auth": {"type": "none"}})
+        # Without login, 'user' will be empty
+        status, responses = self.propfind("/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:" xmlns:R="http://radicale.org/ns/">
+    <prop>
+        <R:version />
+    </prop>
+</propfind>""")
+        assert status == 207
+        response = responses["/"]
+        assert not isinstance(response, int)
+        status_code, _ = response["RADICALE:version"]
+        assert status_code == 404
+
     def test_authentication(self) -> None:
         """Test if server sends authentication request."""
         self.configure({"auth": {"type": "htpasswd",
