@@ -204,11 +204,7 @@ export class CreateEditShareScene {
                 if (error) {
                     this._errorHandler.setError(error);
                 } else {
-                    // On any share-to-self (currently only bday conversion), invalidate the
-                    // collections cache so the virtual calendar appears immediately.
-                    if (this._shareuser_input.value === this._user) {
-                        collectionsCache.invalidate();
-                    }
+                    collectionsCache.invalidate();
                     pop_scene();
                 }
             };

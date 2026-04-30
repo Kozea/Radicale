@@ -146,7 +146,7 @@ export class IncomingSharingScene {
         this._html_scene.classList.remove("hidden");
         this._close_btn.onclick = () => pop_scene();
         this._error_handler.clearError();
-        collectionsCache.getIncomingShares(this._user, this._password, this._error_handler.setError, (shares) => this._render_shares(shares));
+        collectionsCache.getSharingList(this._user, this._password, this._error_handler.setError, (shares) => this._render_shares(shares));
     }
 
     hide() {

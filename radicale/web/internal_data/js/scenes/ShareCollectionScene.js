@@ -22,8 +22,8 @@
 import {
   delete_share_by_map,
   delete_share_by_token,
-  reload_sharing_list,
 } from "../api/sharing.js";
+import { collectionsCache } from "../utils/collections_cache.js";
 import { Collection, Permission } from "../models/collection.js";
 import { extract_title } from "../utils/collection_utils.js";
 
@@ -154,12 +154,10 @@ function update_share_list(user, password, collection, errorHandler) {
     }
   });
 
-  reload_sharing_list(user, password, collection, function (shares, error) {
-    if (error) {
-      errorHandler.setError(error);
-    } else {
-      add_share_rows(user, password, collection, shares, errorHandler);
-    }
+  collectionsCache.getSharingList(user, password, (error) => {
+    errorHandler.setError(error);
+  }, function (shares) {
+    add_share_rows(user, password, collection, shares);
   });
 }
 
@@ -172,10 +170,9 @@ function update_share_list(user, password, collection, errorHandler) {
  * @param {HTMLElement} template 
  * @param {string} delete_label 
  * @param {function(string, string, import('../api/sharing.js').Share, function(?string):void):void} delete_action 
- * @param {ErrorHandler} errorHandler
  * @param {function():void} [onDeleteSuccess] Optional extra callback after a successful delete.
  */
-function add_share_row_node(user, password, collection, share, template, delete_label, delete_action, errorHandler, onDeleteSuccess) {
+function add_share_row_node(user, password, collection, share, template, delete_label, delete_action, onDeleteSuccess) {
   let pathortoken = share["PathOrToken"] || "";
   let node = /** @type {HTMLElement} */ (template.cloneNode(true));
   node.classList.remove("hidden");
@@ -201,8 +198,8 @@ function add_share_row_node(user, password, collection, share, template, delete_
       user, password, "Delete Share", share, delete_label + " " + pathortoken, delete_action, false,
       function () {
         if (onDeleteSuccess) onDeleteSuccess();
+        collectionsCache.invalidate();
         pop_scene();
-        update_share_list(user, password, collection, errorHandler);
       }
     );
     push_scene(delete_collection_scene);
@@ -218,9 +215,8 @@ function add_share_row_node(user, password, collection, share, template, delete_
  * @param {?string} password 
  * @param {Collection} collection 
  * @param {Array<import('../api/sharing.js').Share>} shares 
- * @param {ErrorHandler} errorHandler
  */
-function add_share_rows(user, password, collection, shares, errorHandler) {
+function add_share_rows(user, password, collection, shares) {
   /** @type {HTMLElement} */ let token_template = get_element(document, "[data-name=sharetokenrowtemplate]");
   /** @type {HTMLElement} */ let map_template = get_element(document, "[data-name=sharemaprowtemplate]");
   shares.forEach(function (share) {
@@ -235,10 +231,10 @@ function add_share_rows(user, password, collection, shares, errorHandler) {
       decodedHref.includes(decodedPathOrToken)
     ) {
       if (share["ShareType"] === "token") {
-        add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token, errorHandler);
+        add_share_row_node(user, password, collection, share, token_template, "share", delete_share_by_token);
       }
       else if (share["ShareType"] === "map") {
-        add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map, errorHandler);
+        add_share_row_node(user, password, collection, share, map_template, "map", delete_share_by_map);
       }
     }
   });
