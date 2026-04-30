@@ -126,6 +126,12 @@ def test_incoming_shares(
             "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
         )
     ).to_be_checked()
+    # This is needed due to a potential race condition.
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).not_to_be_disabled()
 
     # 6. Verify "shared by admin" and button visibility in the collection article
     page.click('#incomingsharingscene button[data-name="close"]')
