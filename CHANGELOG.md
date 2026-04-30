@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.7.3.dev
+* Extension: expose RADICALE:version for authenticated users via PROPFIND
 
 ## 3.7.2
 * Fix: broken storage/mtime granularity detection on vfat
