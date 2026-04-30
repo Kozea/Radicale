@@ -31,6 +31,8 @@ class CollectionsCache {
         this.server_features = null;
         /** @type {?XMLHttpRequest} */ this.collections_req = null;
         /** @type {?XMLHttpRequest} */ this.shares_req = null;
+        /** @type {?Array<{ onerror: function(string):void, displayData: function(Array<import("../api/sharing.js").Share>):void }>} */
+        this._sharing_callbacks = null;
     }
 
     invalidate() {
@@ -45,6 +47,7 @@ class CollectionsCache {
             this.shares_req.abort();
             this.shares_req = null;
         }
+        this._sharing_callbacks = null;
     }
 
     /**
@@ -105,27 +108,31 @@ class CollectionsCache {
      * @param {function(string):void} onerror
      * @param {function(Array<import("../api/sharing.js").Share>):void} displayData
      */
-    getIncomingShares(user, password, onerror, displayData) {
+    getSharingList(user, password, onerror, displayData) {
         if (this.incoming_shares !== null) {
             displayData(this.incoming_shares);
             return;
         }
 
-        let loading_scene = new LoadingScene();
-        push_scene(loading_scene);
+        if (!this._sharing_callbacks) {
+            this._sharing_callbacks = [];
+        }
+        this._sharing_callbacks.push({ onerror, displayData });
+
+        if (this.shares_req) {
+            return;
+        }
 
         this.shares_req = reload_sharing_list(user, password, null, (shares, error) => {
-            if (!is_current_scene(loading_scene)) {
-                return;
-            }
             this.shares_req = null;
+            let callbacks = this._sharing_callbacks || [];
+            this._sharing_callbacks = null;
+
             if (error) {
-                onerror(error);
-                pop_scene();
+                callbacks.forEach(cb => cb.onerror(error));
             } else {
                 this.incoming_shares = shares;
-                displayData(this.incoming_shares);
-                pop_scene();
+                callbacks.forEach(cb => cb.displayData(shares));
             }
         });
     }
