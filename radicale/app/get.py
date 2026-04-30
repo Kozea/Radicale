@@ -138,7 +138,11 @@ class ApplicationPartGet(ApplicationBase):
                     # convert VCF to ICS
                     answer = item.serialize(vcf_to_ics=True)
                 else:
-                    answer = item.convert_vcf_to_ics().serialize()
+                    item_converted = item.convert_vcf_to_ics()
+                    if item_converted is not None:
+                        answer = item_converted.serialize()
+                    else:
+                        return httputils.NOT_FOUND
             else:
                 answer = item.serialize()
             return client.OK, headers, answer, None
