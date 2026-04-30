@@ -4855,6 +4855,10 @@ permissions: RrWw""")
             # title from Properties
             assert 'Content-Disposition' not in headers
 
+            # get a single item which is not exsting on conversion
+            logging.info("\n*** GET item as  user -> ok")
+            _, headers, answer = self.request("GET", path_shared_r + "contact1.ics", login="user:userpw", check=404)
+
             # timerange filter elements as user
             logging.info("\n*** REPORT collection entries with timerange user -> ok")
             _, responses = self.report(path_shared_r, """\
