@@ -2,6 +2,7 @@
 
 ## 3.7.3.dev
 * Extension: expose RADICALE:version for authenticated users via PROPFIND
+* Fix: sharing: GET request on single item with bday conversion
 
 ## 3.7.2
 * Fix: broken storage/mtime granularity detection on vfat

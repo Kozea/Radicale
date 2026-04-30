@@ -4838,6 +4838,27 @@ permissions: RrWw""")
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
 
+            # verify content as user
+            logging.info("\n*** GET item as  user -> ok")
+            _, headers, answer = self.request("GET", path_shared_r + "contact2-with-bday.ics", login="user:userpw")
+            logging.debug("resonse: %r", answer)
+            assert "BEGIN:VCARD" not in answer
+            assert "BEGIN:VCALENDAR" in answer
+            assert "RRULE:FREQ=YEARLY" in answer
+            assert "DTSTART;VALUE=DATE:19700101" in answer
+            assert "DTEND;VALUE=DATE:19700102" in answer
+            assert "TRANSP:TRANSPARENT" in answer
+            assert "DESCRIPTION:BDAY=1970-01-01" in answer
+            # content type must be adjusted
+            assert 'Content-Type' in headers
+            assert 'text/calendar' in headers['Content-Type']
+            # title from Properties
+            assert 'Content-Disposition' not in headers
+
+            # get a single item which is not exsting on conversion
+            logging.info("\n*** GET item as  user -> ok")
+            _, headers, answer = self.request("GET", path_shared_r + "contact1.ics", login="user:userpw", check=404)
+
             # timerange filter elements as user
             logging.info("\n*** REPORT collection entries with timerange user -> ok")
             _, responses = self.report(path_shared_r, """\

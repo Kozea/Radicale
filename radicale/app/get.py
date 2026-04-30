@@ -121,7 +121,10 @@ class ApplicationPartGet(ApplicationBase):
             elif limited_access:
                 return httputils.NOT_ALLOWED
             else:
-                content_type = xmlutils.OBJECT_MIMETYPES[item.name]
+                if share and share['Conversion'] == "bday":
+                    content_type = xmlutils.MIMETYPES["VCALENDAR"]
+                else:
+                    content_type = xmlutils.OBJECT_MIMETYPES[item.name]
                 content_disposition = ""
             assert item.last_modified
             headers = {
@@ -130,9 +133,16 @@ class ApplicationPartGet(ApplicationBase):
                 "ETag": item.etag}
             if content_disposition:
                 headers["Content-Disposition"] = content_disposition
-            if isinstance(item, storage.BaseCollection) and share and share['Conversion'] == "bday":
-                # convert VCF to ICS
-                answer = item.serialize(vcf_to_ics=True)
+            if share and share['Conversion'] == "bday":
+                if isinstance(item, storage.BaseCollection):
+                    # convert VCF to ICS
+                    answer = item.serialize(vcf_to_ics=True)
+                else:
+                    item_converted = item.convert_vcf_to_ics()
+                    if item_converted is not None:
+                        answer = item_converted.serialize()
+                    else:
+                        return httputils.NOT_FOUND
             else:
                 answer = item.serialize()
             return client.OK, headers, answer, None
