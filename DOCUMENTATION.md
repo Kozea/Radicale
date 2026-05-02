@@ -1630,7 +1630,7 @@ Available types are:
 * `no-unicode` (no unicode)
 * `strict` (reduced ASCII set)
 
-Default: `minimum`
+Default: `minimal`
 
 ##### validate_path_type
 
@@ -1644,7 +1644,7 @@ Validate path value content
 * `no-unicode` (no unicode)
 * `strict` (reduced ASCII set)
 
-Default: `minimum`
+Default: `minimal`
 
 ##### hook
 
