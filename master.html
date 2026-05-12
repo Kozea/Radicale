@@ -1837,6 +1837,63 @@ Allows creation and management of address books and calendars.</p></li>
 <p>Log response content (body) on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
+<section class="level5" id="request_header_on_notice_condition">
+<h5>request_header_on_notice_condition <a class="headerlink" href="#request_header_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log request header on <code>level = notice</code> if condition is
+fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: JSON structure as text</p>
+<p>Supported tokens:</p>
+<ul>
+<li><code>method</code></li>
+<li><code>path</code></li>
+<li><code>useragent</code></li>
+<li><code>host</code> (IPv4/IPv6 address/network)</li>
+<li><code>login</code></li>
+<li><code>status</code> (only supported on responses)</li>
+</ul>
+<p>Supported matches:</p>
+<ul>
+<li>str: <code>startswith</code>, <code>endswith</code>,
+<code>equal</code>, <code>re</code></li>
+<li>int: <code>==</code>, <code>&lt;</code>, <code>&lt;=</code>,
+<code>&gt;=</code>, <code>&gt;</code>, <code>!=</code></li>
+<li>IP address: <code>equal</code>, <code>==</code>,
+<code>!=</code></li>
+<li>IP network: <code>included</code>, <code>excluded</code></li>
+</ul>
+<p>Examples:</p>
+<ul>
+<li><code>{"method": {"match": "equal", "value": "GET"}, "login": {"match": "equal", "value": "owner"}}</code></li>
+<li><code>{"method": {"match": "equal", "value": "PUT"}, "status": {"match": "&gt;=", "value": "201"}, "host": {"match": "included", "value": "127.0.0.0/8"}}</code></li>
+<li><code>{"method": {"match": "equal", "value": "PUT"}, "path": {"match": "re", "value": "ev?nt[01]"}}</code></li>
+</ul>
+</section>
+<section class="level5" id="request_content_on_notice_condition">
+<h5>request_content_on_notice_condition <a class="headerlink" href="#request_content_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log request content (body) on <code>level = notice</code> if
+condition is fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: see <code>request_header_on_notice_condition</code></p>
+</section>
+<section class="level5" id="response_header_on_notice_condition">
+<h5>response_header_on_notice_condition <a class="headerlink" href="#response_header_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log response header on <code>level = notice</code> if condition is
+fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: see <code>request_header_on_notice_condition</code></p>
+</section>
+<section class="level5" id="response_content_on_notice_condition">
+<h5>response_content_on_notice_condition <a class="headerlink" href="#response_content_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log response content (body) on <code>level = notice</code> if
+condition is fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: see <code>request_header_on_notice_condition</code></p>
+</section>
 <section class="level5" id="rights_rule_doesnt_match_on_debug">
 <h5>rights_rule_doesnt_match_on_debug <a class="headerlink" href="#rights_rule_doesnt_match_on_debug">&para;</a></h5>
 <p><em>(&gt;= 3.2.3)</em></p>
