@@ -1060,6 +1060,33 @@ Format: OpenSSL cipher list (see also "man openssl-ciphers")</p>
 <p>Strip script name from URI if called by reverse proxy</p>
 <p>Default: (taken from HTTP_X_SCRIPT_NAME or SCRIPT_NAME)</p>
 </section>
+<section class="level5" id="validate_user_value">
+<h5>validate_user_value <a class="headerlink" href="#validate_user_value">&para;</a></h5>
+<p><em>(&gt;= 3.7.2)</em></p>
+<p>Validate user value content</p>
+<p>Available types are:</p>
+<ul>
+<li><code>none</code></li>
+<li><code>minimal</code> (control and some special chars)</li>
+<li><code>unicode-letter</code> (unicode letters)</li>
+<li><code>no-unicode</code> (no unicode)</li>
+<li><code>strict</code> (reduced ASCII set)</li>
+</ul>
+<p>Default: <code>minimal</code></p>
+</section>
+<section class="level5" id="validate_path_value">
+<h5>validate_path_value <a class="headerlink" href="#validate_path_value">&para;</a></h5>
+<p><em>(&gt;= 3.7.2)</em></p>
+<p>Validate path value content</p>
+<ul>
+<li><code>none</code></li>
+<li><code>minimal</code> (control and some special chars)</li>
+<li><code>unicode-letter</code> (unicode letters)</li>
+<li><code>no-unicode</code> (no unicode)</li>
+<li><code>strict</code> (reduced ASCII set)</li>
+</ul>
+<p>Default: <code>minimal</code></p>
+</section>
 </section>
 <section class="level4" id="encoding">
 <h4>[encoding] <a class="headerlink" href="#encoding">&para;</a></h4>
@@ -1677,33 +1704,6 @@ seconds).</p>
 <p>Strict preconditions check on PUT in case item already exists <a href="https://www.rfc-editor.org/rfc/rfc6352#section-9.2">RFC6352#9.2</a></p>
 <p>Default: <code>False</code></p>
 </section>
-<section class="level5" id="validate_user_value">
-<h5>validate_user_value <a class="headerlink" href="#validate_user_value">&para;</a></h5>
-<p><em>(&gt;= 3.7.2)</em></p>
-<p>Validate user value content</p>
-<p>Available types are:</p>
-<ul>
-<li><code>none</code></li>
-<li><code>minimal</code> (control and some special chars)</li>
-<li><code>unicode-letter</code> (unicode letters)</li>
-<li><code>no-unicode</code> (no unicode)</li>
-<li><code>strict</code> (reduced ASCII set)</li>
-</ul>
-<p>Default: <code>minimum</code></p>
-</section>
-<section class="level5" id="validate_path_type">
-<h5>validate_path_type <a class="headerlink" href="#validate_path_type">&para;</a></h5>
-<p><em>(&gt;= 3.7.2)</em></p>
-<p>Validate path value content</p>
-<ul>
-<li><code>none</code></li>
-<li><code>minimal</code> (control and some special chars)</li>
-<li><code>unicode-letter</code> (unicode letters)</li>
-<li><code>no-unicode</code> (no unicode)</li>
-<li><code>strict</code> (reduced ASCII set)</li>
-</ul>
-<p>Default: <code>minimum</code></p>
-</section>
 <section class="level5" id="hook">
 <h5>hook <a class="headerlink" href="#hook">&para;</a></h5>
 <p>Command that is run after changes to storage. See the <a href="#versioning-collections-with-git">Versioning collections with
@@ -1836,6 +1836,63 @@ Allows creation and management of address books and calendars.</p></li>
 <p><em>(&gt;= 3.2.2)</em></p>
 <p>Log response content (body) on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="request_header_on_notice_condition">
+<h5>request_header_on_notice_condition <a class="headerlink" href="#request_header_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log request header on <code>level = notice</code> if condition is
+fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: JSON structure as text</p>
+<p>Supported tokens:</p>
+<ul>
+<li><code>method</code></li>
+<li><code>path</code></li>
+<li><code>useragent</code></li>
+<li><code>host</code> (IPv4/IPv6 address/network)</li>
+<li><code>login</code></li>
+<li><code>status</code> (only supported on responses)</li>
+</ul>
+<p>Supported matches:</p>
+<ul>
+<li>str: <code>startswith</code>, <code>endswith</code>,
+<code>equal</code>, <code>re</code></li>
+<li>int: <code>==</code>, <code>&lt;</code>, <code>&lt;=</code>,
+<code>&gt;=</code>, <code>&gt;</code>, <code>!=</code></li>
+<li>IP address: <code>equal</code>, <code>==</code>,
+<code>!=</code></li>
+<li>IP network: <code>included</code>, <code>excluded</code></li>
+</ul>
+<p>Examples:</p>
+<ul>
+<li><code>{"method": {"match": "equal", "value": "GET"}, "login": {"match": "equal", "value": "owner"}}</code></li>
+<li><code>{"method": {"match": "equal", "value": "PUT"}, "status": {"match": "&gt;=", "value": "201"}, "host": {"match": "included", "value": "127.0.0.0/8"}}</code></li>
+<li><code>{"method": {"match": "equal", "value": "PUT"}, "path": {"match": "re", "value": "ev?nt[01]"}}</code></li>
+</ul>
+</section>
+<section class="level5" id="request_content_on_notice_condition">
+<h5>request_content_on_notice_condition <a class="headerlink" href="#request_content_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log request content (body) on <code>level = notice</code> if
+condition is fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: see <code>request_header_on_notice_condition</code></p>
+</section>
+<section class="level5" id="response_header_on_notice_condition">
+<h5>response_header_on_notice_condition <a class="headerlink" href="#response_header_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log response header on <code>level = notice</code> if condition is
+fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: see <code>request_header_on_notice_condition</code></p>
+</section>
+<section class="level5" id="response_content_on_notice_condition">
+<h5>response_content_on_notice_condition <a class="headerlink" href="#response_content_on_notice_condition">&para;</a></h5>
+<p><em>(&gt;= 3.7.3)</em></p>
+<p>Log response content (body) on <code>level = notice</code> if
+condition is fulfilled</p>
+<p>Default: <code>{}</code></p>
+<p>Format: see <code>request_header_on_notice_condition</code></p>
 </section>
 <section class="level5" id="rights_rule_doesnt_match_on_debug">
 <h5>rights_rule_doesnt_match_on_debug <a class="headerlink" href="#rights_rule_doesnt_match_on_debug">&para;</a></h5>
