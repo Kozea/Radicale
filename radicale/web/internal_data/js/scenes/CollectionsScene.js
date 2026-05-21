@@ -268,7 +268,7 @@ export class CollectionsScene {
             }
             contentcount_form.textContent = contentcount_form_txt;
         }
-        let href = completeHref(collection.href);
+        let href = window.location.origin + collection.href;
         new UrlTextHandler(url_form, copy_btn).setHref(href);
         download_btn.href = href;
         download_btn.onclick = (event) => {
