@@ -25,7 +25,7 @@ import { Collection, CollectionType, Permission } from "../models/collection.js"
 import { extract_title } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
-import { bytesToHumanReadable, completeHref, get_element, get_element_by_id } from "../utils/misc.js";
+import { bytesToHumanReadable, get_element, get_element_by_id } from "../utils/misc.js";
 import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
