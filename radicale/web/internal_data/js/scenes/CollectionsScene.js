@@ -124,7 +124,7 @@ export class CollectionsScene {
     _ondelete(collection) {
         try {
             let delete_collection_scene = new DeleteConfirmationScene(
-                this._user, this._password, "Delete Collection", collection, collection.displayname || collection.href,
+                this._user, this._password, "Delete Collection", collection, collection.displayname || decodeURIComponent(collection.href),
                 delete_collection, true
             );
             push_scene(delete_collection_scene);
@@ -253,7 +253,7 @@ export class CollectionsScene {
                 edit_btn.classList.add("hidden");
             }
         }
-        title_form.textContent = collection.displayname || collection.href;
+        title_form.textContent = collection.displayname || decodeURIComponent(collection.href);
         if (title_form.textContent.length > 30) {
             title_form.classList.add("smalltext");
         }
