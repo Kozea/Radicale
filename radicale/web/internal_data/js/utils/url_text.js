@@ -37,19 +37,22 @@ export class UrlTextHandler {
         this._element = element;
         this._copyButton = copyButton;
         this._userIndex = -1;
+        this._completedUrl = "";
 
         // Only encode the URL if the entire text is selected.
-        this._element.addEventListener("copy", (event) => {
-            const selectedText = window.getSelection().toString();
-            const totalText = this._element.value;
+        if (this._element) {
+            this._element.addEventListener("copy", (event) => {
+                const selectedText = window.getSelection().toString();
+                const totalText = this._element.value;
 
-            // Check if the selected text length matches the total text length.
-            if (selectedText && selectedText.length === totalText.length) {
-                event.preventDefault();
-                event.clipboardData.setData("text/plain", this._completedUrl);
-            }
-            // Allow default copying if only a part of the text is selected.
-        });
+                // Check if the selected text length matches the total text length.
+                if (event.clipboardData && selectedText && selectedText.length === totalText.length) {
+                    event.preventDefault();
+                    event.clipboardData.setData("text/plain", this._completedUrl || "");
+                }
+                // Allow default copying if only a part of the text is selected.
+            });
+        }
         
         this._element.addEventListener("focusin", () => {
             this._element.setSelectionRange(0, 99999);
@@ -101,7 +104,7 @@ export class UrlTextHandler {
     _oncopy() {
         if (!this._element.value) return;
 
-        navigator.clipboard.writeText(this._completedUrl).then(() => {
+        navigator.clipboard.writeText(this._completedUrl || "").then(() => {
             if (this._copyButton) {
                 this._copyButton.classList.add("copied");
                 this._copyButton.title = "Copied!";
