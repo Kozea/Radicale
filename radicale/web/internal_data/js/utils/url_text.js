@@ -42,7 +42,7 @@ export class UrlTextHandler {
         // Only encode the URL if the entire text is selected.
         if (this._element) {
             this._element.addEventListener("copy", (event) => {
-                const selectedText = window.getSelection().toString();
+                const selectedText = window.getSelection()?.toString();
                 const totalText = this._element.value;
 
                 // Check if the selected text length matches the total text length.
