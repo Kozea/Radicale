@@ -196,7 +196,7 @@ export class CreateEditCollectionScene {
         this._remove_invalid_types();
         this._html_scene.classList.remove("hidden");
         if (this._edit && this._title_form) {
-            this._title_form.textContent = this._collection.displayname || this._collection.href;
+            this._title_form.textContent = this._collection.displayname || decodeURIComponent(this._collection.href);
         }
         this._fill_form();
         this._submit_btn.onclick = () => this._onsubmit();
