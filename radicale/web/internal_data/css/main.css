@@ -517,7 +517,6 @@ summary:hover {
     background-color: var(--badge_icon-bg-color);
 }
 
-
 .smalltext {
     font-size: 75% !important;
 }
@@ -766,4 +765,3 @@ button.inline {
 .hidden {
     display: none !important;
 }
-
