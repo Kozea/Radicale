@@ -63,7 +63,11 @@ export class UrlTextHandler {
         });
 
         if (this._copyButton) {
-            this._copyButton.onclick = () => this._oncopy();
+            if (typeof window !== "undefined" && !window.isSecureContext) {
+                this._copyButton.classList.add("hidden");
+            } else {
+                this._copyButton.onclick = () => this._oncopy();
+            }
         }
     }
 
