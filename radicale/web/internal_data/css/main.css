@@ -310,7 +310,7 @@ summary:hover {
     position: relative;
     right: 25px;
     font-size: 0.8em;
-    color: var(logoutview-version-color);
+    color: var(--logoutview-version-color);
     line-height: 2.2em;
 }
 
@@ -649,8 +649,8 @@ td .url-input-wrapper input {
 }
 
 .copy-btn:hover {
-    background-color: var(--copy-btn-hover-bg-color: #1b2a3a);
-    color: var(--copy-btn-hover-color: #93c5fd);
+    background-color: var(--copy-btn-hover-bg-color);
+    color: var(--copy-btn-hover-color);
 }
 
 .copy-btn:active {
