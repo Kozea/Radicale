@@ -363,6 +363,9 @@
 # Value: none | internal
 #type = internal
 
+# Prefer browser login
+#prefer_browser_login = False
+
 
 [logging]
 

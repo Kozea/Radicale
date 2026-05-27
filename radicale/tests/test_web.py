@@ -31,6 +31,11 @@ class TestBaseWebRequests(BaseTest):
         _, answer = self.get("/.web/")
         assert answer
         self.post("/.web", check=405)
+        _, answer = self.get("/.web/js/config.js")
+        assert "export const PREFER_BROWSER_LOGIN = false;" in answer
+        self.configure({"web": {"prefer_browser_login": "True"}})
+        _, answer = self.get("/.web/js/config.js")
+        assert "export const PREFER_BROWSER_LOGIN = true;" in answer
 
     def test_none(self) -> None:
         self.configure({"web": {"type": "none"}})
