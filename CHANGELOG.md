@@ -5,6 +5,7 @@
 * Improve: sharing: PROPFIND returns also privilege "write" in case "write-content" and "write-properties" is permitted
 * Extension: WebUI dark theme with automatic browser/OS color scheme detection
 * Fix: WebUI hide copy button in insecure environments
+* Improve: WebUI decode URL in text field for better readability
 
 ## 3.7.3
 * Extension: expose RADICALE:version for authenticated users via PROPFIND
