@@ -6,6 +6,7 @@
 * Extension: WebUI dark theme with automatic browser/OS color scheme detection
 * Fix: WebUI hide copy button in insecure environments
 * Improve: WebUI decode URL in text field for better readability
+* Fix: sharing: bday conversion hrefs for vCard filenames ending in v/c/f
 
 ## 3.7.3
 * Extension: expose RADICALE:version for authenticated users via PROPFIND
