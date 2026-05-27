@@ -3,6 +3,7 @@
 ## 3.7.4.dev
 * Fix: sharing: PROPFIND returns now empty owner element in case of a mapped share as clients try PROPFIND on this not accessable href
 * Improve: sharing: PROPFIND returns also privilege "write" in case "write-content" and "write-properties" is permitted
+* Extension: WebUI dark theme with automatic browser/OS color scheme detection
 
 ## 3.7.3
 * Extension: expose RADICALE:version for authenticated users via PROPFIND
