@@ -1699,6 +1699,15 @@ Available backends are:
 
 Default: `internal`
 
+##### prefer_browser_login _(>= 3.7.4)_
+
+Try to use browser based login rather than the built in login in the web UI. This 
+can be helpful if the login system you are using uses redirects, such as in
+an OIDC setup. For this to work properly, you will also have to make sure CORS
+headers are configured correctly.s
+
+Default: `False`
+
 #### [logging]
 
 ##### level

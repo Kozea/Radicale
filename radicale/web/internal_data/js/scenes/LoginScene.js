@@ -20,6 +20,7 @@
  */
 
 import { get_principal } from "../api/api.js";
+import { PREFER_BROWSER_LOGIN } from "../config.js";
 import { ROOT_PATH, SERVER } from "../constants.js";
 import { Collection } from "../models/collection.js";
 import { extract_title, extractUsernameFromPrincipalCollection } from "../utils/collection_utils.js";
@@ -167,7 +168,7 @@ export class LoginScene {
         fetch(SERVER + ROOT_PATH, {
             method: 'PROPFIND',
             headers: { 'Depth': '0' },
-            credentials: 'omit'
+            credentials: PREFER_BROWSER_LOGIN ? 'include' : 'omit'
         }).then((response) => {
             if (response.ok) {
                 // Authenticated! Now it's safe to call get_principal

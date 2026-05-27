@@ -691,7 +691,11 @@ This is an automated message. Please do not reply.""",
             "value": "internal",
             "help": "web interface backend",
             "type": str_or_callable,
-            "internal": web.INTERNAL_TYPES})])),
+            "internal": web.INTERNAL_TYPES}),
+        ("prefer_browser_login", {
+            "value": "False",
+            "help": "prefer browser login",
+            "type": bool})])),
     ("logging", OrderedDict([
         ("level", {
             "value": "info",
