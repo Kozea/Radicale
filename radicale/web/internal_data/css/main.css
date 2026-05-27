@@ -1,6 +1,130 @@
+/* Default (light mode) */
+:root {
+    color-scheme: light dark;
+    --body-bg-color: #ffffff;
+    --body-color: #424247;
+    --container-bg-color: rgb(250, 250, 250); 
+    --container-border-color: #2a2a33;
+    --container-box-shadow-color: #0000001a;
+    --container-h1-color: #484848;
+    --tr-border-bottom-color: #dadce0;
+    --th-color: #666;
+    --details-border-color: #dadce0;
+    --details-bg-color: white;
+    --summary-hover-color: #2494fe;
+    --loginscene-infcloudlink-color: #484848;
+    --loadingscene-bg-color: rgb(237 237 237);
+    --logoutview-bg-color: white;
+    --logoutview-color: #666;
+    --logoutview-border-bottom-color: #dadce0;
+    --logoutview-a-color: white;
+    --collectionsscene-article-bg-color: rgb(250, 250, 250);
+    --collectionsscene-article-box-shadow-color: #0000001a;
+    --collectionsscene-article-border-color: #dadce0;
+    --collectionsscene-article-colorbar-bg-color: #000000;
+    --editcollectionscene-p-span-color: #4e9a06;
+    --deletecollectionscene-p-span-color: #a40000;
+    --uploadcollectionscene-li-border-bottom-color: #d5d5d5;
+    --uploadcollectionscene-successmessage-color: #4e9a06;
+    --fabcontainer-a-color: white; 
+    --fabcontainer-a-bg-color: black; 
+    --fabcontainer-a-box-shadow-color: #000000d6;
+    --badge_icon-bg-color: white; 
+    --error-color: rgb(217, 48, 37); 
+    --error-before-color: white; 
+    --error-before-bg-color: rgb(217, 48, 37);
+    --button-color: white; 
+    --button-bg-color: black;
+    --input-select-border-color: #e6e6e6; 
+    --input-select-bg-color: #0f1115; 
+    --input-focus-visible-border-color: #2494fe;
+    --copy-btn-color: #2494fe;
+    --copy-btn-hover-bg-color: #f0f7ff;
+    --copy-btn-hover-color: #055fb5;
+    --copy-btn-copied-color: #4e9a06;
+    --p-red-span-red-color: #b50202;
+    --button-red-a-red-bg-color: #b50202; 
+    --button-red-a-red-border-color: #a40000; 
+    --button-red-hover-a-red-hover-bg-color: #a40000;
+    --button-red-active-a-red-active-bg-color: #8f0000; 
+    --button-green-a-green-bg-color: #4e9a06; 
+    --button-green-a-green-border-color: #377200;
+    --button-green-hover-a-green-hover-bg-color: #377200;
+    --button-green-active-a-green-active-bg-color: #285200; 
+    --button-blue-a-blue-bg-color: #2494fe;
+    --button-blue-a-blue-border-color: #055fb5;
+    --button-blue-hover-a-blue-hover-bg-color: #1578d6;
+    --button-blue-active-a-blue-active-bg-color: #055fb5;
+    --pill-bg-color: #6c757d;
+    --pill-color: #fff;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+:root {
+    --body-bg-color: #0f1115;
+    --body-color: #e5e7eb;
+    --container-bg-color: #1b1b22;
+    --container-border-color: #2a2a33;
+    --container-box-shadow-color: #00000066;
+    --container-h1-color: #e5e7eb;
+    --tr-border-bottom-color: #2a2a33;
+    --th-color: #a1a1aa;
+    --details-border-color: #2a2a33; 
+    --details-bg-color: #1b1b22;
+    --summary-hover-color: #2494fe;
+    --loginscene-infcloudlink-color: #a1a1aa;
+    --loadingscene-bg-color: #12141a;
+    --logoutview-bg-color: #1b1b22;
+    --logoutview-color: #a1a1aa;
+    --logoutview-border-bottom-color: #2a2a33;
+    --logoutview-a-color: #e5e7eb; 
+    --logoutview-version-color: #6b7280; 
+    --collectionsscene-article-bg-color: #1b1b22;
+    --collectionsscene-article-box-shadow-color: #00000066;
+    --collectionsscene-article-border-color: #2a2a33;
+    --collectionsscene-article-colorbar-bg-color: #111827;  
+    --editcollectionscene-p-span-color: #22c55e;
+    --deletecollectionscene-p-span-color: #ef4444;
+    --uploadcollectionscene-border-bottom-color: #2a2a33;
+    --uploadcollectionscene-successmessage-color: #22c55e; 
+    --fabcontainer-a-color: #e5e7eb; 
+    --fabcontainer-a-bg-color: #111827; 
+    --fabcontainer-a-box-shadow-color: #000000aa; 
+    --badge_icon-bg-color: #1b1b22;
+    --error-color: #f87171; 
+    --error-before-color: white; 
+    --error-before-bg-color: #ef4444; 
+    --button-color: #e5e7eb; 
+    --button-bg-color: #111827; 
+    --input-select-border-color: #2a2a33; 
+    --input-select-bg-color: #0f1115; 
+    --input-focus-visible-border-color: #2494fe;
+    --copy-btn-color: #60a5fa;
+    --copy-btn-hover-bg-color: #1b2a3a;
+    --copy-btn-hover-color: #93c5fd;
+    --copy-btn-copied-color: #22c55e;
+    --p-red-span-red-color: #f87171;
+    --button-red-a-red-bg-color: #7f1d1d; 
+    --button-red-a-red-border-color: #991b1b; 
+    --button-red-hover-a-red-hover-bg-color: #991b1b;
+    --button-red-active-a-red-active-bg-color: #b91c1c; 
+    --button-green-a-green-bg-color: #14532d; 
+    --button-green-a-green-border-color: #166534;
+    --button-green-hover-a-green-hover-bg-color: #166534; 
+    --button-green-active-a-green-active-bg-color: #22c55e; 
+    --button-blue-a-blue-bg-color: #1d4ed8;
+    --button-blue-a-blue-border-color: #1e40af; 
+    --button-blue-hover-a-blue-hover-bg-color: #2563eb;
+    --button-blue-active-a-blue-active-bg-color: #1e40af;
+    --pill-bg-color: #3a3f4b;
+    --pill-color: #e5e7eb;
+}
+}
+
 body {
-    background: #ffffff;
-    color: #424247;
+    background: var(--body-bg-color);
+    color: var(--body-color);
     font-family: sans-serif;
     font-size: 14pt;
     margin: 0;
@@ -26,10 +150,10 @@ main {
     transition: .2s;
     overflow: hidden;
     padding: 1ex 1em 1ex 1em;
-    background: rgb(250, 250, 250);
-    border: 1px solid #dadce0;
+    background: var(--container-bg-color);
+    border: 1px solid var(--container-border-color); 
     border-radius: 8px;
-    box-shadow: 2px 2px 3px #0000001a;
+    box-shadow: 2px 2px 3px var(--container-box-shadow-color);
     display: block;
     flex-shrink: 0;
     margin: 0 auto;
@@ -39,7 +163,7 @@ main {
     margin: 0;
     width: 100%;
     text-align: center;
-    color: #484848;
+    color: var(--container-h1-color);
 }
 
 table {
@@ -56,7 +180,7 @@ td {
 }
 
 tr {
-    border-bottom: 1px solid #dadce0;
+    border-bottom: 1px solid var(--tr-border-bottom-color);
 }
 
 tr:last-child {
@@ -65,7 +189,7 @@ tr:last-child {
 
 th {
     font-size: 0.8em;
-    color: #666;
+    color: var(--th-color);
     font-weight: normal;
     text-transform: uppercase;
 }
@@ -75,11 +199,11 @@ td.fill {
 }
 
 details {
-    border: 1px solid #dadce0;
+    border: 1px solid var(--details-border-color);
     border-radius: 0.7ex;
     padding: 0.5ex 0.7ex;
     margin-bottom: 1ex;
-    background: white;
+    background: var(--details-bg-color);
 }
 
 summary {
@@ -90,14 +214,14 @@ summary {
 }
 
 summary:hover {
-    color: #2494fe;
+    color: var(--summary-hover-color);
 }
 
 #loginscene .infcloudlink {
     margin: 0;
     width: 100%;
     text-align: center;
-    color: #484848;
+    color: var(--loginscene-infcloudlink-color);
 }
 
 #loginscene .infcloudlink-hidden {
@@ -126,7 +250,7 @@ summary:hover {
 #loadingscene {
     width: 100%;
     height: 100%;
-    background: rgb(237 237 237);
+    background: var(--loadingscene-bg-color);
     position: absolute;
     top: 0;
     left: 0;
@@ -147,11 +271,11 @@ summary:hover {
 #logoutview {
     width: 100%;
     display: block;
-    background: white;
+    background: var(--logoutview-bg-color);
     text-align: center;
     padding: 10px 0px;
-    color: #666;
-    border-bottom: 2px solid #dadce0;
+    color: var(--logoutview-color);
+    border-bottom: 2px solid var(--logoutview-border-bottom-color);
     position: fixed;
 }
 
@@ -162,7 +286,7 @@ summary:hover {
 }
 
 #logoutview a {
-    color: white;
+    color: var(--logoutview-a-color);
     text-decoration: none;
     padding: 3px 10px;
     position: relative;
@@ -186,7 +310,7 @@ summary:hover {
     position: relative;
     right: 25px;
     font-size: 0.8em;
-    color: #999;
+    color: var(--logoutview-version-color);
     line-height: 2.2em;
 }
 
@@ -203,10 +327,10 @@ summary:hover {
 
 #collectionsscene article {
     width: 275px;
-    background: rgb(250, 250, 250);
+    background: var(--collectionsscene-article-bg-color);
     border-radius: 8px;
-    box-shadow: 2px 2px 3px #0000001a;
-    border: 1px solid #dadce0;
+    box-shadow: 2px 2px 3px var(--collectionsscene-article-box-shadow-color);
+    border: 1px solid var(--collectionsscene-article-border-color);
     padding: 5px 10px;
     padding-top: 0;
     margin: 10px;
@@ -219,7 +343,7 @@ summary:hover {
     width: 500%;
     height: 15px;
     margin: 0px -100%;
-    background: #000000;
+    background: var(--collectionsscene-article-colorbar-bg-color);
 }
 
 #collectionsscene article .title {
@@ -288,13 +412,13 @@ summary:hover {
 #editcollectionscene p span {
     word-wrap: break-word;
     font-weight: bold;
-    color: #4e9a06;
+    color: var(--editcollectionscene-p-span-color); 
 }
 
 #deletecollectionscene p span {
     word-wrap: break-word;
     font-weight: bold;
-    color: #a40000;
+    color: var(--deletecollectionscene-p-span-color);
 }
 
 #uploadcollectionscene ul {
@@ -304,7 +428,7 @@ summary:hover {
 }
 
 #uploadcollectionscene li {
-    border-bottom: 1px dashed #d5d5d5;
+    border-bottom: 1px dashed var(--uploadcollectionscene-li-border-bottom-color);
     margin-bottom: 10px;
     padding-bottom: 10px;
 }
@@ -315,7 +439,7 @@ summary:hover {
 }
 
 #uploadcollectionscene .successmessage {
-    color: #4e9a06;
+    color: var(--uploadcollectionscene-successmessage-color);
     width: 100%;
     text-align: center;
     display: block;
@@ -345,11 +469,11 @@ summary:hover {
     width: 30px;
     height: 30px;
     text-decoration: none;
-    color: white;
+    color: var(--fabcontainer-a-color); 
     border: none !important;
     border-radius: 100%;
     margin: 5px 10px;
-    background: black;
+    background: var(--fabcontainer-a-bg-color);
     text-align: center;
     display: flex;
     align-content: center;
@@ -357,7 +481,7 @@ summary:hover {
     align-items: center;
     font-size: 30px;
     padding: 10px;
-    box-shadow: 2px 2px 7px #000000d6;
+    box-shadow: 2px 2px 7px var(--fabcontainer-a-box-shadow-color);
 }
 
 .title {
@@ -390,9 +514,8 @@ summary:hover {
     right: -5px;
     filter: invert(1);
     border-radius: 50%;
-    background-color: white;
+    background-color: var(--badge_icon-bg-color);
 }
-
 
 .smalltext {
     font-size: 75% !important;
@@ -402,7 +525,7 @@ summary:hover {
     width: 100%;
     display: block;
     text-align: center;
-    color: rgb(217, 48, 37);
+    color: var(--error-color); 
     font-family: sans-serif;
     clear: both;
     padding-top: 15px;
@@ -416,8 +539,8 @@ img.loading {
 .error::before {
     content: "!";
     height: 1.4em;
-    color: white;
-    background: rgb(217, 48, 37);
+    color: var(--error-before-color);
+    background: var(--error-before-bg-color);
     font-weight: bold;
     border-radius: 100%;
     display: inline-block;
@@ -430,11 +553,11 @@ img.loading {
 button {
     font-size: 1em;
     padding: 7px 21px;
-    color: white;
+    color: var(--button-color);
     border-radius: 4px;
     float: right;
     margin-left: 10px;
-    background: black;
+    background: var(--button-bg-color);
     cursor: pointer;
     position: relative;
 }
@@ -444,7 +567,7 @@ select {
     width: 100%;
     height: 3em;
     border-style: solid;
-    border-color: #e6e6e6;
+    border-color: var(--input-select-border-color);
     border-width: 1px;
     border-radius: 7px;
     margin-bottom: 25px;
@@ -466,7 +589,7 @@ input[type=password] {
 input:active,
 input:focus,
 input:focus-visible {
-    border-color: #2494fe !important;
+    border-color: var(--input-focus-visible-border-color) !important;
     border-width: 1px !important;
 }
 
@@ -506,7 +629,7 @@ td .url-input-wrapper input {
     margin-left: -30px;
     background: transparent;
     border: none;
-    color: #2494fe;
+    color: var(--copy-btn-color);
     font-size: 1.25em;
     cursor: pointer;
     padding: 0;
@@ -526,8 +649,8 @@ td .url-input-wrapper input {
 }
 
 .copy-btn:hover {
-    background-color: #f0f7ff;
-    color: #055fb5;
+    background-color: var(--copy-btn-hover-bg-color);
+    color: var(--copy-btn-hover-color);
 }
 
 .copy-btn:active {
@@ -535,7 +658,7 @@ td .url-input-wrapper input {
 }
 
 .copy-btn.copied {
-    color: #4e9a06;
+    color: var(--copy-btn-copied-color);
 }
 
 input[type=radio],
@@ -548,56 +671,56 @@ input[type=checkbox] {
 
 p.red,
 span.red {
-    color: #b50202;
+    color: var(--p-red-span-red-color);
 }
 
 button.red,
 a.red {
-    background: #b50202;
-    border: 1px solid #a40000;
+    background: var(--button-red-a-red-bg-color);
+    border: 1px solid var(--button-red-a-red-border-color);
 }
 
 button.red:hover,
 a.red:hover {
-    background: #a40000;
+    background: var(--button-red-hover-a-red-hover-bg-color);
 }
 
 button.red:active,
 a.red:active {
-    background: #8f0000;
+    background: var(--button-red-active-a-red-active-bg-color);
 }
 
 button.green,
 a.green {
-    background: #4e9a06;
-    border: 1px solid #377200;
+    background: var(--button-green-a-green-bg-color);
+    border: 1px solid var(--button-green-a-green-border-color);
 }
 
 button.green:hover,
 a.green:hover {
-    background: #377200;
+    background: var(--button-green-hover-a-green-hover-bg-color);
 }
 
 button.green:active,
 a.green:active {
-    background: #285200;
+    background: var(--button-green-active-a-green-active-bg-color);
 }
 
 button.blue,
 a.blue {
-    background: #2494fe;
-    border: 1px solid #055fb5;
+    background: var(--button-blue-a-blue-bg-color);
+    border: 1px solid var(--button-blue-a-blue-border-color);
 }
 
 button.blue:hover,
 a.blue:hover {
-    background: #1578d6;
+    background: var(--button-blue-hover-a-blue-hover-bg-color);
     cursor: pointer !important;
 }
 
 button.blue:active,
 a.blue:active {
-    background: #055fb5;
+    background: var(--button-blue-active-a-blue-active-bg-color);
     cursor: pointer !important;
 }
 
@@ -642,3 +765,4 @@ button.inline {
 .hidden {
     display: none !important;
 }
+
