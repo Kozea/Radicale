@@ -287,7 +287,7 @@ if (keys %Logins) {
       printf "%-" . $length . "s | %7d |  %7.3f%% |\n", $login, $Logins{$login}, (($Logins{$login} * 100) / $sum);
    }
    print "-" x($length + 24) . "\n";
-   printf "%-" . $length . "s | %7d |  %7.3d%% |\n", "", $sum, 100;
+   printf "%-" . $length . "s | %7d |  %7.3f%% |\n", "", $sum, 100;
 }
 
 if (keys %UserAgents) {
@@ -301,7 +301,7 @@ if (keys %UserAgents) {
       printf "%-" . $length . "s | %7d |  %7.3f%% |\n", $ua, $UserAgents{$ua}, (($UserAgents{$ua} * 100) / $sum);
    }
    print "-" x($length + 24) . "\n";
-   printf "%-" . $length . "s | %7d |  %7.3d%% |\n", "", $sum, 100;
+   printf "%-" . $length . "s | %7d |  %7.3f%% |\n", "", $sum, 100;
 }
 
 if (keys %Requests) {
