@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.7.5.dev
+
 ## 3.7.4
 * Fix: sharing: PROPFIND returns now empty owner element in case of a mapped share as clients try PROPFIND on this not accessable href
 * Improve: sharing: PROPFIND returns also privilege "write" in case "write-content" and "write-properties" is permitted
