@@ -504,7 +504,37 @@ class Item:
         self.component_name
         self._vobject_item = orig_vobject_item
 
-    def convert_vcf_to_ics(self) -> Union["Item", None]:
+    def replace_placeholders(self, text: str, placeholder_mapping: dict) -> str:
+        for placeholder in placeholder_mapping:
+            text = text.replace(placeholder, placeholder_mapping[placeholder])
+
+        # resolve {..|..} recursive
+        pattern = re.compile('(.*)({)([^|]+)\\|(.+)(})(.*)')
+        logger.trace("item/convert_vcf_to_ics: resolve {..|..} starting with: %r", text)
+        while True:
+            match = pattern.match(text)
+            if not match:
+                # nothing more todo
+                break
+            else:
+                if match[3].startswith('!') and match[3].endswith('!'):
+                    # not resolved variable
+                    if '|' in match[4]:
+                        # further recursion required
+                        text = match[1] + match[2] + match[4] + match[5] + match[6]
+                        logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace/continue result: %r", text)
+                    else:
+                        text = match[1] + match[4] + match[6]
+                        logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace/final result: %r", text)
+                        break
+                else:
+                    # resolved variable
+                    text = match[1] + match[3] + match[6]
+                    logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace(resolved) result: %r", text)
+        return text
+
+    def convert_vcf_to_ics(self, ShareActions: dict = {}) -> Union["Item", None]:
+        logger.trace("item/convert_vcf_to_ics: ShareActions: %r", ShareActions)
         logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
         logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
         if self.vobject_item.name != "VCARD":
@@ -529,22 +559,54 @@ class Item:
         else:
             pass
 
+        placeholder_mapping: dict = {}
+
         bdayS = match[1] + match[2] + match[3]
         bdaySdesc = match[1] + "-" + match[2] + "-" + match[3]
         bdayY = int(match[1])
         bdayM = int(match[2])
         bdayD = int(match[3])
 
+        placeholder_mapping['{year}'] = match[1]
+        placeholder_mapping['{month}'] = match[2]
+        placeholder_mapping['{day}'] = match[3]
+
         # create ICS
         if hasattr(self.vobject_item, "fn"):
             name = self.vobject_item.fn.value
         elif hasattr(self.vobject_item, "n"):
-            name = self.vobject_item.n.value
+            name = self.vobject_item.n.value.family + " " + self.vobject_item.n.value.given
         elif hasattr(self.vobject_item, "nickname"):
             name = self.vobject_item.nickname.value
         else:
             logger.trace("item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
             return None
+
+        if hasattr(self.vobject_item, "nickname") and self.vobject_item.nickname.value != "":
+            placeholder_mapping['{nickname}'] = self.vobject_item.nickname.value
+        else:
+            placeholder_mapping['{nickname}'] = '!nickname!'
+
+        if hasattr(self.vobject_item, "fn") and self.vobject_item.fn.value != "":
+            placeholder_mapping['{fn}'] = self.vobject_item.fn.value
+        else:
+            placeholder_mapping['{nickname}'] = '!fn!'
+
+        # rfc6350#6.2 FamilyName;GivenName;AdditionalNames;HonorificPrefixes;HonorificSuffixes
+        if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.family != "":
+            placeholder_mapping['{n:f}'] = self.vobject_item.n.value.family
+        else:
+            placeholder_mapping['{n:f}'] = '!n:f!'
+
+        if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.given != "":
+            placeholder_mapping['{n:g}'] = self.vobject_item.n.value.given
+        else:
+            placeholder_mapping['{n:g}'] = '!n:g!'
+
+        if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.additional != "":
+            placeholder_mapping['{n:a}'] = self.vobject_item.n.value.additional
+        else:
+            placeholder_mapping['{n:a}'] = '!n:a!'
 
         # create VCALENDAR
         item_ics = vobject.newFromBehavior('vcalendar')
@@ -579,7 +641,14 @@ class Item:
             item_ics.vevent.add('uid').value = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
 
         # set SUMMARY
-        item_ics.vevent.add('summary').value = name + " (BDAY)"
+        summary = name + " (BDAY)"  # default
+        if ShareActions is not None and 'template' in ShareActions:
+            if 'conversion_bday_summary_template' in ShareActions['template']:
+                summary = ShareActions['template']['conversion_bday_summary_template']
+                summary = self.replace_placeholders(summary, placeholder_mapping)
+            else:
+                summary = name + " (BDAY)"
+        item_ics.vevent.add('summary').value = summary
 
         # set RRULE
         item_ics.vevent.add('rrule').value = "FREQ=YEARLY"
@@ -588,7 +657,12 @@ class Item:
         item_ics.vevent.add('transp').value = "TRANSPARENT"
 
         # add description
-        item_ics.vevent.add('description').value = "BDAY=" + bdaySdesc
+        description = "BDAY=" + bdaySdesc  # default
+        if ShareActions is not None and 'template' in ShareActions:
+            if 'conversion_bday_description_template' in ShareActions['template']:
+                description = ShareActions['template']['conversion_bday_description_template']
+                description = self.replace_placeholders(description, placeholder_mapping)
+        item_ics.vevent.add('description').value = description
 
         href = self.href
         if href is not None:
