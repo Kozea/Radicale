@@ -4932,7 +4932,7 @@ permissions: RrWw""")
             assert "text/calendar" in str(prop.text)
 
     def test_sharing_api_map_vcf_bday_template(self) -> None:
-        """share-by-map with conversion=bday format tests."""
+        """share-by-map with conversion=bday template tests."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
@@ -5054,6 +5054,144 @@ permissions: RrWw""")
             logging.info("\n*** GET collection user format: description -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "DESCRIPTION:year=1990 month=01 day=01" in answer
+
+    def test_sharing_api_map_vcf_bday_per_share_template(self) -> None:
+        """share-by-map with conversion=bday template per share tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "response_header_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped_2 = "/owner/adressbook2-" + db_type + ".vcf/"
+            path_mapped_3 = "/owner/adressbook3-" + db_type + ".vcf/"
+
+            path_shared_2r = "/user/calendar-bday-abook2-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_3r = "/user/calendar-bday-abook3-shared-by-owner-r-" + db_type + ".ics/"
+
+            self.create_addressbook(path_mapped_2, login="owner:ownerpw")
+            self.create_addressbook(path_mapped_3, login="owner:ownerpw")
+
+            contact2 = get_file_content("contact2-with-bday.vcf")
+            path2 = path_mapped_2 + "/contact2-with-bday.vcf"
+            path_shared_2 = path_shared_2r + "/contact2-with-bday.vcf"
+            self.put(path2, contact2, login="owner:ownerpw")
+
+            contact3 = get_file_content("contact3-with-bday.vcf")
+            path3 = path_mapped_3 + "/contact3-with-bday.vcf"
+            path_shared_3 = path_shared_3r + "/contact3-with-bday.vcf"
+            self.put(path3, contact3, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped_2
+            json_dict['PathOrToken'] = path_shared_2r
+            json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY2"}
+            json_dict['Actions'] = {"template": {
+                "conversion_bday_summary_template": "{fn} (BDAY2)",
+                "conversion_bday_description_template": "BDAY2={year}-{month}-{day}",
+                }}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped_3
+            json_dict['PathOrToken'] = path_shared_3r
+            json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-Birthday3"}
+            json_dict['Actions'] = {"template": {
+                "conversion_bday_summary_template": "{fn} (Birthday3)",
+                "conversion_bday_description_template": "Birthday3={year}-{month}-{day}",
+                }}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map(bday) by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped_2
+            json_dict['PathOrToken'] = path_shared_2r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            logging.info("\n*** enable map(bday) by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped_3
+            json_dict['PathOrToken'] = path_shared_3r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            # verify content as user
+            logging.info("\n*** GET collection user template 2 -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (BDAY2)" in answer
+
+            logging.info("\n*** GET collection user template 3 -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "SUMMARY:Test-FN-C3 (Birthday3)" in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped_2
+            json_dict['PathOrToken'] = path_shared_2r
+            json_dict['Actions'] = {"template": {
+                "conversion_bday_summary_template": "{fn} (BDAY2x)",
+                "conversion_bday_description_template": "BDAY2x={year}-{month}-{day}",
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # verify content as user
+            logging.info("\n*** GET collection user template 2 -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (BDAY2x)" in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r with wrong Action -> problem")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped_2
+            json_dict['PathOrToken'] = path_shared_2r
+            json_dict['Actions'] = {"template": {
+                "conversion_bday_summary_template_UNSUPPORTED": "{fn} (BDAY2x)",
+                "conversion_bday_description_template_UNSUPPORTED": "BDAY2x={year}-{month}-{day}",
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
     def test_sharing_api_map_vcf_bday_complex(self) -> None:
         """share-by-map with conversion=bday complex tests."""
