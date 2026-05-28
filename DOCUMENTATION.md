@@ -2287,6 +2287,8 @@ Default: `true`
 
 ##### default_permissions_create_token
 
+_(>= 3.7.0)_
+
 Default permissions for create token-based sharing
 
 Default: `r`
@@ -2295,11 +2297,29 @@ Supported: `rwEePp`
 
 ##### default_permissions_create_map
 
+_(>= 3.7.0)_
+
 Default permissions for map-based sharing
 
 Default: `r`
 
 Supported: `rwEePp`
+
+##### conversion_bday_summary_template
+
+_(>= 3.7.5)_
+
+Global template for summary of conversion "bday"
+
+Default: `{{n:f} {n:g} {n:a}|{fn}|{nickname}} (BDAY)`
+
+##### #conversion_bday_description_template
+
+_(>= 3.7.5)_
+
+Global template for description of conversion "bday"
+
+Default: `BDAY={year}-{month}-{day}`
 
 ## Supported Clients
 
