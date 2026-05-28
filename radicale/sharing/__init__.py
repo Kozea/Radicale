@@ -123,6 +123,13 @@ TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
+ACTIONS_WHITELIST: dict = {
+        "template": {
+            'conversion_bday_summary_template': str,
+            'conversion_bday_description_template': str,
+            }
+        }
+
 CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
 
 
@@ -829,7 +836,21 @@ class BaseSharing:
                 return httputils.bad_request("Conversion not supported: %r" % Conversion)
 
         if 'Actions' in request_data:
-            return httputils.bad_request("Actions currently not supported (reserved for future needs)")
+            valid = True  # default
+            for level1 in request_data['Actions']:
+                if level1 in ACTIONS_WHITELIST:
+                    for level2 in request_data['Actions'][level1]:
+                        if level2 in ACTIONS_WHITELIST[level1]:
+                            pass
+                        else:
+                            valid = False
+                            break
+                else:
+                    valid = False
+                    break
+            if not valid:
+                return httputils.bad_request("Actions format not valid")
+            Actions = request_data['Actions']
 
         if 'Enabled' in request_data:
             Enabled = request_data['Enabled']
@@ -1152,7 +1173,8 @@ class BaseSharing:
                            OwnerOrUser=user,
                            User=User,
                            Timestamp=Timestamp,
-                           Properties=Properties)
+                           Properties=Properties,
+                           Actions=Actions)
                 else:
                     result = self.database_update_sharing(
                            ShareType=ShareType,
@@ -1164,7 +1186,8 @@ class BaseSharing:
                            OwnerOrUser=user,
                            User=User,
                            Timestamp=Timestamp,
-                           Properties=Properties)
+                           Properties=Properties,
+                           Actions=Actions)
 
             elif user == share['User']:
                 # User is only allowed to update Properties
