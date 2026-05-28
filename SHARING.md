@@ -43,7 +43,7 @@ Types of supported sharing configuration:
  * `TimestampCreated`: unixtime of creation
  * `TimestampUpdated`: unixtime of last update
  * `Properties`: overlay properties (limited set whitelisted)
- * `Actions`: (reserved for future usage)
+ * `Actions`: specific configuration
  
 `Enabled*`: _owner_ AND _user_ have to enable a share to become usable
 
@@ -365,6 +365,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
 | Enabled | bool | optional (owner/default:False) |
 | Hidden | bool | optional (owner/default:True) |
 | Properties | optional |
+| Actions | optional |
 
  * Output: text/plain|application/json
 
@@ -519,6 +520,7 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 | Enabled | bool | adjust | optional(owner) | optional(user) |
 | Hidden | bool | adjust | optional(owner) | optional(user) |
 | Properties | str | adjust | optional | optional |
+| Actions | str | adjust | optional | not-permitted |
 
  * Output: text/plain|application/json
 
