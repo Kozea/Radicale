@@ -2311,7 +2311,19 @@ _(>= 3.7.5)_
 
 Global template for summary of conversion "bday"
 
-Default: `{{n:f} {n:g} {n:a}|{fn}|{nickname}} (BDAY)`
+Default: `"{{n:f} {n:g} {n:a}|{fn}|{nickname}} (BDAY)"`
+
+Supported placeholders (data used from VCARD)
+ * `{year}`: year of birthday (RFC6350#6.2.5)
+ * `{month}`: month of birthday (RFC6350#6.2.5)
+ * `{day}`: day of birthday (RFC6350#6.2.5)
+ * `{fn}`: full name (RFC6350#6.2.1)
+ * `{n:f}`: family name (RFC6350#6.2.2)
+ * `{n:g}`: given name (RFC6350#6.2.2)
+ * `{n:a}`: additional name (RFC6350#6.2.2)
+ * `{nickname}`: nick name (RFC6350#6.2.3)
+
+Fallback is supported if placeholders inside `{...|...}` (first successful resolved one is used)
 
 ##### #conversion_bday_description_template
 
@@ -2319,7 +2331,9 @@ _(>= 3.7.5)_
 
 Global template for description of conversion "bday"
 
-Default: `BDAY={year}-{month}-{day}`
+Default: `"BDAY={year}-{month}-{day}"`
+
+Supported placeholders see `conversion_bday_summary_template`
 
 ## Supported Clients
 
