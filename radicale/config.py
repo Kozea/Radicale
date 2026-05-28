@@ -593,7 +593,16 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("default_permissions_create_map", {
             "value": "r",
             "help": "default permissions for map-based sharing",
-            "type": rights_permission})])),
+            "type": rights_permission}),
+        ("conversion_bday_summary_template", {
+            "value": "{{n:f} {n:g} {n:a}|{fn}|{nickname}} (BDAY)",
+            "help": "conversion bday summary template",
+            "type": str}),
+        ("conversion_bday_description_template", {
+            "value": "BDAY={year}-{month}-{day}",
+            "help": "conversion bday description template",
+            "type": str}),
+        ])),
     ("hook", OrderedDict([
         ("type", {
             "value": "none",
