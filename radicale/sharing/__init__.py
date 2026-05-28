@@ -166,6 +166,8 @@ class BaseSharing:
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
         self.enforce_properties_overlay = configuration.get("sharing", "enforce_properties_overlay")
+        self.conversion_bday_summary_template = configuration.get("sharing", "conversion_bday_summary_template")
+        self.conversion_bday_description_template = configuration.get("sharing", "conversion_bday_description_template")
 
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
@@ -175,6 +177,8 @@ class BaseSharing:
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
         logger.info("sharing.enforce_properties_overlay: %s", self.enforce_properties_overlay)
+        logger.info("sharing.conversion_bday_summary_template: %s", self.conversion_bday_summary_template)
+        logger.info("sharing.conversion_bday_description_template: %s", self.conversion_bday_description_template)
 
         # database tasks
         self.sharing_db_type = configuration.get("sharing", "type")
