@@ -4931,6 +4931,130 @@ permissions: RrWw""")
             status, prop = response["D:getcontenttype"]
             assert "text/calendar" in str(prop.text)
 
+    def test_sharing_api_map_vcf_bday_template(self) -> None:
+        """share-by-map with conversion=bday format tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "response_header_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_shared_r = "/user/calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact2 = get_file_content("contact2-with-bday.vcf")
+            path2 = path_mapped + "/contact2-with-bday.vcf"
+            path_shared_2 = path_shared_r + "/contact2-with-bday.vcf"
+            self.put(path2, contact2, login="owner:ownerpw")
+
+            contact3 = get_file_content("contact3-with-bday.vcf")
+            path3 = path_mapped + "/contact3-with-bday.vcf"
+            path_shared_3 = path_shared_r + "/contact3-with-bday.vcf"
+            self.put(path3, contact3, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map(bday) by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "{{fn}|{n:f} {n:g} {n:a}|{nickname}} (BDAY)",
+                "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
+                }})
+
+            # verify content as user
+            logging.info("\n*** GET collection user format:default -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (BDAY)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{fn}|{n:f} {n:g} {n:a}|{nickname}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:text -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{n:f} {n:g} {n:a}|{fn}|{nickname}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:n -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:FamilyTest GivenTest AdditionalsTest (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{n:f} {n:g} {n:a}|{fn}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:nickname -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-NICKNAME (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{nickname} (Birthday)"}})
+            logging.info("\n*** GET collection user format:nickname not resolvable -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "SUMMARY:!nickname! (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{fn}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:nickname with fn fallback -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "SUMMARY:Test-FN-C3 (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{n:g} {n:f}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:nickname with n fallback -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "SUMMARY:Given3Test Family3Test (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{n:f}, {n:g}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:nickname with n fallback -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "SUMMARY:Family3Test\\, Given3Test (Birthday)" in answer
+
+            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{n:f} {n:g} {n:a}} (Birthday)"}})
+            logging.info("\n*** GET collection user format:nickname with n fallback -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "SUMMARY:Family3Test Given3Test !n:a! (Birthday)" in answer
+            assert "DESCRIPTION:BDAY=1990-01-01" in answer
+
+            self.configure({"sharing": {"conversion_bday_description_template": "Birthday={year}{month}{day}"}})
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday=19900101" in answer
+
+            self.configure({"sharing": {"conversion_bday_description_template": "year={year} month={month} day={day}\nfn='{fn}'\nn:g='{n:g}'\nn:f='{n:f}'\nn:a='{n:a}'"}})
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:year=1990 month=01 day=01" in answer
+
     def test_sharing_api_map_vcf_bday_complex(self) -> None:
         """share-by-map with conversion=bday complex tests."""
         self.configure({"auth": {"type": "htpasswd",
@@ -5161,7 +5285,7 @@ permissions: RrWw""")
             _, answer = self.get(path_mapped, login="owner:ownerpw")
             assert "contact1" in answer
             assert "contact2" in answer
-            assert "NICKNAME-C3" in answer
+            assert "Family3Test" in answer
 
             # create map
             logging.info("\n*** create bday owner to itself -> ok")
@@ -5277,6 +5401,7 @@ permissions: RrWw""")
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
+                                    "conversion_bday_summary_template": "{fn} (BDAY)",
                                     "permit_create_token": True,
                                     "permit_properties_overlay": "True",
                                     "enforce_properties_overlay": "True",
@@ -5328,7 +5453,7 @@ permissions: RrWw""")
             _, answer = self.get(path_mapped, login="owner:ownerpw")
             assert "contact1" in answer
             assert "contact2" in answer
-            assert "NICKNAME-C3" in answer
+            assert "Family3Test" in answer
 
             # create map
             logging.info("\n*** create token with bday conversion (default permissions) -> ok")
