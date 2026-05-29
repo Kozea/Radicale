@@ -2325,7 +2325,7 @@ Supported placeholders (data used from VCARD)
 
 Fallback is supported if placeholders inside `{...|...}` (first successful resolved one is used)
 
-##### #conversion_bday_description_template
+##### conversion_bday_description_template
 
 _(>= 3.7.5)_
 
