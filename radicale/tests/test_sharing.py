@@ -4997,6 +4997,7 @@ permissions: RrWw""")
             self.configure({"sharing": {
                 "conversion_bday_summary_template": "{{fn}|{n:f} {n:g} {n:a}|{nickname}} (BDAY)",
                 "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
+                "conversion_bday_alarm_trigger_template": "-15H;BDAY tomorrow|9H;BDAY today",
                 }})
 
             # verify content as user
@@ -5054,6 +5055,18 @@ permissions: RrWw""")
             logging.info("\n*** GET collection user format: description -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "DESCRIPTION:year=1990 month=01 day=01" in answer
+            assert "DESCRIPTION:BDAY tomorrow" in answer
+            assert "DESCRIPTION:BDAY today" in answer
+            assert "TRIGGER:-PT15H" in answer
+            assert "TRIGGER:PT9H" in answer
+
+            self.configure({"sharing": {"conversion_bday_alarm_trigger_template": "-12H;Birthday tomorrow of {fn}|12H;Birthday today of {n:g} {n:f}'"}})
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday tomorrow of Test-FN-C3" in answer
+            assert "DESCRIPTION:Birthday today of Given3Test Family3Test" in answer
+            assert "TRIGGER:-PT12H" in answer
+            assert "TRIGGER:PT12H" in answer
 
     def test_sharing_api_map_vcf_bday_per_share_template(self) -> None:
         """share-by-map with conversion=bday template per share tests."""
