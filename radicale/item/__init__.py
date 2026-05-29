@@ -533,6 +533,34 @@ class Item:
                     logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace(resolved) result: %r", text)
         return text
 
+    def trigger_to_timedelta(self, trigger) -> Union[datetime.timedelta, None]:
+        # workaround as vobject is not supporting direct set of value
+        # limited implementatino of reverse function of timedeltaToString in vobject/icalendar.py
+        pattern = re.compile('([+-])?([0-9]+)([WDHM])$')
+        match = pattern.match(trigger)
+        if not match:
+            logger.error("item/convert_vcf_to_ics: trigger time value not valid: %r", trigger)
+            return None
+
+        sign = 1
+        if match[1] == "-":
+            sign = -1
+
+        value = int(match[2]) * sign
+
+        td: Union[datetime.timedelta, None] = None
+
+        if match[3] == "D":
+            td = datetime.timedelta(days=value)
+        elif match[3] == "M":
+            td = datetime.timedelta(minutes=value)
+        elif match[3] == "H":
+            td = datetime.timedelta(hours=value)
+        elif match[3] == "W":
+            td = datetime.timedelta(weeks=value)
+
+        return td
+
     def convert_vcf_to_ics(self, ShareActions: dict = {}) -> Union["Item", None]:
         logger.trace("item/convert_vcf_to_ics: ShareActions: %r", ShareActions)
         logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
@@ -646,9 +674,22 @@ class Item:
             if 'conversion_bday_summary_template' in ShareActions['template']:
                 summary = ShareActions['template']['conversion_bday_summary_template']
                 summary = self.replace_placeholders(summary, placeholder_mapping)
-            else:
-                summary = name + " (BDAY)"
         item_ics.vevent.add('summary').value = summary
+
+        # set VALARM
+        if ShareActions is not None and 'template' in ShareActions:
+            alarm_trigger = ShareActions['template']['conversion_bday_alarm_trigger_template']
+            if alarm_trigger is not None and alarm_trigger != "":
+                for entry in alarm_trigger.split('|'):
+                    (trigger, description) = entry.split(';')
+                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
+                    td = self.trigger_to_timedelta(trigger)
+                    if td is not None:
+                        description = self.replace_placeholders(description, placeholder_mapping)
+                        valarm = item_ics.vevent.add('valarm')
+                        valarm.add('action').value = "DISPLAY"
+                        valarm.add('description').value = description
+                        valarm.add('trigger').value = td
 
         # set RRULE
         item_ics.vevent.add('rrule').value = "FREQ=YEARLY"
