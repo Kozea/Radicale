@@ -2335,6 +2335,20 @@ Default: `"BDAY={year}-{month}-{day}"`
 
 Supported placeholders see `conversion_bday_summary_template`
 
+##### conversion_bday_alarm_trigger_template
+
+_(>= 3.7.5)_
+
+Global template for alarm trigger of conversion "bday"
+
+Default: `"-15H;BDAY tomorrow|9H;BDAY today"`
+
+Supported format: `TIMEDELTA;DESCRIPTION` (separated by `|` if more alarms should be generated)
+
+Supported format for `TIMEDELTA`: `[+-]?[0-9]+[WDHM]`
+
+Supported placeholders for `DESCRIPTION` see `conversion_bday_summary_template`
+
 ## Supported Clients
 
 Radicale has been tested with:
