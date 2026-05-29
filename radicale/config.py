@@ -602,6 +602,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "BDAY={year}-{month}-{day}",
             "help": "conversion bday description template",
             "type": str}),
+        ("conversion_bday_alarm_trigger_template", {
+            "value": "-15H;BDAY tomorrow|9H;BDAY today",
+            "help": "conversion bday alarm trigger template",
+            "type": str}),
         ])),
     ("hook", OrderedDict([
         ("type", {
