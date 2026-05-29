@@ -127,6 +127,7 @@ ACTIONS_WHITELIST: dict = {
         "template": {
             'conversion_bday_summary_template': str,
             'conversion_bday_description_template': str,
+            'conversion_bday_alarm_trigger_template': str,
             }
         }
 
@@ -175,6 +176,7 @@ class BaseSharing:
         self.enforce_properties_overlay = configuration.get("sharing", "enforce_properties_overlay")
         self.conversion_bday_summary_template = configuration.get("sharing", "conversion_bday_summary_template")
         self.conversion_bday_description_template = configuration.get("sharing", "conversion_bday_description_template")
+        self.conversion_bday_alarm_trigger_template = configuration.get("sharing", "conversion_bday_alarm_trigger_template")
 
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
@@ -186,6 +188,7 @@ class BaseSharing:
         logger.info("sharing.enforce_properties_overlay: %s", self.enforce_properties_overlay)
         logger.info("sharing.conversion_bday_summary_template: %s", self.conversion_bday_summary_template)
         logger.info("sharing.conversion_bday_description_template: %s", self.conversion_bday_description_template)
+        logger.info("sharing.conversion_bday_alarm_trigger_template: %s", self.conversion_bday_alarm_trigger_template)
 
         # database tasks
         self.sharing_db_type = configuration.get("sharing", "type")
@@ -422,6 +425,7 @@ class BaseSharing:
                             'template': {
                                 'conversion_bday_summary_template': self.conversion_bday_summary_template,
                                 'conversion_bday_description_template': self.conversion_bday_description_template,
+                                'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
                                 }
                              }
                 elif 'template' in share['Actions']:
@@ -432,18 +436,28 @@ class BaseSharing:
                         share['Actions']['template'].update(
                             {'conversion_bday_summary_template': self.conversion_bday_summary_template}
                             )
+
                     if 'conversion_bday_description_template' in share['Actions']['template']:
                         # nothing to do
                         pass
                     else:
                         share['Actions']['template'].update(
-                            {'conversion_bday_description_template': self.conversion_bday_summary_template}
+                            {'conversion_bday_description_template': self.conversion_bday_description_template}
+                            )
+
+                    if 'conversion_bday_alarm_trigger_template' in share['Actions']['template']:
+                        # nothing to do
+                        pass
+                    else:
+                        share['Actions']['template'].update(
+                            {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
                             )
                 else:
                     share['Actions'].update(
                             {'template': {
                                 'conversion_bday_summary_template': self.conversion_bday_summary_template,
                                 'conversion_bday_description_template': self.conversion_bday_description_template,
+                                'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
                                 }
                              }
                             )
