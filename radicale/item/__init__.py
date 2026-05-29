@@ -509,8 +509,8 @@ class Item:
             text = text.replace(placeholder, placeholder_mapping[placeholder])
 
         # resolve {..|..} recursive
-        pattern = re.compile('(.*)({)([^|]+)\\|(.+)(})(.*)')
-        logger.trace("item/convert_vcf_to_ics: resolve {..|..} starting with: %r", text)
+        pattern = re.compile('(.*)(\\[)([^|]+)\\|(.+)(\\])(.*)')
+        logger.trace("item/convert_vcf_to_ics: resolve [..|..] starting with: %r", text)
         while True:
             match = pattern.match(text)
             if not match:
@@ -522,15 +522,15 @@ class Item:
                     if '|' in match[4]:
                         # further recursion required
                         text = match[1] + match[2] + match[4] + match[5] + match[6]
-                        logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace/continue result: %r", text)
+                        logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/continue result: %r", text)
                     else:
                         text = match[1] + match[4] + match[6]
-                        logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace/final result: %r", text)
+                        logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/final result: %r", text)
                         break
                 else:
                     # resolved variable
                     text = match[1] + match[3] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve {..|..} match/replace(resolved) result: %r", text)
+                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace(resolved) result: %r", text)
         return text
 
     def trigger_to_timedelta(self, trigger) -> Union[datetime.timedelta, None]:

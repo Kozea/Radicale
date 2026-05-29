@@ -595,7 +595,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "default permissions for map-based sharing",
             "type": rights_permission}),
         ("conversion_bday_summary_template", {
-            "value": "{{n:f} {n:g} {n:a}|{fn}|{nickname}} (BDAY)",
+            "value": "[{n:f} {n:g} {n:a}|{fn}|{nickname}] (BDAY)",
             "help": "conversion bday summary template",
             "type": str}),
         ("conversion_bday_description_template", {
@@ -603,7 +603,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "conversion bday description template",
             "type": str}),
         ("conversion_bday_alarm_trigger_template", {
-            "value": "-15H;BDAY tomorrow|9H;BDAY today",
+            "value": "",
             "help": "conversion bday alarm trigger template",
             "type": str}),
         ])),
