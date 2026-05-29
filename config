@@ -362,6 +362,9 @@
 # Global template for description of conversion "bday"
 #conversion_bday_description_template = "BDAY={year}-{month}-{day}"
 
+# Global template of alarm trigger of conversion "bday"
+#conversion_bday_alarm_trigger_template = "-15H;BDAY tomorrow|9H;BDAY today"
+
 [web]
 
 # Web interface backend
