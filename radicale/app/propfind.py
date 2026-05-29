@@ -230,7 +230,7 @@ def xml_propfind_response(
                     element.text = item.etag
                 else:
                     if share_bday_automap:
-                        item_converted = item.convert_vcf_to_ics()
+                        item_converted = item.convert_vcf_to_ics(ShareActions=share['Actions'])
                         if item_converted:
                             element.text = item_converted.etag
                         else:
@@ -382,14 +382,14 @@ def xml_propfind_response(
                         logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for collection")
                         length = 0
                         for entry in item.get_all():
-                            item_ics = entry.convert_vcf_to_ics()
+                            item_ics = entry.convert_vcf_to_ics(ShareActions=share['Actions'])
                             if item_ics is None:
                                 continue
                             length += len(item_ics.vobject_item.serialize().encode(encoding))
                         element.text = str(length)
                     else:
                         logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for single item")
-                        item_converted = item.convert_vcf_to_ics()
+                        item_converted = item.convert_vcf_to_ics(ShareActions=share['Actions'])
                         if item_converted is not None:
                             element.text = str(len(item_converted.serialize()))
                         else:
@@ -457,7 +457,7 @@ def xml_propfind_response(
                         logger.trace("PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
                         items = []
                         for entry in item.get_all():
-                            item_ics = entry.convert_vcf_to_ics()
+                            item_ics = entry.convert_vcf_to_ics(ShareActions=share['Actions'])
                             if item_ics is None:
                                 continue
                             items.append(item_ics.vobject_item)
@@ -626,7 +626,7 @@ class ApplicationPartPropfind(ApplicationBase):
             for item, permission, raw_permissions in item_list:
                 if self._sharing._enabled and share:
                     if share['Conversion'] == "bday" and not isinstance(item, storage.BaseCollection):
-                        if not item.convert_vcf_to_ics():
+                        if not item.convert_vcf_to_ics(ShareActions=share['Actions']):
                             if len_item_list == 1:
                                 # only dedicated item requested
                                 return httputils.NOT_FOUND
