@@ -5131,6 +5131,26 @@ permissions: RrWw""")
                 "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
                 }})
 
+            logging.info("\n*** configuration test: conversion_bday_age_max < 0")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_age_max": -1,
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_age_max > MAX")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_age_max": 200,
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
             # verify content as user
             logging.info("\n*** GET collection user format:default -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
@@ -5217,10 +5237,43 @@ permissions: RrWw""")
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
-            json_dict['Actions'] = {"limit": {
+            json_dict['Actions'] = {"config": {
                 "conversion_bday_age_max": -1,
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            # update template with invalid data test
+            logging.info("\n*** update map(bday) user/owner:r -> age_max exceeds MAX")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_age_max": (sharing.SHARING_BDAY_AGE_MAX + 1),
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            # update template with valid data test
+            logging.info("\n*** update map(bday) user/owner:r -> age_max ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_age_max": 0,
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # update template with valid data test
+            logging.info("\n*** update map(bday) user/owner:r -> age_max < MAX")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_age_max": sharing.SHARING_BDAY_AGE_MAX,
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             logging.info("\n*** update map(bday) user/owner:r -> unsupported level 1")
             json_dict = {}

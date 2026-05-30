@@ -24,7 +24,7 @@ import uuid
 from csv import DictWriter
 from datetime import datetime
 from http import client
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 from urllib.parse import parse_qs
 
 from radicale import (config, httputils, pathutils, rights, storage, types,
@@ -123,14 +123,24 @@ TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
+SHARING_BDAY_AGE_MAX: int = 199  # maximum age to prevent unexpected DoS by config
+
+
+def check_bday_max_age(data: Any) -> int:
+    value = int(data)
+    if value < 0:
+        raise ValueError("value is negative: %d" % value)
+    if value > SHARING_BDAY_AGE_MAX:
+        raise ValueError("value exceeds maximum (%d): %d" % (SHARING_BDAY_AGE_MAX, value))
+    return value
+
+
 ACTIONS_WHITELIST: dict = {
-        'template': {
+        'config': {
             'conversion_bday_summary_template': str,
             'conversion_bday_description_template': str,
             'conversion_bday_alarm_trigger_template': str,
-            },
-        'limit': {
-            'conversion_bday_age_max': "positive_int",
+            'conversion_bday_age_max': check_bday_max_age,
             },
         }
 
@@ -862,9 +872,12 @@ class BaseSharing:
                 if level1 in ACTIONS_WHITELIST:
                     for level2 in request_data['Actions'][level1]:
                         if level2 in ACTIONS_WHITELIST[level1]:
-                            if ACTIONS_WHITELIST[level1][level2] == "positive_int":
-                                if int(request_data['Actions'][level1][level2]) < 0:
-                                    hint = "'" + level1 + "': {'" + level2 + "'} is negative"
+                            logger.trace(api_info + ": Actions validation: type='%r'", type(ACTIONS_WHITELIST[level1][level2]))
+                            if callable(ACTIONS_WHITELIST[level1][level2]):
+                                try:
+                                    value = ACTIONS_WHITELIST[level1][level2](request_data['Actions'][level1][level2])
+                                except ValueError:
+                                    hint = "'" + level1 + "': {'" + level2 + "'} is out-of-range"
                                     valid = False
                                     break
                             pass

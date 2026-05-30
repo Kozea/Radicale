@@ -609,7 +609,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("conversion_bday_age_max", {
             "value": "99",
             "help": "conversion bday age max",
-            "type": positive_int}),
+            "type": sharing.check_bday_max_age}),
         ])),
     ("hook", OrderedDict([
         ("type", {
