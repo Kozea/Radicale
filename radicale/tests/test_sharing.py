@@ -5060,7 +5060,7 @@ permissions: RrWw""")
             assert "TRIGGER:-PT15H" in answer
             assert "TRIGGER:PT9H" in answer
 
-            self.configure({"sharing": {"conversion_bday_alarm_trigger_template": "-12H;Birthday tomorrow of {fn}|12H;Birthday today of {n:g} {n:f}'"}})
+            self.configure({"sharing": {"conversion_bday_alarm_trigger_template": "-12H;Birthday tomorrow of {fn}|12H;Birthday today of {n:g} {n:f}"}})
             logging.info("\n*** GET collection user format: description -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "DESCRIPTION:Birthday tomorrow of Test-FN-C3" in answer
