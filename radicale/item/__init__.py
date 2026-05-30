@@ -47,6 +47,8 @@ PRODID_CONVERTED = u"-//Radicale//NONSGML " + utils.package_version("radicale") 
 PRODID_SUFFIX = " (auto-converted by Radicale " + utils.package_version("radicale") + ")"
 UID_SUFFIX = "-auto-converted-by-Radicale"
 
+VCF_TO_ICS_SUPPORTED_PLACEHOLDERS: list = ["fn", "n:f", "n:g", "n:a", "age", "nickname", "year", "month", "day"]
+
 
 def read_components(s: str) -> List[vobject.base.Component]:
     """Wrapper for vobject.readComponents"""
@@ -362,6 +364,65 @@ def verify(file: str, encoding: str):
     return True
 
 
+def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
+    for placeholder in placeholder_mapping:
+        text = text.replace(placeholder, placeholder_mapping[placeholder])
+
+    # resolve {..|..} recursive
+    pattern = re.compile('(.*)(\\[)([^|]+)\\|(.+)(\\])(.*)')
+    logger.trace("item/convert_vcf_to_ics: resolve [..|..] starting with: %r", text)
+    while True:
+        match = pattern.match(text)
+        if not match:
+            # nothing more todo
+            break
+        else:
+            if match[3].startswith('!') and match[3].endswith('!'):
+                # not resolved variable
+                if '|' in match[4]:
+                    # further recursion required
+                    text = match[1] + match[2] + match[4] + match[5] + match[6]
+                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/continue result: %r", text)
+                else:
+                    text = match[1] + match[4] + match[6]
+                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/final result: %r", text)
+                    break
+            else:
+                # resolved variable
+                text = match[1] + match[3] + match[6]
+                logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace(resolved) result: %r", text)
+    return text
+
+
+def trigger_to_timedelta(trigger) -> Union[datetime.timedelta, None]:
+    # workaround as vobject is not supporting direct set of value
+    # limited implementatino of reverse function of timedeltaToString in vobject/icalendar.py
+    pattern = re.compile('([+-])?([0-9]+)([WDHM])$')
+    match = pattern.match(trigger)
+    if not match:
+        logger.error("item/convert_vcf_to_ics: trigger time value not valid: %r", trigger)
+        return None
+
+    sign = 1
+    if match[1] == "-":
+        sign = -1
+
+    value = int(match[2]) * sign
+
+    td: Union[datetime.timedelta, None] = None
+
+    if match[3] == "D":
+        td = datetime.timedelta(days=value)
+    elif match[3] == "M":
+        td = datetime.timedelta(minutes=value)
+    elif match[3] == "H":
+        td = datetime.timedelta(hours=value)
+    elif match[3] == "W":
+        td = datetime.timedelta(weeks=value)
+
+    return td
+
+
 class Item:
     """Class for address book and calendar entries."""
 
@@ -504,63 +565,6 @@ class Item:
         self.component_name
         self._vobject_item = orig_vobject_item
 
-    def replace_placeholders(self, text: str, placeholder_mapping: dict) -> str:
-        for placeholder in placeholder_mapping:
-            text = text.replace(placeholder, placeholder_mapping[placeholder])
-
-        # resolve {..|..} recursive
-        pattern = re.compile('(.*)(\\[)([^|]+)\\|(.+)(\\])(.*)')
-        logger.trace("item/convert_vcf_to_ics: resolve [..|..] starting with: %r", text)
-        while True:
-            match = pattern.match(text)
-            if not match:
-                # nothing more todo
-                break
-            else:
-                if match[3].startswith('!') and match[3].endswith('!'):
-                    # not resolved variable
-                    if '|' in match[4]:
-                        # further recursion required
-                        text = match[1] + match[2] + match[4] + match[5] + match[6]
-                        logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/continue result: %r", text)
-                    else:
-                        text = match[1] + match[4] + match[6]
-                        logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/final result: %r", text)
-                        break
-                else:
-                    # resolved variable
-                    text = match[1] + match[3] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace(resolved) result: %r", text)
-        return text
-
-    def trigger_to_timedelta(self, trigger) -> Union[datetime.timedelta, None]:
-        # workaround as vobject is not supporting direct set of value
-        # limited implementatino of reverse function of timedeltaToString in vobject/icalendar.py
-        pattern = re.compile('([+-])?([0-9]+)([WDHM])$')
-        match = pattern.match(trigger)
-        if not match:
-            logger.error("item/convert_vcf_to_ics: trigger time value not valid: %r", trigger)
-            return None
-
-        sign = 1
-        if match[1] == "-":
-            sign = -1
-
-        value = int(match[2]) * sign
-
-        td: Union[datetime.timedelta, None] = None
-
-        if match[3] == "D":
-            td = datetime.timedelta(days=value)
-        elif match[3] == "M":
-            td = datetime.timedelta(minutes=value)
-        elif match[3] == "H":
-            td = datetime.timedelta(hours=value)
-        elif match[3] == "W":
-            td = datetime.timedelta(weeks=value)
-
-        return td
-
     def convert_vcf_to_ics(self, ShareActions: dict = {}) -> Union["Item", None]:
         logger.trace("item/convert_vcf_to_ics: ShareActions: %r", ShareActions)
         logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
@@ -650,14 +654,14 @@ class Item:
         if ShareActions is not None and 'config' in ShareActions:
             if 'conversion_bday_summary_template' in ShareActions['config']:
                 summary = ShareActions['config']['conversion_bday_summary_template']
-                summary = self.replace_placeholders(summary, placeholder_mapping)
+                summary = replace_placeholders(summary, placeholder_mapping)
 
         # create DESCRIPTION
         description = "BDAY=" + bdaySdesc  # default
         if ShareActions is not None and 'config' in ShareActions:
             if 'conversion_bday_description_template' in ShareActions['config']:
                 description = ShareActions['config']['conversion_bday_description_template']
-                description = self.replace_placeholders(description, placeholder_mapping)
+                description = replace_placeholders(description, placeholder_mapping)
 
         # check ALARM
         alarm_trigger = ""  # default
@@ -719,9 +723,9 @@ class Item:
                 for entry in alarm_trigger.split('|'):
                     (trigger, alarm_description) = entry.split(';')
                     logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
-                    td = self.trigger_to_timedelta(trigger)
+                    td = trigger_to_timedelta(trigger)
                     if td is not None:
-                        alarm_description = self.replace_placeholders(alarm_description, placeholder_mapping)
+                        alarm_description = replace_placeholders(alarm_description, placeholder_mapping)
                         alarm_description_value = alarm_description.replace("{age}", str(age))
                         valarm = vevent.add('valarm')
                         valarm.add('action').value = "DISPLAY"

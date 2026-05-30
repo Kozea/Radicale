@@ -597,15 +597,15 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("conversion_bday_summary_template", {
             "value": "[{n:f} {n:g} {n:a}|{fn}|{nickname}] (BDAY)",
             "help": "conversion bday summary template",
-            "type": str}),
+            "type": sharing.check_template}),
         ("conversion_bday_description_template", {
             "value": "BDAY={year}-{month}-{day}",
             "help": "conversion bday description template",
-            "type": str}),
+            "type": sharing.check_template}),
         ("conversion_bday_alarm_trigger_template", {
             "value": "",
             "help": "conversion bday alarm trigger template",
-            "type": str}),
+            "type": sharing.check_template_alarm_trigger}),
         ("conversion_bday_age_max", {
             "value": "99",
             "help": "conversion bday age max",

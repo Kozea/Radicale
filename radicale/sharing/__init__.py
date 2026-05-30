@@ -27,8 +27,8 @@ from http import client
 from typing import Any, Sequence, Union
 from urllib.parse import parse_qs
 
-from radicale import (config, httputils, pathutils, rights, storage, types,
-                      utils)
+from radicale import (config, httputils, item, pathutils, rights, storage,
+                      types, utils)
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
@@ -135,11 +135,49 @@ def check_bday_max_age(data: Any) -> int:
     return value
 
 
+def check_template(data: Any) -> str:
+    placeholder_mapping: dict = {}
+    for placeholder in item.VCF_TO_ICS_SUPPORTED_PLACEHOLDERS:
+        placeholder_mapping["{" + placeholder + "}"] = '!' + placeholder + '!'
+
+    result = item.replace_placeholders(data, placeholder_mapping)
+    logger.trace("replace placeholders: %r -> %r", data, result)
+    pattern = re.compile('.*{.*}.*')
+    if pattern.search(result):
+        raise ValueError("template contains unsupported placeholder {..}: %r" % result)
+    return data
+
+
+def check_template_alarm_trigger(data: Any) -> str:
+    if data is not None and data != '':
+        for entry in data.split('|'):
+            try:
+                (trigger, alarm_description) = entry.split(';')
+            except ValueError:
+                raise ValueError("alarm trigger template misses <trigger>;<alarm description>")
+
+            if trigger is not None and trigger != '':
+                td = item.trigger_to_timedelta(trigger)
+                if td is None:
+                    raise ValueError("alarm trigger template contains unsupported trigger: %r" % trigger)
+            else:
+                raise ValueError("alarm trigger template misses trigger")
+
+            if alarm_description is not None and alarm_description != '':
+                try:
+                    check_template(alarm_description)
+                except Exception as e:
+                    raise e
+            else:
+                raise ValueError("alarm trigger template misses description")
+    return data
+
+
 ACTIONS_WHITELIST: dict = {
         'config': {
-            'conversion_bday_summary_template': str,
-            'conversion_bday_description_template': str,
-            'conversion_bday_alarm_trigger_template': str,
+            'conversion_bday_summary_template': check_template,
+            'conversion_bday_description_template': check_template,
+            'conversion_bday_alarm_trigger_template': check_template_alarm_trigger,
             'conversion_bday_age_max': check_bday_max_age,
             },
         }
@@ -872,12 +910,11 @@ class BaseSharing:
                 if level1 in ACTIONS_WHITELIST:
                     for level2 in request_data['Actions'][level1]:
                         if level2 in ACTIONS_WHITELIST[level1]:
-                            logger.trace(api_info + ": Actions validation: type='%r'", type(ACTIONS_WHITELIST[level1][level2]))
                             if callable(ACTIONS_WHITELIST[level1][level2]):
                                 try:
                                     value = ACTIONS_WHITELIST[level1][level2](request_data['Actions'][level1][level2])
                                 except ValueError:
-                                    hint = "'" + level1 + "': {'" + level2 + "'} is out-of-range"
+                                    hint = "'" + level1 + "': {'" + level2 + "'} is not supported"
                                     valid = False
                                     break
                             pass
