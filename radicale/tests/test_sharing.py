@@ -4995,7 +4995,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
             self.configure({"sharing": {
-                "conversion_bday_summary_template": "{{fn}|{n:f} {n:g} {n:a}|{nickname}} (BDAY)",
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
                 "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
                 "conversion_bday_alarm_trigger_template": "-15H;BDAY tomorrow|9H;BDAY today",
                 }})
@@ -5005,17 +5005,17 @@ permissions: RrWw""")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (BDAY)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{fn}|{n:f} {n:g} {n:a}|{nickname}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (Birthday)"}})
             logging.info("\n*** GET collection user format:text -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (Birthday)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{n:f} {n:g} {n:a}|{fn}|{nickname}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{n:f} {n:g} {n:a}|{fn}|{nickname}] (Birthday)"}})
             logging.info("\n*** GET collection user format:n -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:FamilyTest GivenTest AdditionalsTest (Birthday)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{n:f} {n:g} {n:a}|{fn}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{nickname}|{n:f} {n:g} {n:a}|{fn}] (Birthday)"}})
             logging.info("\n*** GET collection user format:nickname -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-NICKNAME (Birthday)" in answer
@@ -5025,22 +5025,22 @@ permissions: RrWw""")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "SUMMARY:!nickname! (Birthday)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{fn}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{nickname}|{nickname}|{fn}] (Birthday)"}})
             logging.info("\n*** GET collection user format:nickname with fn fallback -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "SUMMARY:Test-FN-C3 (Birthday)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{n:g} {n:f}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{nickname}|{nickname}|{n:g} {n:f}] (Birthday)"}})
             logging.info("\n*** GET collection user format:nickname with n fallback -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "SUMMARY:Given3Test Family3Test (Birthday)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{n:f}, {n:g}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{nickname}|{nickname}|{n:f}, {n:g}] (Birthday)"}})
             logging.info("\n*** GET collection user format:nickname with n fallback -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "SUMMARY:Family3Test\\, Given3Test (Birthday)" in answer
 
-            self.configure({"sharing": {"conversion_bday_summary_template": "{{nickname}|{nickname}|{n:f} {n:g} {n:a}} (Birthday)"}})
+            self.configure({"sharing": {"conversion_bday_summary_template": "[{nickname}|{nickname}|{n:f} {n:g} {n:a}] (Birthday)"}})
             logging.info("\n*** GET collection user format:nickname with n fallback -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "SUMMARY:Family3Test Given3Test !n:a! (Birthday)" in answer
