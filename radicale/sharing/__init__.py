@@ -124,11 +124,14 @@ TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
 ACTIONS_WHITELIST: dict = {
-        "template": {
+        'template': {
             'conversion_bday_summary_template': str,
             'conversion_bday_description_template': str,
             'conversion_bday_alarm_trigger_template': str,
-            }
+            },
+        'limit': {
+            'conversion_bday_age_max': "positive_int",
+            },
         }
 
 CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
@@ -177,6 +180,7 @@ class BaseSharing:
         self.conversion_bday_summary_template = configuration.get("sharing", "conversion_bday_summary_template")
         self.conversion_bday_description_template = configuration.get("sharing", "conversion_bday_description_template")
         self.conversion_bday_alarm_trigger_template = configuration.get("sharing", "conversion_bday_alarm_trigger_template")
+        self.conversion_bday_age_max = configuration.get("sharing", "conversion_bday_age_max")
 
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
@@ -189,6 +193,7 @@ class BaseSharing:
         logger.info("sharing.conversion_bday_summary_template: %s", self.conversion_bday_summary_template)
         logger.info("sharing.conversion_bday_description_template: %s", self.conversion_bday_description_template)
         logger.info("sharing.conversion_bday_alarm_trigger_template: %s", self.conversion_bday_alarm_trigger_template)
+        logger.info("sharing.conversion_bday_age_max: %s", self.conversion_bday_age_max)
 
         # database tasks
         self.sharing_db_type = configuration.get("sharing", "type")
@@ -426,41 +431,61 @@ class BaseSharing:
                                 'conversion_bday_summary_template': self.conversion_bday_summary_template,
                                 'conversion_bday_description_template': self.conversion_bday_description_template,
                                 'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
-                                }
+                                },
+                            'limit': {
+                                'conversion_bday_age_max': self.conversion_bday_age_max,
+                                },
                              }
-                elif 'template' in share['Actions']:
-                    if 'conversion_bday_summary_template' in share['Actions']['template']:
-                        # nothing to do
-                        pass
-                    else:
-                        share['Actions']['template'].update(
-                            {'conversion_bday_summary_template': self.conversion_bday_summary_template}
-                            )
-
-                    if 'conversion_bday_description_template' in share['Actions']['template']:
-                        # nothing to do
-                        pass
-                    else:
-                        share['Actions']['template'].update(
-                            {'conversion_bday_description_template': self.conversion_bday_description_template}
-                            )
-
-                    if 'conversion_bday_alarm_trigger_template' in share['Actions']['template']:
-                        # nothing to do
-                        pass
-                    else:
-                        share['Actions']['template'].update(
-                            {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
-                            )
                 else:
-                    share['Actions'].update(
-                            {'template': {
-                                'conversion_bday_summary_template': self.conversion_bday_summary_template,
-                                'conversion_bday_description_template': self.conversion_bday_description_template,
-                                'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
-                                }
-                             }
-                            )
+                    if 'template' in share['Actions']:
+                        if 'conversion_bday_summary_template' in share['Actions']['template']:
+                            # nothing to do
+                            pass
+                        else:
+                            share['Actions']['template'].update(
+                                {'conversion_bday_summary_template': self.conversion_bday_summary_template}
+                                )
+
+                        if 'conversion_bday_description_template' in share['Actions']['template']:
+                            # nothing to do
+                            pass
+                        else:
+                            share['Actions']['template'].update(
+                                {'conversion_bday_description_template': self.conversion_bday_description_template}
+                                )
+
+                        if 'conversion_bday_alarm_trigger_template' in share['Actions']['template']:
+                            # nothing to do
+                            pass
+                        else:
+                            share['Actions']['template'].update(
+                                {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
+                                )
+                    else:
+                        share['Actions'].update(
+                                {'template': {
+                                    'conversion_bday_summary_template': self.conversion_bday_summary_template,
+                                    'conversion_bday_description_template': self.conversion_bday_description_template,
+                                    'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
+                                    }
+                                 }
+                                )
+
+                    if 'limit' in share['Actions']:
+                        if 'conversion_bday_age_max' in share['Actions']['limit']:
+                            # nothing to do
+                            pass
+                        else:
+                            share['Actions']['limit'].update(
+                                {'conversion_bday_age_max': self.conversion_bday_age_max}
+                                )
+                    else:
+                        share['Actions'].update(
+                                {'limit': {
+                                    'conversion_bday_age_max': self.conversion_bday_age_max,
+                                    }
+                                 }
+                                )
 
             logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r Actions=%r", share['ShareType'], share['PathOrToken'], share['PathMapped'], user, share['Owner'], share['Permissions'], share['Conversion'], share['Actions'])
 
@@ -851,19 +876,27 @@ class BaseSharing:
 
         if 'Actions' in request_data:
             valid = True  # default
+            hint = ""
             for level1 in request_data['Actions']:
                 if level1 in ACTIONS_WHITELIST:
                     for level2 in request_data['Actions'][level1]:
                         if level2 in ACTIONS_WHITELIST[level1]:
+                            if ACTIONS_WHITELIST[level1][level2] == "positive_int":
+                                if int(request_data['Actions'][level1][level2]) < 0:
+                                    hint = "'" + level1 + "': {'" + level2 + "'} is negative"
+                                    valid = False
+                                    break
                             pass
                         else:
+                            hint = "'" + level1 + "': {'" + level2 + "'} is not supported"
                             valid = False
                             break
                 else:
+                    hint = "'" + level1 + "' is not supported"
                     valid = False
                     break
             if not valid:
-                return httputils.bad_request("Actions format not valid")
+                return httputils.bad_request("Actions format not valid: " + hint)
             Actions = request_data['Actions']
 
         if 'Enabled' in request_data:
