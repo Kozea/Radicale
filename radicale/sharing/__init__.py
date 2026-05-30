@@ -178,6 +178,7 @@ ACTIONS_WHITELIST: dict = {
             'conversion_bday_summary_template': check_template,
             'conversion_bday_description_template': check_template,
             'conversion_bday_alarm_trigger_template': check_template_alarm_trigger,
+            'conversion_bday_categories': str,
             'conversion_bday_age_max': check_bday_max_age,
             },
         }
@@ -228,6 +229,7 @@ class BaseSharing:
         self.conversion_bday_summary_template = configuration.get("sharing", "conversion_bday_summary_template")
         self.conversion_bday_description_template = configuration.get("sharing", "conversion_bday_description_template")
         self.conversion_bday_alarm_trigger_template = configuration.get("sharing", "conversion_bday_alarm_trigger_template")
+        self.conversion_bday_categories = configuration.get("sharing", "conversion_bday_categories")
         self.conversion_bday_age_max = configuration.get("sharing", "conversion_bday_age_max")
 
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
@@ -241,6 +243,7 @@ class BaseSharing:
         logger.info("sharing.conversion_bday_summary_template: %s", self.conversion_bday_summary_template)
         logger.info("sharing.conversion_bday_description_template: %s", self.conversion_bday_description_template)
         logger.info("sharing.conversion_bday_alarm_trigger_template: %s", self.conversion_bday_alarm_trigger_template)
+        logger.info("sharing.conversion_bday_categories: %s", self.conversion_bday_categories)
         logger.info("sharing.conversion_bday_age_max: %s", self.conversion_bday_age_max)
 
         # database tasks
@@ -479,6 +482,7 @@ class BaseSharing:
                                 'conversion_bday_summary_template': self.conversion_bday_summary_template,
                                 'conversion_bday_description_template': self.conversion_bday_description_template,
                                 'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
+                                'conversion_bday_categories': self.conversion_bday_categories,
                                 'conversion_bday_age_max': self.conversion_bday_age_max,
                                 },
                              }
@@ -506,6 +510,14 @@ class BaseSharing:
                         else:
                             share['Actions']['config'].update(
                                 {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
+                                )
+
+                        if 'conversion_bday_categories' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            share['Actions']['config'].update(
+                                {'conversion_bday_categories': self.conversion_bday_categories}
                                 )
 
                         if 'conversion_bday_age_max' in share['Actions']['config']:

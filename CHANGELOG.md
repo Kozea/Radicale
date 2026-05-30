@@ -4,6 +4,7 @@
 * Add: [sharing] conversion_bday_summary_template (customize summary)
 * Add: [sharing] conversion_bday_description_template (customize description)
 * Add: [sharing] conversion_bday_alarm_trigger_template (customize alarms)
+* Add: [sharing] conversion_bday_categories (customize)
 * Add: [sharing] conversion_bday_age_max (limit in case of "age" placeholder is used which blocks using RRULE)
 
 ## 3.7.4

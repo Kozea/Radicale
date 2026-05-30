@@ -663,6 +663,12 @@ class Item:
                 description = ShareActions['config']['conversion_bday_description_template']
                 description = replace_placeholders(description, placeholder_mapping)
 
+        # create CATEGORIES
+        categories: list = ["Birthday"]  # default
+        if ShareActions is not None and 'config' in ShareActions:
+            if 'conversion_bday_categories' in ShareActions['config']:
+                categories = ShareActions['config']['conversion_bday_categories'].split(',')
+
         # check ALARM
         alarm_trigger = ""  # default
         if ShareActions is not None and 'config' in ShareActions:
@@ -717,6 +723,10 @@ class Item:
             else:
                 summary_value = summary
             vevent.add('summary').value = summary_value
+
+            # set CATEGORIES
+            if categories is not None and categories != []:
+                vevent.add('categories').value = categories
 
             # set VALARM
             if alarm_trigger is not None and alarm_trigger != "":

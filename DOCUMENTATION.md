@@ -2352,6 +2352,14 @@ Supported format for `TIMEDELTA`: `[+-]?[0-9]+[WDHM]`
 
 Supported placeholders for `DESCRIPTION` see `conversion_bday_summary_template`
 
+##### conversion_bday_categories
+
+_(>= 3.7.5)_
+
+Global categories of conversion "bday", separated by `,`
+
+Default: `Birthday`
+
 ##### conversion_bday_age_max
 
 _(>= 3.7.5)_

@@ -4830,6 +4830,7 @@ permissions: RrWw""")
             assert "DTEND;VALUE=DATE:19700102" in answer
             assert "TRANSP:TRANSPARENT" in answer
             assert "DESCRIPTION:BDAY=1970-01-01" in answer
+            assert "CATEGORIES:Birthday" in answer
             # content type must be adjusted
             assert 'Content-Type' in headers
             assert 'text/calendar' in headers['Content-Type']
@@ -4879,6 +4880,7 @@ permissions: RrWw""")
             assert "DTEND;VALUE=DATE:19700102" in answer
             assert "TRANSP:TRANSPARENT" in answer
             assert "DESCRIPTION:BDAY=1970-01-01" in answer
+            assert "CATEGORIES:Birthday" in answer
             # content type must be adjusted
             assert 'Content-Type' in headers
             assert 'text/calendar' in headers['Content-Type']
@@ -5067,6 +5069,13 @@ permissions: RrWw""")
             assert "DESCRIPTION:Birthday today of Given3Test Family3Test" in answer
             assert "TRIGGER:-PT12H" in answer
             assert "TRIGGER:PT12H" in answer
+
+            self.configure({"sharing": {"conversion_bday_categories": "Birthday,Geburtstag"}})
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday tomorrow of Test-FN-C3" in answer
+            assert "DESCRIPTION:Birthday today of Given3Test Family3Test" in answer
+            assert "CATEGORIES:Birthday,Geburtstag" in answer
 
             logging.info("\n*** configuration test: conversion_bday_summary_template not supported")
             try:

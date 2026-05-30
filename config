@@ -366,6 +366,9 @@
 #  Example: "-15H;BDAY tomorrow|9H;BDAY today"
 #conversion_bday_alarm_trigger_template = ""
 
+# Global categories of conversion "bday"
+#conversion_bday_categories = "Birthday"
+
 # Global max limit of "bday" age
 #  Only active in case of {age} is used as placeholder
 #conversion_bday_age_max = 99
