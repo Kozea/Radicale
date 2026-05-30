@@ -645,65 +645,105 @@ class Item:
         else:
             item_ics.add('prodid').value = PRODID_CONVERTED
 
-        # create EVENT
-        item_ics.add('vevent')
-
-        # set DTSTART
-        dtstart = datetime.date(bdayY, bdayM, bdayD)
-        item_ics.vevent.add('dtstart').value = dtstart
-
-        # calculate and set DTEND
-        dtend = dtstart + datetime.timedelta(days=1)
-        item_ics.vevent.add('dtend').value = dtend
-
-        # set UID
-        if hasattr(self.vobject_item, "uid"):
-            pattern = re.compile('^(.*)-[0-9a-fA-F]{12}(.*)$')
-            match = pattern.match(self.vobject_item.uid.value)
-            if match:
-                # replace part of UUID by bday
-                item_ics.vevent.add('uid').value = match[1] + '-' + 'bda0' + bdayS + match[2]
-            else:
-                item_ics.vevent.add('uid').value = self.vobject_item.uid.value + UID_SUFFIX
-        else:
-            item_ics.vevent.add('uid').value = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
-
-        # set SUMMARY
+        # create SUMMARY
         summary = name + " (BDAY)"  # default
         if ShareActions is not None and 'template' in ShareActions:
             if 'conversion_bday_summary_template' in ShareActions['template']:
                 summary = ShareActions['template']['conversion_bday_summary_template']
                 summary = self.replace_placeholders(summary, placeholder_mapping)
-        item_ics.vevent.add('summary').value = summary
 
-        # set VALARM
-        if ShareActions is not None and 'template' in ShareActions:
-            alarm_trigger = ShareActions['template']['conversion_bday_alarm_trigger_template']
-            if alarm_trigger is not None and alarm_trigger != "":
-                for entry in alarm_trigger.split('|'):
-                    (trigger, description) = entry.split(';')
-                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
-                    td = self.trigger_to_timedelta(trigger)
-                    if td is not None:
-                        description = self.replace_placeholders(description, placeholder_mapping)
-                        valarm = item_ics.vevent.add('valarm')
-                        valarm.add('action').value = "DISPLAY"
-                        valarm.add('description').value = description
-                        valarm.add('trigger').value = td
-
-        # set RRULE
-        item_ics.vevent.add('rrule').value = "FREQ=YEARLY"
-
-        # add transparency
-        item_ics.vevent.add('transp').value = "TRANSPARENT"
-
-        # add description
+        # create DESCRIPTION
         description = "BDAY=" + bdaySdesc  # default
         if ShareActions is not None and 'template' in ShareActions:
             if 'conversion_bday_description_template' in ShareActions['template']:
                 description = ShareActions['template']['conversion_bday_description_template']
                 description = self.replace_placeholders(description, placeholder_mapping)
-        item_ics.vevent.add('description').value = description
+
+        # check ALARM
+        alarm_trigger = ""  # default
+        if ShareActions is not None and 'template' in ShareActions:
+            alarm_trigger = ShareActions['template']['conversion_bday_alarm_trigger_template']
+
+        vevent_enable_age = False
+        age_max = 0
+        if "{age}" in summary or "{age}" in description or "age" in alarm_trigger:
+            if ShareActions is not None and 'limit' in ShareActions:
+                if 'conversion_bday_age_max' in ShareActions['limit']:
+                    age_max = ShareActions['limit']['conversion_bday_age_max']
+            vevent_enable_age = True
+
+        # create UID
+        if hasattr(self.vobject_item, "uid"):
+            pattern = re.compile('^(.*)-[0-9a-fA-F]{12}(.*)$')
+            match = pattern.match(self.vobject_item.uid.value)
+            if match:
+                # replace part of UUID by bday
+                uid = match[1] + '-' + 'bda0' + bdayS + match[2]
+            else:
+                uid = self.vobject_item.uid.value + UID_SUFFIX
+        else:
+            uid = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
+
+        age = 0
+        while age <= age_max:
+            # create EVENT
+            vevent = item_ics.add('vevent')
+
+            # set DTSTART
+            if vevent_enable_age:
+                dtstart = datetime.date(bdayY + age, bdayM, bdayD)
+            else:
+                dtstart = datetime.date(bdayY, bdayM, bdayD)
+            vevent.add('dtstart').value = dtstart
+
+            # calculate and set DTEND
+            dtend = dtstart + datetime.timedelta(days=1)
+            vevent.add('dtend').value = dtend
+
+            # set UID
+            if vevent_enable_age:
+                uid_value = uid + "-AGE-" + str(age)
+            else:
+                uid_value = uid
+            vevent.add('uid').value = uid_value
+
+            # set SUMMARY
+            if vevent_enable_age:
+                summary_value = summary.replace("{age}", str(age))
+            else:
+                summary_value = summary
+            vevent.add('summary').value = summary_value
+
+            # set VALARM
+            if alarm_trigger is not None and alarm_trigger != "":
+                for entry in alarm_trigger.split('|'):
+                    (trigger, alarm_description) = entry.split(';')
+                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
+                    td = self.trigger_to_timedelta(trigger)
+                    if td is not None:
+                        alarm_description = self.replace_placeholders(alarm_description, placeholder_mapping)
+                        alarm_description_value = alarm_description.replace("{age}", str(age))
+                        valarm = vevent.add('valarm')
+                        valarm.add('action').value = "DISPLAY"
+                        valarm.add('description').value = alarm_description_value
+                        valarm.add('trigger').value = td
+
+            # set RRULE
+            if not vevent_enable_age:
+                vevent.add('rrule').value = "FREQ=YEARLY"
+
+            # add transparency
+            vevent.add('transp').value = "TRANSPARENT"
+
+            # set DESCRIPTION
+            if vevent_enable_age:
+                description_value = description.replace("{age}", str(age))
+            else:
+                description_value = description
+            vevent.add('description').value = description_value
+
+            # increase age
+            age = age + 1
 
         href = self.href
         if href is not None:
