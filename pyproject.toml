@@ -220,7 +220,7 @@ commands_pre = [["playwright", "install", "chromium"]]
 commands = [["pytest", "integ_tests"]]
 
 [tool.tox.env.html5validator]
-deps = ["html5validator"]
+deps = ["html5validator-2"]
 commands = [["html5validator", "--root", "radicale/web/internal_data/", "--also-check-css"]]
 
 
