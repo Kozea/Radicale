@@ -5178,7 +5178,7 @@ permissions: RrWw""")
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
-            json_dict['Actions'] = {"limit": {
+            json_dict['Actions'] = {"config": {
                 "conversion_bday_age_max": 5,
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
@@ -5237,7 +5237,7 @@ permissions: RrWw""")
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
-            json_dict['Actions'] = {"limit": {
+            json_dict['Actions'] = {"config": {
                 "level2": "test",
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
@@ -5298,7 +5298,7 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             json_dict['Properties'] = {"D:displayname": "Test-BDAY2"}
-            json_dict['Actions'] = {"template": {
+            json_dict['Actions'] = {"config": {
                 "conversion_bday_summary_template": "{fn} (BDAY2)",
                 "conversion_bday_description_template": "BDAY2={year}-{month}-{day}",
                 }}
@@ -5317,7 +5317,7 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             json_dict['Properties'] = {"D:displayname": "Test-Birthday3"}
-            json_dict['Actions'] = {"template": {
+            json_dict['Actions'] = {"config": {
                 "conversion_bday_summary_template": "{fn} (Birthday3)",
                 "conversion_bday_description_template": "Birthday3={year}-{month}-{day}",
                 }}
@@ -5355,7 +5355,7 @@ permissions: RrWw""")
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped_2
             json_dict['PathOrToken'] = path_shared_2r
-            json_dict['Actions'] = {"template": {
+            json_dict['Actions'] = {"config": {
                 "conversion_bday_summary_template": "{fn} (BDAY2x)",
                 "conversion_bday_description_template": "BDAY2x={year}-{month}-{day}",
                 }}
@@ -5374,7 +5374,7 @@ permissions: RrWw""")
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped_2
             json_dict['PathOrToken'] = path_shared_2r
-            json_dict['Actions'] = {"template": {
+            json_dict['Actions'] = {"config": {
                 "conversion_bday_summary_template_UNSUPPORTED": "{fn} (BDAY2x)",
                 "conversion_bday_description_template_UNSUPPORTED": "BDAY2x={year}-{month}-{day}",
                 }}

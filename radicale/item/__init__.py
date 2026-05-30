@@ -647,29 +647,29 @@ class Item:
 
         # create SUMMARY
         summary = name + " (BDAY)"  # default
-        if ShareActions is not None and 'template' in ShareActions:
-            if 'conversion_bday_summary_template' in ShareActions['template']:
-                summary = ShareActions['template']['conversion_bday_summary_template']
+        if ShareActions is not None and 'config' in ShareActions:
+            if 'conversion_bday_summary_template' in ShareActions['config']:
+                summary = ShareActions['config']['conversion_bday_summary_template']
                 summary = self.replace_placeholders(summary, placeholder_mapping)
 
         # create DESCRIPTION
         description = "BDAY=" + bdaySdesc  # default
-        if ShareActions is not None and 'template' in ShareActions:
-            if 'conversion_bday_description_template' in ShareActions['template']:
-                description = ShareActions['template']['conversion_bday_description_template']
+        if ShareActions is not None and 'config' in ShareActions:
+            if 'conversion_bday_description_template' in ShareActions['config']:
+                description = ShareActions['config']['conversion_bday_description_template']
                 description = self.replace_placeholders(description, placeholder_mapping)
 
         # check ALARM
         alarm_trigger = ""  # default
-        if ShareActions is not None and 'template' in ShareActions:
-            alarm_trigger = ShareActions['template']['conversion_bday_alarm_trigger_template']
+        if ShareActions is not None and 'config' in ShareActions:
+            alarm_trigger = ShareActions['config']['conversion_bday_alarm_trigger_template']
 
         vevent_enable_age = False
         age_max = 0
         if "{age}" in summary or "{age}" in description or "age" in alarm_trigger:
-            if ShareActions is not None and 'limit' in ShareActions:
-                if 'conversion_bday_age_max' in ShareActions['limit']:
-                    age_max = ShareActions['limit']['conversion_bday_age_max']
+            if ShareActions is not None and 'config' in ShareActions:
+                if 'conversion_bday_age_max' in ShareActions['config']:
+                    age_max = ShareActions['config']['conversion_bday_age_max']
             vevent_enable_age = True
 
         # create UID

@@ -425,66 +425,47 @@ class BaseSharing:
         if share is not None:
             if share['Conversion'] == "bday":
                 # autogenerate Actions if not existing
-                if share['Actions'] is None:
+                if share['Actions'] is None or 'config' not in share['Actions']:
                     share['Actions'] = {
-                            'template': {
+                            'config': {
                                 'conversion_bday_summary_template': self.conversion_bday_summary_template,
                                 'conversion_bday_description_template': self.conversion_bday_description_template,
                                 'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
-                                },
-                            'limit': {
                                 'conversion_bday_age_max': self.conversion_bday_age_max,
                                 },
                              }
                 else:
-                    if 'template' in share['Actions']:
-                        if 'conversion_bday_summary_template' in share['Actions']['template']:
+                    if 'config' in share['Actions']:
+                        if 'conversion_bday_summary_template' in share['Actions']['config']:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['template'].update(
+                            share['Actions']['config'].update(
                                 {'conversion_bday_summary_template': self.conversion_bday_summary_template}
                                 )
 
-                        if 'conversion_bday_description_template' in share['Actions']['template']:
+                        if 'conversion_bday_description_template' in share['Actions']['config']:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['template'].update(
+                            share['Actions']['config'].update(
                                 {'conversion_bday_description_template': self.conversion_bday_description_template}
                                 )
 
-                        if 'conversion_bday_alarm_trigger_template' in share['Actions']['template']:
+                        if 'conversion_bday_alarm_trigger_template' in share['Actions']['config']:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['template'].update(
+                            share['Actions']['config'].update(
                                 {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
                                 )
-                    else:
-                        share['Actions'].update(
-                                {'template': {
-                                    'conversion_bday_summary_template': self.conversion_bday_summary_template,
-                                    'conversion_bday_description_template': self.conversion_bday_description_template,
-                                    'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
-                                    }
-                                 }
-                                )
 
-                    if 'limit' in share['Actions']:
-                        if 'conversion_bday_age_max' in share['Actions']['limit']:
+                        if 'conversion_bday_age_max' in share['Actions']['config']:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['limit'].update(
+                            share['Actions']['config'].update(
                                 {'conversion_bday_age_max': self.conversion_bday_age_max}
-                                )
-                    else:
-                        share['Actions'].update(
-                                {'limit': {
-                                    'conversion_bday_age_max': self.conversion_bday_age_max,
-                                    }
-                                 }
                                 )
 
             logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r Actions=%r", share['ShareType'], share['PathOrToken'], share['PathMapped'], user, share['Owner'], share['Permissions'], share['Conversion'], share['Actions'])
