@@ -2323,6 +2323,9 @@ Supported placeholders (data used from VCARD)
  * `{n:a}`: additional name (RFC6350#6.2.2)
  * `{nickname}`: nick name (RFC6350#6.2.3)
 
+Supported extra placeholders
+ * `{age}`: age, toggles to creation of single events instead using RRULE
+
 Fallback is supported if placeholders inside `[...|...]` (first successful resolved one is used)
 
 ##### conversion_bday_description_template
