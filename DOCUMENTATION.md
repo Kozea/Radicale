@@ -2349,6 +2349,14 @@ Supported format for `TIMEDELTA`: `[+-]?[0-9]+[WDHM]`
 
 Supported placeholders for `DESCRIPTION` see `conversion_bday_summary_template`
 
+##### conversion_bday_age_max
+
+_(>= 3.7.5)_
+
+Global max limit of "bday" age, only active in case of `{age}` is used as placeholder
+
+Default: `99`
+
 ## Supported Clients
 
 Radicale has been tested with:

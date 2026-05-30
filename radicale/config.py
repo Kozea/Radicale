@@ -606,6 +606,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "",
             "help": "conversion bday alarm trigger template",
             "type": str}),
+        ("conversion_bday_age_max", {
+            "value": 99,
+            "help": "conversion bday age max",
+            "type": positive_int}),
         ])),
     ("hook", OrderedDict([
         ("type", {
