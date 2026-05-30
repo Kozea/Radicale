@@ -5068,6 +5068,97 @@ permissions: RrWw""")
             assert "TRIGGER:-PT12H" in answer
             assert "TRIGGER:PT12H" in answer
 
+            logging.info("\n*** configuration test: conversion_bday_summary_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_description_template": "year={year} month={month} day={day}\nfn='{fn}'\nn:g='{n:g}'\nn:f='{n:f}'\nn:a='{notsupported}'",
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_description_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_summary_template": "[{nickname}|{nickname}|{n:f} {n:g} {n:a}] {notsupportedplaceholder}",
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_alarm_trigger_template": "-12T;Birthday tomorrow of {fn}"
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_alarm_trigger_template": "BROKEN;Birthday tomorrow of {fn}"
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_alarm_trigger_template": "-+BROKEN;Birthday tomorrow of {fn}"
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_alarm_trigger_template": "+0;Birthday tomorrow of {fn}"
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_alarm_trigger_template": "-12H"
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_alarm_trigger_template": "-12H;"
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r with invalid config -> 400")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_alarm_trigger_template": "-12H;"
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
     def test_sharing_api_map_vcf_bday_age_template(self) -> None:
         """share-by-map with conversion=bday template tests with age."""
         self.configure({"auth": {"type": "htpasswd",
@@ -5144,7 +5235,7 @@ permissions: RrWw""")
             logging.info("\n*** configuration test: conversion_bday_age_max > MAX")
             try:
                 self.configure({"sharing": {
-                    "conversion_bday_age_max": 200,
+                    "conversion_bday_age_max": (sharing.SHARING_BDAY_AGE_MAX + 1),
                     }})
             except RuntimeError:
                 pass
