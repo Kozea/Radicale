@@ -2341,7 +2341,7 @@ _(>= 3.7.5)_
 
 Global template for alarm trigger of conversion "bday"
 
-Default: `"-15H;BDAY tomorrow|9H;BDAY today"`
+Default: ``
 
 Supported format: `TIMEDELTA;DESCRIPTION` (separated by `|` if more alarms should be generated)
 
