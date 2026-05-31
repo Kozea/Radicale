@@ -2311,7 +2311,7 @@ _(>= 3.7.5)_
 
 Global template for summary of conversion "bday"
 
-Default: `"{{n:f} {n:g}|{fn}|{nickname}} ({year}) (BDAY)"`
+Default: `{{n:f} {n:g}|{fn}|{nickname}} ({year}) (BDAY)`
 
 Supported placeholders (data used from VCARD)
  * `{year}`: year of birthday (RFC6350#6.2.5)
@@ -2334,7 +2334,7 @@ _(>= 3.7.5)_
 
 Global template for description of conversion "bday"
 
-Default: `"BDAY={year}-{month}-{day}"`
+Default: `BDAY={year}-{month}-{day}`
 
 Supported placeholders see `conversion_bday_summary_template`
 

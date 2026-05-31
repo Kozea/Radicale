@@ -357,17 +357,17 @@
 #default_permissions_create_map = r
 
 # Global template for summary of conversion "bday"
-#conversion_bday_summary_template = "[{n:f} {n:g} |{fn}|{nickname}] ({year}) (BDAY)"
+#conversion_bday_summary_template = [{n:f} {n:g} |{fn}|{nickname}] ({year}) (BDAY)
 
 # Global template for description of conversion "bday"
-#conversion_bday_description_template = "BDAY={year}-{month}-{day}"
+#conversion_bday_description_template = BDAY={year}-{month}-{day}
 
 # Global template of alarm trigger of conversion "bday"
 #  Example: "-15H;BDAY tomorrow|9H;BDAY today"
 #conversion_bday_alarm_trigger_template = ""
 
 # Global categories of conversion "bday"
-#conversion_bday_categories = "Birthday"
+#conversion_bday_categories = Birthday
 
 # Global max limit of "bday" age
 #  Only active in case of {age} is used as placeholder
