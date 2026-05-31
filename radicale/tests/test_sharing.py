@@ -5077,6 +5077,15 @@ permissions: RrWw""")
             assert "DESCRIPTION:Birthday today of Given3Test Family3Test" in answer
             assert "CATEGORIES:Birthday,Geburtstag" in answer
 
+            self.configure({
+                "sharing": {"conversion_bday_description_template": "",
+                            "conversion_bday_alarm_trigger_template": "",
+                            }
+                })
+            logging.info("\n*** GET collection user format: no description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION" not in answer
+
             logging.info("\n*** configuration test: conversion_bday_summary_template not supported")
             try:
                 self.configure({"sharing": {
