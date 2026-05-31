@@ -136,9 +136,9 @@ class ApplicationPartGet(ApplicationBase):
             if share and share['Conversion'] == "bday":
                 if isinstance(item, storage.BaseCollection):
                     # convert VCF to ICS
-                    answer = item.serialize(vcf_to_ics=True)
+                    answer = item.serialize(vcf_to_ics=True, ShareActions=share['Actions'])
                 else:
-                    item_converted = item.convert_vcf_to_ics()
+                    item_converted = item.convert_vcf_to_ics(ShareActions=share['Actions'])
                     if item_converted is not None:
                         answer = item_converted.serialize()
                     else:

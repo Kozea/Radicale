@@ -24,11 +24,11 @@ import uuid
 from csv import DictWriter
 from datetime import datetime
 from http import client
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 from urllib.parse import parse_qs
 
-from radicale import (config, httputils, pathutils, rights, storage, types,
-                      utils)
+from radicale import (config, httputils, item, pathutils, rights, storage,
+                      types, utils)
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
@@ -123,6 +123,77 @@ TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
+SHARING_BDAY_AGE_MAX_LIMIT: int = 199  # maximum age to prevent unexpected DoS by config
+SHARING_BDAY_AGE_MAX_DEFAULT: int = 99
+SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT: str = "[{n:f} {n:g}|{fn}|{nickname}] ({year}) (BDAY)"
+SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT: str = "BDAY={year}-{month}-{day}"
+SHARING_BDAY_CATEGORIES_DEFAULT: str = 'Birthday'
+
+
+def check_bday_max_age(data: Any) -> int:
+    value = int(data)
+    if value < 0:
+        raise ValueError("value is negative: %d" % value)
+    if value > SHARING_BDAY_AGE_MAX_LIMIT:
+        raise ValueError("value exceeds maximum (%d): %d" % (SHARING_BDAY_AGE_MAX_LIMIT, value))
+    return value
+
+
+def check_template(data: Any) -> str:
+    placeholder_mapping: dict = {}
+    for placeholder in item.VCF_TO_ICS_SUPPORTED_PLACEHOLDERS:
+        placeholder_mapping["{" + placeholder + "}"] = '!' + placeholder + '!'
+
+    result = item.replace_placeholders(data, placeholder_mapping)
+    logger.trace("replace placeholders: %r -> %r", data, result)
+    pattern = re.compile('.*{.*}.*')
+    if pattern.search(result):
+        raise ValueError("template contains unsupported placeholder {..}: %r" % result)
+    return data
+
+
+def check_template_not_empty(data: Any) -> str:
+    result = check_template(data)
+    if result == "":
+        raise ValueError("template not allowed to be empty")
+    return data
+
+
+def check_template_alarm_trigger(data: Any) -> str:
+    if data is not None and data != '':
+        for entry in data.split('|'):
+            try:
+                (trigger, alarm_description) = entry.split(';')
+            except ValueError:
+                raise ValueError("alarm trigger template misses <trigger>;<alarm description>")
+
+            if trigger is not None and trigger != '':
+                td = item.trigger_to_timedelta(trigger)
+                if td is None:
+                    raise ValueError("alarm trigger template contains unsupported trigger: %r" % trigger)
+            else:
+                raise ValueError("alarm trigger template misses trigger")
+
+            if alarm_description is not None and alarm_description != '':
+                try:
+                    check_template_not_empty(alarm_description)
+                except Exception as e:
+                    raise e
+            else:
+                raise ValueError("alarm trigger template misses description")
+    return data
+
+
+ACTIONS_WHITELIST: dict = {
+        'config': {
+            'conversion_bday_summary_template': check_template_not_empty,
+            'conversion_bday_description_template': check_template,
+            'conversion_bday_alarm_trigger_template': check_template_alarm_trigger,
+            'conversion_bday_categories': str,
+            'conversion_bday_age_max': check_bday_max_age,
+            },
+        }
+
 CONVERSIONS_WHITELIST: Sequence[str] = ("bday", "none")
 
 
@@ -166,6 +237,11 @@ class BaseSharing:
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
         self.enforce_properties_overlay = configuration.get("sharing", "enforce_properties_overlay")
+        self.conversion_bday_summary_template = configuration.get("sharing", "conversion_bday_summary_template")
+        self.conversion_bday_description_template = configuration.get("sharing", "conversion_bday_description_template")
+        self.conversion_bday_alarm_trigger_template = configuration.get("sharing", "conversion_bday_alarm_trigger_template")
+        self.conversion_bday_categories = configuration.get("sharing", "conversion_bday_categories")
+        self.conversion_bday_age_max = configuration.get("sharing", "conversion_bday_age_max")
 
         logger.info("sharing.collection_by_map  : %s", self.sharing_collection_by_map)
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
@@ -175,6 +251,11 @@ class BaseSharing:
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
         logger.info("sharing.enforce_properties_overlay: %s", self.enforce_properties_overlay)
+        logger.info("sharing.conversion_bday_summary_template: %r", self.conversion_bday_summary_template)
+        logger.info("sharing.conversion_bday_description_template: %r", self.conversion_bday_description_template)
+        logger.info("sharing.conversion_bday_alarm_trigger_template: %r", self.conversion_bday_alarm_trigger_template)
+        logger.info("sharing.conversion_bday_categories: %r", self.conversion_bday_categories)
+        logger.info("sharing.conversion_bday_age_max: %s", self.conversion_bday_age_max)
 
         # database tasks
         self.sharing_db_type = configuration.get("sharing", "type")
@@ -402,6 +483,73 @@ class BaseSharing:
                     return None
         else:
             logger.trace("sharing/map: not active")
+
+        if share is not None:
+            if share['Conversion'] == "bday":
+                # autogenerate Actions if not existing
+                if share['Actions'] is None or 'config' not in share['Actions']:
+                    share['Actions'] = {
+                            'config_default': {
+                                'conversion_bday_summary_template': self.conversion_bday_summary_template,
+                                'conversion_bday_description_template': self.conversion_bday_description_template,
+                                'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
+                                'conversion_bday_categories': self.conversion_bday_categories,
+                                'conversion_bday_age_max': self.conversion_bday_age_max,
+                                },
+                             }
+                else:
+                    if 'config' in share['Actions']:
+                        if 'conversion_bday_summary_template' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_summary_template': self.conversion_bday_summary_template}
+                                )
+
+                        if 'conversion_bday_description_template' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_description_template': self.conversion_bday_description_template}
+                                )
+
+                        if 'conversion_bday_alarm_trigger_template' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
+                                )
+
+                        if 'conversion_bday_categories' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_categories': self.conversion_bday_categories}
+                                )
+
+                        if 'conversion_bday_age_max' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_age_max': self.conversion_bday_age_max}
+                                )
+
+            logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r Actions=%r", share['ShareType'], share['PathOrToken'], share['PathMapped'], user, share['Owner'], share['Permissions'], share['Conversion'], share['Actions'])
 
         return share
 
@@ -789,7 +937,31 @@ class BaseSharing:
                 return httputils.bad_request("Conversion not supported: %r" % Conversion)
 
         if 'Actions' in request_data:
-            return httputils.bad_request("Actions currently not supported (reserved for future needs)")
+            valid = True  # default
+            hint = ""
+            for level1 in request_data['Actions']:
+                if level1 in ACTIONS_WHITELIST:
+                    for level2 in request_data['Actions'][level1]:
+                        if level2 in ACTIONS_WHITELIST[level1]:
+                            if callable(ACTIONS_WHITELIST[level1][level2]):
+                                try:
+                                    value = ACTIONS_WHITELIST[level1][level2](request_data['Actions'][level1][level2])
+                                except ValueError:
+                                    hint = "'" + level1 + "': {'" + level2 + "'} is not supported"
+                                    valid = False
+                                    break
+                            pass
+                        else:
+                            hint = "'" + level1 + "': {'" + level2 + "'} is not supported"
+                            valid = False
+                            break
+                else:
+                    hint = "'" + level1 + "' is not supported"
+                    valid = False
+                    break
+            if not valid:
+                return httputils.bad_request("Actions format not valid: " + hint)
+            Actions = request_data['Actions']
 
         if 'Enabled' in request_data:
             Enabled = request_data['Enabled']
@@ -1112,7 +1284,8 @@ class BaseSharing:
                            OwnerOrUser=user,
                            User=User,
                            Timestamp=Timestamp,
-                           Properties=Properties)
+                           Properties=Properties,
+                           Actions=Actions)
                 else:
                     result = self.database_update_sharing(
                            ShareType=ShareType,
@@ -1124,7 +1297,8 @@ class BaseSharing:
                            OwnerOrUser=user,
                            User=User,
                            Timestamp=Timestamp,
-                           Properties=Properties)
+                           Properties=Properties,
+                           Actions=Actions)
 
             elif user == share['User']:
                 # User is only allowed to update Properties

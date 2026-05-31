@@ -441,6 +441,8 @@ class Sharing(sharing.BaseSharing):
                                     field = field.replace("{'", '{"')  # replace for JSON start {' -> {"
                                     field = field.replace("'}", '"}')  # replace for JSON end '} -> "}
                                     field = field.replace("': '", '": "')  # replace for JSON entry/value ': ' -> ": "
+                                    field = field.replace("': {", '": {')  # replace for JSON entry/value ': { -> ": {
+                                    field = field.replace("': ", '": ')  # replace for JSON entry/value ':  -> ":(whitespace)
                                     field = field.replace("', '", '", "')  # replace for JSON delimiter ', ' -> ", "
                                     logger.trace("json prep quote replacer match (after) : %s", field)
                                     try:

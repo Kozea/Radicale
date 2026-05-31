@@ -223,7 +223,7 @@ class BaseCollection:
         """Get the HTTP-datetime of when the collection was modified."""
         raise NotImplementedError
 
-    def serialize(self, vcf_to_ics: bool = False) -> str:
+    def serialize(self, vcf_to_ics: bool = False, ShareActions: dict = {}) -> str:
         """Get the unicode string representing the whole collection."""
         if self.tag == "VCALENDAR":
             in_vcalendar = False
@@ -288,7 +288,7 @@ class BaseCollection:
                 items = []
                 for item in self.get_all():
                     logger.trace("storage/convert VCF to ICS: %r:", item)
-                    item_ics = item.convert_vcf_to_ics()
+                    item_ics = item.convert_vcf_to_ics(ShareActions=ShareActions)
                     if item_ics is None:
                         continue
                     else:

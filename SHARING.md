@@ -43,7 +43,7 @@ Types of supported sharing configuration:
  * `TimestampCreated`: unixtime of creation
  * `TimestampUpdated`: unixtime of last update
  * `Properties`: overlay properties (limited set whitelisted)
- * `Actions`: (reserved for future usage)
+ * `Actions`: specific configuration
  
 `Enabled*`: _owner_ AND _user_ have to enable a share to become usable
 
@@ -246,6 +246,7 @@ Can be selected by `HTTP_ACCEPT` - default is equal to provided `CONTENT_TYPE`
  * `Enabled`: owner/user selected by authentication
  * `Hidden`: owner/user selected by authentication
  * `Properties`: properties to overlay
+ * `Actions`: specific configuration
  
 ### API Hooks
 
@@ -315,7 +316,8 @@ Create a share by mapping a collection of an `Owner` to a token.
 | Permissions | str | optional (default:rp) |
 | Enabled | bool | optional (owner/default:False) |
 | Hidden | bool | optional (owner/default:True) |
-| Properties | str | optional |
+| Properties | str(dict) | optional |
+| Actions | str(dict) | optional |
 
  * Output: text/plain|application/json
 
@@ -364,7 +366,8 @@ Create a share by mapping a collection of an `Owner` to an `User`.
 | Permissions | str | optional (default:r) |
 | Enabled | bool | optional (owner/default:False) |
 | Hidden | bool | optional (owner/default:True) |
-| Properties | optional |
+| Properties | str(dict) | optional |
+| Actions | str(dict) | optional |
 
  * Output: text/plain|application/json
 
@@ -518,7 +521,8 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 | Permissions | str | adjust | optional | not-permitted |
 | Enabled | bool | adjust | optional(owner) | optional(user) |
 | Hidden | bool | adjust | optional(owner) | optional(user) |
-| Properties | str | adjust | optional | optional |
+| Properties | str(dict) | adjust | optional | optional |
+| Actions | str(dict) | adjust | optional | not-permitted |
 
  * Output: text/plain|application/json
 
@@ -675,7 +679,6 @@ curl -u user:$userpw -d "$xml_pfc" -X PROPFIND http://localhost:5232/user/cal1-f
 
 Owner can create for itself or for particular user a virtual bday collection from an existing addressbook.
 
-
 ### Examples
 
 Preconditions:
@@ -686,6 +689,8 @@ Preconditions:
    * `permit_create_map`
 
 #### Examples using API
+
+##### Mapping
 
   * Create as *map*
 
@@ -712,6 +717,8 @@ END:VCALENDAR
 
 Via WebUI an additional (virtual) calendar collection appears
 
+##### Mapping as token
+
   * Create as *token*
 
 ```bash
@@ -722,7 +729,7 @@ Status='success'
 PathOrToken='/.token/v1/lqqwqhZYTGi9uSPsixien_8G5jiSK0FfhNFRGG_t8UA0/'
 ```
 
-  * Fetch *map*
+  * Fetch *token*
 
 ```bash
 ## Fetch VCALENDAR auto-created from VADDRESSBOOK

@@ -2287,6 +2287,8 @@ Default: `true`
 
 ##### default_permissions_create_token
 
+_(>= 3.7.0)_
+
 Default permissions for create token-based sharing
 
 Default: `r`
@@ -2295,11 +2297,76 @@ Supported: `rwEePp`
 
 ##### default_permissions_create_map
 
+_(>= 3.7.0)_
+
 Default permissions for map-based sharing
 
 Default: `r`
 
 Supported: `rwEePp`
+
+##### conversion_bday_summary_template
+
+_(>= 3.7.5)_
+
+Global template for summary of conversion "bday"
+
+Default: `{{n:f} {n:g}|{fn}|{nickname}} ({year}) (BDAY)`
+
+Supported placeholders (data used from VCARD)
+ * `{year}`: year of birthday (RFC6350#6.2.5)
+ * `{month}`: month of birthday (RFC6350#6.2.5)
+ * `{day}`: day of birthday (RFC6350#6.2.5)
+ * `{fn}`: full name (RFC6350#6.2.1)
+ * `{n:f}`: family name (RFC6350#6.2.2)
+ * `{n:g}`: given name (RFC6350#6.2.2)
+ * `{n:a}`: additional name (RFC6350#6.2.2)
+ * `{nickname}`: nick name (RFC6350#6.2.3)
+
+Supported extra placeholders
+ * `{age}`: age, toggles to creation of single events instead using RRULE
+
+Fallback is supported if placeholders inside `[...|...]` (first successful resolved one is used)
+
+##### conversion_bday_description_template
+
+_(>= 3.7.5)_
+
+Global template for description of conversion "bday"
+
+Default: `BDAY={year}-{month}-{day}`
+
+Supported placeholders see `conversion_bday_summary_template`
+
+##### conversion_bday_alarm_trigger_template
+
+_(>= 3.7.5)_
+
+Global template for alarm trigger of conversion "bday"
+
+Default: ``
+
+Supported format: `TIMEDELTA;DESCRIPTION` (separated by `|` if more alarms should be generated)
+
+Supported format for `TIMEDELTA`: `[+-]?[0-9]+[WDHM]`
+
+Supported placeholders for `DESCRIPTION` see `conversion_bday_summary_template`
+
+##### conversion_bday_categories
+
+_(>= 3.7.5)_
+
+Global categories of conversion "bday", separated by `,`
+
+Default: `Birthday`
+
+##### conversion_bday_age_max
+
+_(>= 3.7.5)_
+
+Global max limit of "bday" age, only active in case of `{age}` is used as placeholder
+
+Default: `99`
 
 ## Supported Clients
 

@@ -267,7 +267,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         # autoconvert
         retrieved_items_vcf_to_ics = []
         for item, flag in retrieved_items:
-            item_ics = item.convert_vcf_to_ics()
+            item_ics = item.convert_vcf_to_ics(ShareActions=share['Actions'])
             if item_ics is None:
                 continue
             else:

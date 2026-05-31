@@ -38,7 +38,7 @@ from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
 import vobject
 
 from radicale import storage  # noqa:F401
-from radicale import pathutils, utils
+from radicale import pathutils, sharing, utils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
@@ -46,6 +46,8 @@ from radicale.log import logger
 PRODID_CONVERTED = u"-//Radicale//NONSGML " + utils.package_version("radicale") + "//EN (auto-converted)"
 PRODID_SUFFIX = " (auto-converted by Radicale " + utils.package_version("radicale") + ")"
 UID_SUFFIX = "-auto-converted-by-Radicale"
+
+VCF_TO_ICS_SUPPORTED_PLACEHOLDERS: list = ["fn", "n:f", "n:g", "n:a", "age", "nickname", "year", "month", "day"]
 
 
 def read_components(s: str) -> List[vobject.base.Component]:
@@ -362,6 +364,65 @@ def verify(file: str, encoding: str):
     return True
 
 
+def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
+    for placeholder in placeholder_mapping:
+        text = text.replace(placeholder, placeholder_mapping[placeholder])
+
+    # resolve {..|..} recursive
+    pattern = re.compile('(.*)(\\[)([^|]+)\\|(.+)(\\])(.*)')
+    logger.trace("item/convert_vcf_to_ics: resolve [..|..] starting with: %r", text)
+    while True:
+        match = pattern.match(text)
+        if not match:
+            # nothing more todo
+            break
+        else:
+            if match[3].startswith('!') and match[3].endswith('!'):
+                # not resolved variable
+                if '|' in match[4]:
+                    # further recursion required
+                    text = match[1] + match[2] + match[4] + match[5] + match[6]
+                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/continue result: %r", text)
+                else:
+                    text = match[1] + match[4] + match[6]
+                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/final result: %r", text)
+                    break
+            else:
+                # resolved variable
+                text = match[1] + match[3] + match[6]
+                logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace(resolved) result: %r", text)
+    return text
+
+
+def trigger_to_timedelta(trigger) -> Union[datetime.timedelta, None]:
+    # workaround as vobject is not supporting direct set of value
+    # limited implementatino of reverse function of timedeltaToString in vobject/icalendar.py
+    pattern = re.compile('([+-])?([0-9]+)([WDHM])$')
+    match = pattern.match(trigger)
+    if not match:
+        logger.error("item/convert_vcf_to_ics: trigger time value not valid: %r", trigger)
+        return None
+
+    sign = 1
+    if match[1] == "-":
+        sign = -1
+
+    value = int(match[2]) * sign
+
+    td: Union[datetime.timedelta, None] = None
+
+    if match[3] == "D":
+        td = datetime.timedelta(days=value)
+    elif match[3] == "M":
+        td = datetime.timedelta(minutes=value)
+    elif match[3] == "H":
+        td = datetime.timedelta(hours=value)
+    elif match[3] == "W":
+        td = datetime.timedelta(weeks=value)
+
+    return td
+
+
 class Item:
     """Class for address book and calendar entries."""
 
@@ -504,7 +565,8 @@ class Item:
         self.component_name
         self._vobject_item = orig_vobject_item
 
-    def convert_vcf_to_ics(self) -> Union["Item", None]:
+    def convert_vcf_to_ics(self, ShareActions: dict = {}) -> Union["Item", None]:
+        logger.trace("item/convert_vcf_to_ics: ShareActions: %r", ShareActions)
         logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
         logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
         if self.vobject_item.name != "VCARD":
@@ -529,22 +591,53 @@ class Item:
         else:
             pass
 
+        placeholder_mapping: dict = {}
+
         bdayS = match[1] + match[2] + match[3]
-        bdaySdesc = match[1] + "-" + match[2] + "-" + match[3]
         bdayY = int(match[1])
         bdayM = int(match[2])
         bdayD = int(match[3])
+
+        placeholder_mapping['{year}'] = match[1]
+        placeholder_mapping['{month}'] = match[2]
+        placeholder_mapping['{day}'] = match[3]
 
         # create ICS
         if hasattr(self.vobject_item, "fn"):
             name = self.vobject_item.fn.value
         elif hasattr(self.vobject_item, "n"):
-            name = self.vobject_item.n.value
+            name = self.vobject_item.n.value.family + " " + self.vobject_item.n.value.given
         elif hasattr(self.vobject_item, "nickname"):
             name = self.vobject_item.nickname.value
         else:
             logger.trace("item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
             return None
+
+        if hasattr(self.vobject_item, "nickname") and self.vobject_item.nickname.value != "":
+            placeholder_mapping['{nickname}'] = self.vobject_item.nickname.value
+        else:
+            placeholder_mapping['{nickname}'] = '!nickname!'
+
+        if hasattr(self.vobject_item, "fn") and self.vobject_item.fn.value != "":
+            placeholder_mapping['{fn}'] = self.vobject_item.fn.value
+        else:
+            placeholder_mapping['{nickname}'] = '!fn!'
+
+        # rfc6350#6.2 FamilyName;GivenName;AdditionalNames;HonorificPrefixes;HonorificSuffixes
+        if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.family != "":
+            placeholder_mapping['{n:f}'] = self.vobject_item.n.value.family
+        else:
+            placeholder_mapping['{n:f}'] = '!n:f!'
+
+        if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.given != "":
+            placeholder_mapping['{n:g}'] = self.vobject_item.n.value.given
+        else:
+            placeholder_mapping['{n:g}'] = '!n:g!'
+
+        if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.additional != "":
+            placeholder_mapping['{n:a}'] = self.vobject_item.n.value.additional
+        else:
+            placeholder_mapping['{n:a}'] = '!n:a!'
 
         # create VCALENDAR
         item_ics = vobject.newFromBehavior('vcalendar')
@@ -555,40 +648,134 @@ class Item:
         else:
             item_ics.add('prodid').value = PRODID_CONVERTED
 
-        # create EVENT
-        item_ics.add('vevent')
+        # prepare SUMMARY
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_summary_template' in ShareActions['config']:
+            summary = ShareActions['config']['conversion_bday_summary_template']
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_summary_template' in ShareActions['config_default']:
+            summary = ShareActions['config_default']['conversion_bday_summary_template']
+        else:
+            summary = sharing.SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT  # fallback
+        summary = replace_placeholders(summary, placeholder_mapping)
 
-        # set DTSTART
-        dtstart = datetime.date(bdayY, bdayM, bdayD)
-        item_ics.vevent.add('dtstart').value = dtstart
+        # prepare DESCRIPTION
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_description_template' in ShareActions['config']:
+            description = ShareActions['config']['conversion_bday_description_template']
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_description_template' in ShareActions['config_default']:
+            description = ShareActions['config_default']['conversion_bday_description_template']
+        else:
+            description = sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT  # fallback
+        description = replace_placeholders(description, placeholder_mapping)
 
-        # calculate and set DTEND
-        dtend = dtstart + datetime.timedelta(days=1)
-        item_ics.vevent.add('dtend').value = dtend
+        # create CATEGORIES
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_categories' in ShareActions['config']:
+            categories = ShareActions['config']['conversion_bday_categories'].split(',')
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_categories' in ShareActions['config_default']:
+            categories = ShareActions['config_default']['conversion_bday_categories'].split(',')
+        else:
+            categories = sharing.SHARING_BDAY_CATEGORIES_DEFAULT.split(',')  # fallback
 
-        # set UID
+        # check ALARM
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_alarm_trigger_template' in ShareActions['config']:
+            alarm_trigger = ShareActions['config']['conversion_bday_alarm_trigger_template']
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_alarm_trigger_template' in ShareActions['config_default']:
+            alarm_trigger = ShareActions['config_default']['conversion_bday_alarm_trigger_template']
+        else:
+            alarm_trigger = ""  # default
+
+        vevent_enable_age = False
+        age_max = 0
+        if "{age}" in summary or "{age}" in description or "age" in alarm_trigger:
+            if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_age_max' in ShareActions['config']:
+                age_max = ShareActions['config']['conversion_bday_age_max']
+            elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_age_max' in ShareActions['config_default']:
+                age_max = ShareActions['config_default']['conversion_bday_age_max']
+            else:
+                age_max = sharing.SHARING_BDAY_AGE_MAX_DEFAULT  # fallback
+            vevent_enable_age = True
+
+        # create UID
         if hasattr(self.vobject_item, "uid"):
             pattern = re.compile('^(.*)-[0-9a-fA-F]{12}(.*)$')
             match = pattern.match(self.vobject_item.uid.value)
             if match:
                 # replace part of UUID by bday
-                item_ics.vevent.add('uid').value = match[1] + '-' + 'bda0' + bdayS + match[2]
+                uid = match[1] + '-' + 'bda0' + bdayS + match[2]
             else:
-                item_ics.vevent.add('uid').value = self.vobject_item.uid.value + UID_SUFFIX
+                uid = self.vobject_item.uid.value + UID_SUFFIX
         else:
-            item_ics.vevent.add('uid').value = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
+            uid = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
 
-        # set SUMMARY
-        item_ics.vevent.add('summary').value = name + " (BDAY)"
+        age = 0
+        while age <= age_max:
+            # create EVENT
+            vevent = item_ics.add('vevent')
 
-        # set RRULE
-        item_ics.vevent.add('rrule').value = "FREQ=YEARLY"
+            # set DTSTART
+            if vevent_enable_age:
+                dtstart = datetime.date(bdayY + age, bdayM, bdayD)
+            else:
+                dtstart = datetime.date(bdayY, bdayM, bdayD)
+            vevent.add('dtstart').value = dtstart
 
-        # add transparency
-        item_ics.vevent.add('transp').value = "TRANSPARENT"
+            # calculate and set DTEND
+            dtend = dtstart + datetime.timedelta(days=1)
+            vevent.add('dtend').value = dtend
 
-        # add description
-        item_ics.vevent.add('description').value = "BDAY=" + bdaySdesc
+            # set UID
+            if vevent_enable_age:
+                uid_value = uid + "-AGE-" + str(age)
+            else:
+                uid_value = uid
+            vevent.add('uid').value = uid_value
+
+            # set SUMMARY
+            if vevent_enable_age:
+                summary_value = summary.replace("{age}", str(age))
+            else:
+                summary_value = summary
+            vevent.add('summary').value = summary_value
+
+            # set CATEGORIES
+            if categories is not None and categories != []:
+                vevent.add('categories').value = categories
+
+            # set CLASS
+            vevent.add('class').value = "PRIVATE"
+
+            # set STATUS
+            vevent.add('status').value = "CONFIRMED"
+
+            # set VALARM
+            if alarm_trigger is not None and alarm_trigger != "":
+                for entry in alarm_trigger.split('|'):
+                    (trigger, alarm_description) = entry.split(';')
+                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
+                    td = trigger_to_timedelta(trigger)
+                    if td is not None:
+                        alarm_description = replace_placeholders(alarm_description, placeholder_mapping)
+                        alarm_description_value = alarm_description.replace("{age}", str(age))
+                        valarm = vevent.add('valarm')
+                        valarm.add('action').value = "DISPLAY"
+                        valarm.add('description').value = alarm_description_value
+                        valarm.add('trigger').value = td
+
+            # set RRULE
+            if not vevent_enable_age:
+                vevent.add('rrule').value = "FREQ=YEARLY"
+
+            # add transparency
+            vevent.add('transp').value = "TRANSPARENT"
+
+            # set DESCRIPTION
+            if vevent_enable_age:
+                description_value = description.replace("{age}", str(age))
+            else:
+                description_value = description
+            if description != "":
+                vevent.add('description').value = description_value
+
+            # increase age
+            age = age + 1
 
         href = self.href
         if href is not None:
