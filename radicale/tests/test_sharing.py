@@ -5097,6 +5097,26 @@ permissions: RrWw""")
             else:
                 raise
 
+            logging.info("\n*** configuration test: conversion_bday_summary_template empty")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_summary_template": "",
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                raise
+
+            logging.info("\n*** configuration test: conversion_bday_description_template empty")
+            try:
+                self.configure({"sharing": {
+                    "conversion_bday_description_template": "",
+                    }})
+            except RuntimeError:
+                pass
+            else:
+                pass
+
             logging.info("\n*** configuration test: conversion_bday_alarm_trigger_template not supported")
             try:
                 self.configure({"sharing": {

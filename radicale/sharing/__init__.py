@@ -152,6 +152,13 @@ def check_template(data: Any) -> str:
     return data
 
 
+def check_template_not_empty(data: Any) -> str:
+    result = check_template(data)
+    if result == "":
+        raise ValueError("template not allowed to be empty")
+    return data
+
+
 def check_template_alarm_trigger(data: Any) -> str:
     if data is not None and data != '':
         for entry in data.split('|'):
@@ -169,7 +176,7 @@ def check_template_alarm_trigger(data: Any) -> str:
 
             if alarm_description is not None and alarm_description != '':
                 try:
-                    check_template(alarm_description)
+                    check_template_not_empty(alarm_description)
                 except Exception as e:
                     raise e
             else:
@@ -179,7 +186,7 @@ def check_template_alarm_trigger(data: Any) -> str:
 
 ACTIONS_WHITELIST: dict = {
         'config': {
-            'conversion_bday_summary_template': check_template,
+            'conversion_bday_summary_template': check_template_not_empty,
             'conversion_bday_description_template': check_template,
             'conversion_bday_alarm_trigger_template': check_template_alarm_trigger,
             'conversion_bday_categories': str,

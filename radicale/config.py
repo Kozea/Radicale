@@ -597,7 +597,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("conversion_bday_summary_template", {
             "value": sharing.SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT,
             "help": "conversion bday summary template",
-            "type": sharing.check_template}),
+            "type": sharing.check_template_not_empty}),
         ("conversion_bday_description_template", {
             "value": sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT,
             "help": "conversion bday description template",
