@@ -123,15 +123,19 @@ TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
 OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
 
-SHARING_BDAY_AGE_MAX: int = 199  # maximum age to prevent unexpected DoS by config
+SHARING_BDAY_AGE_MAX_LIMIT: int = 199  # maximum age to prevent unexpected DoS by config
+SHARING_BDAY_AGE_MAX_DEFAULT: int = 99
+SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT: str = "[{n:f} {n:g} {n:a}|{fn}|{nickname}] ({year}) (BDAY)"
+SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT: str = "BDAY={year}-{month}-{day}"
+SHARING_BDAY_CATEGORIES_DEFAULT: str = 'Birthday'
 
 
 def check_bday_max_age(data: Any) -> int:
     value = int(data)
     if value < 0:
         raise ValueError("value is negative: %d" % value)
-    if value > SHARING_BDAY_AGE_MAX:
-        raise ValueError("value exceeds maximum (%d): %d" % (SHARING_BDAY_AGE_MAX, value))
+    if value > SHARING_BDAY_AGE_MAX_LIMIT:
+        raise ValueError("value exceeds maximum (%d): %d" % (SHARING_BDAY_AGE_MAX_LIMIT, value))
     return value
 
 
@@ -478,7 +482,7 @@ class BaseSharing:
                 # autogenerate Actions if not existing
                 if share['Actions'] is None or 'config' not in share['Actions']:
                     share['Actions'] = {
-                            'config': {
+                            'config_default': {
                                 'conversion_bday_summary_template': self.conversion_bday_summary_template,
                                 'conversion_bday_description_template': self.conversion_bday_description_template,
                                 'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template,
@@ -492,7 +496,9 @@ class BaseSharing:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['config'].update(
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
                                 {'conversion_bday_summary_template': self.conversion_bday_summary_template}
                                 )
 
@@ -500,7 +506,9 @@ class BaseSharing:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['config'].update(
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
                                 {'conversion_bday_description_template': self.conversion_bday_description_template}
                                 )
 
@@ -508,7 +516,9 @@ class BaseSharing:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['config'].update(
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
                                 {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
                                 )
 
@@ -516,7 +526,9 @@ class BaseSharing:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['config'].update(
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
                                 {'conversion_bday_categories': self.conversion_bday_categories}
                                 )
 
@@ -524,7 +536,9 @@ class BaseSharing:
                             # nothing to do
                             pass
                         else:
-                            share['Actions']['config'].update(
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
                                 {'conversion_bday_age_max': self.conversion_bday_age_max}
                                 )
 

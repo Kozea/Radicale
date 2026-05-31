@@ -5008,7 +5008,7 @@ permissions: RrWw""")
             assert "SUMMARY:Test-FN (BDAY)" in answer
 
             self.configure({"sharing": {"conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (Birthday)"}})
-            logging.info("\n*** GET collection user format:text -> ok")
+            logging.info("\n*** GET collection user format with fn+Birthday -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (Birthday)" in answer
 
@@ -5244,7 +5244,7 @@ permissions: RrWw""")
             logging.info("\n*** configuration test: conversion_bday_age_max > MAX")
             try:
                 self.configure({"sharing": {
-                    "conversion_bday_age_max": (sharing.SHARING_BDAY_AGE_MAX + 1),
+                    "conversion_bday_age_max": (sharing.SHARING_BDAY_AGE_MAX_LIMIT + 1),
                     }})
             except RuntimeError:
                 pass
@@ -5349,7 +5349,7 @@ permissions: RrWw""")
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Actions'] = {"config": {
-                "conversion_bday_age_max": (sharing.SHARING_BDAY_AGE_MAX + 1),
+                "conversion_bday_age_max": (sharing.SHARING_BDAY_AGE_MAX_LIMIT + 1),
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
@@ -5371,7 +5371,7 @@ permissions: RrWw""")
             json_dict['PathMapped'] = path_mapped
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Actions'] = {"config": {
-                "conversion_bday_age_max": sharing.SHARING_BDAY_AGE_MAX,
+                "conversion_bday_age_max": sharing.SHARING_BDAY_AGE_MAX_LIMIT,
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
@@ -5952,8 +5952,8 @@ permissions: RrWw""")
             logging.info("\n*** GET bday with token")
             _, answer = self.get(path_shared)
             assert "VCARD" not in answer
-            assert "Test-FN-C3 (BDAY)" in answer
-            assert "Test-FN (BDAY)" in answer
+            assert "Test-FN-C3 (BDAY)" in answer  # contact2
+            assert "Test-FN (BDAY)" in answer  # contact1
 
             # verify content as owner
             logging.info("\n*** GET collection owner -> ok")

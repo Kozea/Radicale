@@ -38,7 +38,7 @@ from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
 import vobject
 
 from radicale import storage  # noqa:F401
-from radicale import pathutils, utils
+from radicale import pathutils, sharing, utils
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
 
@@ -594,7 +594,6 @@ class Item:
         placeholder_mapping: dict = {}
 
         bdayS = match[1] + match[2] + match[3]
-        bdaySdesc = match[1] + "-" + match[2] + "-" + match[3]
         bdayY = int(match[1])
         bdayM = int(match[2])
         bdayD = int(match[3])
@@ -649,37 +648,49 @@ class Item:
         else:
             item_ics.add('prodid').value = PRODID_CONVERTED
 
-        # create SUMMARY
-        summary = name + " (BDAY)"  # default
-        if ShareActions is not None and 'config' in ShareActions:
-            if 'conversion_bday_summary_template' in ShareActions['config']:
-                summary = ShareActions['config']['conversion_bday_summary_template']
-                summary = replace_placeholders(summary, placeholder_mapping)
+        # prepare SUMMARY
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_summary_template' in ShareActions['config']:
+            summary = ShareActions['config']['conversion_bday_summary_template']
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_summary_template' in ShareActions['config_default']:
+            summary = ShareActions['config_default']['conversion_bday_summary_template']
+        else:
+            summary = sharing.SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT  # fallback
+        summary = replace_placeholders(summary, placeholder_mapping)
 
-        # create DESCRIPTION
-        description = "BDAY=" + bdaySdesc  # default
-        if ShareActions is not None and 'config' in ShareActions:
-            if 'conversion_bday_description_template' in ShareActions['config']:
-                description = ShareActions['config']['conversion_bday_description_template']
-                description = replace_placeholders(description, placeholder_mapping)
+        # prepare DESCRIPTION
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_description_template' in ShareActions['config']:
+            description = ShareActions['config']['conversion_bday_description_template']
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_description_template' in ShareActions['config_default']:
+            description = ShareActions['config_default']['conversion_bday_description_template']
+        else:
+            description = sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT  # fallback
+        description = replace_placeholders(description, placeholder_mapping)
 
         # create CATEGORIES
-        categories: list = ["Birthday"]  # default
-        if ShareActions is not None and 'config' in ShareActions:
-            if 'conversion_bday_categories' in ShareActions['config']:
-                categories = ShareActions['config']['conversion_bday_categories'].split(',')
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_categories' in ShareActions['config']:
+            categories = ShareActions['config']['conversion_bday_categories'].split(',')
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_categories' in ShareActions['config_default']:
+            categories = ShareActions['config_default']['conversion_bday_categories'].split(',')
+        else:
+            categories = sharing.SHARING_BDAY_CATEGORIES_DEFAULT.split(',')  # fallback
 
         # check ALARM
-        alarm_trigger = ""  # default
-        if ShareActions is not None and 'config' in ShareActions:
+        if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_alarm_trigger_template' in ShareActions['config']:
             alarm_trigger = ShareActions['config']['conversion_bday_alarm_trigger_template']
+        elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_alarm_trigger_template' in ShareActions['config_default']:
+            alarm_trigger = ShareActions['config_default']['conversion_bday_alarm_trigger_template']
+        else:
+            alarm_trigger = ""  # default
 
         vevent_enable_age = False
         age_max = 0
         if "{age}" in summary or "{age}" in description or "age" in alarm_trigger:
-            if ShareActions is not None and 'config' in ShareActions:
-                if 'conversion_bday_age_max' in ShareActions['config']:
-                    age_max = ShareActions['config']['conversion_bday_age_max']
+            if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_age_max' in ShareActions['config']:
+                age_max = ShareActions['config']['conversion_bday_age_max']
+            elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_age_max' in ShareActions['config_default']:
+                age_max = ShareActions['config_default']['conversion_bday_age_max']
+            else:
+                age_max = sharing.SHARING_BDAY_AGE_MAX_DEFAULT  # fallback
             vevent_enable_age = True
 
         # create UID

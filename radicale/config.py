@@ -595,11 +595,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "default permissions for map-based sharing",
             "type": rights_permission}),
         ("conversion_bday_summary_template", {
-            "value": "[{n:f} {n:g} {n:a}|{fn}|{nickname}] (BDAY)",
+            "value": sharing.SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT,
             "help": "conversion bday summary template",
             "type": sharing.check_template}),
         ("conversion_bday_description_template", {
-            "value": "BDAY={year}-{month}-{day}",
+            "value": sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT,
             "help": "conversion bday description template",
             "type": sharing.check_template}),
         ("conversion_bday_alarm_trigger_template", {
@@ -607,11 +607,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "conversion bday alarm trigger template",
             "type": sharing.check_template_alarm_trigger}),
         ("conversion_bday_categories", {
-            "value": "Birthday",
+            "value": sharing.SHARING_BDAY_CATEGORIES_DEFAULT,
             "help": "conversion bday categories",
             "type": str}),
         ("conversion_bday_age_max", {
-            "value": "99",
+            "value": str(sharing.SHARING_BDAY_AGE_MAX_DEFAULT),
             "help": "conversion bday age max",
             "type": sharing.check_bday_max_age}),
         ])),
