@@ -4881,6 +4881,8 @@ permissions: RrWw""")
             assert "TRANSP:TRANSPARENT" in answer
             assert "DESCRIPTION:BDAY=1970-01-01" in answer
             assert "CATEGORIES:Birthday" in answer
+            assert "CLASS:PRIVATE" in answer
+            assert "STATUS:CONFIRMED" in answer
             # content type must be adjusted
             assert 'Content-Type' in headers
             assert 'text/calendar' in headers['Content-Type']
