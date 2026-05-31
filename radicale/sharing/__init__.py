@@ -251,10 +251,10 @@ class BaseSharing:
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
         logger.info("sharing.enforce_properties_overlay: %s", self.enforce_properties_overlay)
-        logger.info("sharing.conversion_bday_summary_template: %s", self.conversion_bday_summary_template)
-        logger.info("sharing.conversion_bday_description_template: %s", self.conversion_bday_description_template)
-        logger.info("sharing.conversion_bday_alarm_trigger_template: %s", self.conversion_bday_alarm_trigger_template)
-        logger.info("sharing.conversion_bday_categories: %s", self.conversion_bday_categories)
+        logger.info("sharing.conversion_bday_summary_template: %r", self.conversion_bday_summary_template)
+        logger.info("sharing.conversion_bday_description_template: %r", self.conversion_bday_description_template)
+        logger.info("sharing.conversion_bday_alarm_trigger_template: %r", self.conversion_bday_alarm_trigger_template)
+        logger.info("sharing.conversion_bday_categories: %r", self.conversion_bday_categories)
         logger.info("sharing.conversion_bday_age_max: %s", self.conversion_bday_age_max)
 
         # database tasks
