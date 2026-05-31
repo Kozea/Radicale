@@ -5199,6 +5199,115 @@ permissions: RrWw""")
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
+            self.configure({
+                "sharing": {"conversion_bday_description_template": sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT,
+                            "conversion_bday_alarm_trigger_template": "",
+                            }
+                })
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r with valid description template -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_summary_template": "{fn} ({year})",
+                "conversion_bday_description_template": "Birthday={year}-{month}-{day}"
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday=1990-01-01" in answer
+            assert "SUMMARY:Test-FN-C3 (1990)" in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r with valid empty description template -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_description_template": ""
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday=" not in answer
+            assert "DESCRIPTION:BDAY=" not in answer
+            assert "SUMMARY:Test-FN-C3 (1990)" in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r DEL description template -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_description_template": sharing.SHARING_ACTIONS_DELETE_VALUE
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday=" not in answer
+            assert "DESCRIPTION:BDAY=" in answer
+            assert "SUMMARY:Test-FN-C3 (1990)" in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r DEL summary template -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_summary_template": sharing.SHARING_ACTIONS_DELETE_VALUE
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** GET collection user format: description -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "DESCRIPTION:Birthday=" not in answer
+            assert "DESCRIPTION:BDAY=" in answer
+            assert "SUMMARY:Family3Test Given3Test !n:a! (Birthday)" in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r with valid age max -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_age_max": 5,
+                "conversion_bday_summary_template": "{fn} ({year}/{age})",
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** GET collection user format: summary with age -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "Test-FN-C3 (1990/0)" in answer
+            assert "Test-FN-C3 (1990/5)" in answer
+            assert "Test-FN-C3 (1990/6)" not in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r with valid age max -> 200")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_age_max": sharing.SHARING_ACTIONS_DELETE_VALUE
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** GET collection user format: summary with age -> ok")
+            _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
+            assert "Test-FN-C3 (1990/0)" in answer
+            assert "Test-FN-C3 (1990/5)" in answer
+            assert "Test-FN-C3 (1990/6)" in answer
+
     def test_sharing_api_map_vcf_bday_age_template(self) -> None:
         """share-by-map with conversion=bday template tests with age."""
         self.configure({"auth": {"type": "htpasswd",
