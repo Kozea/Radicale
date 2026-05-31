@@ -526,6 +526,8 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 
  * Output: text/plain|application/json
 
+ * Level-2 entries in "Actions" can be deleted using special value `#DEL#` (see API example below related to "bday" conversion)
+
  * Examples:
 
 ###### form->text
@@ -737,4 +739,80 @@ curl http://localhost:5232/.token/v1/lqqwqhZYTGi9uSPsixien_8G5jiSK0FfhNFRGG_t8UA
 BEGIN:VCALENDAR
 ...
 END:VCALENDAR
+```
+
+##### Adjusting templates per share
+
+```bash
+## set specific config: conversion_bday_summary_template
+curl -u owner:$ownerpw -H "Content-Type: application/json" -d '{ "PathMapped": "/owner/addressbook/", "PathOrToken": "/owner/bday-of-addressbook/", "Actions": { "config": { "conversion_bday_summary_template": "{fn} ({year}" }}}' http://localhost:5232/.sharing/v1/map/update
+{"ApiVersion": 1, "Status": "success"}
+```
+
+```bash
+## list adjusted share
+curl -s -H "Content-Type: application/json" -u owner:$ownerpw -d '{ "PathMapped": "/owner/addressbook/", "PathOrToken": "/owner/bday-of-addressbook/"}' http://localhost:5232/.sharing/v1/map/list | jq
+{
+  "ApiVersion": 1,
+  "Lines": 1,
+  "Status": "success",
+  "Content": [
+    {
+      "ShareType": "map",
+      "PathOrToken": "/owner/bday-of-addressbook/",
+      "PathMapped": "/owner/addressbook/",
+      "Conversion": "bday",
+      "Owner": "owner",
+      "User": "owner",
+      "Permissions": "r",
+      "EnabledByOwner": true,
+      "EnabledByUser": true,
+      "HiddenByOwner": false,
+      "HiddenByUser": false,
+      "TimestampCreated": 1774339430,
+      "TimestampUpdated": 1780240328,
+      "Properties": {},
+      "Actions": {
+        "config": {
+          "conversion_bday_summary_template": "{fn} ({year}"
+        }
+      }
+    }
+  ]
+}
+```
+
+```bash
+## delete specific config: conversion_bday_summary_template (using special value "#DEL#")
+curl -u owner:$ownerpw -H "Content-Type: application/json" -d '{ "PathMapped": "/owner/addressbook/", "PathOrToken": "/owner/bday-of-addressbook/", "Actions": { "config": { "conversion_bday_summary_template": "#DEL#" }}}' http://localhost:5232/.sharing/v1/map/update
+{"ApiVersion": 1, "Status": "success"}
+```
+
+```bash
+## list share (specific config is deleted)
+curl -s -H "Content-Type: application/json" -u owner:$ownerpw -d '{ "PathMapped": "/owner/addressbook/", "PathOrToken": "/owner/bday-of-addressbook/"}' http://localhost:5232/.sharing/v1/map/list | jq
+{
+  "ApiVersion": 1,
+  "Lines": 1,
+  "Status": "success",
+  "Content": [
+    {
+      "ShareType": "map",
+      "PathOrToken": "/owner/bday-of-addressbook/",
+      "PathMapped": "/owner/addressbook/",
+      "Conversion": "bday",
+      "Owner": "owner",
+      "User": "owner",
+      "Permissions": "r",
+      "EnabledByOwner": true,
+      "EnabledByUser": true,
+      "HiddenByOwner": false,
+      "HiddenByUser": false,
+      "TimestampCreated": 1774339430,
+      "TimestampUpdated": 1780240558,
+      "Properties": {},
+      "Actions": {}
+    }
+  ]
+}
 ```

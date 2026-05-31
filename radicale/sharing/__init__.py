@@ -128,6 +128,7 @@ SHARING_BDAY_AGE_MAX_DEFAULT: int = 99
 SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT: str = "[{n:f} {n:g}|{fn}|{nickname}] ({year}) (BDAY)"
 SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT: str = "BDAY={year}-{month}-{day}"
 SHARING_BDAY_CATEGORIES_DEFAULT: str = 'Birthday'
+SHARING_ACTIONS_DELETE_VALUE: str = '#DEL#'
 
 
 def check_bday_max_age(data: Any) -> int:
@@ -555,7 +556,6 @@ class BaseSharing:
 
     # adjust a share
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
-        """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         logger.info("sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
         # Filter properies for permitted ones
         properties_filtered: dict = {}
@@ -943,7 +943,7 @@ class BaseSharing:
                 if level1 in ACTIONS_WHITELIST:
                     for level2 in request_data['Actions'][level1]:
                         if level2 in ACTIONS_WHITELIST[level1]:
-                            if callable(ACTIONS_WHITELIST[level1][level2]):
+                            if callable(ACTIONS_WHITELIST[level1][level2]) and request_data['Actions'][level1][level2] != SHARING_ACTIONS_DELETE_VALUE:
                                 try:
                                     value = ACTIONS_WHITELIST[level1][level2](request_data['Actions'][level1][level2])
                                 except ValueError:
@@ -1252,6 +1252,32 @@ class BaseSharing:
                             # unset, do nothing
                             logger.trace("" + api_info + ": clear property %r", prop)
                             del Properties[prop]
+
+            if 'Actions' in request_data:
+                if Actions is None:
+                    # clear actions
+                    Actions = {}
+                elif Actions == {}:
+                    # empty, nothing to do
+                    pass
+                elif share['Actions'] is not None:
+                    # replace properties
+                    for level1 in share['Actions']:
+                        if level1 not in Actions:
+                            Actions[level1] = {}  # initialize level1
+                        for level2 in share['Actions'][level1]:
+                            logger.trace("" + api_info + ": check for existing Actions entry %r->%r", level1, level2)
+                            if level2 not in Actions[level1]:
+                                logger.trace("" + api_info + ": overtake Actions entry %r->%r", level1, level2)
+                                Actions[level1][level2] = share['Actions'][level1][level2]
+                            elif Actions[level1][level2] == SHARING_ACTIONS_DELETE_VALUE:
+                                # unset, do nothing
+                                logger.trace("" + api_info + ": delete Actions entry %r->%r", level1, level2)
+                                del Actions[level1][level2]
+                        if len(Actions[level1]) == 0:
+                            logger.trace("" + api_info + ": delete Actions entry %r", level1)
+                            # unset level1
+                            del Actions[level1]
 
             if Permissions is not None and share['Conversion'] is not None:
                 Permissions = str(Permissions)
