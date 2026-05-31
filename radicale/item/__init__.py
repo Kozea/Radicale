@@ -743,7 +743,7 @@ class Item:
             vevent.add('class').value = "PRIVATE"
 
             # set STATUS
-            vevent.add('class').value = "CONFIRMED"
+            vevent.add('status').value = "CONFIRMED"
 
             # set VALARM
             if alarm_trigger is not None and alarm_trigger != "":
