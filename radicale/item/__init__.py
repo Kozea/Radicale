@@ -771,7 +771,8 @@ class Item:
                 description_value = description.replace("{age}", str(age))
             else:
                 description_value = description
-            vevent.add('description').value = description_value
+            if description != "":
+                vevent.add('description').value = description_value
 
             # increase age
             age = age + 1
