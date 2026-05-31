@@ -556,7 +556,6 @@ class BaseSharing:
 
     # adjust a share
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
-        """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         logger.info("sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
         # Filter properies for permitted ones
         properties_filtered: dict = {}
