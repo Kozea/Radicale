@@ -125,7 +125,7 @@ OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:c
 
 SHARING_BDAY_AGE_MAX_LIMIT: int = 199  # maximum age to prevent unexpected DoS by config
 SHARING_BDAY_AGE_MAX_DEFAULT: int = 99
-SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT: str = "[{n:f} {n:g} {n:a}|{fn}|{nickname}] ({year}) (BDAY)"
+SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT: str = "[{n:f} {n:g}|{fn}|{nickname}] ({year}) (BDAY)"
 SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT: str = "BDAY={year}-{month}-{day}"
 SHARING_BDAY_CATEGORIES_DEFAULT: str = 'Birthday'
 

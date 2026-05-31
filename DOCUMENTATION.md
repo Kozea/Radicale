@@ -2311,7 +2311,7 @@ _(>= 3.7.5)_
 
 Global template for summary of conversion "bday"
 
-Default: `"{{n:f} {n:g} {n:a}|{fn}|{nickname}} (BDAY)"`
+Default: `"{{n:f} {n:g}|{fn}|{nickname}} ({year}) (BDAY)"`
 
 Supported placeholders (data used from VCARD)
  * `{year}`: year of birthday (RFC6350#6.2.5)
