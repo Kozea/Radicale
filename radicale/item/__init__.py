@@ -739,6 +739,12 @@ class Item:
             if categories is not None and categories != []:
                 vevent.add('categories').value = categories
 
+            # set CLASS
+            vevent.add('class').value = "PRIVATE"
+
+            # set STATUS
+            vevent.add('class').value = "CONFIRMED"
+
             # set VALARM
             if alarm_trigger is not None and alarm_trigger != "":
                 for entry in alarm_trigger.split('|'):
