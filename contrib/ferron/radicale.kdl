@@ -1,0 +1,8 @@
+// Minimal configuration for Ferron web server v2
+
+example.com {
+	location "/radicale" remove_base=#true {
+		proxy "http://localhost:5232"
+		proxy_request_header "X-Script-Name" "/radicale"
+	}
+}
