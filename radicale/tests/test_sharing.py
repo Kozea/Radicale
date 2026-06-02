@@ -425,6 +425,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['SupportedConversions'] == list(sharing.CONVERSIONS_WHITELIST)
             assert answer_dict['PermittedPropertiesOverlay'] is True
             assert answer_dict['SupportedPropertiesOverlay'] == list(sharing.OVERLAY_PROPERTIES_WHITELIST)
+            assert answer_dict['SupportedActions'] == sharing.ACTIONS_WHITELIST_INFO
 
             logging.info("\n*** check API hook: info/all (2)")
             self.configure({"sharing": {"permit_properties_overlay": "False"}})

@@ -116,6 +116,7 @@ API_TYPES_V1: dict[str, type] = {
         "SupportedConversions": list,
         "PermittedPropertiesOverlay": bool,
         "SupportedPropertiesOverlay": list,
+        "SupportedActions": dict,
 }
 
 
@@ -185,6 +186,7 @@ def check_template_alarm_trigger(data: Any) -> str:
     return data
 
 
+# dict for validation of API request: create/update
 ACTIONS_WHITELIST: dict = {
         'config': {
             'conversion_bday_summary_template': check_template_not_empty,
@@ -192,6 +194,17 @@ ACTIONS_WHITELIST: dict = {
             'conversion_bday_alarm_trigger_template': check_template_alarm_trigger,
             'conversion_bday_categories': str,
             'conversion_bday_age_max': check_bday_max_age,
+            },
+        }
+
+# dict for displaying API request: info
+ACTIONS_WHITELIST_INFO: dict = {
+        'config': {
+            'conversion_bday_summary_template': "str",
+            'conversion_bday_description_template': "str",
+            'conversion_bday_alarm_trigger_template': "str",
+            'conversion_bday_categories': "str",
+            'conversion_bday_age_max': "int",
             },
         }
 
@@ -1431,6 +1444,7 @@ class BaseSharing:
                 answer['SupportedConversions'] = CONVERSIONS_WHITELIST
                 answer['PermittedPropertiesOverlay'] = self.permit_properties_overlay
                 answer['SupportedPropertiesOverlay'] = OVERLAY_PROPERTIES_WHITELIST
+                answer['SupportedActions'] = ACTIONS_WHITELIST_INFO
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
