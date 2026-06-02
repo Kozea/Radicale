@@ -270,7 +270,8 @@ FeatureEnabledCollectionByToken=True
 PermittedCreateCollectionByToken=True
 SupportedConversions=(bday none)
 PermittedPropertiesOverlay=True
-SupportedPropertiesOverlay=(C:calendar-description ICAL:calendar-color CR:addressbook-description INF:addressbook-color D:displayname)
+SupportedPropertiesOverlay=(C:calendar-description ICAL:calendar-color CR:addressbook-description INF:addressbook-color D:displayname ICAL:calendar-order)
+SupportedActions='{'config': {'conversion_bday_summary_template': 'str', 'conversion_bday_description_template': 'str', 'conversion_bday_alarm_trigger_template': 'str', 'conversion_bday_categories': 'str', 'conversion_bday_age_max': 'int'}}'
 ```
 
 ###### json->json, parsed with jq
@@ -285,9 +286,28 @@ curl -u user:$userpw --silent -H "accept: application/json" -d "" http://localho
   "PermittedCreateCollectionByMap": true,
   "FeatureEnabledCollectionByToken": true,
   "PermittedCreateCollectionByToken": true,
-  "SupportedConversions": ["bday", "none"],
+  "SupportedConversions": [
+    "bday",
+    "none"
+  ],
   "PermittedPropertiesOverlay": true,
-  "SupportedPropertiesOverlay": ["C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname"]
+  "SupportedPropertiesOverlay": [
+    "C:calendar-description",
+    "ICAL:calendar-color",
+    "CR:addressbook-description",
+    "INF:addressbook-color",
+    "D:displayname",
+    "ICAL:calendar-order"
+  ],
+  "SupportedActions": {
+    "config": {
+      "conversion_bday_summary_template": "str",
+      "conversion_bday_description_template": "str",
+      "conversion_bday_alarm_trigger_template": "str",
+      "conversion_bday_categories": "str",
+      "conversion_bday_age_max": "int"
+    }
+  }
 }
 ```
 
