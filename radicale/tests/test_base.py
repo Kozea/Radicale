@@ -273,6 +273,12 @@ permissions: RrWw""")
         event = get_file_content("event_exdate_without_rrule.ics")
         self.put("/calendar.ics/event.ics", event)
 
+    def test_add_event_with_issue2151(self) -> None:
+        """Test event of issue#2151."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue2151.ics")
+        self.put("/calendar.ics/event_issue2151.ics", event)
+
     def test_add_todo(self) -> None:
         """Add a todo."""
         self.mkcalendar("/calendar.ics/")
