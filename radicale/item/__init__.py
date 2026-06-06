@@ -174,7 +174,7 @@ def check_and_sanitize_items(
             # EXDATE has value DATE even if DTSTART/DTEND is DATE-TIME.
             # The RFC is vaguely formulated on the issue.
             # To resolve the issue convert EXDATE and RDATE to
-            # the same type as DTDSTART
+            # the same type as DTSTART
             if hasattr(component, "dtstart"):
                 ref_date = component.dtstart.value
                 ref_value_param = component.dtstart.params.get("VALUE")
