@@ -180,6 +180,13 @@ def check_and_sanitize_items(
                 ref_value_param = component.dtstart.params.get("VALUE")
                 for dates in chain(component.contents.get("exdate", []),
                                    component.contents.get("rdate", [])):
+                    for i, date in enumerate(dates.value):
+                        if type(ref_date) is datetime.datetime and type(date) is datetime.datetime:
+                            if hasattr(ref_date, 'tzinfo'):
+                                if hasattr(date, 'tzinfo') and date.tzinfo is None:
+                                    # Ensure that datetime.datetime object has timezone set if dtstart has one
+                                    dates.value[i] = dates.value[i].replace(tzinfo=ref_date.tzinfo)
+                                    logger.trace("ITEM/check_and_sanitize_item: overtake missing tzinfo from dtstart: '%s' -> '%s'", date, dates.value[i])
                     if all(type(d) is type(ref_date) for d in dates.value):
                         continue
                     for i, date in enumerate(dates.value):
