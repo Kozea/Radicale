@@ -1324,7 +1324,8 @@ class BaseSharing:
                            User=User,
                            Timestamp=Timestamp,
                            Properties=Properties,
-                           Actions=Actions)
+                           Actions=Actions,
+                           Conversion=Conversion)
                 else:
                     result = self.database_update_sharing(
                            ShareType=ShareType,
@@ -1337,7 +1338,8 @@ class BaseSharing:
                            User=User,
                            Timestamp=Timestamp,
                            Properties=Properties,
-                           Actions=Actions)
+                           Actions=Actions,
+                           Conversion=Conversion)
 
             elif user == share['User']:
                 # User is only allowed to update Properties

@@ -138,8 +138,158 @@ export function discover_server_features(user, password, callback) {
  * @property {number} [TimestampUpdated]
  * @property {Object<String, String>} [Properties]
  * @property {string} [Conversion]
+ * @property {Object<String, *>} [Actions]
  */
 
+export class ConfigProperty {
+    /**
+     * @param {string} key
+     * @param {string} type
+     * @param {string} displayName
+     */
+    constructor(key, type, displayName) {
+        /** @type {string} */ this.key = key;
+        /** @type {string} */ this.type = type;
+        /** @type {string} */ this.displayName = displayName;
+    }
+}
+
+export const BDAY_CONFIG = Object.freeze([
+    Object.freeze(new ConfigProperty("conversion_bday_summary_template", "str", "Summary template")),
+    Object.freeze(new ConfigProperty("conversion_bday_description_template", "str", "Description template")),
+    Object.freeze(new ConfigProperty("conversion_bday_alarm_trigger_template", "str", "Alarm trigger template")),
+    Object.freeze(new ConfigProperty("conversion_bday_categories", "str", "Categories")),
+    Object.freeze(new ConfigProperty("conversion_bday_age_max", "int", "Max age"))
+]);
+
+export class ShareConfig {
+    /**
+     * @param {ShareConfig|Record<string, any>} [data]
+     */
+    constructor(data = {}) {
+        /** @type {Record<string, any>} */
+        this._values = {};
+        let rawData = data;
+        if (data instanceof ShareConfig) {
+            rawData = data._values;
+        }
+        for (const [key, value] of Object.entries(rawData || {})) {
+            const bdayProp = BDAY_CONFIG.find(c => c.key === key);
+            if (bdayProp && bdayProp.type === "int" && value !== null && value !== undefined) {
+                let parsed = parseInt(String(value), 10);
+                this._values[key] = isNaN(parsed) ? value : parsed;
+            } else {
+                this._values[key] = value;
+            }
+        }
+    }
+
+    /**
+     * @param {ConfigProperty} property
+     * @returns {any}
+     */
+    get(property) {
+        let val = this._values[property.key] ?? null;
+        return val === "#DEL#" ? null : val;
+    }
+
+    /**
+     * @param {ConfigProperty} property
+     * @param {any} val
+     */
+    set(property, val) {
+        if (val === undefined || val === null || val === "") {
+            this._values[property.key] = null;
+        } else if (property.type === "int") {
+            let parsed = parseInt(String(val), 10);
+            this._values[property.key] = isNaN(parsed) ? val : parsed;
+        } else {
+            this._values[property.key] = val;
+        }
+    }
+
+    /**
+     * @param {ConfigProperty|string} property
+     */
+    delete(property) {
+        const key = typeof property === "string" ? property : property.key;
+        this._values[key] = "#DEL#";
+    }
+
+    /**
+     * @param {ConfigProperty} property
+     * @returns {boolean}
+     */
+    isDeleted(property) {
+        return this._values[property.key] === "#DEL#";
+    }
+
+    /**
+     * @returns {Record<string, any>}
+     */
+    toJSON() {
+        /** @type {Record<string, any>} */
+        let obj = {};
+        for (const [key, value] of Object.entries(this._values)) {
+            if (value !== null) {
+                obj[key] = value;
+            }
+        }
+        return obj;
+    }
+}
+
+export class ShareActions {
+    /**
+     * @param {Record<string, any>} [data]
+     */
+    constructor(data = {}) {
+        /** @type {ShareConfig} */
+        this._config = new ShareConfig(data.config || {});
+        for (const [key, value] of Object.entries(data)) {
+            if (key !== "config") {
+                (/** @type {any} */ (this))[key] = value;
+            }
+        }
+    }
+
+    /**
+     * @returns {ShareConfig}
+     */
+    get config() {
+        return this._config;
+    }
+
+    /**
+     * @param {ShareConfig|Record<string, any>} value
+     */
+    set config(value) {
+        if (value instanceof ShareConfig) {
+            this._config = value;
+        } else {
+            this._config = new ShareConfig(value || {});
+        }
+    }
+
+    /**
+     * @returns {Record<string, any>|undefined}
+     */
+    toJSON() {
+        /** @type {Record<string, any>} */
+        let obj = {};
+        for (const [key, value] of Object.entries(this)) {
+            if (key === "_config" && value instanceof ShareConfig) {
+                let configJSON = value.toJSON();
+                if (Object.keys(configJSON).length > 0) {
+                    obj.config = configJSON;
+                }
+            } else if (value !== null && value !== undefined) {
+                obj[key] = value;
+            }
+        }
+        return Object.keys(obj).length > 0 ? obj : undefined;
+    }
+}
 
 export class Share {
     /**
@@ -160,6 +310,40 @@ export class Share {
         /** @type {number} */ this.TimestampUpdated = data.TimestampUpdated || 0;
         /** @type {Object<String, String>} */ this.Properties = data.Properties || {};
         /** @type {string} */ this.Conversion = data.Conversion || "";
+        /** @type {ShareActions} */ this._Actions = new ShareActions();
+        this.Actions = data.Actions || {};
+    }
+
+    /**
+     * @returns {ShareActions}
+     */
+    get Actions() {
+        return this._Actions;
+    }
+
+    /**
+     * @param {ShareActions|Record<string, any>} value
+     */
+    set Actions(value) {
+        if (value instanceof ShareActions) {
+            this._Actions = value;
+        } else {
+            this._Actions = new ShareActions(value || {});
+        }
+    }
+
+    /**
+     * @returns {ShareConfig}
+     */
+    get config() {
+        return this.Actions.config;
+    }
+
+    /**
+     * @param {ShareConfig|Record<string, any>} value
+     */
+    set config(value) {
+        this.Actions.config = value;
     }
 }
 
@@ -247,6 +431,7 @@ export function add_share_by_token(
             Hidden: share.HiddenByOwner,
             Properties: share.Properties,
             Conversion: share.Conversion,
+            Actions: share.Actions,
         },
         function (response) {
             let json_response = JSON.parse(response);
@@ -288,6 +473,7 @@ export function add_share_by_map(
             User: share.User,
             PathOrToken: decodeURIComponent(share.PathOrToken),
             Conversion: share.Conversion,
+            Actions: share.Actions,
         },
         function (response) {
             let json_response = JSON.parse(response);
@@ -390,6 +576,7 @@ export function update_share_by_token(
             Hidden: share.HiddenByOwner,
             Properties: share.Properties,
             Conversion: share.Conversion,
+            Actions: share.Actions,
         },
         function (response) {
             let json_response = JSON.parse(response);
@@ -431,6 +618,7 @@ export function update_share_by_map(
             Hidden: share.HiddenByOwner,
             Properties: share.Properties,
             Conversion: share.Conversion,
+            Actions: share.Actions,
         },
         function (response) {
             let json_response = JSON.parse(response);

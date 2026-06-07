@@ -170,3 +170,23 @@ export function validate_files(input, field_name) {
         return "Please select at least one " + field_name;
     };
 }
+
+/**
+ * Validates that the input is a valid integer (if not empty).
+ * @param {HTMLInputElement} input
+ * @param {string} field_name
+ * @returns {function(): ?string}
+ */
+export function validate_integer(input, field_name) {
+    return () => {
+        let value = input.value.trim();
+        if (!value) {
+            return null;
+        }
+        let parsed = parseInt(value, 10);
+        if (isNaN(parsed) || String(parsed) !== value) {
+            return field_name + " must be an integer";
+        }
+        return null;
+    };
+}
