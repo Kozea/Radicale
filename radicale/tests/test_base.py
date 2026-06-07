@@ -273,6 +273,18 @@ permissions: RrWw""")
         event = get_file_content("event_exdate_without_rrule.ics")
         self.put("/calendar.ics/event.ics", event)
 
+    def test_add_event_exdate_no_tz(self) -> None:
+        """Test event where EXDATE has no tzinfo."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue2151.ics")
+        self.put("/calendar.ics/event_issue2151.ics", event)
+
+    def test_add_event_dtstart_no_tz_exdate_tz(self) -> None:
+        """Test event where DTSTART has no tzinfo but EXDATE."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_mixed_datetime_and_date_exdate.ics")
+        self.put("/calendar.ics/event_mixed_datetime_and_date_exdate.ics", event)
+
     def test_add_todo(self) -> None:
         """Add a todo."""
         self.mkcalendar("/calendar.ics/")

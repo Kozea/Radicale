@@ -174,12 +174,26 @@ def check_and_sanitize_items(
             # EXDATE has value DATE even if DTSTART/DTEND is DATE-TIME.
             # The RFC is vaguely formulated on the issue.
             # To resolve the issue convert EXDATE and RDATE to
-            # the same type as DTDSTART
+            # the same type as DTSTART
             if hasattr(component, "dtstart"):
                 ref_date = component.dtstart.value
                 ref_value_param = component.dtstart.params.get("VALUE")
                 for dates in chain(component.contents.get("exdate", []),
                                    component.contents.get("rdate", [])):
+                    for i, date in enumerate(dates.value):
+                        if type(ref_date) is datetime.datetime and type(date) is datetime.datetime:
+                            if hasattr(ref_date, 'tzinfo') and ref_date.tzinfo is not None:
+                                logger.trace("ITEM/check_and_sanitize_item: dtstart has tzinfo: '%s'", ref_date)
+                                if hasattr(date, 'tzinfo') and date.tzinfo is None:
+                                    # Ensure that datetime.datetime object has timezone set if dtstart has
+                                    dates.value[i] = dates.value[i].replace(tzinfo=ref_date.tzinfo)
+                                    logger.trace("ITEM/check_and_sanitize_item: overtake missing tzinfo from dtstart: '%s' -> '%s'", date, dates.value[i])
+                            elif (hasattr(ref_date, 'tzinfo') and ref_date.tzinfo is None) or not hasattr(ref_date, 'tzinfo'):
+                                logger.trace("ITEM/check_and_sanitize_item: dtstart has no tzinfo: '%s'", ref_date)
+                                if hasattr(date, 'tzinfo') and date.tzinfo is not None:
+                                    # Ensure that datetime.datetime object has no timezone set if dtstart has none
+                                    dates.value[i] = dates.value[i].replace(tzinfo=None)
+                                    logger.trace("ITEM/check_and_sanitize_item: remove existing tzinfo (dtstart has none): '%s' -> '%s'", date, dates.value[i])
                     if all(type(d) is type(ref_date) for d in dates.value):
                         continue
                     for i, date in enumerate(dates.value):
