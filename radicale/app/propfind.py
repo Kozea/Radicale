@@ -257,8 +257,8 @@ def xml_propfind_response(
             child_element.text = xmlutils.make_href(base_prefix, path)
             if share:
                 # backmap
-                if child_element.text.startswith(share['PathMapped']):
-                    child_element.text = str(share['PathOrToken']) + child_element.text.removeprefix(share['PathMapped'])
+                if child_element.text.startswith(base_prefix + share['PathMapped']):
+                    child_element.text = base_prefix + str(share['PathOrToken']) + child_element.text.removeprefix(base_prefix + share['PathMapped'])
                 if share_bday_automap and child_element.text.endswith(".vcf"):
                     child_element.text = child_element.text.removesuffix(".vcf") + ".ics"
             element.append(child_element)

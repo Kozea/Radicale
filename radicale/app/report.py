@@ -739,11 +739,11 @@ def xml_item_response(base_prefix: str, href: str,
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, href)
-    logger.trace("REPORT/xml_report: href=%r", href_element.text)
+    logger.trace("REPORT/xml_report: href=%r base_prefix=%r", href_element.text, base_prefix)
     if share:
         # backmap
-        if href_element.text.startswith(share['PathMapped']):
-            href_element.text = str(share['PathOrToken']) + href_element.text.removeprefix(share['PathMapped'])
+        if href_element.text.startswith(base_prefix + share['PathMapped']):
+            href_element.text = base_prefix + str(share['PathOrToken']) + href_element.text.removeprefix(base_prefix + share['PathMapped'])
         if share_bday_automap and href_element.text.endswith(".vcf"):
             href_element.text = href_element.text.removesuffix(".vcf") + ".ics"
         logger.trace("REPORT/xml_report: href=%r (backmapped)", href_element.text)
