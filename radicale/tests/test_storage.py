@@ -172,8 +172,7 @@ class TestMultiFileSystem(BaseTest):
                                     "request_header_on_debug": "False",
                                     }})
         self.put("/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
-        collection_folder = os.path.join(self.colpath, "collection-root",
-                                    "calendar.ics")
+        collection_folder = os.path.join(self.colpath, "collection-root", "calendar.ics")
         collection_folder_st_ino_1 = os.stat(collection_folder).st_ino
         logger.debug("path=%r stat.ST_INO=%d", collection_folder, collection_folder_st_ino_1)
         # Overwrite
