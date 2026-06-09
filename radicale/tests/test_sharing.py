@@ -4783,6 +4783,15 @@ permissions: RrWw""")
             json_dict['Conversion'] = "none"
             _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
+            # update map with same conversion
+            logging.info("\n*** update map(bday) with equal Conversion -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
             # enable map by user
             logging.info("\n*** enable map(bday) by user")
             json_dict = {}
