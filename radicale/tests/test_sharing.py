@@ -4756,7 +4756,7 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
-            _, headers, answer = self._sharing_api_json("map", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
 
             # create map
             logging.info("\n*** create map(bday) user/owner:r -> ok")
@@ -6243,7 +6243,7 @@ permissions: RrWw""")
             json_dict['Permissions'] = "rw"
             json_dict['Hidden'] = False
             json_dict['Conversion'] = "bday"
-            _, headers, answer = self._sharing_api_json("token", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("token", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
 
             # check PROPFIND item with token
             logging.info("\n*** PROPFIND item with token -> calendar")
@@ -6378,7 +6378,7 @@ permissions: RrWw""")
             json_dict['User'] = "owner"
             json_dict['PathOrToken'] = path_shared
             json_dict['Permissions'] = "rPe"
-            _, headers, answer = self._sharing_api_json("token", "update", check=405, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("token", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
             # update map to "rPE"
             logging.info("\n*** update token with bday conversion ('rPE' permissions) -> not supported")
@@ -6386,7 +6386,7 @@ permissions: RrWw""")
             json_dict['User'] = "owner"
             json_dict['PathOrToken'] = path_shared
             json_dict['Permissions'] = "rPE"
-            _, headers, answer = self._sharing_api_json("token", "update", check=405, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("token", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
 
             # update map Conversion
             logging.info("\n*** update token remove Conversion -> not supported")
@@ -6432,7 +6432,7 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             json_dict['Conversion'] = "bday"
-            _, headers, answer = self._sharing_api_json("token", "create", check=405, login="owner:ownerpw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("token", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
 
     def test_sharing_api_map_properies_overlay_unicode(self) -> None:
         """share-by-map API usage tests related to properties overlay using unicode."""
