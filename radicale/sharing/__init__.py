@@ -1301,6 +1301,11 @@ class BaseSharing:
                             logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
                             return httputils.bad_request("Permissions are not supported for conversion")
 
+            if Conversion is not None and share['Conversion'] is not None:
+                if Conversion != share['Conversion']:
+                    logger.warning(api_info + ": PathMapped=%r change of Conversion %r -> %r is not supported", PathMapped, share['Conversion'], Conversion)
+                    return httputils.bad_request("Change of conversion is not supported")
+
             if user == share['Owner']:
                 if PathMapped is not None:
                     # check access Permissions
