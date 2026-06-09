@@ -8,6 +8,7 @@
 * Add: [sharing] conversion_bday_age_max (limit in case of "age" placeholder is used which blocks using RRULE)
 * Extension: [sharing/bday conversion]: add STATUS + CLASS fields
 * Improve: sanitize item align timezone (add/remove) of EXDATE or RDATE with DTSTART
+* Fix: sharing: bday conversion backmap on PROPFIND/REPORT if script_name is active (via reverse proxy)
 
 ## 3.7.4
 * Fix: sharing: PROPFIND returns now empty owner element in case of a mapped share as clients try PROPFIND on this not accessable href

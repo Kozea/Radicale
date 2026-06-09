@@ -60,39 +60,31 @@ class TestSharingApiSanity(BaseTest):
             f.write(htpasswd_content)
 
     # Helper functions
-    def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None], prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None], x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         path_base = "/.sharing/v1/" + sharing_type + "/"
-        if prefix is not None:
-            path_base = prefix + path_base
-            _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept, x_forwarded_for="127.0.0.2")
-        else:
-            _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept)
+        _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept, x_forwarded_for=x_forwarded_for)
         logging.info("received answer:\n%s", "\n".join(answer.splitlines()))
         return _, headers, answer
 
-    def _sharing_api_form(self, sharing_type: str, action: str, check: int, login: Union[str, None], form_array: Sequence[str], accept: Union[str, None] = None, prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api_form(self, sharing_type: str, action: str, check: int, login: Union[str, None], form_array: Sequence[str], accept: Union[str, None] = None, x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         data = "&".join(form_array)
         content_type = "application/x-www-form-urlencoded"
         if accept is None:
             accept = "text/plain"
-        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, prefix=prefix)
+        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, x_forwarded_for=x_forwarded_for)
         return _, headers, answer
 
-    def _sharing_api_json(self, sharing_type: str, action: str, check: int, login: Union[str, None], json_dict: dict, accept: Union[str, None] = None, prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api_json(self, sharing_type: str, action: str, check: int, login: Union[str, None], json_dict: dict, accept: Union[str, None] = None, x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         data = json.dumps(json_dict)
         content_type = "application/json"
         if accept is None:
             accept = "application/json"
-        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, prefix=prefix)
+        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, x_forwarded_for=x_forwarded_for)
         return _, headers, answer
 
-    def _propfind_allprop(self, path: str, login: str = "", prefix: Union[str, None] = None, check=207) -> dict:
+    def _propfind_allprop(self, path: str, login: str = "", check=207, x_forwarded_for: Union[str, None] = None) -> dict:
         propfind_allprop = get_file_content("allprop.xml")
-        if prefix is not None:
-            path = prefix + path
-            _, responses = self.propfind(path=path, data=propfind_allprop, login=login, x_forwarded_for="127.0.0.2", check=check)
-        else:
-            _, responses = self.propfind(path=path, data=propfind_allprop, login=login, check=check)
+        _, responses = self.propfind(path=path, data=propfind_allprop, login=login, check=check, x_forwarded_for=x_forwarded_for)
         logging.info("response: %r", responses)
         if check != 207:
             return {}
@@ -784,10 +776,10 @@ class TestSharingApiSanity(BaseTest):
 
             logging.info("\n*** create token")
             json_dict = {}
-            json_dict["PathMapped"] = script_name + path_base
+            json_dict["PathMapped"] = path_base
             json_dict["Enabled"] = True
             json_dict["Hidden"] = False
-            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, prefix=script_name)
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, x_forwarded_for="127.0.0.2")
             answer_dict = json.loads(answer)
             assert "Status" in answer_dict
             assert "PathOrToken" in answer_dict
@@ -796,9 +788,17 @@ class TestSharingApiSanity(BaseTest):
             assert Token.startswith(script_name) is True
             path_shared = Token
 
-            # check PROPFIND item as owner (remove prefix again as added later)
+            # check PROPFIND item as owner without proxy
+            logging.info("\n*** PROPFIND item as owner via proxy -> calendar")
+            response = self._propfind_allprop(path_shared, login="owner:ownerpw", x_forwarded_for="127.0.0.2")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+
+            # check PROPFIND item as owner without proxy
             logging.info("\n*** PROPFIND item as owner -> calendar")
-            response = self._propfind_allprop(path_shared.removeprefix(script_name), login="owner:ownerpw", prefix=script_name)
+            response = self._propfind_allprop(path_shared.removeprefix(script_name), login="owner:ownerpw")
             logging.debug("response: %r", response)
             assert "CR:supported-address-data" not in response
             assert "C:supported-calendar-component-set" in response
@@ -5845,7 +5845,9 @@ permissions: RrWw""")
             assert int(str(prop.text)) == 2
 
     def test_sharing_api_map_vcf_bday_self(self) -> None:
-        """share-by-map with conversion=bday to self tests."""
+        """share-by-map with conversion=bday to self tests (without and with simulated proxy)."""
+        script_name = "/radicale"
+
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
@@ -5859,6 +5861,7 @@ permissions: RrWw""")
                                     "response_header_on_debug": "True",
                                     "response_content_on_debug": "True",
                                     "request_content_on_debug": "True"},
+                        "server": {"script_name": script_name},
                         "rights": {"type": "owner_only"}})
 
         json_dict: dict
@@ -5896,6 +5899,17 @@ permissions: RrWw""")
 </propfind>""", login="owner:ownerpw")
             logging.info("response: %r", responses)
             response = responses[path_mapped]
+            assert not isinstance(response, int)
+            assert "CR:supported-address-data" in response
+
+            logging.info("\n*** PROPFIND collection owner via proxy -> ok")
+            _, responses = self.propfind(script_name + path_mapped, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<propname />
+</propfind>""", login="owner:ownerpw", x_forwarded_for="127.0.0.2")
+            logging.info("response: %r", responses)
+            response = responses[script_name + path_mapped]
             assert not isinstance(response, int)
             assert "CR:supported-address-data" in response
 
@@ -5948,6 +5962,36 @@ permissions: RrWw""")
             assert "{urn:ietf:params:xml:ns:carddav}addressbook" in resourcetypes.tag
             assert "{urn:ietf:params:xml:ns:caldav}calendar" not in resourcetypes.tag
 
+            logging.info("\n*** PROPFIND all as owner via proxy")
+            _, responses = self.propfind(script_name + path_owner, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="owner:ownerpw", HTTP_DEPTH="1", x_forwarded_for="127.0.0.2")
+            # logging.debug("responses: %r", responses)
+            response = responses[script_name + path_mapped]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_mapped, response)
+            assert "C:supported-calendar-component-set" in response
+            assert path_shared not in responses
+            assert "D:resourcetype" in response
+            status, resourcetype = response["D:resourcetype"]
+            resourcetypes = resourcetype.find(xmlutils.make_clark("CR:addressbook"))
+            assert resourcetypes is not None
+            assert "{urn:ietf:params:xml:ns:carddav}addressbook" in resourcetypes.tag
+            assert "{urn:ietf:params:xml:ns:caldav}calendar" not in resourcetypes.tag
+
             # enable + unhide
             logging.info("\n*** enable+unhide bday owner to itself -> ok")
             json_dict = {}
@@ -5957,7 +6001,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # check PROPFIND item as owner
-            logging.info("\n*** PROPFIND all as owner")
+            logging.info("\n*** PROPFIND item as owner")
             _, responses = self.propfind(path_owner, """\
 <?xml version="1.0"?>
 <propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
@@ -5995,9 +6039,57 @@ permissions: RrWw""")
             assert {'name': 'VTODO'} not in comp_attr
             assert {'name': 'VJOURNAL'} not in comp_attr
 
-            # check PROPFIND item as owner
-            logging.info("\n*** PROPFIND item as owner -> calendar")
+            # check PROPFIND item as owner via proxy
+            logging.info("\n*** PROPFIND collection as owner via proxy")
+            _, responses = self.propfind(script_name + path_owner, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:CR="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/" xmlns:ICAL="http://apple.com/ns/ical/" xmlns:RADICALE="http://radicale.org/ns/" xmlns:ns3="http://inf-it.com/ns/ab/">
+  <prop>
+    <resourcetype />
+    <RADICALE:displayname />
+    <ICAL:calendar-color />
+    <ns3:addressbook-color />
+    <C:calendar-description />
+    <C:supported-calendar-component-set />
+    <CR:addressbook-description />
+    <CS:source />
+    <RADICALE:getcontentcount />
+    <getcontentlength />
+  </prop>
+</propfind>""", login="owner:ownerpw", HTTP_DEPTH="1", x_forwarded_for="127.0.0.2")
+            # logging.debug("responses: %r", responses)
+            response = responses[script_name + path_shared]
+            assert not isinstance(response, int)
+            logging.debug("response %r: %r", path_mapped, response)
+            assert "C:supported-calendar-component-set" in response
+            assert script_name + path_shared in responses
+            status, resourcetype = response["D:resourcetype"]
+            resourcetypes = resourcetype.find(xmlutils.make_clark("C:calendar"))
+            assert resourcetypes is not None
+            assert "{urn:ietf:params:xml:ns:carddav}addressbook" not in resourcetypes.tag
+            assert "{urn:ietf:params:xml:ns:caldav}calendar" in resourcetypes.tag
+            status, sup_cal_comp_set = response["C:supported-calendar-component-set"]
+            sup_cal_comp_sets = sup_cal_comp_set.findall(xmlutils.make_clark("C:comp"))
+            comp_attr = []
+            for comp in sup_cal_comp_sets:
+                comp_attr.append(comp.attrib)
+                logging.debug("comp: %r", comp.attrib)
+            assert {'name': 'VEVENT'} in comp_attr
+            assert {'name': 'VTODO'} not in comp_attr
+            assert {'name': 'VJOURNAL'} not in comp_attr
+
+            # check PROPFIND collection as owner
+            logging.info("\n*** PROPFIND collection as owner -> calendar")
             response = self._propfind_allprop(path_shared, login="owner:ownerpw")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "D:sync-token" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+
+            # check PROPFIND collection as owner via proxy
+            logging.info("\n*** PROPFIND collection as owner via proxy -> calendar")
+            response = self._propfind_allprop(script_name + path_shared, login="owner:ownerpw", x_forwarded_for="127.0.0.2")
             logging.debug("response: %r", response)
             assert "CR:supported-address-data" not in response
             assert "D:sync-token" not in response
@@ -6012,6 +6104,43 @@ permissions: RrWw""")
             # title from default
             assert 'Content-Disposition' in headers
             assert 'Calendar.ics' in headers['Content-Disposition']
+
+            # verify content as owner via proxy
+            logging.info("\n*** GET collection owner via proxy -> ok")
+            _, headers, answer = self.request("GET", script_name + path_shared, login="owner:ownerpw", x_forwarded_for="127.0.0.2")
+            assert 'Content-Type' in headers
+            assert 'text/calendar' in headers['Content-Type']
+            # title from default
+            assert 'Content-Disposition' in headers
+            assert 'Calendar.ics' in headers['Content-Disposition']
+
+            # verify report as owner
+            logging.info("\n*** REPORT collection owner -> ok")
+            _, responses = self.report(path_shared, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag/>
+    </D:prop>
+</C:calendar-query>""", login="owner:ownerpw")
+            logging.debug("resonses: %r", responses)
+            assert path_shared + "contact2-with-bday.ics" in responses
+            assert path_shared + "contact3-with-bday.ics" in responses
+            assert path_shared + "contact1.ics" not in responses
+
+            # verify report as owner via proxy
+            logging.info("\n*** REPORT collection owner -> ok")
+            _, responses = self.report(script_name + path_shared, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag/>
+    </D:prop>
+</C:calendar-query>""", login="owner:ownerpw", x_forwarded_for="127.0.0.2")
+            logging.debug("resonses: %r", responses)
+            assert script_name + path_shared + "contact2-with-bday.ics" in responses
+            assert script_name + path_shared + "contact3-with-bday.ics" in responses
+            assert script_name + path_shared + "contact1.ics" not in responses
 
     def test_sharing_api_token_vcf_bday(self) -> None:
         """share-by-bday to a token tests."""

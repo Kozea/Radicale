@@ -143,6 +143,45 @@ class TestMultiFileSystem(BaseTest):
         assert answer1 == answer2
         assert os.path.exists(os.path.join(cache_folder, "event1.ics"))
 
+    def test_put_items_multiple(self) -> None:
+        """Upload 2 items to calendar, check that collection inode number stays."""
+        self.configure({"logging": {"response_content_on_debug": "False",
+                                    "response_header_on_debug": "False",
+                                    "request_content_on_debug": "False",
+                                    "request_header_on_debug": "False",
+                                    }})
+        self.mkcalendar("/calendar.ics/")
+        event1 = get_file_content("event1.ics")
+        path1 = "/calendar.ics/event1.ics"
+        event2 = get_file_content("event2.ics")
+        path2 = "/calendar.ics/event2.ics"
+        self.put(path1, event1)
+        collection_folder = os.path.join(self.colpath, "collection-root", "calendar.ics")
+        collection_folder_st_ino_1 = os.stat(collection_folder).st_ino
+        logger.debug("path=%r stat.ST_INO=%d", collection_folder, collection_folder_st_ino_1)
+        self.put(path2, event2)
+        collection_folder_st_ino_2 = os.stat(collection_folder).st_ino
+        logger.debug("path=%r stat.ST_INO=%d", collection_folder, collection_folder_st_ino_2)
+        assert collection_folder_st_ino_1 == collection_folder_st_ino_2
+
+    def test_put_calendar_multiple(self) -> None:
+        """Upload 2 calendars, check that collection inode number changes."""
+        self.configure({"logging": {"response_content_on_debug": "False",
+                                    "response_header_on_debug": "False",
+                                    "request_content_on_debug": "False",
+                                    "request_header_on_debug": "False",
+                                    }})
+        self.put("/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR")
+        collection_folder = os.path.join(self.colpath, "collection-root", "calendar.ics")
+        collection_folder_st_ino_1 = os.stat(collection_folder).st_ino
+        logger.debug("path=%r stat.ST_INO=%d", collection_folder, collection_folder_st_ino_1)
+        # Overwrite
+        events = get_file_content("event_multiple.ics")
+        self.put("/calendar.ics/", events)
+        collection_folder_st_ino_2 = os.stat(collection_folder).st_ino
+        logger.debug("path=%r stat.ST_INO=%d", collection_folder, collection_folder_st_ino_2)
+        assert collection_folder_st_ino_1 != collection_folder_st_ino_2
+
     def test_put_whole_calendar_uids_used_as_file_names(self) -> None:
         """Test if UIDs are used as file names."""
         _TestBaseRequests.test_put_whole_calendar(
