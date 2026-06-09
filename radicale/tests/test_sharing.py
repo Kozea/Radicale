@@ -4774,6 +4774,15 @@ permissions: RrWw""")
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
+            # update map with (denied) conversion change
+            logging.info("\n*** update map(bday), try to change Conversion -> fail")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Conversion'] = "none"
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
             # enable map by user
             logging.info("\n*** enable map(bday) by user")
             json_dict = {}
