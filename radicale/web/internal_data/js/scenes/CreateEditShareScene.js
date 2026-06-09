@@ -19,12 +19,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Share, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
+import { BDAY_CONFIG, Share, ShareConfig, add_share_by_map, add_share_by_token, get_property_key, update_share_by_map, update_share_by_token } from "../api/sharing.js";
 import { CollectionType, Permission } from "../models/collection.js";
 import { extract_title, update_title_and_description } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
-import { FormValidator, validate_href, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
+import { FormValidator, validate_href, validate_integer, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
 import { get_element, get_element_by_id, onCleanHREFinput, random_uuid } from "../utils/misc.js";
 import { Scene, is_current_scene, pop_scene } from "./scene_manager.js";
 
@@ -64,6 +64,8 @@ export class CreateEditShareScene {
         this._token_write_warning = /** @type {HTMLElement} */ (get_element(this._html_scene, "[data-name=token_write_warning]"));
         this._conversions_details = /** @type {HTMLDetailsElement} */ (get_element(this._html_scene, "[data-name=conversions]"));
         this._conversions_container = get_element(this._html_scene, "[data-name=conversions_container]");
+        this._config_details = /** @type {HTMLDetailsElement} */ (get_element(this._html_scene, "[data-name=config]"));
+        this._config_container = get_element(this._html_scene, "[data-name=config_container]");
 
         this._properties_fieldset = /** @type {HTMLDetailsElement} */ (get_element(this._html_scene, "[data-name=properties_override]"));
         this._displayname_override_enabled = /** @type {HTMLInputElement} */ (get_element(this._html_scene, "[data-name=displayname_override_enabled]"));
@@ -78,9 +80,12 @@ export class CreateEditShareScene {
         this._cancel_btn = get_element(this._html_scene, "[data-name=cancel]");
 
         this._errorHandler = new ErrorHandler(this._error_form);
-        this._map_validator = new FormValidator(this._errorHandler);
+        this._validator = new FormValidator(this._errorHandler);
 
-        this._map_validator.addValidator(this._shareuser_input, () => {
+        this._validator.addValidator(this._shareuser_input, () => {
+            if (this._shareType !== "map") {
+                return null;
+            }
             let conversion = this._get_selected_conversion();
             if (conversion != "none") {
                 return validate_non_empty(this._shareuser_input, "Share User")();
@@ -88,7 +93,34 @@ export class CreateEditShareScene {
                 return validate_not_empty_or_equals(this._shareuser_input, user, "Share User")();
             }
         });
-        this._map_validator.addValidator(this._sharehref_input, validate_href(this._sharehref_input, "Share Href"));
+        this._validator.addValidator(this._sharehref_input, () => {
+            if (this._shareType !== "map") {
+                return null;
+            }
+            return validate_href(this._sharehref_input, "Share Href")();
+        });
+
+        this._validator.addValidator(/** @type {any} */(this._form), () => {
+            let conversion = this._get_selected_conversion();
+            if (conversion === "bday") {
+                for (let property of BDAY_CONFIG) {
+                    if (property.type === "int") {
+                        /** @type {HTMLInputElement | null} */
+                        let textInput = this._config_container.querySelector("#newshare_config_" + property.key);
+                        /** @type {HTMLInputElement | null} */
+                        let deleteCheckbox = this._config_container.querySelector("#newshare_config_del_" + property.key);
+                        let isDeleted = deleteCheckbox ? deleteCheckbox.checked : false;
+                        if (textInput && !isDeleted) {
+                            let error = validate_integer(textInput, property.displayName)();
+                            if (error) {
+                                return error;
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        });
 
         this._sharehref_input.addEventListener("input", onCleanHREFinput);
 
@@ -150,8 +182,75 @@ export class CreateEditShareScene {
                 }
             }
 
-            this._map_validator.validate();
+            this._validator.validate();
         }
+        if (conversion === "bday") {
+            this._config_details.classList.remove("hidden");
+            this._config_details.open = true;
+        } else {
+            this._config_details.classList.add("hidden");
+        }
+    }
+
+    /**
+     * @param {readonly import("../api/sharing.js").ConfigProperty[]} config_properties
+     * @param {string} conversion
+     */
+    _create_config_container(config_properties, conversion) {
+        this._config_container.innerHTML = "";
+        config_properties.forEach(property => {
+            let row = document.createElement("div");
+            row.className = "property-override";
+
+            let label = document.createElement("label");
+            label.textContent = property.displayName + ":";
+            label.htmlFor = "newshare_config_" + property.key;
+
+            let textInput = document.createElement("input");
+            textInput.type = "text";
+            textInput.id = "newshare_config_" + property.key;
+            textInput.dataset.key = property.key;
+
+            let deleteCheckbox = document.createElement("input");
+            deleteCheckbox.type = "checkbox";
+            deleteCheckbox.id = "newshare_config_del_" + property.key;
+            deleteCheckbox.dataset.key = property.key;
+
+            let deleteLabel = document.createElement("label");
+            deleteLabel.textContent = "delete";
+            deleteLabel.htmlFor = deleteCheckbox.id;
+
+            let val = null;
+            let isDel = false;
+            if (this._edit && this._share && this._share.Conversion === conversion && this._share.config) {
+                val = this._share.config.get(property);
+                isDel = this._share.config.isDeleted(property);
+            }
+
+            if (isDel) {
+                deleteCheckbox.checked = true;
+                textInput.disabled = true;
+                textInput.value = "";
+            } else {
+                deleteCheckbox.checked = false;
+                textInput.disabled = false;
+                textInput.value = val !== null ? String(val) : "";
+            }
+
+            deleteCheckbox.onchange = () => {
+                if (deleteCheckbox.checked) {
+                    textInput.disabled = true;
+                } else {
+                    textInput.disabled = false;
+                }
+            };
+
+            row.appendChild(label);
+            row.appendChild(deleteCheckbox);
+            row.appendChild(deleteLabel);
+            row.appendChild(textInput);
+            this._config_container.appendChild(row);
+        });
     }
 
     _oncancel() {
@@ -165,10 +264,8 @@ export class CreateEditShareScene {
 
     _onsubmit() {
         try {
-            if (this._shareType === "map") {
-                if (!this._map_validator.validate()) {
-                    return false;
-                }
+            if (!this._validator.validate()) {
+                return false;
             }
             let conversion = this._get_selected_conversion();
             let is_conversion = conversion != "none";
@@ -209,6 +306,33 @@ export class CreateEditShareScene {
                 }
             };
 
+            /** @type {Record<string, any>} */
+            let new_actions = {};
+            if (this._edit && this._share && this._share.Actions) {
+                new_actions = JSON.parse(JSON.stringify(this._share.Actions));
+            }
+            if (conversion_value === "bday") {
+                let new_config = new ShareConfig();
+                BDAY_CONFIG.forEach(property => {
+                    /** @type {HTMLInputElement | null} */
+                    let textInput = this._config_container.querySelector("#newshare_config_" + property.key);
+                    /** @type {HTMLInputElement | null} */
+                    let deleteCheckbox = this._config_container.querySelector("#newshare_config_del_" + property.key);
+                    if (deleteCheckbox && deleteCheckbox.checked) {
+                        new_config.delete(property);
+                    } else if (textInput) {
+                        new_config.set(property, textInput.value);
+                    }
+                });
+                new_actions.config = new_config;
+            } else {
+                let new_config = new ShareConfig();
+                BDAY_CONFIG.forEach(property => {
+                    new_config.delete(property);
+                });
+                new_actions.config = new_config;
+            }
+
             let new_share = new Share({
                 ShareType: this._shareType,
                 PathMapped: this._pathMapped,
@@ -221,6 +345,7 @@ export class CreateEditShareScene {
                 User: (this._edit && this._share) ? this._share.User : this._shareuser_input.value,
                 PathOrToken: (this._edit && this._share) ? this._share.PathOrToken : (this._shareType === "map" ? "/" + this._shareuser_input.value + "/" + this._sharehref_input.value + "/" : ""),
                 Conversion: conversion_value,
+                Actions: new_actions,
             });
 
             if (this._edit) {
@@ -254,6 +379,8 @@ export class CreateEditShareScene {
         });
         this._cancel_btn.onclick = () => this._oncancel();
         this._form.onsubmit = () => this._onsubmit();
+
+        this._create_config_container(BDAY_CONFIG, "bday");
 
         let onChangeCallback = () => this._on_permissions_change();
         this._permissions_ro_radio.addEventListener("change", onChangeCallback);
@@ -409,12 +536,12 @@ export class CreateEditShareScene {
             }
             this._sharehref_input.disabled = this._edit;
             this._sharemapfields.classList.remove("hidden");
-            this._map_validator.validate();
         } else {
             this._sharehref_input.value = "";
             this._sharemapfields.classList.add("hidden");
             this._errorHandler.clearError();
         }
+        this._validator.validate();
         this._on_permissions_change();
 
         update_title_and_description(this._collection, this._title, this._description);
