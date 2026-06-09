@@ -60,39 +60,31 @@ class TestSharingApiSanity(BaseTest):
             f.write(htpasswd_content)
 
     # Helper functions
-    def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None], prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None], x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         path_base = "/.sharing/v1/" + sharing_type + "/"
-        if prefix is not None:
-            path_base = prefix + path_base
-            _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept, x_forwarded_for="127.0.0.2")
-        else:
-            _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept)
+        _, headers, answer = self.request("POST", path_base + action, check=check, login=login, data=data, content_type=content_type, accept=accept, x_forwarded_for=x_forwarded_for)
         logging.info("received answer:\n%s", "\n".join(answer.splitlines()))
         return _, headers, answer
 
-    def _sharing_api_form(self, sharing_type: str, action: str, check: int, login: Union[str, None], form_array: Sequence[str], accept: Union[str, None] = None, prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api_form(self, sharing_type: str, action: str, check: int, login: Union[str, None], form_array: Sequence[str], accept: Union[str, None] = None, x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         data = "&".join(form_array)
         content_type = "application/x-www-form-urlencoded"
         if accept is None:
             accept = "text/plain"
-        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, prefix=prefix)
+        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, x_forwarded_for=x_forwarded_for)
         return _, headers, answer
 
-    def _sharing_api_json(self, sharing_type: str, action: str, check: int, login: Union[str, None], json_dict: dict, accept: Union[str, None] = None, prefix: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
+    def _sharing_api_json(self, sharing_type: str, action: str, check: int, login: Union[str, None], json_dict: dict, accept: Union[str, None] = None, x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
         data = json.dumps(json_dict)
         content_type = "application/json"
         if accept is None:
             accept = "application/json"
-        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, prefix=prefix)
+        _, headers, answer = self._sharing_api(sharing_type, action, check, login, data, content_type, accept, x_forwarded_for=x_forwarded_for)
         return _, headers, answer
 
-    def _propfind_allprop(self, path: str, login: str = "", prefix: Union[str, None] = None, check=207, x_forwarded_for: Union[str, None] = None) -> dict:
+    def _propfind_allprop(self, path: str, login: str = "", check=207, x_forwarded_for: Union[str, None] = None) -> dict:
         propfind_allprop = get_file_content("allprop.xml")
-        if prefix is not None:
-            path = prefix + path
-            _, responses = self.propfind(path=path, data=propfind_allprop, login=login, x_forwarded_for="127.0.0.2", check=check)
-        else:
-            _, responses = self.propfind(path=path, data=propfind_allprop, login=login, check=check, x_forwarded_for=x_forwarded_for)
+        _, responses = self.propfind(path=path, data=propfind_allprop, login=login, check=check, x_forwarded_for=x_forwarded_for)
         logging.info("response: %r", responses)
         if check != 207:
             return {}
@@ -784,10 +776,10 @@ class TestSharingApiSanity(BaseTest):
 
             logging.info("\n*** create token")
             json_dict = {}
-            json_dict["PathMapped"] = script_name + path_base
+            json_dict["PathMapped"] = path_base
             json_dict["Enabled"] = True
             json_dict["Hidden"] = False
-            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, prefix=script_name)
+            _, headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict=json_dict, x_forwarded_for="127.0.0.2")
             answer_dict = json.loads(answer)
             assert "Status" in answer_dict
             assert "PathOrToken" in answer_dict
@@ -796,9 +788,17 @@ class TestSharingApiSanity(BaseTest):
             assert Token.startswith(script_name) is True
             path_shared = Token
 
-            # check PROPFIND item as owner (remove prefix again as added later)
+            # check PROPFIND item as owner without proxy
+            logging.info("\n*** PROPFIND item as owner via proxy -> calendar")
+            response = self._propfind_allprop(path_shared, login="owner:ownerpw", x_forwarded_for="127.0.0.2")
+            logging.debug("response: %r", response)
+            assert "CR:supported-address-data" not in response
+            assert "C:supported-calendar-component-set" in response
+            assert "D:current-user-privilege-set" in response
+
+            # check PROPFIND item as owner without proxy
             logging.info("\n*** PROPFIND item as owner -> calendar")
-            response = self._propfind_allprop(path_shared.removeprefix(script_name), login="owner:ownerpw", prefix=script_name)
+            response = self._propfind_allprop(path_shared.removeprefix(script_name), login="owner:ownerpw")
             logging.debug("response: %r", response)
             assert "CR:supported-address-data" not in response
             assert "C:supported-calendar-component-set" in response
