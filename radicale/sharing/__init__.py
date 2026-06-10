@@ -947,7 +947,7 @@ class BaseSharing:
             Conversion = request_data['Conversion']
             # verify against whitelist
             if Conversion not in CONVERSIONS_WHITELIST:
-                return httputils.bad_request("Conversion not supported: %r" % Conversion)
+                return httputils.bad_request("Conversion is not supported: %r" % Conversion)
 
         if 'Actions' in request_data:
             valid = True  # default
@@ -1060,11 +1060,11 @@ class BaseSharing:
                     return httputils.NOT_FOUND
                 if not isinstance(item, storage.BaseCollection):
                     logger.warning(api_info + ": PathMapped=%r is not a collection", PathMapped)
-                    return httputils.METHOD_NOT_ALLOWED
+                    return httputils.bad_request("PathMapped is not a collection")
                 if Conversion == "bday":
                     if item.tag != "VADDRESSBOOK":
                         logger.warning(api_info + ": PathMapped=%r is not a VADDRESSBOOK collection (mandatory for Conversion=%r)", PathMapped, Conversion)
-                        return httputils.METHOD_NOT_ALLOWED
+                        return httputils.bad_request("Conversion is not supported for collection type")
 
             if Permissions is None:
                 if ShareType == "token":
@@ -1081,7 +1081,7 @@ class BaseSharing:
                     for permission in Permissions:
                         if permission not in "rPp":
                             logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
-                            return httputils.METHOD_NOT_ALLOWED
+                            return httputils.bad_request("Permissions are not supported for conversion")
 
             if Enabled is None:
                 Enabled = False # security by default
@@ -1299,7 +1299,12 @@ class BaseSharing:
                     for permission in Permissions:
                         if permission not in "rPp":
                             logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
-                            return httputils.METHOD_NOT_ALLOWED
+                            return httputils.bad_request("Permissions are not supported for conversion")
+
+            if Conversion is not None and share['Conversion'] is not None:
+                if Conversion != share['Conversion']:
+                    logger.warning(api_info + ": PathMapped=%r change of Conversion %r -> %r is not supported", PathMapped, share['Conversion'], Conversion)
+                    return httputils.bad_request("Change of conversion is not supported")
 
             if user == share['Owner']:
                 if PathMapped is not None:
@@ -1324,8 +1329,9 @@ class BaseSharing:
                            User=User,
                            Timestamp=Timestamp,
                            Properties=Properties,
+                           Conversion=Conversion,
                            Actions=Actions,
-                           Conversion=Conversion)
+                           )
                 else:
                     result = self.database_update_sharing(
                            ShareType=ShareType,
@@ -1338,8 +1344,9 @@ class BaseSharing:
                            User=User,
                            Timestamp=Timestamp,
                            Properties=Properties,
+                           Conversion=Conversion,
                            Actions=Actions,
-                           Conversion=Conversion)
+                           )
 
             elif user == share['User']:
                 # User is only allowed to update Properties
