@@ -125,18 +125,20 @@ sub ConvertLoc($) {
    my $loc = $_[0];
    if (defined $Locations{$loc}) {
       # from cache
-      return ":L=" . $Locations{$loc};
+      return ":" . $Locations{$loc};
    } elsif (defined $LocationsFile{$loc}) {
       # from cache
-      return ":L=" . $LocationsFile{$loc};
+      return ":" . $LocationsFile{$loc};
    }
 
-   if ($loc =~ /\/'$/o) {
-      $Locations{$loc} = "L=" . substr(Digest::SHA::sha256_hex($loc), 0, 8);
-      return ":" . $Locations{$loc};
-   } else {
-      $LocationsFile{$loc} = "L=<FILE>";
-      return ":" . $Locations{$loc};
+   if ($loc =~ /^(.*\/)([^\/]*)'$/o) {
+      $Locations{$1} = "L=" . substr(Digest::SHA::sha256_hex($1), 0, 8);
+      if ($2 eq "") {
+         return ":" . $Locations{$1};
+      } else {
+         $LocationsFile{$loc} = $Locations{$1} . ":FILE";
+         return ":" . $LocationsFile{$loc};
+      }
    }
 }
 
@@ -154,8 +156,13 @@ sub ConvertLogin($) {
 while (defined($ThisLine = <STDIN>)) {
    # count loglevel
    if ( $ThisLine =~ /\[(TRACE|DEBUG|INFO|NOTICE|WARNING|ERROR|CRITICAL|ALERT)\] /o ) {
-      $Loglevel{$1}++
-   }       
+      $Loglevel{$1}++;
+   }
+
+   if ( $ThisLine =~ /\[(TRACE|DEBUG)\] /o ) {
+      # skip TRACE|DEBUG for statistics
+      next;
+   }
   
    # parse log for events
    if ( $ThisLine =~ /Radicale server ready/o ) {
@@ -294,7 +301,7 @@ if (keys %UserAgents) {
    $sum = Sum(\%UserAgents);
    $length = MaxLength(\%UserAgents);
    print "\n**UserAgent Counters**\n";
-   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   print "*  Location: L=<HASH> -> see below, :FILE -> see raw log\n" if (scalar(keys %Locations) > 0);
    printf "%-" . $length . "s | %7s | %9s |\n", "UserAgent", "cnt", "ratio";
    print "-" x($length + 24) . "\n";
    foreach my $ua (sort keys %UserAgents) {
@@ -308,7 +315,7 @@ if (keys %Requests) {
    $sum = Sum(\%Requests);
    $length = MaxLength(\%Requests);
    print "\n**Request counters (D=<depth>)**\n";
-   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   print "*  Location: L=<HASH> -> see below, :FILE -> see raw log\n" if (scalar(keys %Locations) > 0);
    printf "%-" . $length . "s | %7s | %9s |\n", "Request", "cnt", "ratio";
    print "-" x($length + 24) . "\n";
    foreach my $req (sort keys %Requests) {
@@ -323,7 +330,7 @@ if (keys %Responses) {
    $length = MaxLength(\%Responses);
    print "\n**Response result counters ((D=<depth> R=<result>)**\n";
    print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n" if ($Detail >= 15);
-   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   print "*  Location: L=<HASH> -> see below, :FILE -> see raw log\n" if (scalar(keys %Locations) > 0);
    printf "%-" . $length . "s | %7s | %9s |\n", "Response", "cnt", "ratio";
    print "-" x($length + 24) . "\n";
    foreach my $req (sort keys %Responses) {
@@ -337,7 +344,7 @@ if (keys %ResponseTimes) {
    $length = MaxLength(\%ResponseTimes);
    print "\n**Response timings (counts, seconds) (D=<depth> R=<result> F=<flags>)**\n";
    print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n" if ($Detail >= 15);
-   print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+   print "*  Location: L=<HASH> -> see below, :FILE -> see raw log\n" if (scalar(keys %Locations) > 0);
    printf "%-" . $length . "s | %7s | %7s | %7s | %7s |\n", "Response", "cnt", "min", "max", "avg";
    print "-" x($length + 42) . "\n";
    foreach my $req (sort keys %ResponseTimes) {
@@ -355,7 +362,7 @@ if (keys %ResponseSizes) {
       $length = MaxLength($ResponseSizes{$type});
       print "\n**Response sizes (counts, bytes: $type) (D=<depth> R=<result>)**\n";
       print "*  Flags: ST:sync-token SC:sync-collection GCT:getctag GET:getetag\n" if ($Detail >= 15);
-      print "*  Location: L=<HASH> -> see below  L=<FILE> -> see raw log\n" if (scalar(keys %Locations) > 0);
+      print "*  Location: L=<HASH> -> see below, :FILE -> see raw log\n" if (scalar(keys %Locations) > 0);
       printf "%-" . $length . "s | %7s | %9s | %9s | %9s |\n", "Response", "cnt", "min", "max", "avg";
       print "-" x($length + 48) . "\n";
       foreach my $req (sort keys %{$ResponseSizes{$type}}) {
