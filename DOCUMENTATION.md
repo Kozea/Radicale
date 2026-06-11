@@ -2324,7 +2324,7 @@ Supported placeholders (data used from VCARD)
  * `{nickname}`: nick name (RFC6350#6.2.3)
 
 Supported extra placeholders
- * `{age}`: age, toggles to creation of single events instead using RRULE
+ * `{age}`: age, toggles to creation of single events instead using RRULE (only active if year + age_max >= current year)
 
 Fallback is supported if placeholders inside `[...|...]` (first successful resolved one is used)
 
