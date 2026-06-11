@@ -2318,7 +2318,8 @@ permissions: <code>P</code></li>
 <p>Supported extra placeholders</p>
 <ul>
 <li><code>{age}</code>: age, toggles to creation of single events
-instead using RRULE</li>
+instead using RRULE (only active if year + age_max &gt;= current
+year)</li>
 </ul>
 <p>Fallback is supported if placeholders inside <code>[...|...]</code>
 (first successful resolved one is used)</p>
@@ -2337,7 +2338,7 @@ instead using RRULE</li>
 <p>Global template for alarm trigger of conversion "bday"</p>
 <p>Default: ``</p>
 <p>Supported format: <code>TIMEDELTA;DESCRIPTION</code> (separated by
-<code>|</code> if more alarms should be generated)</p>
+<code>$</code> if more alarms should be generated)</p>
 <p>Supported format for <code>TIMEDELTA</code>:
 <code>[+-]?[0-9]+[WDHM]</code></p>
 <p>Supported placeholders for <code>DESCRIPTION</code> see
