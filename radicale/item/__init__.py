@@ -692,7 +692,6 @@ class Item:
             summary = ShareActions['config_default']['conversion_bday_summary_template']
         else:
             summary = sharing.SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT  # fallback
-        summary = replace_placeholders(summary, placeholder_mapping)
 
         # prepare DESCRIPTION
         if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_description_template' in ShareActions['config']:
@@ -701,7 +700,6 @@ class Item:
             description = ShareActions['config_default']['conversion_bday_description_template']
         else:
             description = sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT  # fallback
-        description = replace_placeholders(description, placeholder_mapping)
 
         # create CATEGORIES
         if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_categories' in ShareActions['config']:
@@ -774,12 +772,16 @@ class Item:
                 uid_value = uid
             vevent.add('uid').value = uid_value
 
-            # set SUMMARY
+            # set placehoder for "age"
             if vevent_enable_age:
-                summary_value = summary.replace("{age}", str(age))
-            else:
-                summary_value = summary
-            vevent.add('summary').value = summary_value
+                placeholder_mapping['{age}'] = str(age)
+            elif not vcard_has_year:
+                placeholder_mapping['{age}'] = "??"
+            elif vcard_age_exceed_max:
+                placeholder_mapping['{age}'] = "!age!"
+
+            # set SUMMARY
+            vevent.add('summary').value = replace_placeholders(summary, placeholder_mapping)
 
             # set CATEGORIES
             if categories is not None and categories != []:
@@ -793,16 +795,14 @@ class Item:
 
             # set VALARM
             if alarm_trigger is not None and alarm_trigger != "":
-                for entry in alarm_trigger.split('|'):
+                for entry in alarm_trigger.split('$'):
                     (trigger, alarm_description) = entry.split(';')
-                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
+                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, alarm_description)
                     td = trigger_to_timedelta(trigger)
                     if td is not None:
-                        alarm_description = replace_placeholders(alarm_description, placeholder_mapping)
-                        alarm_description_value = alarm_description.replace("{age}", str(age))
                         valarm = vevent.add('valarm')
                         valarm.add('action').value = "DISPLAY"
-                        valarm.add('description').value = alarm_description_value
+                        valarm.add('description').value = replace_placeholders(alarm_description, placeholder_mapping)
                         valarm.add('trigger').value = td
 
             # set RRULE
@@ -813,12 +813,8 @@ class Item:
             vevent.add('transp').value = "TRANSPARENT"
 
             # set DESCRIPTION
-            if vevent_enable_age:
-                description_value = description.replace("{age}", str(age))
-            else:
-                description_value = description
             if description != "":
-                vevent.add('description').value = description_value
+                vevent.add('description').value = replace_placeholders(description, placeholder_mapping)
 
             # increase age
             age = age + 1
