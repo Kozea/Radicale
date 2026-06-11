@@ -49,6 +49,9 @@ UID_SUFFIX = "-auto-converted-by-Radicale"
 
 VCF_TO_ICS_SUPPORTED_PLACEHOLDERS: list = ["fn", "n:f", "n:g", "n:a", "age", "nickname", "year", "month", "day"]
 
+# List of BDAY years acting as flag for "no year specified"
+VCF_TO_ICS_BDAY_NO_YEAR: list = ["1604"]
+
 
 def read_components(s: str) -> List[vobject.base.Component]:
     """Wrapper for vobject.readComponents"""
@@ -605,6 +608,13 @@ class Item:
         else:
             pass
 
+        vcard_has_year = True  # default
+        vcard_age_exceed_max = False  # default
+
+        if str(match[1]) in VCF_TO_ICS_BDAY_NO_YEAR:
+            logger.trace("item/convert_vcf_to_ics: has 'no year' bday: %r -> %r", self.href, bday.value)
+            vcard_has_year = False
+
         placeholder_mapping: dict = {}
 
         bdayS = match[1] + match[2] + match[3]
@@ -615,6 +625,9 @@ class Item:
         placeholder_mapping['{year}'] = match[1]
         placeholder_mapping['{month}'] = match[2]
         placeholder_mapping['{day}'] = match[3]
+
+        if not vcard_has_year:
+            placeholder_mapping['{year}'] = "????"
 
         # create ICS
         if hasattr(self.vobject_item, "fn"):
@@ -698,14 +711,23 @@ class Item:
 
         vevent_enable_age = False
         age_max = 0
-        if "{age}" in summary or "{age}" in description or "age" in alarm_trigger:
+        if vcard_has_year and ("{age}" in summary or "{age}" in description or "age" in alarm_trigger):
             if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_age_max' in ShareActions['config']:
                 age_max = ShareActions['config']['conversion_bday_age_max']
             elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_age_max' in ShareActions['config_default']:
                 age_max = ShareActions['config_default']['conversion_bday_age_max']
             else:
                 age_max = sharing.SHARING_BDAY_AGE_MAX_DEFAULT  # fallback
-            vevent_enable_age = True
+
+            # check for age_max in the past
+            currentDateTime = datetime.datetime.now()
+            date = currentDateTime.date()
+            if bdayY + age_max < date.year:
+                logger.trace("item/convert_vcf_to_ics: bdayY=%d + age_max=%d < current year %d -> disable age support", bdayY, age_max, date.year)
+                vcard_age_exceed_max = True
+                age_max = 0
+            else:
+                vevent_enable_age = True
 
         # create UID
         if hasattr(self.vobject_item, "uid"):
