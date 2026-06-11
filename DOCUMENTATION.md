@@ -2346,7 +2346,7 @@ Global template for alarm trigger of conversion "bday"
 
 Default: ``
 
-Supported format: `TIMEDELTA;DESCRIPTION` (separated by `|` if more alarms should be generated)
+Supported format: `TIMEDELTA;DESCRIPTION` (separated by `$` if more alarms should be generated)
 
 Supported format for `TIMEDELTA`: `[+-]?[0-9]+[WDHM]`
 

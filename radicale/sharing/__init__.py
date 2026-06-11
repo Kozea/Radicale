@@ -163,7 +163,7 @@ def check_template_not_empty(data: Any) -> str:
 
 def check_template_alarm_trigger(data: Any) -> str:
     if data is not None and data != '':
-        for entry in data.split('|'):
+        for entry in data.split('$'):
             try:
                 (trigger, alarm_description) = entry.split(';')
             except ValueError:
