@@ -5300,14 +5300,15 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Actions'] = {"config": {
                 "conversion_bday_age_max": 5,
-                "conversion_bday_summary_template": "{fn} ({year}/{age})",
+                "conversion_bday_summary_template": "{fn} ({year}/[{age}|MAX-in-the-past])",
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** GET collection user format: summary with age -> ok")
+            logging.info("\n*** GET collection user format: summary with age:5 -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
-            assert "Test-FN-C3 (1990/0)" in answer
-            assert "Test-FN-C3 (1990/5)" in answer
+            assert "Test-FN-C3 (1990/MAX-in-the-past)" in answer
+            assert "Test-FN-C3 (1990/0)" not in answer
+            assert "Test-FN-C3 (1990/5)" not in answer
             assert "Test-FN-C3 (1990/6)" not in answer
 
             # update template
@@ -5321,7 +5322,7 @@ permissions: RrWw""")
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
-            logging.info("\n*** GET collection user format: summary with age -> ok")
+            logging.info("\n*** GET collection user format: summary with age default -> ok")
             _, headers, answer = self.request("GET", path_shared_3, login="user:userpw")
             assert "Test-FN-C3 (1990/0)" in answer
             assert "Test-FN-C3 (1990/5)" in answer
@@ -5416,20 +5417,21 @@ permissions: RrWw""")
             assert "SUMMARY:Test-FN (BDAY)" in answer
 
             self.configure({"sharing": {
-                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] ({age}. Birthday)",
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] ([{age}. |]Birthday)",
+                "conversion_bday_age_max": 99,
                 }})
-            logging.info("\n*** GET collection user format:text -> ok")
+            logging.info("\n*** GET collection user format:text (summary) (age:99) -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (0. Birthday)" in answer
             assert "SUMMARY:Test-FN (1. Birthday)" in answer
             assert "SUMMARY:Test-FN (99. Birthday)" in answer
             assert "SUMMARY:Test-FN (100. Birthday)" not in answer
 
+            logging.info("\n*** GET collection user format:text (no trigger) (age:99) -> ok")
             self.configure({"sharing": {
                 "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
                 "conversion_bday_description_template": "AGE={age}",
                 }})
-            logging.info("\n*** GET collection user format:text -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (BDAY)" in answer
             assert "DESCRIPTION:AGE=0" in answer
@@ -5437,12 +5439,12 @@ permissions: RrWw""")
             assert "DESCRIPTION:AGE=99" in answer
             assert "DESCRIPTION:AGE=100" not in answer
 
+            logging.info("\n*** GET collection user format:text (with trigger) -> ok")
             self.configure({"sharing": {
                 "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
                 "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
-                "conversion_bday_alarm_trigger_template": "-15H;alarm {fn} {age}. birthday",
+                "conversion_bday_alarm_trigger_template": "-15H;alarm {fn} [{age}. |]birthday",
                 }})
-            logging.info("\n*** GET collection user format:text -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (BDAY)" in answer
             assert "DESCRIPTION:BDAY=1970-01-01" in answer
@@ -5452,7 +5454,44 @@ permissions: RrWw""")
             assert "DESCRIPTION:alarm Test-FN 100. birthday" not in answer
 
             # update template
-            logging.info("\n*** update map(bday) user/owner:r -> ok")
+            logging.info("\n*** update map(bday) user/owner:r (age:98) -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Actions'] = {"config": {
+                "conversion_bday_age_max": 98,
+                }}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** GET collection user format:text (age:98) -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (BDAY)" in answer
+            assert "DESCRIPTION:BDAY=1970-01-01" in answer
+            assert "DESCRIPTION:alarm Test-FN 0. birthday" in answer
+            assert "DESCRIPTION:alarm Test-FN 1. birthday" in answer
+            assert "DESCRIPTION:alarm Test-FN 98. birthday" in answer
+            assert "DESCRIPTION:alarm Test-FN 99. birthday" not in answer
+            assert "DESCRIPTION:alarm Test-FN 100. birthday" not in answer
+
+            logging.info("\n*** GET collection user limit age (age:98) -> ok")
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
+                "conversion_bday_description_template": "AGE=[{age}|MAX-in-the-past]",
+                "conversion_bday_alarm_trigger_template": "",
+                }})
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (BDAY)" in answer
+            assert "DESCRIPTION:AGE=0" in answer
+            assert "DESCRIPTION:AGE=1" in answer
+            assert "DESCRIPTION:AGE=98" in answer
+            assert "DESCRIPTION:AGE=99" not in answer
+            assert "DESCRIPTION:AGE=100" not in answer
+
+            # update template
+            logging.info("\n*** update map(bday) user/owner:r (age:5) -> ok")
             json_dict = {}
             json_dict['User'] = "user"
             json_dict['PathMapped'] = path_mapped
@@ -5464,29 +5503,28 @@ permissions: RrWw""")
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
 
-            logging.info("\n*** GET collection user format:text -> ok")
+            logging.info("\n*** GET collection user format:text (age:5) -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (BDAY)" in answer
-            assert "DESCRIPTION:BDAY=1970-01-01" in answer
-            assert "DESCRIPTION:alarm Test-FN 0. birthday" in answer
-            assert "DESCRIPTION:alarm Test-FN 1. birthday" in answer
-            assert "DESCRIPTION:alarm Test-FN 5. birthday" in answer
-            assert "DESCRIPTION:alarm Test-FN 6. birthday" not in answer
+            assert "DESCRIPTION:AGE=MAX-in-the-past" in answer
+            assert "DESCRIPTION:alarm Test-FN 0. birthday" not in answer
+            assert "DESCRIPTION:alarm Test-FN 1. birthday" not in answer
+            assert "DESCRIPTION:alarm Test-FN 98. birthday" not in answer
             assert "DESCRIPTION:alarm Test-FN 99. birthday" not in answer
             assert "DESCRIPTION:alarm Test-FN 100. birthday" not in answer
 
+            logging.info("\n*** GET collection user limit age (age:5) -> ok")
             self.configure({"sharing": {
                 "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
-                "conversion_bday_description_template": "AGE={age}",
+                "conversion_bday_description_template": "AGE=[{age}|MAX-in-the-past|MAX-in-the-past]",
                 "conversion_bday_alarm_trigger_template": "",
                 }})
-            logging.info("\n*** GET collection user limit age to 5 -> ok")
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
             assert "SUMMARY:Test-FN (BDAY)" in answer
-            assert "DESCRIPTION:AGE=0" in answer
-            assert "DESCRIPTION:AGE=1" in answer
-            assert "DESCRIPTION:AGE=5" in answer
-            assert "DESCRIPTION:AGE=6" not in answer
+            assert "DESCRIPTION:AGE=MAX-in-the-past" in answer
+            assert "DESCRIPTION:AGE=0" not in answer
+            assert "DESCRIPTION:AGE=1" not in answer
+            assert "DESCRIPTION:AGE=98" not in answer
             assert "DESCRIPTION:AGE=99" not in answer
             assert "DESCRIPTION:AGE=100" not in answer
 
@@ -5553,6 +5591,103 @@ permissions: RrWw""")
                 "level2": "test",
                 }}
             _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+    def test_sharing_api_map_vcf_no_year_bday_age_template(self) -> None:
+        """share-by-map with conversion=bday template tests with age and VCF without year."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "response_header_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_shared_r = "/user/calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact2 = get_file_content("contact4-with-bday-no-year.vcf")
+            path2 = path_mapped + "/contact4-with-bday-no-year.vcf"
+            path_shared_2 = path_shared_r + "/contact4-with-bday-no-year.vcf"
+            self.put(path2, contact2, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map(bday) by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
+                "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
+                }})
+
+            # verify content as user
+            logging.info("\n*** GET collection user format:default -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test bday without year Thunderbird CardBook (BDAY)" in answer
+
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] ([{age}. |]Birthday)",
+                }})
+            logging.info("\n*** GET collection user format:text -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "(0. Birthday)" not in answer
+
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
+                "conversion_bday_description_template": "AGE={age}  BDAY={year}-{month}-{day}",
+                }})
+            logging.info("\n*** GET collection user format:text -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test bday without year Thunderbird CardBook (BDAY)" in answer
+            assert "DESCRIPTION:AGE=0" not in answer
+            assert "DESCRIPTION:AGE=??" in answer
+
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
+                "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
+                "conversion_bday_alarm_trigger_template": "-15H;alarm {fn} [{age}. |]birthday",
+                }})
+            logging.info("\n*** GET collection user format:text -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test bday without year Thunderbird CardBook (BDAY)" in answer
+            assert "DESCRIPTION:BDAY=????-01-01" in answer
+            assert "DESCRIPTION:alarm Test bday without year Thunderbird CardBook 0. birthday" not in answer
+            assert "DESCRIPTION:alarm Test bday without year Thunderbird CardBook ??. birthday" in answer
 
     def test_sharing_api_map_vcf_bday_per_share_template(self) -> None:
         """share-by-map with conversion=bday template per share tests."""
