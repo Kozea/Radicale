@@ -49,6 +49,9 @@ UID_SUFFIX = "-auto-converted-by-Radicale"
 
 VCF_TO_ICS_SUPPORTED_PLACEHOLDERS: list = ["fn", "n:f", "n:g", "n:a", "age", "nickname", "year", "month", "day"]
 
+# List of BDAY years acting as flag for "no year specified"
+VCF_TO_ICS_BDAY_NO_YEAR: list = ["1604"]
+
 
 def read_components(s: str) -> List[vobject.base.Component]:
     """Wrapper for vobject.readComponents"""
@@ -379,27 +382,37 @@ def verify(file: str, encoding: str):
 
 
 def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
+    logger.trace("item/convert_vcf_to_ics: resolve placeholders: %r", text)
+
     for placeholder in placeholder_mapping:
         text = text.replace(placeholder, placeholder_mapping[placeholder])
 
-    # resolve {..|..} recursive
-    pattern = re.compile('(.*)(\\[)([^|]+)\\|(.+)(\\])(.*)')
-    logger.trace("item/convert_vcf_to_ics: resolve [..|..] starting with: %r", text)
+    logger.trace("item/convert_vcf_to_ics: resolve [..|..] in  : %r", text)
+
+    # resolve [..|..] recursive
+    pattern = re.compile('(.*)(\\[)([^|]+)\\|([^\\]]*)(\\])(.*)')
     while True:
         match = pattern.match(text)
         if not match:
             # nothing more todo
             break
         else:
-            if match[3].startswith('!') and match[3].endswith('!'):
+            logger.trace("item/convert_vcf_to_ics: resolve match       : %r", match[0])
+            # check for still unresolved placeholders
+            unresolved = False
+            for placeholder in VCF_TO_ICS_SUPPORTED_PLACEHOLDERS:
+                if "!" + placeholder + "!" in match[3]:
+                    unresolved = True
+                    break
+            if unresolved:
                 # not resolved variable
                 if '|' in match[4]:
                     # further recursion required
                     text = match[1] + match[2] + match[4] + match[5] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/continue result: %r", text)
+                    logger.trace("item/convert_vcf_to_ics: resolve continue    : %r", text)
                 else:
                     text = match[1] + match[4] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/final result: %r", text)
+                    logger.trace("item/convert_vcf_to_ics: resolve final result: %r", text)
                     break
             else:
                 # resolved variable
@@ -605,6 +618,13 @@ class Item:
         else:
             pass
 
+        vcard_has_year = True  # default
+        vcard_age_exceed_max = False  # default
+
+        if str(match[1]) in VCF_TO_ICS_BDAY_NO_YEAR:
+            logger.trace("item/convert_vcf_to_ics: has 'no year' bday: %r -> %r", self.href, bday.value)
+            vcard_has_year = False
+
         placeholder_mapping: dict = {}
 
         bdayS = match[1] + match[2] + match[3]
@@ -615,6 +635,9 @@ class Item:
         placeholder_mapping['{year}'] = match[1]
         placeholder_mapping['{month}'] = match[2]
         placeholder_mapping['{day}'] = match[3]
+
+        if not vcard_has_year:
+            placeholder_mapping['{year}'] = "????"
 
         # create ICS
         if hasattr(self.vobject_item, "fn"):
@@ -669,7 +692,6 @@ class Item:
             summary = ShareActions['config_default']['conversion_bday_summary_template']
         else:
             summary = sharing.SHARING_BDAY_SUMMARY_TEMPLATE_DEFAULT  # fallback
-        summary = replace_placeholders(summary, placeholder_mapping)
 
         # prepare DESCRIPTION
         if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_description_template' in ShareActions['config']:
@@ -678,7 +700,6 @@ class Item:
             description = ShareActions['config_default']['conversion_bday_description_template']
         else:
             description = sharing.SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT  # fallback
-        description = replace_placeholders(description, placeholder_mapping)
 
         # create CATEGORIES
         if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_categories' in ShareActions['config']:
@@ -698,14 +719,23 @@ class Item:
 
         vevent_enable_age = False
         age_max = 0
-        if "{age}" in summary or "{age}" in description or "age" in alarm_trigger:
+        if vcard_has_year and ("{age}" in summary or "{age}" in description or "age" in alarm_trigger):
             if ShareActions is not None and 'config' in ShareActions and 'conversion_bday_age_max' in ShareActions['config']:
                 age_max = ShareActions['config']['conversion_bday_age_max']
             elif ShareActions is not None and 'config_default' in ShareActions and 'conversion_bday_age_max' in ShareActions['config_default']:
                 age_max = ShareActions['config_default']['conversion_bday_age_max']
             else:
                 age_max = sharing.SHARING_BDAY_AGE_MAX_DEFAULT  # fallback
-            vevent_enable_age = True
+
+            # check for age_max in the past
+            currentDateTime = datetime.datetime.now()
+            date = currentDateTime.date()
+            if bdayY + age_max < date.year:
+                logger.trace("item/convert_vcf_to_ics: bdayY=%d + age_max=%d < current year %d -> disable age support", bdayY, age_max, date.year)
+                vcard_age_exceed_max = True
+                age_max = 0
+            else:
+                vevent_enable_age = True
 
         # create UID
         if hasattr(self.vobject_item, "uid"):
@@ -742,12 +772,16 @@ class Item:
                 uid_value = uid
             vevent.add('uid').value = uid_value
 
-            # set SUMMARY
+            # set placehoder for "age"
             if vevent_enable_age:
-                summary_value = summary.replace("{age}", str(age))
-            else:
-                summary_value = summary
-            vevent.add('summary').value = summary_value
+                placeholder_mapping['{age}'] = str(age)
+            elif not vcard_has_year:
+                placeholder_mapping['{age}'] = "??"
+            elif vcard_age_exceed_max:
+                placeholder_mapping['{age}'] = "!age!"
+
+            # set SUMMARY
+            vevent.add('summary').value = replace_placeholders(summary, placeholder_mapping)
 
             # set CATEGORIES
             if categories is not None and categories != []:
@@ -761,16 +795,14 @@ class Item:
 
             # set VALARM
             if alarm_trigger is not None and alarm_trigger != "":
-                for entry in alarm_trigger.split('|'):
+                for entry in alarm_trigger.split('$'):
                     (trigger, alarm_description) = entry.split(';')
-                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, description)
+                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, alarm_description)
                     td = trigger_to_timedelta(trigger)
                     if td is not None:
-                        alarm_description = replace_placeholders(alarm_description, placeholder_mapping)
-                        alarm_description_value = alarm_description.replace("{age}", str(age))
                         valarm = vevent.add('valarm')
                         valarm.add('action').value = "DISPLAY"
-                        valarm.add('description').value = alarm_description_value
+                        valarm.add('description').value = replace_placeholders(alarm_description, placeholder_mapping)
                         valarm.add('trigger').value = td
 
             # set RRULE
@@ -781,12 +813,8 @@ class Item:
             vevent.add('transp').value = "TRANSPARENT"
 
             # set DESCRIPTION
-            if vevent_enable_age:
-                description_value = description.replace("{age}", str(age))
-            else:
-                description_value = description
             if description != "":
-                vevent.add('description').value = description_value
+                vevent.add('description').value = replace_placeholders(description, placeholder_mapping)
 
             # increase age
             age = age + 1
