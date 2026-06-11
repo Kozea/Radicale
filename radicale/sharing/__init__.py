@@ -147,7 +147,7 @@ def check_template(data: Any) -> str:
         placeholder_mapping["{" + placeholder + "}"] = '!' + placeholder + '!'
 
     result = item.replace_placeholders(data, placeholder_mapping)
-    logger.trace("replace placeholders: %r -> %r", data, result)
+    logger.trace("replace placeholders result: %r -> %r", data, result)
     pattern = re.compile('.*{.*}.*')
     if pattern.search(result):
         raise ValueError("template contains unsupported placeholder {..}: %r" % result)

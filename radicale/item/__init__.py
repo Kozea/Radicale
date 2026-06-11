@@ -382,27 +382,37 @@ def verify(file: str, encoding: str):
 
 
 def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
+    logger.trace("item/convert_vcf_to_ics: resolve placeholders: %r", text)
+
     for placeholder in placeholder_mapping:
         text = text.replace(placeholder, placeholder_mapping[placeholder])
 
-    # resolve {..|..} recursive
-    pattern = re.compile('(.*)(\\[)([^|]+)\\|(.+)(\\])(.*)')
-    logger.trace("item/convert_vcf_to_ics: resolve [..|..] starting with: %r", text)
+    logger.trace("item/convert_vcf_to_ics: resolve [..|..] in  : %r", text)
+
+    # resolve [..|..] recursive
+    pattern = re.compile('(.*)(\\[)([^|]+)\\|([^\\]]*)(\\])(.*)')
     while True:
         match = pattern.match(text)
         if not match:
             # nothing more todo
             break
         else:
-            if match[3].startswith('!') and match[3].endswith('!'):
+            logger.trace("item/convert_vcf_to_ics: resolve match       : %r", match[0])
+            # check for still unresolved placeholders
+            unresolved = False
+            for placeholder in VCF_TO_ICS_SUPPORTED_PLACEHOLDERS:
+                if "!" + placeholder + "!" in match[3]:
+                    unresolved = True
+                    break
+            if unresolved:
                 # not resolved variable
                 if '|' in match[4]:
                     # further recursion required
                     text = match[1] + match[2] + match[4] + match[5] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/continue result: %r", text)
+                    logger.trace("item/convert_vcf_to_ics: resolve continue    : %r", text)
                 else:
                     text = match[1] + match[4] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace/final result: %r", text)
+                    logger.trace("item/convert_vcf_to_ics: resolve final result: %r", text)
                     break
             else:
                 # resolved variable
