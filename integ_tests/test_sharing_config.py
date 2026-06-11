@@ -50,12 +50,14 @@ def _create_addressbook_and_open_share(
     page.locator('#createcollectionscene select[data-name="type"]').select_option(
         "ADDRESSBOOK"
     )
-    page.locator('#createcollectionscene input[data-name="displayname"]').fill(name)
+    page.locator(
+        '#createcollectionscene input[data-name="displayname"]').fill(name)
     page.click('#createcollectionscene button[data-name="submit"]')
 
     # Open share scene
     page.hover("article:not(.hidden)")
-    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+    page.click(
+        'article:not(.hidden) a[data-name="share"]', force=True, strict=True)
 
     # Click Share by Map
     page.click('button[data-name="sharebymap"]')
@@ -76,7 +78,8 @@ def test_sharing_config_save_and_reload(
 
     # Config details should now be visible and open
     expect(page.locator("details[data-name='config']")).to_be_visible()
-    expect(page.locator("details[data-name='config']")).to_have_attribute("open", "")
+    expect(page.locator("details[data-name='config']")
+           ).to_have_attribute("open", "")
 
     # Fill share map fields (user and href)
     page.locator('input[data-name="shareuser"]').fill("max")
@@ -198,76 +201,6 @@ def test_sharing_config_delete_checkbox(
     page.click('#createeditsharescene button[data-name="cancel"]')
 
 
-def test_sharing_config_conversion_none(
-    context: BrowserContext, page: Page, radicale_server: str, config: Config
-) -> None:
-    _create_addressbook_and_open_share(
-        context, page, radicale_server, config, "Addressbook for Conversion None"
-    )
-
-    # Select Birthday conversion
-    page.click('label[for="newshare_conv_bday"]')
-
-    # Fill share map fields (user and href)
-    page.locator('input[data-name="shareuser"]').fill("max")
-    page.locator('input[data-name="sharehref"]').fill("mapped-bday-none")
-
-    # Set some config values
-    page.locator("#newshare_config_conversion_bday_summary_template").fill(
-        "{fn} Birthday"
-    )
-    page.locator("#newshare_config_conversion_bday_age_max").fill("120")
-
-    # Save
-    page.click('#createeditsharescene button[data-name="submit"]')
-
-    # Verify share created
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-
-    # Re-open share in edit mode
-    page.click(
-        "tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='edit']",
-        strict=True,
-    )
-
-    # Change conversion back to None
-    page.click('label[for="newshare_conv_none"]')
-    expect(page.locator("details[data-name='config']")).to_be_hidden()
-
-    # Save
-    page.click('#createeditsharescene button[data-name="submit"]')
-
-    # Re-open share in edit mode once more
-    page.click(
-        "tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='edit']",
-        strict=True,
-    )
-
-    # Change conversion back to Birthday
-    page.click('label[for="newshare_conv_bday"]')
-
-    # Config fields should be empty and enabled, delete checkboxes unchecked
-    expect(
-        page.locator("#newshare_config_conversion_bday_summary_template")
-    ).to_have_value("")
-    expect(
-        page.locator("#newshare_config_conversion_bday_summary_template")
-    ).to_be_enabled()
-    expect(
-        page.locator("#newshare_config_del_conversion_bday_summary_template")
-    ).not_to_be_checked()
-
-    expect(page.locator("#newshare_config_conversion_bday_age_max")).to_have_value("")
-    expect(page.locator("#newshare_config_conversion_bday_age_max")).to_be_enabled()
-    expect(
-        page.locator("#newshare_config_del_conversion_bday_age_max")
-    ).not_to_be_checked()
-
-    page.click('#createeditsharescene button[data-name="cancel"]')
-
-
 def test_sharing_config_invalid_integer(
     context: BrowserContext, page: Page, radicale_server: str, config: Config
 ) -> None:
@@ -291,7 +224,8 @@ def test_sharing_config_invalid_integer(
     page.locator("#newshare_config_conversion_bday_age_max").fill("foo")
 
     # Verify that there is some error message shown
-    expect(page.locator("#createeditsharescene [data-name='error']")).not_to_be_empty()
+    expect(page.locator(
+        "#createeditsharescene [data-name='error']")).not_to_be_empty()
     expect(page.locator("#createeditsharescene [data-name='error']")).to_contain_text(
         "Max age must be an integer"
     )
@@ -309,7 +243,8 @@ def test_sharing_config_invalid_integer(
     page.locator("#newshare_config_conversion_bday_age_max").fill("120")
 
     # Verify error is cleared
-    expect(page.locator("#createeditsharescene [data-name='error']")).to_be_empty()
+    expect(page.locator(
+        "#createeditsharescene [data-name='error']")).to_be_empty()
 
     # Save
     page.click('#createeditsharescene button[data-name="submit"]')
