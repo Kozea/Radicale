@@ -309,7 +309,10 @@ export class CreateEditShareScene {
             /** @type {Record<string, any>} */
             let new_actions = {};
             if (this._edit && this._share && this._share.Actions) {
-                new_actions = JSON.parse(JSON.stringify(this._share.Actions));
+                let actions_json = JSON.stringify(this._share.Actions);
+                if (actions_json) {
+                    new_actions = JSON.parse(actions_json);
+                }
             }
             if (conversion_value === "bday") {
                 let new_config = new ShareConfig();
