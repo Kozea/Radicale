@@ -129,6 +129,59 @@ def test_sharing_config_save_and_reload(
     page.click('#createeditsharescene button[data-name="cancel"]')
 
 
+def test_sharing_config_bday_save_empty_reenter_edit_age(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    _create_addressbook_and_open_share(
+        context, page, radicale_server, config, "Addressbook for Empty Bday Edit"
+    )
+
+    # Select Birthday conversion
+    page.click('label[for="newshare_conv_bday"]')
+
+    # Fill share map fields (user and href)
+    page.locator('input[data-name="shareuser"]').fill("max")
+    page.locator('input[data-name="sharehref"]').fill("mapped-bday-empty-reenter")
+
+    # Save immediately without setting any config
+    page.click('#createeditsharescene button[data-name="submit"]')
+
+    # Verify share created
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+
+    # Re-open share in edit mode
+    page.click(
+        "tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='edit']",
+        strict=True,
+    )
+
+    # Change max age config value (previously triggered SyntaxError: JSON.parse: unexpected character)
+    page.locator("#newshare_config_conversion_bday_age_max").fill("123")
+
+    # Save
+    page.click('#createeditsharescene button[data-name="submit"]')
+
+    # Verify share updated and returned to share collection scene
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+
+    # Re-open share in edit mode again to verify it saved
+    page.click(
+        "tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='edit']",
+        strict=True,
+    )
+
+    expect(page.locator("#newshare_config_conversion_bday_age_max")).to_have_value(
+        "123"
+    )
+
+    page.click('#createeditsharescene button[data-name="cancel"]')
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+
+
 def test_sharing_config_delete_checkbox(
     context: BrowserContext, page: Page, radicale_server: str, config: Config
 ) -> None:
