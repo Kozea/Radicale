@@ -427,6 +427,7 @@ export class CreateEditShareScene {
                     radio.value = opt;
                     radio.id = id;
                     radio.checked = (opt === initial_conversion);
+                    radio.disabled = this._edit;
                     radio.onchange = () => this._on_conversion_change();
 
                     let label = document.createElement("label");
