@@ -423,6 +423,16 @@ def test_create_and_delete_share_by_bday(
         )
     ).to_have_count(1)
 
+    # Edit the bday share to verify that the conversion selection is disabled in the loaded state
+    page.click(
+        "tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='edit']",
+        strict=True,
+    )
+    expect(page.locator("#createeditsharescene h1")).to_have_text("Edit Share")
+    expect(page.locator("input#newshare_conv_none")).to_be_disabled()
+    expect(page.locator("input#newshare_conv_bday")).to_be_disabled()
+    page.click('#createeditsharescene button[data-name="cancel"]')
+
     # Close the share scene and verify the virtual bday calendar is now in the collections list
     page.click('#sharecollectionscene button[data-name="cancel"]')
     expect(page.locator("#sharecollectionscene")).to_be_hidden()
