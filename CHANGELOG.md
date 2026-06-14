@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.7.5.dev
+## 3.7.5
 * Add: [sharing] conversion_bday_summary_template (customize summary)
 * Add: [sharing] conversion_bday_description_template (customize description)
 * Add: [sharing] conversion_bday_alarm_trigger_template (customize alarms)
