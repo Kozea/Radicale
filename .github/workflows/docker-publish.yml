@@ -69,7 +69,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          build-args: DEPENDENCIES=bcrypt,argon2,ldap
+          build-args: |
+            DEPENDENCIES=bcrypt,argon2,ldap
+            VERSION=${{ github.event.release.tag_name || github.ref_name }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
