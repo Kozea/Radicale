@@ -280,7 +280,7 @@ Choices</a></li>
 <section class="level2" id="translations-of-this-page">
 <h2>Translations of this page <a class="headerlink" href="#translations-of-this-page">&para;</a></h2>
 <ul>
-<li><a href="https://github.com/Kozea/Radicale/blob/master/docs/DOCUMENTATION.te.md">Telugu</a></li>
+<li><a href="https://github.com/Kozea/Radicale/blob/master/docs/translations/DOCUMENTATION.te.md">Telugu</a></li>
 </ul>
 </section>
 <section class="level2" id="getting-started">
@@ -1754,6 +1754,15 @@ Allows creation and management of address books and calendars.</p></li>
 </ul>
 <p>Default: <code>internal</code></p>
 </section>
+<section class="level5" id="prefer_browser_login">
+<h5>prefer_browser_login <a class="headerlink" href="#prefer_browser_login">&para;</a></h5>
+<p><em>(&gt;= 3.7.4)</em></p>
+<p>Try to use browser based login rather than the built in login in the
+web UI. This can be helpful if the login system you are using uses
+redirects, such as in an OIDC setup. For this to work properly, you will
+also have to make sure CORS headers are configured correctly.s</p>
+<p>Default: <code>False</code></p>
+</section>
 </section>
 <section class="level4" id="logging">
 <h4>[logging] <a class="headerlink" href="#logging">&para;</a></h4>
@@ -2277,15 +2286,77 @@ permissions: <code>P</code></li>
 </section>
 <section class="level5" id="default_permissions_create_token">
 <h5>default_permissions_create_token <a class="headerlink" href="#default_permissions_create_token">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
 <p>Default permissions for create token-based sharing</p>
 <p>Default: <code>r</code></p>
 <p>Supported: <code>rwEePp</code></p>
 </section>
 <section class="level5" id="default_permissions_create_map">
 <h5>default_permissions_create_map <a class="headerlink" href="#default_permissions_create_map">&para;</a></h5>
+<p><em>(&gt;= 3.7.0)</em></p>
 <p>Default permissions for map-based sharing</p>
 <p>Default: <code>r</code></p>
 <p>Supported: <code>rwEePp</code></p>
+</section>
+<section class="level5" id="conversion_bday_summary_template">
+<h5>conversion_bday_summary_template <a class="headerlink" href="#conversion_bday_summary_template">&para;</a></h5>
+<p><em>(&gt;= 3.7.5)</em></p>
+<p>Global template for summary of conversion "bday"</p>
+<p>Default:
+<code>{{n:f} {n:g}|{fn}|{nickname}} ({year}) (BDAY)</code></p>
+<p>Supported placeholders (data used from VCARD)</p>
+<ul>
+<li><code>{year}</code>: year of birthday (RFC6350#6.2.5)</li>
+<li><code>{month}</code>: month of birthday (RFC6350#6.2.5)</li>
+<li><code>{day}</code>: day of birthday (RFC6350#6.2.5)</li>
+<li><code>{fn}</code>: full name (RFC6350#6.2.1)</li>
+<li><code>{n:f}</code>: family name (RFC6350#6.2.2)</li>
+<li><code>{n:g}</code>: given name (RFC6350#6.2.2)</li>
+<li><code>{n:a}</code>: additional name (RFC6350#6.2.2)</li>
+<li><code>{nickname}</code>: nick name (RFC6350#6.2.3)</li>
+</ul>
+<p>Supported extra placeholders</p>
+<ul>
+<li><code>{age}</code>: age, toggles to creation of single events
+instead using RRULE (only active if year + age_max &gt;= current
+year)</li>
+</ul>
+<p>Fallback is supported if placeholders inside <code>[...|...]</code>
+(first successful resolved one is used)</p>
+</section>
+<section class="level5" id="conversion_bday_description_template">
+<h5>conversion_bday_description_template <a class="headerlink" href="#conversion_bday_description_template">&para;</a></h5>
+<p><em>(&gt;= 3.7.5)</em></p>
+<p>Global template for description of conversion "bday"</p>
+<p>Default: <code>BDAY={year}-{month}-{day}</code></p>
+<p>Supported placeholders see
+<code>conversion_bday_summary_template</code></p>
+</section>
+<section class="level5" id="conversion_bday_alarm_trigger_template">
+<h5>conversion_bday_alarm_trigger_template <a class="headerlink" href="#conversion_bday_alarm_trigger_template">&para;</a></h5>
+<p><em>(&gt;= 3.7.5)</em></p>
+<p>Global template for alarm trigger of conversion "bday"</p>
+<p>Default: ``</p>
+<p>Supported format: <code>TIMEDELTA;DESCRIPTION</code> (separated by
+<code>$</code> if more alarms should be generated)</p>
+<p>Supported format for <code>TIMEDELTA</code>:
+<code>[+-]?[0-9]+[WDHM]</code></p>
+<p>Supported placeholders for <code>DESCRIPTION</code> see
+<code>conversion_bday_summary_template</code></p>
+</section>
+<section class="level5" id="conversion_bday_categories">
+<h5>conversion_bday_categories <a class="headerlink" href="#conversion_bday_categories">&para;</a></h5>
+<p><em>(&gt;= 3.7.5)</em></p>
+<p>Global categories of conversion "bday", separated by
+<code>,</code></p>
+<p>Default: <code>Birthday</code></p>
+</section>
+<section class="level5" id="conversion_bday_age_max">
+<h5>conversion_bday_age_max <a class="headerlink" href="#conversion_bday_age_max">&para;</a></h5>
+<p><em>(&gt;= 3.7.5)</em></p>
+<p>Global max limit of "bday" age, only active in case of
+<code>{age}</code> is used as placeholder</p>
+<p>Default: <code>99</code></p>
 </section>
 </section>
 </section>
