@@ -563,7 +563,7 @@ class BaseSharing:
                                 {'conversion_bday_age_max': self.conversion_bday_age_max}
                                 )
 
-            logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r Actions=%r", share['ShareType'], share['PathOrToken'], share['PathMapped'], user, share['Owner'], share['Permissions'], share['Conversion'], share['Actions'])
+                logger.debug("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r Actions=%r", share['ShareType'], share['PathOrToken'], share['PathMapped'], user, share['Owner'], share['Permissions'], share['Conversion'], share['Actions'])
 
         return share
 
