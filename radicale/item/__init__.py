@@ -37,6 +37,7 @@ from typing import (Any, Callable, List, MutableMapping, Optional, Sequence,
 
 import vobject
 
+import radicale.item as radicale_item
 from radicale import storage  # noqa:F401
 from radicale import pathutils, sharing, utils
 from radicale.item import filter as radicale_filter
