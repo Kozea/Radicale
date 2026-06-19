@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.7.6.dev
+* Extension: item verification on commandline
 
 ## 3.7.5
 * Add: [sharing] conversion_bday_summary_template (customize summary)
