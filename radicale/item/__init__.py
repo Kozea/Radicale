@@ -377,7 +377,38 @@ def verify(file: str, encoding: str):
         logger.info("Item content (hexdump/lines):\n%s", utils.hexdump_lines(content))
         return False
     else:
-        logger.info("Verifying item: %s successful", file)
+        logger.info("Verifying item(vobject/read_components): %s successful", file)
+
+    try:
+        tag = radicale_item.predict_tag_of_whole_collection(vobject_items)
+        radicale_item.check_and_sanitize_items(vobject_items, tag=tag)
+    except Exception as e:
+        logger.error("Verifying item: %s problem: %s", file, e)
+        logger.warning("Item content:\n%s", utils.textwrap_str(content))
+        return False
+    else:
+        logger.info("Verifying item(radicale/check_and_sanitze): %s successful", file)
+
+    vobject_item, = vobject_items
+
+    try:
+        item = radicale_item.Item(collection_path="verify", vobject_item=vobject_item)
+    except Exception as e:
+        logger.error("Verifying item: %s problem: %s", file, e)
+        logger.warning("Item content:\n%s", utils.textwrap_str(content))
+        return False
+    else:
+        logger.info("Verifying item(radicale/Item): %s successful", file)
+
+    try:
+        item.prepare()
+    except Exception as e:
+        logger.error("Verifying item: %s problem: %s", file, e)
+        logger.warning("Item content:\n%s", utils.textwrap_str(content))
+        return False
+    else:
+        logger.info("Verifying item(radicale/prepare): %s successful", file)
+
     return True
 
 
