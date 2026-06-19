@@ -382,7 +382,10 @@ def verify(file: str, encoding: str):
 
     try:
         tag = radicale_item.predict_tag_of_whole_collection(vobject_items)
-        radicale_item.check_and_sanitize_items(vobject_items, tag=tag)
+        if tag is not None:
+            radicale_item.check_and_sanitize_items(vobject_items, tag=tag)
+        else:
+            raise ValueError("collection tag cannot be predicted")
     except Exception as e:
         logger.error("Verifying item: %s problem: %s", file, e)
         logger.warning("Item content:\n%s", utils.textwrap_str(content))
