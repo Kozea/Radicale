@@ -151,6 +151,48 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
+    def test_add_event_with_rdate_period_start_duration_single(self) -> None:
+        """Add an event with RDATE/PERIOD with start+duration."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_rdate_period_start_duration.ics")
+        path = "/calendar.ics/event_rdate_period_start_duration.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "RDATE;VALUE=PERIOD:20000102T000000Z/PT2H" in answer
+
+    @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
+    def test_add_event_with_rdate_period_start_duration_multi(self) -> None:
+        """Add an event with RDATE/PERIOD with multiple start+duration."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_rdate_period_start_duration_multi.ics")
+        path = "/calendar.ics/event_rdate_period_start_duration_multi.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "RDATE;VALUE=PERIOD:20000102T000000Z/PT2H,20010102T000000Z/PT2H" in answer
+
+    @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
+    def test_add_event_with_rdate_period_start_stop_single(self) -> None:
+        """Add an event with RDATE/PERIOD with start+stop."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_rdate_period_start_stop.ics")
+        path = "/calendar.ics/event_rdate_period_start_stop.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "RDATE;VALUE=PERIOD:20000102T000000Z/20000402T000000Z" in answer
+
+    @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
+    def test_add_event_with_rdate_period_start_stop_multi(self) -> None:
+        """Add an event with RDATE/PERIOD with multiple start+stop."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_rdate_period_start_stop_multi.ics")
+        path = "/calendar.ics/event_rdate_period_start_stop_multi.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        # wrapped answer
+        assert "RDATE;VALUE=PERIOD:20000102T000000Z/20000402T000000Z,20010102T000000Z/20010" in answer
+        assert " 402T000000Z" in answer
+
     def test_add_event_with_desc_ok(self) -> None:
         """Add an event."""
         self.mkcalendar("/calendar.ics/")

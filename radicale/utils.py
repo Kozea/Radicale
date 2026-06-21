@@ -27,6 +27,8 @@ from importlib import import_module, metadata
 from string import ascii_letters, digits, punctuation
 from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
+import vobject
+
 from radicale import config
 from radicale.log import logger
 
@@ -105,6 +107,43 @@ def vobject_supports_vcard4() -> bool:
         return major >= 1
     except Exception:
         return False
+
+
+# global cache
+vobject_supports_period_cache: Union[bool, None] = None
+
+
+def vobject_supports_period() -> bool:
+    """Check if vobject supports period (requires version > 0.9.9)."""
+    global vobject_supports_period_cache
+
+    if vobject_supports_period_cache is not None:
+        return vobject_supports_period_cache
+
+    content_test = """
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:test
+BEGIN:VEVENT
+UID:test-rdate-period-time-start-stop
+DTSTART:20000101T000000Z
+DURATION:PT1H
+DESCRIPTION:event with rdate period start and stop
+DTSTAMP:20000101T000000Z
+RDATE;VALUE=PERIOD:20000102T000000Z/20000402T000000Z
+RRULE:FREQ=WEEKLY
+END:VEVENT
+END:VCALENDAR
+"""
+    obj = vobject.readOne(content_test)
+
+    try:
+        obj.serialize()
+    except Exception:
+        vobject_supports_period_cache = False
+    else:
+        vobject_supports_period_cache = True
+    return vobject_supports_period_cache
 
 
 def packages_version():
@@ -373,11 +412,11 @@ def textwrap_str(content: str, limit: int = DEFAULT_LIMIT_CONTENT) -> str:
 
 def dataToHex(data, count):
     result = ''
-    for item in range(count):
-        if ((item > 0) and ((item % 8) == 0)):
+    for i in range(count):
+        if ((i > 0) and ((i % 8) == 0)):
             result += ' '
-        if (item < len(data)):
-            result += '%02x' % data[item] + ' '
+        if (i < len(data)):
+            result += '%02x' % data[i] + ' '
         else:
             result += '   '
     return result
@@ -385,9 +424,9 @@ def dataToHex(data, count):
 
 def dataToAscii(data, count):
     result = ''
-    for item in range(count):
-        if (item < len(data)):
-            char = chr(data[item])
+    for i in range(count):
+        if (i < len(data)):
+            char = chr(data[i])
             if char in ascii_letters or \
                char in digits or \
                char in punctuation or \
@@ -400,9 +439,9 @@ def dataToAscii(data, count):
 
 def dataToSpecial(data, count):
     result = ''
-    for item in range(count):
-        if (item < len(data)):
-            char = chr(data[item])
+    for i in range(count):
+        if (i < len(data)):
+            char = chr(data[i])
             if char == '\r':
                 result += 'C'
             elif char == '\n':
