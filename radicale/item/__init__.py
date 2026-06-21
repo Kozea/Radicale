@@ -568,8 +568,8 @@ class Item:
             try:
                 self._text = self.vobject_item.serialize()
             except Exception as e:
-                raise RuntimeError("Failed to serialize item %r from %r: %s" %
-                                   (self.href, self._collection_path,
+                raise RuntimeError("Failed to serialize item %r with UID %r from %r: %s" %
+                                   (self.href, self.uid, self._collection_path,
                                     e)) from e
         return self._text
 
