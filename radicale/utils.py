@@ -373,11 +373,11 @@ def textwrap_str(content: str, limit: int = DEFAULT_LIMIT_CONTENT) -> str:
 
 def dataToHex(data, count):
     result = ''
-    for item in range(count):
-        if ((item > 0) and ((item % 8) == 0)):
+    for i in range(count):
+        if ((i > 0) and ((i % 8) == 0)):
             result += ' '
-        if (item < len(data)):
-            result += '%02x' % data[item] + ' '
+        if (i < len(data)):
+            result += '%02x' % data[i] + ' '
         else:
             result += '   '
     return result
@@ -385,9 +385,9 @@ def dataToHex(data, count):
 
 def dataToAscii(data, count):
     result = ''
-    for item in range(count):
-        if (item < len(data)):
-            char = chr(data[item])
+    for i in range(count):
+        if (i < len(data)):
+            char = chr(data[i])
             if char in ascii_letters or \
                char in digits or \
                char in punctuation or \
@@ -400,9 +400,9 @@ def dataToAscii(data, count):
 
 def dataToSpecial(data, count):
     result = ''
-    for item in range(count):
-        if (item < len(data)):
-            char = chr(data[item])
+    for i in range(count):
+        if (i < len(data)):
+            char = chr(data[i])
             if char == '\r':
                 result += 'C'
             elif char == '\n':
