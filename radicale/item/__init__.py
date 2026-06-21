@@ -200,6 +200,27 @@ def check_and_sanitize_items(
                                     logger.trace("ITEM/check_and_sanitize_item: remove existing tzinfo (dtstart has none): '%s' -> '%s'", date, dates.value[i])
                     if all(type(d) is type(ref_date) for d in dates.value):
                         continue
+                    if dates.params.get("VALUE") == ["PERIOD"]:
+                        if not utils.vobject_supports_period():
+                            raise ValueError("PERIOD not supported by used vobject=%s in object %r" % (utils.package_version("vobject"), component_uid))
+                        # period     = period-explicit / period-start
+                        # period-explicit = date-time "/" date-time
+                        # period-start = date-time "/" dur-value
+                        for i, date in enumerate(dates.value):
+                            if not isinstance(date, tuple):
+                                raise ValueError("invalid PERIOD (not a tuple) in object %r" % component_uid)
+                            if len(date) != 2:
+                                raise ValueError("invalid PERIOD (not 2 elements) in object %r" % component_uid)
+                            if type(date[0]) is datetime.datetime and type(date[1]) is datetime.datetime:
+                                if (date[0] > date[1]):
+                                    raise ValueError("invalid PERIOD (end before start) in object %r" % component_uid)
+                                # skip explicit tzinfo check for now, no buggy client known
+                                logger.trace("ITEM/check_and_sanitize_item: PERIOD/start-stop found: '%s'", date)
+                            elif type(date[0]) is datetime.datetime and type(date[1]) is datetime.timedelta:
+                                logger.trace("ITEM/check_and_sanitize_item: PERIOD/start-duration found: '%s'", date)
+                            else:
+                                raise ValueError("invalid PERIOD (element types not matching) in object %r" % component_uid)
+                        continue
                     for i, date in enumerate(dates.value):
                         dates.value[i] = ref_date.replace(
                             date.year, date.month, date.day)

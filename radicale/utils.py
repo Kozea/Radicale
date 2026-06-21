@@ -27,6 +27,8 @@ from importlib import import_module, metadata
 from string import ascii_letters, digits, punctuation
 from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
+import vobject
+
 from radicale import config
 from radicale.log import logger
 
@@ -105,6 +107,43 @@ def vobject_supports_vcard4() -> bool:
         return major >= 1
     except Exception:
         return False
+
+
+# global cache
+vobject_supports_period_cache: Union[bool, None] = None
+
+
+def vobject_supports_period() -> bool:
+    """Check if vobject supports period (requires version > 0.9.9)."""
+    global vobject_supports_period_cache
+
+    if vobject_supports_period_cache is not None:
+        return vobject_supports_period_cache
+
+    content_test = """
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:test
+BEGIN:VEVENT
+UID:test-rdate-period-time-start-stop
+DTSTART:20000101T000000Z
+DURATION:PT1H
+DESCRIPTION:event with rdate period start and stop
+DTSTAMP:20000101T000000Z
+RDATE;VALUE=PERIOD:20000102T000000Z/20000402T000000Z
+RRULE:FREQ=WEEKLY
+END:VEVENT
+END:VCALENDAR
+"""
+    obj = vobject.readOne(content_test)
+
+    try:
+        obj.serialize()
+    except Exception:
+        vobject_supports_period_cache = False
+    else:
+        vobject_supports_period_cache = True
+    return vobject_supports_period_cache
 
 
 def packages_version():
