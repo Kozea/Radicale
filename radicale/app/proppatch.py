@@ -25,6 +25,7 @@ import socket
 import xml.etree.ElementTree as ET
 from http import client
 from typing import Dict, Optional, Union, cast
+from urllib.parse import quote
 
 import defusedxml.ElementTree as DefusedET
 
@@ -49,8 +50,8 @@ def xml_proppatch(base_prefix: str, path: str,
     href = ET.Element(xmlutils.make_clark("D:href"))
     href.text = xmlutils.make_href(base_prefix, path)
     if share:
-        # backmap
-        href.text = href.text.replace(share['PathMapped'], share['PathOrToken'])
+        # backmap; quote so the encoded href and raw share path compare
+        href.text = href.text.replace(quote(share['PathMapped']), quote(str(share['PathOrToken'])))
     response.append(href)
     # Create D:propstat element for props with status 200 OK
     propstat = ET.Element(xmlutils.make_clark("D:propstat"))

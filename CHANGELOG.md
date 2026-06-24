@@ -3,6 +3,7 @@
 ## 3.7.6.dev
 * Extension: item verification on commandline
 * Improvement: catch lack of support of PERIOD in vobject <= 0.9.9
+* Fix: sharing: backmap of REPORT/PROPPATCH hrefs is now URL-encode-aware (edit of a shared collection failed when the principal contains '@')
 
 ## 3.7.5
 * Add: [sharing] conversion_bday_summary_template (customize summary)

@@ -31,7 +31,7 @@ import xml.etree.ElementTree as ET
 from http import client
 from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
                     Tuple, Union)
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 
 import vobject
 import vobject.base
@@ -741,9 +741,11 @@ def xml_item_response(base_prefix: str, href: str,
     href_element.text = xmlutils.make_href(base_prefix, href)
     logger.trace("REPORT/xml_report: href=%r base_prefix=%r", href_element.text, base_prefix)
     if share:
-        # backmap
-        if href_element.text.startswith(base_prefix + share['PathMapped']):
-            href_element.text = base_prefix + str(share['PathOrToken']) + href_element.text.removeprefix(base_prefix + share['PathMapped'])
+        # backmap; quote so the encoded href and raw share path compare
+        mapped = quote(share['PathMapped'])
+        token = quote(str(share['PathOrToken']))
+        if href_element.text.startswith(base_prefix + mapped):
+            href_element.text = base_prefix + token + href_element.text.removeprefix(base_prefix + mapped)
         if share_bday_automap and href_element.text.endswith(".vcf"):
             href_element.text = href_element.text.removesuffix(".vcf") + ".ics"
         logger.trace("REPORT/xml_report: href=%r (backmapped)", href_element.text)
