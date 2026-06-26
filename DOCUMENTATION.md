@@ -1389,6 +1389,14 @@ One of:
 
 Default: `tls`
 
+##### imap_append_domain
+
+_(>= 3.7.6)_
+
+Append domain to login before trying IMAP connection like @domain.tld
+
+Default: (unset)
+
 ##### oauth2_token_endpoint
 
 _(>= 3.5.0)_
