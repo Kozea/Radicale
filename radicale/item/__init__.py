@@ -69,6 +69,9 @@ def read_components(s: str) -> List[vobject.base.Component]:
     s = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]', '', s)
     # Workaround delete all empty lines to avoid vobject parsing errors
     s = re.sub(r'(?m)^[ \t]*\r?\n', '', s)
+    # Delete trailing space on TZID and TZNAME (Microsoft Outlook bug)
+    s = re.sub(r'(TZID|TZNAME)(:[^\r\n]+) (\r?\n)', r"\1\2\3", s)  # fix VTIMEZONE
+    s = re.sub(r'(TZID=[^:]+) (:)', r"\1\2", s)  # fix DTSTART/DTEND
     return list(vobject.readComponents(s, allowQP=True))
 
 
