@@ -193,6 +193,25 @@ permissions: RrWw""")
         assert "RDATE;VALUE=PERIOD:20000102T000000Z/20000402T000000Z,20010102T000000Z/20010" in answer
         assert " 402T000000Z" in answer
 
+    def test_add_event_with_tz_trailing_space(self) -> None:
+        """Add an event."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_issue2172.ics")
+        path = "/calendar.ics/event_issue2172.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "DESCRIPTION" in answer
+        assert "TZID:Mitteleuropäische Zeit " not in answer
+        assert "TZID:Mitteleuropäische Zeit" in answer
+        assert "TZNAME:Mitteleuropäische Zeit " not in answer
+        assert "TZNAME:Mitteleuropäische Zeit" in answer
+        assert "DTSTART;TZID=Mitteleuropäische Zeit :20260701T170000" not in answer
+        assert "DTSTART;TZID=Mitteleuropäische Zeit:20260701T170000" in answer
+        assert "DTEND;TZID=Mitteleuropäische Zeit :20260701T183000" not in answer
+        assert "DTEND;TZID=Mitteleuropäische Zeit:20260701T183000" in answer
+
     def test_add_event_with_desc_ok(self) -> None:
         """Add an event."""
         self.mkcalendar("/calendar.ics/")
