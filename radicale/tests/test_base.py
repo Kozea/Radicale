@@ -874,7 +874,7 @@ permissions: RrWw""")
         delay = .3
         delay_min = delay * 0.9  # no random jitter during test
         delay_max = delay + 0.2  # no random jitter during test
-        if sys.platform == "darwin":  # no reliable sleep times
+        if sys.platform == "darwin" or sys.platform == "win32":  # no reliable sleep times
             delay_max = delay_max * 1.5
 
         self.configure({"server": {"delay_on_error": delay}})
@@ -910,7 +910,7 @@ permissions: RrWw""")
         delay = .3
         delay_min = delay * 0.9  # no random jitter during test
         delay_max = delay + 0.2  # no random jitter during test
-        if sys.platform == "darwin":  # no reliable sleep times
+        if sys.platform == "darwin" or sys.platform == "win32":  # no reliable sleep times
             delay_max = delay_max * 1.5
 
         self.configure({"rights": {"permit_delete_collection": False}, "auth": {"delay": delay}})
