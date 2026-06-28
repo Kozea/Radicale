@@ -440,6 +440,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "tls",
             "help": "Secure the IMAP connection: *tls*|starttls|none",
             "type": imap_security}),
+        ("imap_append_domain", {
+            "value": "",
+            "help": "Append domain to login before trying IMAP connection like @domain.tld",
+            "type": str}),
         ("oauth2_token_endpoint", {
             "value": "",
             "help": "OAuth2 token endpoint URL",
