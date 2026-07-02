@@ -2562,12 +2562,23 @@ permissions: RW
 user: .+
 collection: {user}/[^/]+
 permissions: rw
+
+# Allow reading and writing the collection named "common" for people in
+# certain LDAP groups
+[groupcal]
+groups: members,directors
+collection: common
+permission: rw
 ```
 
 The titles of the sections are ignored (but must be unique). The keys `user`
 and `collection` contain regular expressions, that are matched against the
 username and the path of the collection. Permissions from the first
 matching section are used. If no section matches, access gets denied.
+
+The `groups` key can be used to provide a comma-separated list of LDAP groups
+which should be matched for access. In case a section has both `user` and
+`groups`, either one matching will allow access in that section.
 
 The username is empty for anonymous users. Therefore, the regex `.+` only
 matches authenticated users and `.*` matches everyone (including anonymous
