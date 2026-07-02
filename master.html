@@ -2544,12 +2544,23 @@ URL.</p>
 <span id="cb57-15"><a aria-hidden="true" href="#cb57-15" tabindex="-1"></a><span class="kw">[calendars]</span></span>
 <span id="cb57-16"><a aria-hidden="true" href="#cb57-16" tabindex="-1"></a><span class="dt">user: .+</span></span>
 <span id="cb57-17"><a aria-hidden="true" href="#cb57-17" tabindex="-1"></a><span class="dt">collection: {user}/</span><span class="kw">[^/]</span><span class="dt">+</span></span>
-<span id="cb57-18"><a aria-hidden="true" href="#cb57-18" tabindex="-1"></a><span class="dt">permissions: rw</span></span></code></pre></div>
+<span id="cb57-18"><a aria-hidden="true" href="#cb57-18" tabindex="-1"></a><span class="dt">permissions: rw</span></span>
+<span id="cb57-19"><a aria-hidden="true" href="#cb57-19" tabindex="-1"></a></span>
+<span id="cb57-20"><a aria-hidden="true" href="#cb57-20" tabindex="-1"></a><span class="co"># Allow reading and writing the collection named "common" for people in</span></span>
+<span id="cb57-21"><a aria-hidden="true" href="#cb57-21" tabindex="-1"></a><span class="co"># certain LDAP groups</span></span>
+<span id="cb57-22"><a aria-hidden="true" href="#cb57-22" tabindex="-1"></a><span class="kw">[groupcal]</span></span>
+<span id="cb57-23"><a aria-hidden="true" href="#cb57-23" tabindex="-1"></a><span class="dt">groups: members,directors</span></span>
+<span id="cb57-24"><a aria-hidden="true" href="#cb57-24" tabindex="-1"></a><span class="dt">collection: common</span></span>
+<span id="cb57-25"><a aria-hidden="true" href="#cb57-25" tabindex="-1"></a><span class="dt">permission: rw</span></span></code></pre></div>
 <p>The titles of the sections are ignored (but must be unique). The keys
 <code>user</code> and <code>collection</code> contain regular
 expressions, that are matched against the username and the path of the
 collection. Permissions from the first matching section are used. If no
 section matches, access gets denied.</p>
+<p>The <code>groups</code> key can be used to provide a comma-separated
+list of LDAP groups which should be matched for access. In case a
+section has both <code>user</code> and <code>groups</code>, either one
+matching will allow access in that section.</p>
 <p>The username is empty for anonymous users. Therefore, the regex
 <code>.+</code> only matches authenticated users and <code>.*</code>
 matches everyone (including anonymous users).</p>
