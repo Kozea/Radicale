@@ -5,6 +5,7 @@
 * Improvement: catch lack of support of PERIOD in vobject <= 0.9.9
 * Fix: sharing: backmap of REPORT/PROPPATCH hrefs is now URL-encode-aware (edit of a shared collection failed when the principal contains '@')
 * Workaround: remove trailing spaces on TZID and TZNAME appended by buggy Microsoft clients
+* Extension: [auth] imap_append_domain option (optional)
 
 ## 3.7.5
 * Add: [sharing] conversion_bday_summary_template (customize summary)
