@@ -1393,7 +1393,7 @@ Default: `tls`
 
 _(>= 3.7.6)_
 
-Append domain to login before trying IMAP connection like @domain.tld
+Append `@` + domain to login before trying IMAP connection
 
 Default: (unset)
 

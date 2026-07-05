@@ -442,7 +442,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": imap_security}),
         ("imap_append_domain", {
             "value": "",
-            "help": "Append domain to login before trying IMAP connection like @domain.tld",
+            "help": "Append '@' + domain to login before trying IMAP connection",
             "type": str}),
         ("oauth2_token_endpoint", {
             "value": "",

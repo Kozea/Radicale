@@ -49,7 +49,7 @@ class Auth(auth.BaseAuth):
             else:
                 logger.info("auth imap port: %d", self._port)
         self._append_domain = self.configuration.get("auth", "imap_append_domain")
-        if self._append_domain == "none":
+        if self._append_domain is None or len(self._append_domain) == 0:
             logger.info("auth imap append domain not used")
         else:
             logger.info("auth imap append domain: %s", self._append_domain)
@@ -68,10 +68,10 @@ class Auth(auth.BaseAuth):
                 connection = imaplib.IMAP4(host=self._host, port=self._port)
                 if self._security == "starttls":
                     connection.starttls(ssl.create_default_context())
-            if not self._append_domain:
+            if self._append_domain is None or len(self._append_domain) == 0:
                 imaplogin = login
             else:
-                imaplogin = login + self._append_domain
+                imaplogin = login + "@" + self._append_domain
             try:
                 if "AUTH=PLAIN" in connection.capabilities:
                     logger.debug("IMAP authentication PLAIN selected for user %r via %s:%d (security: %s)", imaplogin, self._host, self._port, self._security)
@@ -81,7 +81,6 @@ class Auth(auth.BaseAuth):
                     )
                 elif "AUTH=LOGIN" in connection.capabilities:
                     logger.debug("IMAP authentication LOGIN selected for user %r via %s:%d (security: %s)", imaplogin, self._host, self._port, self._security)
-                    print("using imaplogin: %r", imaplogin)
                     connection.login(imaplogin, password)
                 else:
                     logger.error("IMAP server is neither supporting AUTH=PLAIN or AUTH=LOGIN: %s:%d (security: %s)", self._host, self._port, self._security)

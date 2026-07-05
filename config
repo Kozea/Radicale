@@ -161,8 +161,8 @@
 # Value: tls | starttls | none
 #imap_security = tls
 
-# Append domain to login before trying IMAP connection
-# Value: none | @domain.tld
+# Append '@' + domain to login before trying IMAP connection (optional)
+# Value: domain.tld
 #imap_append_domain =
 
 # OAuth2 token endpoint URL
