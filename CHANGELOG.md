@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.7.6.dev
+## 3.7.6
 * Extension: item verification on commandline
 * Improvement: catch lack of support of PERIOD in vobject <= 0.9.9
 * Fix: sharing: backmap of REPORT/PROPPATCH hrefs is now URL-encode-aware (edit of a shared collection failed when the principal contains '@')
