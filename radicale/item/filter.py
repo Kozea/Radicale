@@ -402,8 +402,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                         return
                 elif duration is not None:
                     if original_duration is None:
-                        original_duration = duration.seconds
-                    if duration.seconds > 0:
+                        original_duration = duration.total_seconds()
+                    if duration.total_seconds() > 0:
                         # Line 2
                         if range_fn(dtstart, dtstart + duration,
                                     is_recurrence):

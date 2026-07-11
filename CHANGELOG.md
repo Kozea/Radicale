@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.7.7.dev
+* Fix: time-range filter treated a VEVENT with a whole-day DURATION (e.g. P1D, P2D) as zero-length (timedelta.seconds instead of total_seconds), so such events were missing from calendar-query REPORT results
+
 ## 3.7.6
 * Extension: item verification on commandline
 * Improvement: catch lack of support of PERIOD in vobject <= 0.9.9

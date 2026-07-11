@@ -1789,6 +1789,31 @@ permissions: RrWw""")
 </C:comp-filter>"""], items=(9,))
         assert "/calendar.ics/event9.ics" not in answer
 
+    def test_time_range_filter_events_whole_day_duration(self) -> None:
+        """Report time-range filter on an event with a whole-day DURATION.
+
+        event11 starts 2013-09-01T00:00:00Z and lasts DURATION:P2D, i.e. it is
+        ongoing until 2013-09-03T00:00:00Z. A time-range that falls inside the
+        span (but after DTSTART) must match it, exactly as it would for an
+        equivalent event expressed with DTEND.
+        """
+        # Time-range fully inside the 2-day event, after DTSTART.
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:time-range start="20130902T000000Z" end="20130902T120000Z"/>
+    </C:comp-filter>
+</C:comp-filter>"""], items=(11,))
+        assert "/calendar.ics/event11.ics" in answer
+        # Time-range fully after the event must not match.
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:time-range start="20130904T000000Z" end="20130905T000000Z"/>
+    </C:comp-filter>
+</C:comp-filter>"""], items=(11,))
+        assert "/calendar.ics/event11.ics" not in answer
+
     def test_time_range_filter_without_comp_filter(self) -> None:
         """Report request with time-range filter without comp-filter on events."""
         answer = self._test_filter(["""\
