@@ -30,13 +30,13 @@ export class FormValidator {
      */
     constructor(error_handler) {
         this.error_handler = error_handler;
-        /** @type {Array<{field: HTMLInputElement, validation_method: function(): ?string}>} */
+        /** @type {Array<{field: HTMLInputElement, validation_method: () => string | null}>} */
         this.validation_methods = [];
     }
 
     /**
      * @param {HTMLInputElement} field
-     * @param {function(): ?string} validation_method
+     * @param {() => string | null} validation_method
      */
     addValidator(field, validation_method) {
         this.validation_methods.push({ field, validation_method });
@@ -67,7 +67,7 @@ export class FormValidator {
  * Validates that the input is not empty.
  * @param {HTMLInputElement} input 
  * @param {string} field_name 
- * @returns{function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_non_empty(input, field_name) {
     return () => {
@@ -83,7 +83,7 @@ export function validate_non_empty(input, field_name) {
  * @param {HTMLInputElement} input
  * @param {string} target
  * @param {string} field_name
- * @returns {function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_not_empty_or_equals(input, target, field_name) {
     return () => {
@@ -102,7 +102,7 @@ export function validate_not_empty_or_equals(input, target, field_name) {
  * Validates that the input is a valid HREF.
  * @param {HTMLInputElement} input
  * @param {string} field_name
- * @returns {function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_href(input, field_name) {
     return () => {
@@ -124,7 +124,7 @@ export function validate_href(input, field_name) {
  * Validates that the input is a valid color.
  * @param {HTMLInputElement} input
  * @param {string} field_name
- * @returns {function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_color(input, field_name) {
     return () => {
@@ -144,7 +144,7 @@ export function validate_color(input, field_name) {
  * @param {HTMLInputElement} input
  * @param {string} target
  * @param {string} field_name
- * @returns {function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_equals(input, target, field_name) {
     return () => {
@@ -160,7 +160,7 @@ export function validate_equals(input, target, field_name) {
  * Validates that at least one file is selected in a file input.
  * @param {HTMLInputElement} input
  * @param {string} field_name
- * @returns {function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_files(input, field_name) {
     return () => {
@@ -175,7 +175,7 @@ export function validate_files(input, field_name) {
  * Validates that the input is a valid integer (if not empty).
  * @param {HTMLInputElement} input
  * @param {string} field_name
- * @returns {function(): ?string}
+ * @returns {() => string | null}
  */
 export function validate_integer(input, field_name) {
     return () => {

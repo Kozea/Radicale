@@ -169,10 +169,10 @@ function update_share_list(user, password, collection, errorHandler) {
  * @param {import('../api/sharing.js').Share} share 
  * @param {HTMLElement} template 
  * @param {string} delete_label 
- * @param {function(string, string, import('../api/sharing.js').Share, function(?string):void):void} delete_action 
- * @param {function():void} [onDeleteSuccess] Optional extra callback after a successful delete.
+ * @param {(user: string, password: string | null, share: import('../api/sharing.js').Share, callback: (error: string | null) => void) => void} delete_action 
+ * @param {(() => void) | null} [onDeleteSuccess] Optional extra callback after a successful delete.
  */
-function add_share_row_node(user, password, collection, share, template, delete_label, delete_action, onDeleteSuccess) {
+function add_share_row_node(user, password, collection, share, template, delete_label, delete_action, onDeleteSuccess = null) {
   let pathortoken = share["PathOrToken"] || "";
   let node = /** @type {HTMLElement} */ (template.cloneNode(true));
   node.classList.remove("hidden");

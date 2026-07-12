@@ -28,7 +28,7 @@ import { create_request, to_error_message } from "./common.js";
  * Find the principal collection.
  * @param {?string} user
  * @param {?string} password
- * @param {function(?Collection, ?string):void} callback Returns result or error
+ * @param {(collection: Collection | null, error: string | null) => void} callback Returns result or error
  * @return {XMLHttpRequest}
  */
 export function get_principal(user, password, callback) {
@@ -81,7 +81,7 @@ export function get_principal(user, password, callback) {
  * @param {string} user
  * @param {?string} password
  * @param {Collection} collection
- * @param {function(?Array<Collection>, ?string):void} callback Returns result or error
+ * @param {(collections: Array<Collection> | null, error: string | null) => void} callback Returns result or error
  * @return {XMLHttpRequest}
  */
 export function get_collections(user, password, collection, callback) {
@@ -267,7 +267,7 @@ function _parse_collection(response, collection_href) {
  * @param {?string} password
  * @param {string} collection_href Must always start and end with /.
  * @param {File} file
- * @param {function(?string):void} callback Returns error or null
+ * @param {(error: string | null) => void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function upload_collection(user, password, collection_href, file, callback) {
@@ -291,7 +291,7 @@ export function upload_collection(user, password, collection_href, file, callbac
  * @param {string} user
  * @param {?string} password
  * @param {Collection} collection
- * @param {function(?string):void} callback Returns error or null
+ * @param {(error: string | null) => void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function delete_collection(user, password, collection, callback) {
@@ -315,7 +315,7 @@ export function delete_collection(user, password, collection, callback) {
  * @param {?string} password
  * @param {Collection} collection
  * @param {boolean} create
- * @param {function(?string):void} callback Returns error or null
+ * @param {(error: string | null) => void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 function create_edit_collection(user, password, collection, create, callback) {
@@ -394,7 +394,7 @@ function create_edit_collection(user, password, collection, create, callback) {
  * @param {string} user
  * @param {?string} password
  * @param {Collection} collection
- * @param {function(?string):void} callback Returns error or null
+ * @param {(error: string | null) => void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function create_collection(user, password, collection, callback) {
@@ -405,7 +405,7 @@ export function create_collection(user, password, collection, callback) {
  * @param {string} user
  * @param {?string} password
  * @param {Collection} collection
- * @param {function(?string):void} callback Returns error or null
+ * @param {(error: string | null) => void} callback Returns error or null
  * @return {XMLHttpRequest}
  */
 export function edit_collection(user, password, collection, callback) {

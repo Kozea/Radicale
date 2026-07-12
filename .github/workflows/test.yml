@@ -293,7 +293,7 @@ jobs:
           node-version: 24
       - name: JS Type Check
         run: |
-          npx -p typescript tsc -p radicale/web/jsconfig.json
+          npx -y -p typescript@7.0.2 tsc -p radicale/web/jsconfig.json
 
   lint:
     name: Lint
