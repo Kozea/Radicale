@@ -41,9 +41,9 @@ import { create_request, to_error_message } from "./common.js";
  * @param {?string} password
  * @param {string} path
  * @param {object} body
- * @param {function(string):void} on_success
- * @param {?function():void} on_not_found
- * @param {?function(string):void} on_error
+ * @param {(response: string) => void} on_success
+ * @param {(() => void) | null} on_not_found
+ * @param {((error: string) => void) | null} on_error
  * @returns {XMLHttpRequest}
  */
 function call_sharing_api(
@@ -92,7 +92,7 @@ function call_sharing_api(
 /**
  * @param {string} user
  * @param {?string} password
- * @param {function(import("../api/sharing.js").ServerFeatures, ?string):void} callback
+ * @param {(features: import("../api/sharing.js").ServerFeatures, error: string | null) => void} callback
  */
 export function discover_server_features(user, password, callback) {
     call_sharing_api(
@@ -163,12 +163,12 @@ export const BDAY_CONFIG = Object.freeze([
 ]);
 
 export class ShareConfig {
+    /** @type {Record<string, any>} */
+    _values = {};
     /**
      * @param {ShareConfig|Record<string, any>} [data]
      */
     constructor(data = {}) {
-        /** @type {Record<string, any>} */
-        this._values = {};
         let rawData = data;
         if (data instanceof ShareConfig) {
             rawData = data._values;
@@ -310,8 +310,8 @@ export class Share {
         /** @type {number} */ this.TimestampUpdated = data.TimestampUpdated || 0;
         /** @type {Object<String, String>} */ this.Properties = data.Properties || {};
         /** @type {string} */ this.Conversion = data.Conversion || "";
-        /** @type {ShareActions} */ this._Actions = new ShareActions();
-        this.Actions = data.Actions || {};
+        /** @type {ShareActions} */
+        this._Actions = data.Actions instanceof ShareActions ? data.Actions : new ShareActions(data.Actions || {});
     }
 
     /**
@@ -351,7 +351,7 @@ export class Share {
  * @param {string} user
  * @param {?string} password
  * @param {?import("../models/collection.js").Collection} collection
- * @param {function(Array<Share>, ?string):void} callback
+ * @param {(shares: Array<Share>, error: string | null) => void} callback
  */
 export function reload_sharing_list(user, password, collection, callback) {
     let body = collection ? { PathMapped: decodeURIComponent(collection.href) } : {};
@@ -412,7 +412,7 @@ export function get_property_key(type, property) {
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function add_share_by_token(
     user,
@@ -452,7 +452,7 @@ export function add_share_by_token(
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function add_share_by_map(
     user,
@@ -494,7 +494,7 @@ export function add_share_by_map(
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function delete_share_by_token(
     user,
@@ -526,7 +526,7 @@ export function delete_share_by_token(
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function delete_share_by_map(
     user,
@@ -557,7 +557,7 @@ export function delete_share_by_map(
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function update_share_by_token(
     user,
@@ -597,7 +597,7 @@ export function update_share_by_token(
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function update_share_by_map(
     user,
@@ -641,7 +641,7 @@ export function update_share_by_map(
  * @param {string} user
  * @param {?string} password
  * @param {Share} share
- * @param {function(?string):void} callback
+ * @param {(error: string | null) => void} callback
  */
 export function update_incoming_share(
     user,

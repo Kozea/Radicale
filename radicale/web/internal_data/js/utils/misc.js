@@ -156,7 +156,7 @@ export function get_element(node, selector) {
  *
  * @param {string} str
  * @param {number} max
- * @returns {str}
+ * @returns {string}
  */
 export function trim_to_max(str, max) {
     if (str.length > max - 2) {

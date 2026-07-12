@@ -31,7 +31,7 @@ class CollectionsCache {
         this.server_features = null;
         /** @type {?XMLHttpRequest} */ this.collections_req = null;
         /** @type {?XMLHttpRequest} */ this.shares_req = null;
-        /** @type {?Array<{ onerror: function(string):void, displayData: function(Array<import("../api/sharing.js").Share>):void }>} */
+        /** @type {Array<{ onerror: (error: string) => void, displayData: (shares: Array<import("../api/sharing.js").Share>) => void }> | null} */
         this._sharing_callbacks = null;
     }
 
@@ -54,8 +54,8 @@ class CollectionsCache {
      * @param {string} user
      * @param {?string} password
      * @param {import("../models/collection.js").Collection} principal_collection
-     * @param {function(string):void} onerror
-     * @param {function(Array<import("../models/collection.js").Collection>, Array<import("../api/sharing.js").Share>, boolean):void} displayData
+     * @param {(error: string) => void} onerror
+     * @param {(collections: Array<import("../models/collection.js").Collection>, shares: Array<import("../api/sharing.js").Share>, loaded: boolean) => void} displayData
      */
     getChildCollections(user, password, principal_collection, onerror, displayData) {
         if (this.child_collections !== null && this.incoming_shares !== null) {
@@ -105,8 +105,8 @@ class CollectionsCache {
     /**
      * @param {string} user
      * @param {?string} password
-     * @param {function(string):void} onerror
-     * @param {function(Array<import("../api/sharing.js").Share>):void} displayData
+     * @param {(error: string) => void} onerror
+     * @param {(shares: Array<import("../api/sharing.js").Share>) => void} displayData
      */
     getSharingList(user, password, onerror, displayData) {
         if (this.incoming_shares !== null) {
@@ -140,8 +140,8 @@ class CollectionsCache {
     /**
      * @param {string} user
      * @param {?string} password
-     * @param {function(string):void} onerror
-     * @param {function(import("../api/sharing.js").ServerFeatures):void} displayData
+     * @param {(error: string) => void} onerror
+     * @param {(features: import("../api/sharing.js").ServerFeatures) => void} displayData
      */
     getServerFeatures(user, password, onerror, displayData) {
         if (this.server_features !== null) {

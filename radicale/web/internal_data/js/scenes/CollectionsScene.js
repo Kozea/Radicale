@@ -42,7 +42,7 @@ export class CollectionsScene {
      * @param {string} user
      * @param {?string} password
      * @param {Collection} principal_collection The princial collection
-     * @param {function(?string):void} onerror Called when an error occurs, before the
+     * @param {(error: string | null) => void} onerror Called when an error occurs, before the
      *                                   scene is popped.
      */
     constructor(user, password, principal_collection, onerror) {
