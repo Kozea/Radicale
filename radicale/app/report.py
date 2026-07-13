@@ -638,13 +638,15 @@ def _strip_single_event(
     _convert_to_utc(vevent, 'dtend', dt_format)
     _convert_to_utc(vevent, 'recurrence_id', dt_format)
 
-    try:
-        delattr(vevent, 'rrule')
-        delattr(vevent, 'exdate')
-        delattr(vevent, 'exrule')
-        delattr(vevent, 'rdate')
-    except AttributeError:
-        pass
+    # Remove every recurrence-defining property independently: a single
+    # try/except around the sequential delattr() calls stopped at the first
+    # property that was absent, leaving the following ones (e.g. RDATE) on the
+    # expanded single-occurrence instance.
+    for prop in ('rrule', 'exdate', 'exrule', 'rdate'):
+        try:
+            delattr(vevent, prop)
+        except AttributeError:
+            pass
 
 
 def _strip_component(vevent: vobject.base.Component) -> None:

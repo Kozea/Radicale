@@ -750,3 +750,36 @@ permissions: RrWw""")
             ONLY_DATES,
             2
         )
+
+    def test_report_with_expand_property_strips_recurrence_properties(self) -> None:
+        """Expanded instances must not retain recurrence properties.
+
+        Regression test: the stored event has an RRULE and an RDATE but no
+        EXDATE/EXRULE. Expanded VEVENT instances represent a single
+        occurrence (identified by RECURRENCE-ID) and must not carry any
+        recurrence-defining property (RRULE, RDATE, EXRULE, EXDATE).
+        """
+        uid = "event_rrule_rdate"
+        start = "20060102T000000Z"
+        end = "20060105T000000Z"
+
+        # Baseline (no expand): the stored event still holds RRULE and RDATE.
+        _, responses = self.report(
+            "/calendar.ics/", self._req_without_expand(uid, start, end))
+        response = responses[f"/calendar.ics/{uid}.ics"]
+        assert isinstance(response, dict)
+        status, element = response["C:calendar-data"]
+        assert status == 200 and element.text
+        assert "RRULE" in element.text
+        assert "RDATE" in element.text
+
+        # Expanded: individual instances must not carry recurrence properties.
+        _, responses = self.report(
+            "/calendar.ics/", self._req_with_expand(uid, start, end))
+        response = responses[f"/calendar.ics/{uid}.ics"]
+        assert isinstance(response, dict)
+        status, element = response["C:calendar-data"]
+        assert status == 200 and element.text
+        assert "RECURRENCE-ID" in element.text
+        assert "RRULE" not in element.text
+        assert "RDATE" not in element.text
