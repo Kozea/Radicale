@@ -766,8 +766,9 @@ permissions: RrWw""")
         # Baseline (no expand): the stored event still holds RRULE and RDATE.
         _, responses = self.report(
             "/calendar.ics/", self._req_without_expand(uid, start, end))
-        status, element = responses[
-            f"/calendar.ics/{uid}.ics"]["C:calendar-data"]
+        response = responses[f"/calendar.ics/{uid}.ics"]
+        assert isinstance(response, dict)
+        status, element = response["C:calendar-data"]
         assert status == 200 and element.text
         assert "RRULE" in element.text
         assert "RDATE" in element.text
@@ -775,8 +776,9 @@ permissions: RrWw""")
         # Expanded: individual instances must not carry recurrence properties.
         _, responses = self.report(
             "/calendar.ics/", self._req_with_expand(uid, start, end))
-        status, element = responses[
-            f"/calendar.ics/{uid}.ics"]["C:calendar-data"]
+        response = responses[f"/calendar.ics/{uid}.ics"]
+        assert isinstance(response, dict)
+        status, element = response["C:calendar-data"]
         assert status == 200 and element.text
         assert "RECURRENCE-ID" in element.text
         assert "RRULE" not in element.text
