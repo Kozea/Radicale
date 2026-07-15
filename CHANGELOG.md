@@ -3,6 +3,7 @@
 ## 3.7.7.dev
 * Fix: time-range filter treated a VEVENT with a whole-day DURATION (e.g. P1D, P2D) as zero-length (timedelta.seconds instead of total_seconds), so such events were missing from calendar-query REPORT results
 * Fix: calendar-data expand (REPORT) left recurrence properties (e.g. RDATE) on the expanded single-occurrence VEVENTs; a single try/except around the sequential delattr() calls stopped at the first absent property (e.g. missing EXDATE), so later ones were never removed
+* Fix: text-match filter on a structured property (e.g. vCard N or ADR) crashed with HTTP 500 (AttributeError: 'Name'/'Address' object has no attribute 'lower') because vobject parses these into non-string objects; their text representation is now used
 
 ## 3.7.6
 * Extension: item verification on commandline

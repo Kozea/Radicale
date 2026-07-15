@@ -578,6 +578,11 @@ def text_match(vobject_item: vobject.base.Component,
         match_type = filter_.get("match-type", match_type)
 
     def match(value: str) -> bool:
+        if not isinstance(value, str):
+            # Some properties (e.g. N and ADR in vCard) are parsed by vobject
+            # into structured objects instead of plain strings. Use their text
+            # representation so text-match doesn't crash with AttributeError.
+            value = str(value)
         value = value.lower()
         if match_type == "equals":
             return value == text

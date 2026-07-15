@@ -1458,6 +1458,18 @@ permissions: RrWw""")
     <C:text-match collation="i;unicode-casemap">test</C:text-match>
 </C:prop-filter>"""], "contact", test="allof")
 
+    def test_addressbook_prop_filter_structured(self) -> None:
+        """text-match on a structured property (N) that vobject parses into a
+        non-string value must not crash the REPORT."""
+        assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
+<C:prop-filter name="N">
+    <C:text-match collation="i;unicode-casemap">contact</C:text-match>
+</C:prop-filter>"""], "contact")
+        assert "/contacts.vcf/contact1.vcf" not in self._test_filter(["""\
+<C:prop-filter name="N">
+    <C:text-match collation="i;unicode-casemap">nonexistent</C:text-match>
+</C:prop-filter>"""], "contact")
+
     def test_calendar_empty_filter(self) -> None:
         self._test_filter([""])
 
