@@ -717,7 +717,7 @@ class Item:
         if hasattr(self.vobject_item, "fn") and self.vobject_item.fn.value != "":
             placeholder_mapping['{fn}'] = self.vobject_item.fn.value
         else:
-            placeholder_mapping['{nickname}'] = '!fn!'
+            placeholder_mapping['{fn}'] = '!fn!'
 
         # rfc6350#6.2 FamilyName;GivenName;AdditionalNames;HonorificPrefixes;HonorificSuffixes
         if hasattr(self.vobject_item, "n") and self.vobject_item.n.value.family != "":

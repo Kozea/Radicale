@@ -28,11 +28,13 @@ import re
 import sys
 import tempfile
 import urllib
-from typing import Dict, Sequence, Tuple, Union
+from typing import Dict, Sequence, Tuple, Union, cast
 
 import pytest
+import vobject
 
-from radicale import pathutils, sharing, xmlutils
+from radicale import pathutils, sharing, storage, xmlutils
+from radicale.item import Item
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -5327,6 +5329,39 @@ permissions: RrWw""")
             assert "Test-FN-C3 (1990/0)" in answer
             assert "Test-FN-C3 (1990/5)" in answer
             assert "Test-FN-C3 (1990/6)" in answer
+
+    def test_sharing_bday_conversion_empty_fn(self) -> None:
+        """BDAY-to-ICS conversion of a VCARD with an empty FN property.
+
+        vCard mandates FN, but some clients emit it empty. The fallback for
+        an empty ``{fn}`` must be assigned to the ``{fn}`` placeholder, not to
+        ``{nickname}``: otherwise a present NICKNAME gets clobbered with the
+        ``!fn!`` marker and the ``{fn}`` fallback never triggers.
+        """
+        vcard = vobject.readOne(
+            "BEGIN:VCARD\r\n"
+            "VERSION:3.0\r\n"
+            "UID:contact-empty-fn\r\n"
+            "N:FamilyTest;GivenTest;;;\r\n"
+            "FN:\r\n"
+            "NICKNAME:Test-NICKNAME\r\n"
+            "BDAY:1990-05-06\r\n"
+            "END:VCARD\r\n")
+
+        class _StubCollection:
+            path = "test"
+
+        item = Item(collection=cast(storage.BaseCollection, _StubCollection()),
+                    vobject_item=vcard, href="contact-empty-fn.vcf")
+        converted = item.convert_vcf_to_ics(ShareActions={"config": {
+            "conversion_bday_summary_template": "{nickname} (BDAY)",
+            "conversion_bday_description_template": "[{fn}|no-fn]"}})
+        assert converted is not None
+        serialized = converted.serialize()
+        # NICKNAME must survive, not be overwritten by the '!fn!' marker
+        assert "SUMMARY:Test-NICKNAME (BDAY)" in serialized
+        # empty {fn} must expose the '!fn!' marker so the fallback resolves
+        assert "DESCRIPTION:no-fn" in serialized
 
     def test_sharing_api_map_vcf_bday_age_template(self) -> None:
         """share-by-map with conversion=bday template tests with age."""
