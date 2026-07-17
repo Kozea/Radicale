@@ -133,7 +133,7 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
                                                       time_range_element,
                                                       "VEVENT",
                                                       n=n_occurrences)
-        if len(occurrences) >= max_occurrence:
+        if max_occurrence > 0 and len(occurrences) >= max_occurrence:
             raise ValueError("FREEBUSY occurrences limit of {} hit"
                              .format(max_occurrence))
 

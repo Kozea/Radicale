@@ -2232,6 +2232,18 @@ permissions: RrWw""")
     <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
 </C:free-busy-query>""", 400, is_xml=False)
 
+        # Test max_freebusy_occurrence set to 0 (limit disabled)
+        self.configure({"reporting": {"max_freebusy_occurrence": 0}})
+        code, responses = self.report(calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
+</C:free-busy-query>""", 200, is_xml=False)
+        assert len(responses) == 1
+        vcalendar = list(responses.values())[0]
+        assert isinstance(vcalendar, vobject.base.Component)
+        assert len(vcalendar.vfreebusy_list) == 3
+
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None, **kwargs
             ) -> Tuple[str, RESPONSES]:
