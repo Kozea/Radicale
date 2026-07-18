@@ -27,8 +27,8 @@ from http import client
 from typing import (Dict, Iterable, Iterator, List, Optional, Sequence, Tuple,
                     Union)
 
-from radicale import (httputils, pathutils, rights, storage, types, utils,
-                      xmlutils)
+from radicale import (httputils, pathutils, rights, sharing, storage, types,
+                      utils, xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
@@ -639,7 +639,10 @@ class ApplicationPartPropfind(ApplicationBase):
             if http_depth == "1":
                 logger.trace("PROPFIND: get shared collections")
                 # check for shared collections related to user, Enabled and not Hidden
-                collections_share_list = self._sharing.sharing_collection_list(User=user, Enabled=True, Hidden=False)
+                user_lookup = user
+                if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
+                    user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
+                collections_share_list = self._sharing.sharing_collection_list(User=user_lookup, Enabled=True, Hidden=False)
                 if collections_share_list:
                     for share in collections_share_list:
                         c_share = share['PathOrToken']
