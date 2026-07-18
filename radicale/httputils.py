@@ -209,8 +209,8 @@ def _serve_traversable(
         traversable = traversable.joinpath(index_file)
     if not traversable.is_file():
         return NOT_FOUND
-    content_type = MIMETYPES.get(
-        os.path.splitext(traversable.name)[1].lower(), FALLBACK_MIMETYPE)
+    content_type = mimetypes.get(
+        os.path.splitext(traversable.name)[1].lower(), fallback_mimetype)
     headers = {
         "Content-Type": content_type,
     }
