@@ -74,6 +74,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     """WSGI application."""
 
     _mask_passwords: bool
+    _urldecode_username: bool
     _auth_delay: float
     _delay_on_error: float
     _internal_server: bool
@@ -110,6 +111,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             if not os.access(os.environ['TEMP'], os.W_OK):
                 raise RuntimeError("TEMP found in environment, but not writable: %r" % os.environ['TEMP'])
         self._mask_passwords = configuration.get("logging", "mask_passwords")
+        self._urldecode_username = configuration.get("auth", "urldecode_username")
         self._delay_on_error = configuration.get("server", "delay_on_error")
         logger.info("delay_on_error set to: %.3f seconds", self._delay_on_error)
         self._max_content_length = configuration.get("server", "max_content_length")
@@ -549,18 +551,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        if login and not app_base._check_user_format(self._storage, login, self._validate_user_value):
+        if login and not app_base._check_user_format(self._storage, login, self._validate_user_value, self._urldecode_username):
             info = "not compliant to %r" % self._validate_user_value
             user = ""
         else:
             (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
-        if self.configuration.get("auth", "type") == "ldap":
-            try:
-                logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))
-                self._rights._user_groups = self._auth._ldap_groups
-            except AttributeError:
-                pass
-
         request_info: dict = {
                               "method": request_method,
                               "login": login, # not 'user' in this step
@@ -601,6 +596,16 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Prevent usernames like "user/calendar.ics"
             logger.info("Refused unsafe username: %r", user)
             user = ""
+
+        if user:
+            if self.configuration.get("group", "type") != "none":
+                self._rights._user_groups = self._group.groups(login) if login else set([])
+            elif self.configuration.get("auth", "type") == "ldap":
+                try:
+                    logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))
+                    self._rights._user_groups = self._auth._ldap_groups
+                except AttributeError:
+                    pass
 
         # Create principal collection
         if user:
