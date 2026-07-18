@@ -22,9 +22,10 @@ import sys
 import unicodedata
 import xml.etree.ElementTree as ET
 from typing import Optional, Union
+from urllib.parse import unquote
 
-from radicale import (auth, config, hook, httputils, log, pathutils, rights,
-                      sharing, storage, types, utils, web, xmlutils)
+from radicale import (auth, config, group, hook, httputils, log, pathutils,
+                      rights, sharing, storage, types, utils, web, xmlutils)
 from radicale.log import logger
 from radicale.rights import intersect
 
@@ -84,8 +85,30 @@ def _check_format(self: storage.BaseStorage,
 
 def _check_user_format(self: storage.BaseStorage,
                        user: str,
-                       validation_type: str
+                       validation_type: str,
+                       urldecode_username: bool,
+                       enforceUser: bool = True,
                        ) -> bool:
+    logger.trace("_check_user_format investigate %r (urldecode_username=%r)", user, urldecode_username)
+    if urldecode_username:
+        user = unquote(user)
+    if (user.startswith(sharing.SHARING_SEPARATOR_GROUP) or user.startswith(sharing.SHARING_SEPARATOR_REALM)):
+        if enforceUser:
+            # group/realm identifiers
+            return False
+        else:
+            # strip 1st char
+            user = user[1:]
+    if enforceUser:
+        if user.count(sharing.SHARING_SEPARATOR_GROUP) > 0:
+            # not allowed (avoid injecting a group)
+            return False
+        elif user.count(sharing.SHARING_SEPARATOR_REALM) > 1:
+            # only allowed once
+            return False
+    if (user.endswith(sharing.SHARING_SEPARATOR_GROUP) or user.endswith(sharing.SHARING_SEPARATOR_REALM)):
+        # group/realm identifiers
+        return False
     if validation_type == "strict":
         return (re.search(USER_PATTERN_STRICT_RE, user) is not None)
     else:
@@ -116,6 +139,7 @@ class ApplicationBase:
 
     configuration: config.Configuration
     _auth: auth.BaseAuth
+    _group: group.BaseGroup
     _storage: storage.BaseStorage
     _rights: rights.BaseRights
     _web: web.BaseWeb
@@ -133,6 +157,7 @@ class ApplicationBase:
     def __init__(self, configuration: config.Configuration) -> None:
         self.configuration = configuration
         self._auth = auth.load(configuration)
+        self._group = group.load(configuration)
         self._storage = storage.load(configuration)
         self._rights = rights.load(configuration)
         self._web = web.load(configuration)
