@@ -1494,6 +1494,39 @@ This setting forces decoding the username.
 
 Default: `False`
 
+#### [group]
+
+_(>= 3.8.0)_
+
+##### type
+
+The method to lookup groups for username
+
+Available types are:
+
+* `none`
+  No groups lookup (exception: LDAP, see _auth_ section)
+
+* `htgroup`
+  Use an
+  [Apache htgroup file](https://httpd.apache.org/docs/2.4/mod/mod_authz_groupfile.html)
+  to store groups and their members
+
+##### htgroup_filename
+
+_(>= 3.8.0)_
+
+Path to the htgroup file.
+
+Default: `/etc/radicale/groups`
+
+##### htgroup_cache
+
+_(>= 3.8.0)_
+
+Enable caching of htgroup file based on size and mtime_ns
+
+Default: `False`
 
 #### [rights]
 
