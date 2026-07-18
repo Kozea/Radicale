@@ -131,6 +131,9 @@ SHARING_BDAY_DESCRIPTION_TEMPLATE_DEFAULT: str = "BDAY={year}-{month}-{day}"
 SHARING_BDAY_CATEGORIES_DEFAULT: str = 'Birthday'
 SHARING_ACTIONS_DELETE_VALUE: str = '#DEL#'
 
+SHARING_SEPARATOR_REALM: str = '@'
+SHARING_SEPARATOR_GROUP: str = ':'
+
 
 def check_bday_max_age(data: Any) -> int:
     value = int(data)
@@ -915,7 +918,7 @@ class BaseSharing:
                 elif not request_data[key].endswith("/"):
                     return httputils.bad_request("PathMapped not ending with /")
             elif key == "User":
-                if not app_base._check_user_format(self._storage, request_data[key], self._validate_user_value):
+                if not app_base._check_user_format(self._storage, request_data[key], self._validate_user_value, enforceUser=False, urldecode_username=False):
                     logger.warning("%s: invalid %r: %r (not compliant to %r)", api_info, key, request_data[key], self._validate_user_value)
                     return httputils.bad_request("Invalid value for User")
 
@@ -1183,10 +1186,18 @@ class BaseSharing:
                         logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but denied by 'M')", PathMapped, user)
                         return httputils.NOT_ALLOWED
 
-                access = Access(self._rights, User, PathOrToken)
-                if not access.check("r"):
-                    logger.warning(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
-                    return httputils.NOT_ALLOWED
+                if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
+                    if PathOrToken.startswith("/{user}/"):
+                        # placeholder exists
+                        pass
+                    else:
+                        logger.warning(api_info + ": PathOrToken=%r has to start with placeholder for 'user' using group User=%r", PathOrToken, User)
+                        return httputils.NOT_ALLOWED
+                else:
+                    access = Access(self._rights, User, PathOrToken)
+                    if not access.check("r"):
+                        logger.warning(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
+                        return httputils.NOT_ALLOWED
 
                 # check whether share is already existing as real collection
                 with self._storage.acquire_lock("r", User, path=PathOrToken):
@@ -1196,6 +1207,22 @@ class BaseSharing:
                     else:
                         logger.warning(api_info + ": PathOrToken=%r already exists as real collection for User=%r", PathOrToken, User)
                         return httputils.CONFLICT
+
+                if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
+                    # enforce user toggles for groups
+                    HiddenByUser = False
+                    EnabledByUser = True
+                    if "E" in Permissions:
+                        logger.warning(api_info + ": 'E' in Permissions=%r not allowed for group User=%r", Permissions, User)
+                        return httputils.NOT_ALLOWED
+                    elif "P" in Permissions:
+                        logger.warning(api_info + ": 'P' in Permissions=%r not allowed for group User=%r", Permissions, User)
+                        return httputils.NOT_ALLOWED
+                    # enforce permissions for group
+                    if "e" not in Permissions:
+                        Permissions += "e"
+                    if "p" not in Permissions:
+                        Permissions += "p"
 
                 logger.trace("" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
 
@@ -1317,6 +1344,14 @@ class BaseSharing:
                 if Conversion != share['Conversion']:
                     logger.warning(api_info + ": PathMapped=%r change of Conversion %r -> %r is not supported", PathMapped, share['Conversion'], Conversion)
                     return httputils.bad_request("Change of conversion is not supported")
+
+            if User is not None and (User.startswith('!') or User.startswith('@')):
+                # enforce user permissions for groups
+                if Permissions is not None:
+                    if "e" not in Permissions:
+                        Permissions += "e"
+                    if "p" not in Permissions:
+                        Permissions += "p"
 
             if user == share['Owner']:
                 if PathMapped is not None:
