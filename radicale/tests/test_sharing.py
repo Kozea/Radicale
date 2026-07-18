@@ -48,6 +48,7 @@ class TestSharingApiSanity(BaseTest):
     def setup_method(self) -> None:
         BaseTest.setup_method(self)
         self.htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        self.htgroup_file_path = os.path.join(self.colpath, ".htgroup")
         encoding: str = self.configuration.get("encoding", "stock")
         htpasswd = ["owner:ownerpw", "user:userpw",
                     "owner1:owner1pw", "user1:user1pw",
@@ -55,11 +56,25 @@ class TestSharingApiSanity(BaseTest):
                     "owner.surename@domain.example:owner@pw", "user.surename@domain.example:user@pw",
                     "owner-surename@domain.example:owner@pw", "user-surename@domain.example:user@pw",
                     "owner_surename@domain.example:owner@pw", "user_surename@domain.example:user@pw",
+                    "user1@domain.example:user1@pw", "user2@domain.example:user2@pw",
+                    "user3:user3pw", "user4:user4",
+                    "user1@domain.tld:user1@pw", "user2@domain.tld:user2@pw",
                     "us😀er:user😀pw",
                     "owner2:owner2pw", "user2:user2pw"]
+        htgroup = ["group1:user1",
+                   "group2:user2",
+                   "group3:user3",
+                   "group4:user4",
+                   "group12:user1 user2",
+                   "group13:user1 user3",
+                   "group23:user2 user3",
+                   ]
         htpasswd_content = "\n".join(htpasswd)
+        htgroup_content = "\n".join(htgroup)
         with open(self.htpasswd_file_path, "w", encoding=encoding) as f:
             f.write(htpasswd_content)
+        with open(self.htgroup_file_path, "w", encoding=encoding) as f:
+            f.write(htgroup_content)
 
     # Helper functions
     def _sharing_api(self, sharing_type: str, action: str, check: int, login: Union[str, None], data: str, content_type: str, accept: Union[str, None], x_forwarded_for: Union[str, None] = None) -> Tuple[int, Dict[str, str], str]:
@@ -114,7 +129,7 @@ class TestSharingApiSanity(BaseTest):
         assert status == 200
         return prop.text
 
-    def _proppatch_calendar_color(self, path, login, color) -> None:
+    def _proppatch_calendar_color(self, path, login, color, check=207) -> None:
         _, responses = self.proppatch(path=path, data="""\
 <?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:">
@@ -123,7 +138,9 @@ class TestSharingApiSanity(BaseTest):
   <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
 </D:prop>
 </D:set>
-</D:propertyupdate>""", login=login)
+</D:propertyupdate>""", login=login, check=check)
+        if check != 207:
+            return
         logging.info("response: %r", responses)
         response = responses[path]
         assert not isinstance(response, int) and len(response) == 1
@@ -6956,3 +6973,228 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+    def test_sharing_api_map_user_group_by_domain(self) -> None:
+        """share-by-map API usage tests related user group by domain."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "False",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/calendarPFP-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendarPFP2-" + db_type + ".ics/"
+            path_shared_r = "/{user}/calendarPFP-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared2_r = "/{user}/calendarPFP2-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_r_base = "/{user}/"
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+            self.mkcalendar(path_mapped2, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map @domain/owner:rP -> success")
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # create map
+            logging.info("\n*** create map @domain/owner:rP -> success")
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # verify PROPFIND as user1
+            logging.info("\n*** PROPFIND collection user1@domain.example")
+            path_shared_r_user = path_shared_r.replace("{user}", "user1@domain.example")
+            _, responses = self.propfind(path_shared_r_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.example:user1@pw")
+            assert path_shared_r_user.replace('@', '%40') in responses
+
+            # verify PROPFIND as user2
+            logging.info("\n*** PROPFIND collection user2@domain.example")
+            path_shared_r_user = path_shared_r.replace("{user}", "user2@domain.example")
+            _, responses = self.propfind(path_shared_r_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user2@domain.example:user2@pw")
+            assert path_shared_r_user.replace('@', '%40') in responses
+
+            # verify PROPFIND as user1
+            logging.info("\n*** PROPFIND collection user1@domain.tld")
+            path_shared_r_user = path_shared_r.replace("{user}", "user1@domain.tld")
+            _, responses = self.propfind(path_shared_r_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.tld:user1@pw", check=404)
+
+            # verify PROPFIND as user2
+            logging.info("\n*** PROPFIND collection user2@domain.tld")
+            path_shared_r_user = path_shared_r.replace("{user}", "user2@domain.tld")
+            _, responses = self.propfind(path_shared_r_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user2@domain.tld:user2@pw", check=404)
+
+            # verify PROPFIND as user1 in list
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1@domain.example")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1@domain.example")
+            path_shared_r_user = path_shared_r.replace("{user}", "user1@domain.example")
+            path_shared2_r_user = path_shared_r.replace("{user}", "user1@domain.example")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.example:user1@pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user.replace('@', '%40') in responses
+            assert path_shared_r_user.replace('@', '%40') in responses
+            assert path_shared2_r_user.replace('@', '%40') in responses
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection user1@domain.example -> forbidden")
+            self._proppatch_calendar_color(path_shared_r_user, login="user1@domain.example:user1@pw", color="#FFFFFF", check=403)
+
+            # verify PROPFIND as user1 not in list
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1@domain.tld")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1@domain.tld")
+            path_shared_r_user = path_shared_r.replace("{user}", "user1@domain.tld")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.tld:user1@pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user.replace('@', '%40') in responses
+            assert path_shared_r_user.replace('@', '%40') not in responses
+
+            logging.info("\n*** PROPPATCH collection user1@domain.tld -> not found")
+            self._proppatch_calendar_color(path_shared_r_user, login="user1@domain.tld:user1@pw", color="#FFFFFF", check=404)
+
+    def test_sharing_api_map_user_group_by_local(self) -> None:
+        """share-by-map API usage tests related user group by local."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "False",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped1 = "/owner/calendarUGBL1-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendarUGBL2-" + db_type + ".ics/"
+            path_mapped3 = "/owner/calendarUGBL3-" + db_type + ".ics/"
+            path_shared1_r = "/{user}/calendarUGBL1-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared2_r = "/{user}/calendarUGBL2-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared3_r = "/{user}/calendarUGBL3-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_r_base = "/{user}/"
+            self.mkcalendar(path_mapped1, login="owner:ownerpw")
+            self.mkcalendar(path_mapped2, login="owner:ownerpw")
+            self.mkcalendar(path_mapped3, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map :group1/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map :group2/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group2"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map :group1,group2/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group1,group2"
+            json_dict['PathMapped'] = path_mapped3
+            json_dict['PathOrToken'] = path_shared3_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # verify PROPFIND as user1 in list
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            path_shared2_r_user = path_shared2_r.replace("{user}", "user1")
+            path_shared3_r_user = path_shared3_r.replace("{user}", "user1")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user in responses
+            assert path_shared1_r_user in responses
+            assert path_shared2_r_user not in responses
+            assert path_shared3_r_user in responses
+
+            # verify PROPFIND as user2 in list
+            logging.info("\n*** PROPFIND collection DEPTH=1 user2")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user2")
+            path_shared2_r_user = path_shared2_r.replace("{user}", "user2")
+            path_shared3_r_user = path_shared3_r.replace("{user}", "user2")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user2:user2pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user in responses
+            assert path_shared1_r_user not in responses
+            assert path_shared2_r_user in responses
+            assert path_shared3_r_user in responses
