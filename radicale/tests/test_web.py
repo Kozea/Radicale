@@ -19,6 +19,7 @@ Test web plugin.
 
 """
 
+from radicale import httputils
 from radicale.tests import BaseTest
 
 
@@ -52,3 +53,20 @@ class TestBaseWebRequests(BaseTest):
         assert answer == "custom"
         _, answer = self.post("/.web", "body content")
         assert answer == "echo:body content"
+
+    def test_serve_resource_custom_mimetypes(self) -> None:
+        """serve_resource must honor mimetypes and fallback_mimetype."""
+        status, headers, _, _ = httputils.serve_resource(
+            "radicale.web", "internal_data", "", "/.web/index.html")
+        assert status == 200
+        assert dict(headers)["Content-Type"] == "text/html"
+        status, headers, _, _ = httputils.serve_resource(
+            "radicale.web", "internal_data", "", "/.web/index.html",
+            mimetypes={".html": "text/x-custom"})
+        assert status == 200
+        assert dict(headers)["Content-Type"] == "text/x-custom"
+        status, headers, _, _ = httputils.serve_resource(
+            "radicale.web", "internal_data", "", "/.web/index.html",
+            mimetypes={}, fallback_mimetype="application/x-fallback")
+        assert status == 200
+        assert dict(headers)["Content-Type"] == "application/x-fallback"
