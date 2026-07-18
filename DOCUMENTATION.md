@@ -2341,6 +2341,8 @@ Default: `false`
 * If `False` it can be explicitly granted by *share* permissions: `P`
 * If `True` it can be explicitly forbidden by *share* permissions: `p`
 
+share-by-group/realm: always forbidden (_>= 3.8.0_)
+
 ##### enforce_properties_overlay
 
 _(>= 3.7.0)_
@@ -2351,6 +2353,8 @@ Default: `true`
 
 * If `False` it can be explicitly enforced by *share* permissions: `E`
 * If `True` it can be explicitly forbidden by *share* permissions: `e`
+
+share-by-group/realm: always forbidden (_>= 3.8.0_)
 
 ##### default_permissions_create_token
 
