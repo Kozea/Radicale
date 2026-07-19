@@ -7198,3 +7198,101 @@ permissions: RrWw""")
             assert path_shared1_r_user not in responses
             assert path_shared2_r_user in responses
             assert path_shared3_r_user in responses
+
+            # try upload item as user1 -> fail (w permission missing)
+            logging.info("\n*** PUT to shared1 as user1 -> 403")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            event = get_file_content("event1.ics")
+            self.put(path_shared1_r_user, event, login="user1:user1pw", check=403)
+
+            # update permissions
+            logging.info("\n*** update map :group1/owner -> success")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map :group3/owner -> success")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped3
+            json_dict['PathOrToken'] = path_shared3_r
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # upload item as user1 -> success
+            logging.info("\n*** PUT to shared1 as user1 -> 201")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            event = get_file_content("event1.ics")
+            self.put(path_shared1_r_user, event, login="user1:user1pw")
+
+            # propfind as user1 -> success
+            logging.info("\n*** PROPFIND collection user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            _, responses = self.propfind(path_shared1_r_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1:user1pw")
+            assert path_shared1_r_user in responses
+
+            # report as user1 -> success
+            logging.info("\n*** REPORT collection user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1") + "event1.ics"
+            _, responses = self.report(path_shared1_r_user, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", login="user1:user1pw")
+            assert item_shared1_r_user in responses
+
+            # report as user2 -> success
+            logging.info("\n*** REPORT collection user2")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user2")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user2") + "event1.ics"
+            _, responses = self.report(path_shared1_r_user, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", login="user2:user2pw", check=404)
+
+            # get item as user1 -> success
+            logging.info("\n*** GET from shared1 as user1")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1") + "event1.ics"
+            self.get(item_shared1_r_user, login="user1:user1pw")
+
+            # get item as user2 -> 404
+            logging.info("\n*** GET from shared3 as user2")
+            item_shared3_r_user = path_shared1_r.replace("{user}", "user2") + "event1.ics"
+            self.get(item_shared3_r_user, login="user2:user2pw", check=404)
+
+            # move item as user1 -> success
+            logging.info("\n*** MOVE item shared1 to shared3 as user1")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1") + "event1.ics"
+            item_shared3_r_user = path_shared3_r.replace("{user}", "user1") + "event1.ics"
+            self.request("MOVE", item_shared1_r_user, login="user1:user1pw", HTTP_DESTINATION="http://127.0.0.1"+item_shared3_r_user)
+
+            # get item as user2 -> 200
+            logging.info("\n*** GET from shared3 as user2")
+            item_shared3_r_user = path_shared3_r.replace("{user}", "user2") + "event1.ics"
+            self.get(item_shared3_r_user, login="user2:user2pw")
+
+            # delete item as user1 -> 404
+            logging.info("\n*** DELETE from shared1 as user1 -> 404")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1") + "event1.ics"
+            self.delete(item_shared1_r_user, login="user1:user1pw", check=404)
+
+            # delete item as user1
+            logging.info("\n*** DELETE from shared3 as user1 -> 200")
+            item_shared3_r_user = path_shared3_r.replace("{user}", "user1") + "event1.ics"
+            self.delete(item_shared3_r_user, login="user1:user1pw")
+
+            # try proppatch -> 403
+            logging.info("\n*** PROPPATCH shared3 as user1 -> 403")
+            path_shared3_r_user = path_shared3_r.replace("{user}", "user1")
+            self._proppatch_calendar_color(path_shared3_r_user, login="user1:user1pw", color="#FFFFFF", check=403)
