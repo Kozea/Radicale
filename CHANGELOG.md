@@ -7,6 +7,7 @@
 * Fix: calendar-data expand (REPORT) left recurrence properties (e.g. RDATE) on the expanded single-occurrence VEVENTs; a single try/except around the sequential delattr() calls stopped at the first absent property (e.g. missing EXDATE), so later ones were never removed
 * Fix: text-match filter on a structured property (e.g. vCard N or ADR) crashed with HTTP 500 (AttributeError: 'Name'/'Address' object has no attribute 'lower') because vobject parses these into non-string objects; their text representation is now used
 * Fix: sharing bday-to-ICS conversion assigned the empty-FN fallback marker to the {nickname} placeholder instead of {fn}, so a VCARD with an empty FN got its NICKNAME overwritten with "!fn!" in the generated SUMMARY/DESCRIPTION and the {fn} fallback never resolved
+* Fix: sharing/delete: add forgotten backmap
 
 ## 3.7.6
 * Extension: item verification on commandline
