@@ -1345,7 +1345,7 @@ class BaseSharing:
                     logger.warning(api_info + ": PathMapped=%r change of Conversion %r -> %r is not supported", PathMapped, share['Conversion'], Conversion)
                     return httputils.bad_request("Change of conversion is not supported")
 
-            if User is not None and (User.startswith('!') or User.startswith('@')):
+            if (User is not None and (User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM))) or (share['User'].startswith(SHARING_SEPARATOR_GROUP) or share['User'].startswith(SHARING_SEPARATOR_REALM)):
                 # enforce user permissions for groups
                 if Permissions is not None:
                     if "e" not in Permissions:
