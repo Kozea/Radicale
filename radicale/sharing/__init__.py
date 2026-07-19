@@ -1093,10 +1093,9 @@ class BaseSharing:
                 Permissions = str(Permissions)
                 if Conversion == "bday":
                     # bday is read-only and not supporting "Ee"
-                    for permission in Permissions:
-                        if permission not in "rPp":
-                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
-                            return httputils.bad_request("Permissions are not supported for conversion")
+                    if rights.intersect(Permissions, "Eew"):
+                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
+                        return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
 
             if Enabled is None:
                 Enabled = False # security by default
@@ -1212,17 +1211,10 @@ class BaseSharing:
                     # enforce user toggles for groups
                     HiddenByUser = False
                     EnabledByUser = True
-                    if "E" in Permissions:
-                        logger.warning(api_info + ": 'E' in Permissions=%r not allowed for group User=%r", Permissions, User)
-                        return httputils.NOT_ALLOWED
-                    elif "P" in Permissions:
-                        logger.warning(api_info + ": 'P' in Permissions=%r not allowed for group User=%r", Permissions, User)
-                        return httputils.NOT_ALLOWED
-                    # enforce permissions for group
-                    if "e" not in Permissions:
-                        Permissions += "e"
-                    if "p" not in Permissions:
-                        Permissions += "p"
+                    if rights.intersect(Permissions, "EP"):
+                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
+                        return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
+                    Permissions = rights.add(Permissions, "ep")  # enforce permissions for group
 
                 logger.trace("" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
 
@@ -1335,10 +1327,9 @@ class BaseSharing:
                 Permissions = str(Permissions)
                 if share['Conversion'] == "bday":
                     # bday is read-only and not supporting "Ee"
-                    for permission in Permissions:
-                        if permission not in "rPp":
-                            logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
-                            return httputils.bad_request("Permissions are not supported for conversion")
+                    if rights.intersect(Permissions, "Eew"):
+                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
+                        return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
 
             if Conversion is not None and share['Conversion'] is not None:
                 if Conversion != share['Conversion']:
@@ -1348,10 +1339,10 @@ class BaseSharing:
             if (User is not None and (User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM))) or (share['User'].startswith(SHARING_SEPARATOR_GROUP) or share['User'].startswith(SHARING_SEPARATOR_REALM)):
                 # enforce user permissions for groups
                 if Permissions is not None:
-                    if "e" not in Permissions:
-                        Permissions += "e"
-                    if "p" not in Permissions:
-                        Permissions += "p"
+                    if rights.intersect(Permissions, "EP"):
+                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
+                        return httputils.bad_request("Permissions are not supported for share-by-group/realm: %r" % Permissions)
+                    Permissions = rights.add(Permissions, "ep")  # enforce permissions for group
 
             if user == share['Owner']:
                 if PathMapped is not None:
