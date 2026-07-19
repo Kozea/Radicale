@@ -23,7 +23,7 @@ from http import client
 from typing import Union
 from urllib.parse import quote
 
-from radicale import httputils, pathutils, storage, types, xmlutils
+from radicale import httputils, pathutils, sharing, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
@@ -89,7 +89,10 @@ class ApplicationPartGet(ApplicationBase):
         share = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            share = self._sharing.sharing_collection_resolver(path, user)
+            user_lookup = user
+            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
+                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
+            share = self._sharing.sharing_collection_resolver(path, user_lookup)
             if share:
                 # overwrite and run through extended permission check
                 path = share['PathMapped']
