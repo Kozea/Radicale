@@ -7137,6 +7137,36 @@ permissions: RrWw""")
             self.mkcalendar(path_mapped3, login="owner:ownerpw")
 
             # create map
+            logging.info("\n*** create map :group1/owner -> 400 (unsupported permissions)")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map :group1/owner -> 400 (unsupported permissions)")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "rE"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map :group1/owner -> 400 (unsupported permissions)")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "rEP"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
+
             logging.info("\n*** create map :group1/owner -> success")
             json_dict = {}
             json_dict['User'] = ":group1"
