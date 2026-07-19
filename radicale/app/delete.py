@@ -20,7 +20,9 @@
 
 import xml.etree.ElementTree as ET
 from http import client
-from typing import Optional
+from typing import Optional, Union
+
+from urllib.parse import quote
 
 from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
@@ -29,7 +31,7 @@ from radicale.log import logger
 
 
 def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
-               item_href: Optional[str] = None) -> ET.Element:
+               item_href: Optional[str] = None, share: Union[dict, None] = None) -> ET.Element:
     """Read and answer DELETE requests.
 
     Read rfc4918-9.6 for info.
@@ -43,6 +45,13 @@ def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, path)
+    if share:
+        # backmap; quote so the encoded href and raw share path compare
+        mapped = quote(share['PathMapped'])
+        token = quote(str(share['PathOrToken']))
+        if href_element.text.startswith(base_prefix + mapped):
+            href_element.text = base_prefix + token + href_element.text.removeprefix(base_prefix + mapped)
+        logger.trace("DELETE/xml_delete: href=%r (backmapped)", href_element.text)
     response.append(href_element)
 
     status = ET.Element(xmlutils.make_clark("D:status"))
@@ -122,7 +131,7 @@ class ApplicationPartDelete(ApplicationBase):
                         )
                     )
                 xml_answer = xml_delete(
-                    base_prefix, path, item.collection, item.href)
+                    base_prefix, path, item.collection, item.href, share)
             for notification_item in hook_notification_item_list:  # Will be empty if hook not enabled
                 self._hook.notify(notification_item)
             headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
