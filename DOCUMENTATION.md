@@ -1026,6 +1026,8 @@ Available types are:
 * `ldap` _(>= 3.3.0)_  
   Use a LDAP or AD server to authenticate users by relaying credentials from clients and handle results.
 
+  User groups are supported. Requires group/type=`auth_type` _(>= 3.8.0)_.
+
 * `dovecot` _(>= 3.3.1)_  
   Use a Dovecot server to authenticate users by relaying credentials from clients and handle results.
 
@@ -1038,7 +1040,9 @@ Available types are:
   in combination with SSO support in reverse proxy (e.g. Apache+mod_auth_openidc).
 
 * `pam` _(>= 3.5.0)_  
-  Use local PAM to authenticate users by relaying credentials from client and handle result..
+  Use local PAM to authenticate users by relaying credentials from client and handle result.
+
+  User groups are supported _(>= 3.8.0)_
 
 Default: `none` _(< 3.5.0)_ / `denyall` _(>= 3.5.0)_
 
@@ -1260,6 +1264,8 @@ They also give you access to the group calendars, if those exist.
   This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
 
 Default: (unset)
+
+Requires group lookup type set to `auth_type` _(>= 3.8.0)_
 
 ##### ldap_group_members_attribute
 
@@ -1505,12 +1511,17 @@ The method to lookup groups for username
 Available types are:
 
 * `none`
-  No groups lookup (exception: LDAP, see _auth_ section)
+  No groups lookup at all
+
+* `auth_type`
+  Group lookup by authentication type (if supported)
 
 * `htgroup`
   Use an
   [Apache htgroup file](https://httpd.apache.org/docs/2.4/mod/mod_authz_groupfile.html)
   to store groups and their members
+
+Default: `none`
 
 ##### htgroup_filename
 
