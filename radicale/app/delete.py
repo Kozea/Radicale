@@ -67,6 +67,7 @@ class ApplicationPartDelete(ApplicationBase):
         """Manage DELETE request."""
         actor = user
         permissions_filter = None
+        share = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
             share = self._sharing.sharing_collection_resolver(path, user)
