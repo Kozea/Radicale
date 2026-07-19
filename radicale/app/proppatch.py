@@ -142,6 +142,12 @@ class ApplicationPartProppatch(ApplicationBase):
         else:
             logger.trace("PROPPATCH/xml_proppatch: write-access: %r", path)
             if share:
+                if "p" in share['Permissions']:
+                    logger.notice("PROPPATCH request on shared %r: write-permissions, but disabled by share permission 'p'", path_orig)
+                    return httputils.NOT_ALLOWED
+                elif "p" in raw_permissions:
+                    logger.notice("PROPPATCH request on shared %r: write-permissions, but disabled by rights permission 'p'", path_orig)
+                    return httputils.NOT_ALLOWED
                 # write access -> check for enforced properties overlay
                 logger.trace("PROPPATCH/xml_proppatch: write-access/sharing: %r", path_orig)
                 if self._sharing.enforce_properties_overlay:
