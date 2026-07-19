@@ -116,7 +116,7 @@ class TestBaseGroupRequests(BaseTest):
                             "type": auth_type,
                             "oauth2_token": "dummy",
                             },
-                         "group": {"type": "auth-type"}
+                         "group": {"type": "auth_type"}
                          })
             except RuntimeError:
                 pass
@@ -130,10 +130,9 @@ class TestBaseGroupRequests(BaseTest):
                         {"auth": {
                             "type": auth_type,
                             },
-                         "group": {"type": "auth-type"}
+                         "group": {"type": "auth_type"}
                          })
             except RuntimeError:
                 raise
             else:
                 pass
-

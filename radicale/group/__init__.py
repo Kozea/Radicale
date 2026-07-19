@@ -29,6 +29,7 @@ from radicale import config, utils
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("none",
+                                 "auth_type",
                                  "htgroup",
                                  )
 

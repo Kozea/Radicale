@@ -598,14 +598,17 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             user = ""
 
         if user:
-            if self.configuration.get("group", "type") != "none":
+            group_type = self.configuration.get("group", "type")
+            if group_type in ["htgroup"]:
                 self._rights._user_groups = self._group.groups(login) if login else set([])
-            elif self.configuration.get("auth", "type") == "ldap":
-                try:
-                    logger.debug("Groups received from LDAP: %r", ",".join(self._auth._ldap_groups))
-                    self._rights._user_groups = self._auth._ldap_groups
-                except AttributeError:
-                    pass
+            elif group_type in ["auth_type"]:
+                auth_type = self.configuration.get("auth", "type")
+                if auth_type in ["ldap", "pam"]:
+                    try:
+                        logger.debug("Groups received from %r: %r", auth_type, ",".join(self._auth._groups))
+                        self._rights._user_groups = self._auth._groups
+                    except AttributeError:
+                        pass
 
         # Create principal collection
         if user:

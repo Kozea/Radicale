@@ -106,7 +106,7 @@ class AuthContext:
 
 class BaseAuth:
 
-    _ldap_groups: Set[str] = set([])
+    _groups: Set[str] = set([])
     _urldecode_username: bool
     _lc_username: bool
     _uc_username: bool
