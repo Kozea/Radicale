@@ -4956,6 +4956,10 @@ permissions: RrWw""")
             status, prop = response["D:getcontenttype"]
             assert "text/calendar" in str(prop.text)
 
+            # delete item as user
+            logging.info("\n*** DELETE item as  user -> 403")
+            _, responses = self.delete(path_shared_r + "contact2-with-bday.ics", login="user:userpw", check=403)
+
     def test_sharing_api_map_vcf_bday_template(self) -> None:
         """share-by-map with conversion=bday template tests."""
         self.configure({"auth": {"type": "htpasswd",
