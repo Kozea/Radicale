@@ -8,6 +8,7 @@
 * Fix: text-match filter on a structured property (e.g. vCard N or ADR) crashed with HTTP 500 (AttributeError: 'Name'/'Address' object has no attribute 'lower') because vobject parses these into non-string objects; their text representation is now used
 * Fix: sharing bday-to-ICS conversion assigned the empty-FN fallback marker to the {nickname} placeholder instead of {fn}, so a VCARD with an empty FN got its NICKNAME overwritten with "!fn!" in the generated SUMMARY/DESCRIPTION and the {fn} fallback never resolved
 * Fix: sharing/delete: add forgotten backmap
+* Fix: sharing/proppatch: reject in case of write-access but 'p' is in permissions
 
 ## 3.7.6
 * Extension: item verification on commandline
