@@ -21,7 +21,6 @@
 import xml.etree.ElementTree as ET
 from http import client
 from typing import Optional, Union
-
 from urllib.parse import quote
 
 from radicale import httputils, storage, types, xmlutils
