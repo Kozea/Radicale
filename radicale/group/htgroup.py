@@ -88,7 +88,7 @@ class Group(group.BaseGroup):
                         try:
                             group, members = line.split(":", maxsplit=1)
                             skip = False
-                            if group == "" or members == "":
+                            if group == "":
                                 if init is True:
                                     raise ValueError("htgroup file contains problematic line not matching <group>:<members> in line: %d" % line_num)
                                 else:
