@@ -1026,7 +1026,7 @@ Available types are:
 * `ldap` _(>= 3.3.0)_  
   Use a LDAP or AD server to authenticate users by relaying credentials from clients and handle results.
 
-  User groups are supported. Requires group/type=`auth_type` _(>= 3.8.0)_.
+  User groups are supported. Requires group/type=`from_auth` _(>= 3.8.0)_.
 
 * `dovecot` _(>= 3.3.1)_  
   Use a Dovecot server to authenticate users by relaying credentials from clients and handle results.
@@ -1265,7 +1265,7 @@ They also give you access to the group calendars, if those exist.
 
 Default: (unset)
 
-Requires group lookup type set to `auth_type` _(>= 3.8.0)_
+Requires group lookup type set to `from_auth` _(>= 3.8.0)_
 
 ##### ldap_group_members_attribute
 
@@ -1513,7 +1513,7 @@ Available types are:
 * `none`
   No groups lookup at all
 
-* `auth_type`
+* `from_auth`
   Group lookup by authentication type (if supported)
 
 * `htgroup`

@@ -601,7 +601,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             group_type = self.configuration.get("group", "type")
             if group_type in ["htgroup"]:
                 self._rights._user_groups = self._group.groups(login) if login else set([])
-            elif group_type in ["auth_type"]:
+            elif group_type in ["from_auth"]:
                 auth_type = self.configuration.get("auth", "type")
                 if auth_type in ["ldap", "pam"]:
                     try:

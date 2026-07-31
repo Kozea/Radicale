@@ -107,7 +107,7 @@ class TestBaseGroupRequests(BaseTest):
                     or "Group memberships (htgroup) for user 'tmp': {'group1', 'group2'}" in log
                     ]) == 0
 
-    def test_incompatible_group_auth_type(self) -> None:
+    def test_incompatible_group_from_auth(self) -> None:
         for auth_type in ["dovecot", "imap", "remote_user", "http_remote_user", "htpasswd", "oauth2"]:
             logging.info("\n*** test: auth_type=%r, group_type=%r", "dovecot", auth_type)
             try:
@@ -116,7 +116,7 @@ class TestBaseGroupRequests(BaseTest):
                             "type": auth_type,
                             "oauth2_token": "dummy",
                             },
-                         "group": {"type": "auth_type"}
+                         "group": {"type": "from_auth"}
                          })
             except RuntimeError:
                 pass
@@ -130,7 +130,7 @@ class TestBaseGroupRequests(BaseTest):
                         {"auth": {
                             "type": auth_type,
                             },
-                         "group": {"type": "auth_type"}
+                         "group": {"type": "from_auth"}
                          })
             except RuntimeError:
                 raise
