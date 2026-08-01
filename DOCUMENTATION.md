@@ -870,10 +870,14 @@ Announced to clients requesting "max-resource-size" via PROPFIND.
 
 _(>= 3.7.8)_
 
-The maximum of generated entries of a rrule.
+The maximum of generated entries of an rrule of an vevent.
+Large time frames of RRULE by COUNT or UNTIL could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service
+attacks on large time frames. If the limit is reached, an HTTP error
+is thrown instead of accepting the item.
 
 Default: `10000`
-
 
 ##### timeout
 
