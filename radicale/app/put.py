@@ -47,6 +47,7 @@ PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + 
 
 def prepare(vobject_items: List[vobject.base.Component], path: str,
             content_type: str, permission: bool, parent_permission: bool, max_resource_size: int,
+            max_vevent_rrule_entries: int,
             tag: Optional[str] = None,
             write_whole_collection: Optional[bool] = None) -> Tuple[
                 Iterator[radicale_item.Item],  # items
@@ -73,7 +74,9 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
     try:
         if tag and write_whole_collection is not None:
             radicale_item.check_and_sanitize_items(
-                vobject_items, is_collection=write_whole_collection, tag=tag)
+                vobject_items,
+                max_vevent_rrule_entries=max_vevent_rrule_entries,
+                is_collection=write_whole_collection, tag=tag)
             if write_whole_collection and tag == "VCALENDAR":
                 vobject_components: List[vobject.base.Component] = []
                 vobject_item, = vobject_items
@@ -224,7 +227,9 @@ class ApplicationPartPut(ApplicationBase):
              vobject_items, path, content_type,
              bool(rights.intersect(access.permissions, "Ww")),
              bool(rights.intersect(access.parent_permissions, "w")),
-             self._max_resource_size)
+             self._max_resource_size,
+             self._max_vevent_rrule_entries,
+             )
 
         with self._storage.acquire_lock("w", user, path=path, request="PUT"):
             item = next(iter(self._storage.discover(path)), None)
@@ -289,6 +294,7 @@ class ApplicationPartPut(ApplicationBase):
                      bool(rights.intersect(access.permissions, "Ww")),
                      bool(rights.intersect(access.parent_permissions, "w")),
                      self._max_resource_size,
+                     self._max_vevent_rrule_entries,
                      tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:

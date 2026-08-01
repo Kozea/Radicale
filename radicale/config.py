@@ -254,6 +254,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "10000000",
             "help": "maximum size of resource (default: 10 Mbyte)",
             "type": positive_int}),
+        ("max_vevent_rrule_entries", {
+            "value": "10000",
+            "help": "maximum of RRULE entries (default: 10000)",
+            "type": positive_int}),
         ("timeout", {
             "value": "30",
             "help": "socket timeout",

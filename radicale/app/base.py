@@ -122,6 +122,7 @@ class ApplicationBase:
     _sharing: sharing.BaseSharing
     _encoding: str
     _max_resource_size: int
+    _max_vevent_rrule_entries: int
     _permit_delete_collection: bool
     _permit_overwrite_collection: bool
     _strict_preconditions: bool

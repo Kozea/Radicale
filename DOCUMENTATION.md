@@ -866,6 +866,15 @@ Limited to 80% of max_content_length to cover plain base64 encoded payload.
 
 Announced to clients requesting "max-resource-size" via PROPFIND.
 
+##### max_vevent_rrule_entries
+
+_(>= 3.7.8)_
+
+The maximum of generated entries of a rrule.
+
+Default: `10000`
+
+
 ##### timeout
 
 Socket timeout. (seconds)
