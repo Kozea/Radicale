@@ -1988,9 +1988,33 @@ class TestSharingApiSanity(BaseTest):
             json_dict['PathOrToken'] = path_shared
             _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
 
+            # check GET as user
+            logging.info("\n*** GET collection user -> ok")
+            _, headers, answer = self.request("GET", path_shared, check=200, login="user:userpw")
+
             # check REPORT as user
             logging.info("\n*** REPORT collection user -> ok")
             _, responses = self.report(path_shared, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", login="user:userpw")
+            assert len(responses) == 1
+            logging.info("response: %r", responses)
+            response = responses[path_shared_item]
+            assert isinstance(response, dict)
+            status, prop = response["D:getetag"]
+            assert status == 200 and prop.text
+
+            # check GET as user without trailing /
+            logging.info("\n*** GET collection user (without trailing /) -> ok")
+            _, headers, answer = self.request("GET", path_shared.removesuffix("/"), check=200, login="user:userpw")
+
+            # check REPORT as user without trailing /
+            logging.info("\n*** REPORT collection user (without trailing /) -> ok")
+            _, responses = self.report(path_shared.removesuffix("/"), """\
 <?xml version="1.0" encoding="utf-8" ?>
 <C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
     <D:prop xmlns:D="DAV:">

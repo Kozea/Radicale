@@ -628,6 +628,7 @@ class BaseSharing:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_map:
             logger.trace("sharing/map/resolver: check path: %r", path)
+            # check collection path
             result = self.database_get_sharing(
                 ShareType="map",
                 PathOrToken=path,
@@ -635,7 +636,7 @@ class BaseSharing:
                 User=user)
 
             if not result:
-                # fallback to parent path
+                # assume item path, fallback to parent path
                 parent_path = pathutils.parent_path(path)
                 logger.trace("sharing/map/resolver: check parent path: %r", parent_path)
                 result = self.database_get_sharing(
@@ -646,9 +647,19 @@ class BaseSharing:
                 if result:
                     result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
                     logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
-                else:
-                    logger.trace("sharing/map/resolver: not found")
-                    return None
+
+            if not result and not path.endswith("/"):
+                # assume collection path with missing trailing /
+                path_with_trailing_slash = path + "/"
+                logger.trace("sharing/map/resolver: check path having '/' appended: %r", path_with_trailing_slash)
+                result = self.database_get_sharing(
+                        ShareType="map",
+                        PathOrToken=path_with_trailing_slash,
+                        OnlyEnabled=False,
+                        User=user)
+                if result:
+                    path = path_with_trailing_slash
+                    logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by path_with_trailing_slash=%r", result['PathMapped'], result['Permissions'], path_with_trailing_slash)
 
             if result:
                 if result['EnabledByOwner'] is not True:
@@ -666,6 +677,7 @@ class BaseSharing:
                 logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "map", result['PathOrToken'], result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
                 return result
 
+            logger.trace("sharing/map/resolver: not found")
             return None
         else:
             logger.trace("sharing/map: not active")
