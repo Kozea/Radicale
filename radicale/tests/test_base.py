@@ -328,6 +328,41 @@ permissions: RrWw""")
         event = get_file_content("event_mixed_datetime_and_date.ics")
         self.put("/calendar.ics/event.ics", event)
 
+    def test_add_event_with_rrule_count_500_limit_100(self) -> None:
+        """Test event with RRULE COUNT=500 and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_entries": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_count_500.ics")
+        self.put("/calendar.ics/event.ics", event, check=400)
+
+    def test_add_event_with_rrule_count_500_limit_600(self) -> None:
+        """Test event with RRULE COUNT=500 and limit 600."""
+        self.configure({"server": {"max_vevent_rrule_entries": 600}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_count_500.ics")
+        self.put("/calendar.ics/event.ics", event)
+
+    def test_add_event_with_rrule_until_2y_limit_100(self) -> None:
+        """Test event with RRULE UNTIL=+2y and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_entries": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_2y.ics")
+        self.put("/calendar.ics/event.ics", event, check=400)
+
+    def test_add_event_with_rrule_until_50y_limit_100(self) -> None:
+        """Test event with RRULE UNTIL=+50y and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_entries": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_50y.ics")
+        self.put("/calendar.ics/event.ics", event, check=400)
+
+    def test_add_event_with_rrule_until_5000y_limit_100(self) -> None:
+        """Test event with RRULE UNTIL=+5000y and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_entries": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_5000y.ics")
+        self.put("/calendar.ics/event.ics", event, check=400)
+
     def test_add_event_with_exdate_without_rrule(self) -> None:
         """Test event with EXDATE but not having RRULE."""
         self.mkcalendar("/calendar.ics/")
