@@ -233,11 +233,40 @@ def check_and_sanitize_items(
                     if ref_value_param is not None:
                         dates.params["VALUE"] = ref_value_param
             # vobject interprets recurrence rules on demand
-            try:
-                component.rruleset
-            except Exception as e:
-                raise ValueError("Invalid recurrence rules in %s in object %r"
-                                 % (component.name, component_uid)) from e
+            if hasattr(component, "rrule"):
+                logger.trace("Recurrence rule found in %s in object %r: %r", component.name, component_uid, component.rrule.value)
+                # early check of maximum of COUNT to avoid DoS
+                pattern = re.compile('.*;COUNT=(\\d+).*')
+                match = pattern.match(component.rrule.value)
+                if match:
+                    rrule_count = int(match[1])
+                    if max_vevent_rrule_entries > 0 and rrule_count > max_vevent_rrule_entries:
+                        logger.error("Recurrence rule count in %s in object %r: %d (REJECTED/limit: %d)" % (component.name, component_uid, rrule_count, max_vevent_rrule_entries))
+                        raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
+                                         % (component.name, component_uid, rrule_count, max_vevent_rrule_entries))
+                    else:
+                        logger.trace("Recurrence rule count in %s in object %r: %d (PASSED/limit: %d)" % (component.name, component_uid, rrule_count, max_vevent_rrule_entries))
+                # generic check by vobject
+                try:
+                    rruleset = component.rruleset
+                except Exception as e:
+                    raise ValueError("Invalid recurrence rules in %s in object %r"
+                                     % (component.name, component_uid)) from e
+                # check limit after generation (e.g. UNTIL)
+                # TODO: find possibility to add also early check of UNTIL
+                infinite = False
+                if (";UNTIL=" not in component.rrule.value and
+                        ";COUNT=" not in component.rrule.value):
+                    infinite = True
+
+                if infinite is False:
+                    rrule_entries = len(list(rruleset))
+                    if max_vevent_rrule_entries > 0 and rrule_entries > max_vevent_rrule_entries:
+                        logger.warning("Recurrence rule entries in %s in object %r: %d (limit: %d)" % (component.name, component_uid, rrule_entries, max_vevent_rrule_entries))
+                        raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
+                                         % (component.name, component_uid, rrule_entries, max_vevent_rrule_entries))
+                    else:
+                        logger.trace("Recurrence rule entries in %s in object %r: %d" % (component.name, component_uid, rrule_entries))
     elif tag == "VADDRESSBOOK":
         # https://tools.ietf.org/html/rfc6352#section-5.1
         object_uids = set()
