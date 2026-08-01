@@ -813,9 +813,13 @@ This is an automated message. Please do not reply.""",
     ("headers", OrderedDict([
         ("_allow_extra", str)])),
     ("reporting", OrderedDict([
+        ("max_expand_occurrence", {
+            "value": "10000",
+            "help": "number of expand occurrences per event when reporting",
+            "type": positive_int}),
         ("max_freebusy_occurrence", {
             "value": "10000",
-            "help": "number of occurrences per event when reporting",
+            "help": "number of free-busy occurrences per event when reporting",
             "type": positive_int})]))
     ])
 

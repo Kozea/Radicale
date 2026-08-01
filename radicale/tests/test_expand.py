@@ -326,7 +326,7 @@ permissions: RrWw""")
 
     def test_report_with_expand_property_max_occur(self) -> None:
         """Test report with expand property too many vevents"""
-        self.configure({"reporting": {"max_freebusy_occurrence": 100}})
+        self.configure({"reporting": {"max_expand_occurrence": 100}})
         self._test_expand_max(
             "event_daily_rrule_forever",
             "20060103T000000Z",
@@ -336,7 +336,7 @@ permissions: RrWw""")
 
     def test_report_with_max_occur(self) -> None:
         """Test report with too many vevents"""
-        self.configure({"reporting": {"max_freebusy_occurrence": 10}})
+        self.configure({"reporting": {"max_expand_occurrence": 10}})
 
         uid = "event_multiple_too_many"
         start = "20130901T000000Z"

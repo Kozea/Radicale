@@ -2191,6 +2191,19 @@ This is an automated message. Please do not reply.
 
 #### [reporting]
 
+##### max_expand_occurrence
+
+_(>= 3.7.8)_
+
+When returning an expanded report, a list of occurrences are
+generated based on a given time frame. Large time frames could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service
+attacks on large time frames. If the limit is reached, an HTTP error
+is thrown instead of returning the results.
+
+Default: 10000
+
 ##### max_freebusy_occurrence
 
 _(>= 3.2.3)_

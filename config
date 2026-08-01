@@ -499,6 +499,10 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 
 [reporting]
 
+# When returning an expanded report, limit the number of returned
+# occurences per event to prevent DoS attacks.
+#max_expand_occurrence = 10000
+
 # When returning a free-busy report, limit the number of returned
 # occurences per event to prevent DoS attacks.
 #max_freebusy_occurrence = 10000

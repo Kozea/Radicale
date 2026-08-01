@@ -895,9 +895,9 @@ class ApplicationPartReport(ApplicationBase):
                 assert item.collection is not None
                 collection = item.collection
 
-            max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
             if xml_content is not None and \
                xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
+                max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
                 try:
                     status, body = free_busy_report(
                         base_prefix, path, xml_content, collection, self._encoding,
@@ -909,6 +909,7 @@ class ApplicationPartReport(ApplicationBase):
                 headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
                 return status, headers, str(body), xmlutils.pretty_xml(xml_content)
             else:
+                max_occurrence = self.configuration.get("reporting", "max_expand_occurrence")
                 try:
                     status, xml_answer = xml_report(
                         base_prefix, path, xml_content, collection, self._encoding,
