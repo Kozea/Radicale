@@ -628,6 +628,7 @@ class BaseSharing:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_map:
             logger.trace("sharing/map/resolver: check path: %r", path)
+            # check collection path
             result = self.database_get_sharing(
                 ShareType="map",
                 PathOrToken=path,
@@ -635,7 +636,7 @@ class BaseSharing:
                 User=user)
 
             if not result:
-                # fallback to parent path
+                # assume item path, fallback to parent path
                 parent_path = pathutils.parent_path(path)
                 logger.trace("sharing/map/resolver: check parent path: %r", parent_path)
                 result = self.database_get_sharing(
