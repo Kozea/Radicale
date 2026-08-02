@@ -274,6 +274,9 @@ def check_and_sanitize_items(
                         raise ValueError("Unsupported FREQ in recurrence rule in %s in object %r: %r"
                                          % (component.name, component_uid, rrule._freq))
                     # RRULE has known FREQ+UNTIL+DTSTART
+                    # TZ code taken from vobject/icalendar.py/getrruleset
+                    if rrule._until.tzinfo is None:
+                        rrule._until = rrule._until.replace(tzinfo=dtstart.tzinfo)
                     if dtstart.tzinfo is not None:
                         rrule._until = rrule._until.astimezone(dtstart.tzinfo)
                     delta = rrule._until - dtstart
