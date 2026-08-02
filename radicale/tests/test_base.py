@@ -151,6 +151,19 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_y2040(self) -> None:
+        """Add an event with year 2040."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1_y2040.ics")
+        path = "/calendar.ics/event1_y2040.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
     @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
     def test_add_event_with_rdate_period_start_duration_single(self) -> None:
         """Add an event with RDATE/PERIOD with start+duration."""
