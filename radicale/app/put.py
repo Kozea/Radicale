@@ -47,7 +47,7 @@ PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + 
 
 def prepare(vobject_items: List[vobject.base.Component], path: str,
             content_type: str, permission: bool, parent_permission: bool, max_resource_size: int,
-            max_vevent_rrule_entries: int,
+            max_vevent_rrule_occurrence: int,
             tag: Optional[str] = None,
             write_whole_collection: Optional[bool] = None) -> Tuple[
                 Iterator[radicale_item.Item],  # items
@@ -75,7 +75,7 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
         if tag and write_whole_collection is not None:
             radicale_item.check_and_sanitize_items(
                 vobject_items,
-                max_vevent_rrule_entries=max_vevent_rrule_entries,
+                max_vevent_rrule_occurrence=max_vevent_rrule_occurrence,
                 is_collection=write_whole_collection, tag=tag)
             if write_whole_collection and tag == "VCALENDAR":
                 vobject_components: List[vobject.base.Component] = []
@@ -228,7 +228,7 @@ class ApplicationPartPut(ApplicationBase):
              bool(rights.intersect(access.permissions, "Ww")),
              bool(rights.intersect(access.parent_permissions, "w")),
              self._max_resource_size,
-             self._max_vevent_rrule_entries,
+             self._max_vevent_rrule_occurrence,
              )
 
         with self._storage.acquire_lock("w", user, path=path, request="PUT"):
@@ -294,7 +294,7 @@ class ApplicationPartPut(ApplicationBase):
                      bool(rights.intersect(access.permissions, "Ww")),
                      bool(rights.intersect(access.parent_permissions, "w")),
                      self._max_resource_size,
-                     self._max_vevent_rrule_entries,
+                     self._max_vevent_rrule_occurrence,
                      tag, write_whole_collection)
             props = prepared_props
             if prepared_exc_info:

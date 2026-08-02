@@ -79,7 +79,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
     _internal_server: bool
     _max_content_length: int
     _max_resource_size: int
-    _max_vevent_rrule_entries: int
+    _max_vevent_rrule_occurrence: int
     _auth_realm: str
     _auth_type: str
     _web_type: str
@@ -121,8 +121,8 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             self._max_resource_size = max_resource_size_limited
         else:
             logger.info("max_resource_size set to: %d bytes (%sbytes)", self._max_resource_size, utils.format_unit(self._max_resource_size, binary=True))
-        self._max_vevent_rrule_entries = configuration.get("server", "max_vevent_rrule_entries")
-        logger.info("max_vevent_rrule_entries set to: %d", self._max_vevent_rrule_entries)
+        self._max_vevent_rrule_occurrence = configuration.get("server", "max_vevent_rrule_occurrence")
+        logger.info("max_vevent_rrule_occurrence set to: %d", self._max_vevent_rrule_occurrence)
         self._bad_put_request_content = configuration.get("logging", "bad_put_request_content")
         logger.info("log bad put request content: %s", self._bad_put_request_content)
         self._request_header_on_debug = configuration.get("logging", "request_header_on_debug")

@@ -33,8 +33,8 @@
 # Announced to clients requesting "max-resource-size" via PROPFIND
 #max_resource_size = 10000000
 
-# Max entries of a RRULE, limit the number to prevent DoS attacks.
-#max_vevent_rrule_entries = 10000
+# Max occurrence by an RRULE, limit the number to prevent DoS attacks.
+#max_vevent_rrule_occurrence = 10000
 
 # Socket timeout (seconds)
 #timeout = 30

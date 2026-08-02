@@ -106,7 +106,7 @@ class StorageBase(storage.BaseStorage):
             "logging", "storage_cache_actions_on_debug")
         self._max_resource_size = configuration.get(
             "server", "max_resource_size")
-        self._max_vevent_rrule_entries = configuration.get("server", "max_vevent_rrule_entries")
+        self._max_vevent_rrule_occurrence = configuration.get("server", "max_vevent_rrule_occurrence")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")

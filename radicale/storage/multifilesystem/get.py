@@ -124,7 +124,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         vobject_items = radicale_item.read_components(
                             raw_text.decode(self._encoding))
                         radicale_item.check_and_sanitize_items(
-                            vobject_items, tag=self.tag, max_vevent_rrule_entries=self._storage._max_vevent_rrule_entries)
+                            vobject_items, tag=self.tag, max_vevent_rrule_occurrence=self._storage._max_vevent_rrule_occurrence)
                         vobject_item, = vobject_items
                         temp_item = radicale_item.Item(
                             collection=self, vobject_item=vobject_item)

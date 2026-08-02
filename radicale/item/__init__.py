@@ -103,7 +103,7 @@ def predict_tag_of_whole_collection(
 
 def check_and_sanitize_items(
         vobject_items: List[vobject.base.Component],
-        max_vevent_rrule_entries: int,
+        max_vevent_rrule_occurrence: int,
         is_collection: bool = False, tag: str = "") -> None:
     """Check vobject items for common errors and add missing UIDs.
 
@@ -417,7 +417,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
     return math.floor(start.timestamp()), math.ceil(end.timestamp())
 
 
-def verify(file: str, encoding: str, max_vevent_rrule_entries: int):
+def verify(file: str, encoding: str, max_vevent_rrule_occurrence: int):
     logger.info("Verifying item: %s", file)
     with open(file, "rb") as f:
         content_raw = f.read()
@@ -437,7 +437,7 @@ def verify(file: str, encoding: str, max_vevent_rrule_entries: int):
     try:
         tag = radicale_item.predict_tag_of_whole_collection(vobject_items)
         if tag is not None:
-            radicale_item.check_and_sanitize_items(vobject_items, tag=tag, max_vevent_rrule_entries=max_vevent_rrule_entries)
+            radicale_item.check_and_sanitize_items(vobject_items, tag=tag, max_vevent_rrule_occurrence=max_vevent_rrule_occurrence)
         else:
             raise ValueError("collection tag cannot be predicted")
     except Exception as e:
