@@ -257,7 +257,7 @@ def check_and_sanitize_items(
                         raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
                                          % (component.name, component_uid, rrule_count, max_vevent_rrule_occurrence))
                     else:
-                        logger.trace("Recurrence rule count in %s in object %r: %d (PASSED/limit: %d)" % (component.name, component_uid, rrule_count, max_vevent_rrule_occurrence))
+                        logger.debug("Recurrence rule count in %s in object %r: %d (PASSED/limit: %d)" % (component.name, component_uid, rrule_count, max_vevent_rrule_occurrence))
                 if hasattr(component, "dtstart"):
                     # early check of maximum of (UNTIL-DTSTART)/interval(FREQ) to avoid DoS (ugly workaround with some guessing)
                     pattern = re.compile('FREQ=([A-Z]+)(;.*)?$')
@@ -281,8 +281,8 @@ def check_and_sanitize_items(
                             seconds = delta.total_seconds()
                             if seconds < 0:
                                 # UNTIL < DTSTART
-                                logger.error("Recurrence rule %r in %s in object %r REJECTED, UNTIL is in the past", component.rrule.value, component.name, component_uid)
-                                raise ValueError("Recurrence rule in %s in object %r has UNTIL in the past"
+                                logger.error("Recurrence rule %r in %s in object %r REJECTED, UNTIL < DTSTART", component.rrule.value, component.name, component_uid)
+                                raise ValueError("Recurrence rule in %s in object %r has UNTIL < DTSTART"
                                                  % (component.name, component_uid))
                             rrule_entries = seconds / RRULE_FREQUENCIES_TO_INTERVAL[freq]
                             logger.trace("estimated rule entries: %d", rrule_entries)
@@ -291,7 +291,7 @@ def check_and_sanitize_items(
                                 raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
                                                  % (component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
                             else:
-                                logger.trace("Recurrence rule %r entries in %s in object %r: %d (estimated/PASSED/limit: %d)" % (component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
+                                logger.debug("Recurrence rule %r entries in %s in object %r: %d (estimated/PASSED/limit: %d)" % (component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
                 # generic check by vobject
                 try:
                     rruleset = component.rruleset
@@ -311,7 +311,7 @@ def check_and_sanitize_items(
                         raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
                                          % (component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
                     else:
-                        logger.trace("Recurrence rule %r entries in %s in object %r: %d (calculated/PASSED/limit: %d)", component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence)
+                        logger.debug("Recurrence rule %r entries in %s in object %r: %d (calculated/PASSED/limit: %d)", component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence)
     elif tag == "VADDRESSBOOK":
         # https://tools.ietf.org/html/rfc6352#section-5.1
         object_uids = set()
