@@ -346,48 +346,48 @@ permissions: RrWw""")
         self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_count_500.ics")
-        self.put("/calendar.ics/event.ics", event, check=400)
+        self.put("/calendar.ics/event_full_day_rrule_count_500.ics", event, check=400)
 
     def test_add_event_with_rrule_count_500_limit_600(self) -> None:
         """Test event with RRULE COUNT=500 and limit 600."""
         self.configure({"server": {"max_vevent_rrule_occurrence": 600}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_count_500.ics")
-        self.put("/calendar.ics/event.ics", event)
-
-    def test_add_event_with_rrule_until_2y_limit_800(self) -> None:
-        """Test event with RRULE UNTIL=+2y and limit 800."""
-        self.configure({"server": {"max_vevent_rrule_occurrence": 800}})
-        self.mkcalendar("/calendar.ics/")
-        event = get_file_content("event_full_day_rrule_until_2y.ics")
-        self.put("/calendar.ics/event.ics", event)
+        self.put("/calendar.ics/event_full_day_rrule_count_500.ics", event)
 
     def test_add_event_with_rrule_until_2y_limit_100(self) -> None:
         """Test event with RRULE UNTIL=+2y and limit 100."""
         self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_until_2y.ics")
-        self.put("/calendar.ics/event.ics", event, check=400)
+        self.put("/calendar.ics/event_full_day_rrule_until_2y.ics", event, check=400)
+
+    def test_add_event_with_rrule_until_2y_limit_800(self) -> None:
+        """Test event with RRULE UNTIL=+2y and limit 800."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 800}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_2y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_2y.ics", event)
 
     def test_add_event_with_rrule_until_before_dtstart(self) -> None:
         """Test event with RRULE UNTIL < DTSTART."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_until_before_dtstart.ics")
-        self.put("/calendar.ics/event.ics", event, check=400)
+        self.put("/calendar.ics/event_full_day_rrule_until_before_dtstart.ics", event, check=400)
 
     def test_add_event_with_rrule_until_50y_limit_100(self) -> None:
         """Test event with RRULE UNTIL=+50y and limit 100."""
         self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_until_50y.ics")
-        self.put("/calendar.ics/event.ics", event, check=400)
+        self.put("/calendar.ics/event_full_day_rrule_until_before_dtstart.ics", event, check=400)
 
     def test_add_event_with_rrule_until_5000y_limit_100(self) -> None:
         """Test event with RRULE UNTIL=+5000y and limit 100."""
         self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_until_5000y.ics")
-        self.put("/calendar.ics/event.ics", event, check=400)
+        self.put("/calendar.ics/event_full_day_rrule_until_5000y.ics", event, check=400)
 
     def test_add_event_with_exdate_without_rrule(self) -> None:
         """Test event with EXDATE but not having RRULE."""
