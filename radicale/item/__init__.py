@@ -56,7 +56,7 @@ VCF_TO_ICS_BDAY_NO_YEAR: list = ["1604"]
 # List of RRULE frequencies and their interval in seconds
 RRULE_FREQUENCIES_TO_INTERVAL: dict[str, float] = {
                                   "YEARLY": 365*60*60*24,
-                                  "MONTHLY": 365/30*60*60*24,
+                                  "MONTHLY": 365/12*60*60*24,
                                   "WEEKLY": 60*60*24*7,
                                   "DAILY": 60*60*24,
                                   "HOURLY": 60*60,
