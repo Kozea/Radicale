@@ -53,8 +53,8 @@ VCF_TO_ICS_SUPPORTED_PLACEHOLDERS: list = ["fn", "n:f", "n:g", "n:a", "age", "ni
 # List of BDAY years acting as flag for "no year specified"
 VCF_TO_ICS_BDAY_NO_YEAR: list = ["1604"]
 
-# List of RRULE frequencies and their factor related to 1 second
-RRULE_FREQUENCIES_TO_DAY: dict[str, float] = {
+# List of RRULE frequencies and their interval in seconds
+RRULE_FREQUENCIES_TO_INTERVAL: dict[str, float] = {
                                   "YEARLY": 365*60*60*24,
                                   "MONTHLY": 365/30*60*60*24,
                                   "WEEKLY": 60*60*24*7,
@@ -259,13 +259,12 @@ def check_and_sanitize_items(
                     else:
                         logger.trace("Recurrence rule count in %s in object %r: %d (PASSED/limit: %d)" % (component.name, component_uid, rrule_count, max_vevent_rrule_occurrence))
                 if hasattr(component, "dtstart"):
-                    # early check of maximum of (UNTIL-DTSTART)/FREQ to avoid DoS (ugly workaround with some guessing)
+                    # early check of maximum of (UNTIL-DTSTART)/interval(FREQ) to avoid DoS (ugly workaround with some guessing)
                     pattern = re.compile('FREQ=([A-Z]+)(;.*)?$')
                     match = pattern.match(component.rrule.value)
-                    if match and match[1] in RRULE_FREQUENCIES_TO_DAY:
+                    if match and match[1] in RRULE_FREQUENCIES_TO_INTERVAL:
                         # RRULE has known FREQ
                         freq = match[1]
-                        logger.trace("Recurrence rule found with FREQ: %s", freq)
                         pattern = re.compile('.*;UNTIL=([\\dTZ]+)(;.*)?$')
                         match = pattern.match(component.rrule.value)
                         dtstart = radicale_filter.date_to_datetime(component.dtstart.value)
@@ -278,12 +277,14 @@ def check_and_sanitize_items(
                             until = vobject.icalendar.rrule.rrulestr(component.rrule.value, ignoretz=ignoretz)._until
                             if dtstart.tzinfo is not None:
                                 until = until.astimezone(dtstart.tzinfo)
-                            logger.trace("Recurrence rule found with UNTIL: %s", until)
-                            logger.trace("DTSTART found: %s", dtstart)
                             delta = until - dtstart
                             seconds = delta.total_seconds()
-                            logger.trace("delta in seconds: %d", seconds)
-                            rrule_entries = seconds / RRULE_FREQUENCIES_TO_DAY[freq]
+                            if seconds < 0:
+                                # UNTIL < DTSTART
+                                logger.error("Recurrence rule %r in %s in object %r REJECTED, UNTIL is in the past", component.rrule.value, component.name, component_uid)
+                                raise ValueError("Recurrence rule in %s in object %r has UNTIL in the past"
+                                                 % (component.name, component_uid))
+                            rrule_entries = seconds / RRULE_FREQUENCIES_TO_INTERVAL[freq]
                             logger.trace("estimated rule entries: %d", rrule_entries)
                             if max_vevent_rrule_occurrence > 0 and rrule_entries > max_vevent_rrule_occurrence:
                                 logger.warning("Recurrence rule %r entries in %s in object %r: %d (estimated/REJECTED/limit: %d)", component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence)

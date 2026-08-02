@@ -356,6 +356,12 @@ permissions: RrWw""")
         event = get_file_content("event_full_day_rrule_until_2y.ics")
         self.put("/calendar.ics/event.ics", event, check=400)
 
+    def test_add_event_with_rrule_until_in_the_past(self) -> None:
+        """Test event with RRULE UNTIL=in-the-past."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_in_the_past.ics")
+        self.put("/calendar.ics/event.ics", event, check=400)
+
     def test_add_event_with_rrule_until_50y_limit_100(self) -> None:
         """Test event with RRULE UNTIL=+50y and limit 100."""
         self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
