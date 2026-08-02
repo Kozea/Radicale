@@ -380,7 +380,7 @@ permissions: RrWw""")
         self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_full_day_rrule_until_50y.ics")
-        self.put("/calendar.ics/event_full_day_rrule_until_before_dtstart.ics", event, check=400)
+        self.put("/calendar.ics/event_full_day_rrule_until_50y.ics", event, check=400)
 
     def test_add_event_with_rrule_until_5000y_limit_100(self) -> None:
         """Test event with RRULE UNTIL=+5000y and limit 100."""
