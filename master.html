@@ -1008,6 +1008,17 @@ option.</p>
 payload.</p>
 <p>Announced to clients requesting "max-resource-size" via PROPFIND.</p>
 </section>
+<section class="level5" id="max_vevent_rrule_occurrence">
+<h5>max_vevent_rrule_occurrence <a class="headerlink" href="#max_vevent_rrule_occurrence">&para;</a></h5>
+<p><em>(&gt;= 3.7.8)</em></p>
+<p>The maximum of occurrence by an rrule of a vevent. Large time frames
+defined in RRULE by COUNT or UNTIL could generate a lot of occurrences
+based on the time frame supplied. This setting limits the lookup to
+prevent potential denial of service attacks on large time frames. If the
+limit is reached, an HTTP error is thrown instead of accepting the
+item.</p>
+<p>Default: <code>10000</code></p>
+</section>
 <section class="level5" id="timeout">
 <h5>timeout <a class="headerlink" href="#timeout">&para;</a></h5>
 <p>Socket timeout. (seconds)</p>
@@ -2190,6 +2201,17 @@ This is an automated message. Please do not reply.</code></pre>
 </section>
 <section class="level4" id="reporting">
 <h4>[reporting] <a class="headerlink" href="#reporting">&para;</a></h4>
+<section class="level5" id="max_expand_occurrence">
+<h5>max_expand_occurrence <a class="headerlink" href="#max_expand_occurrence">&para;</a></h5>
+<p><em>(&gt;= 3.7.8)</em></p>
+<p>When returning an expanded report, a list of occurrences are
+generated based on a given time frame. Large time frames could generate
+a lot of occurrences based on the time frame supplied. This setting
+limits the lookup to prevent potential denial of service attacks on
+large time frames. If the limit is reached, an HTTP error is thrown
+instead of returning the results.</p>
+<p>Default: 10000</p>
+</section>
 <section class="level5" id="max_freebusy_occurrence">
 <h5>max_freebusy_occurrence <a class="headerlink" href="#max_freebusy_occurrence">&para;</a></h5>
 <p><em>(&gt;= 3.2.3)</em></p>
