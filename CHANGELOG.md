@@ -3,6 +3,8 @@
 ## 3.7.8.dev
 * Fix: sharing/proppatch: reject in case of write-access but 'p' is in permissions
 * Fix: sharing/by-map: catch collection path without trailing / (supporting "pimsync")
+* Add: [report] max_expand_occurrence option to separate from max_freebusy_occurrence
+* Add: [system] max_vevent_rrule_occurrence option to catch DoS by problematic RRULE early enough (workaround for missing protection in current vobject version)
 
 ## 3.7.7
 * Fix: web plugin helpers httputils.serve_resource/serve_folder ignored their mimetypes and fallback_mimetype parameters and always used the built-in mapping, so custom web plugins could not serve additional file types with a correct Content-Type

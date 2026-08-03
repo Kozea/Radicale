@@ -53,6 +53,17 @@ VCF_TO_ICS_SUPPORTED_PLACEHOLDERS: list = ["fn", "n:f", "n:g", "n:a", "age", "ni
 # List of BDAY years acting as flag for "no year specified"
 VCF_TO_ICS_BDAY_NO_YEAR: list = ["1604"]
 
+# List of RRULE frequencies and their interval in seconds
+RRULE_FREQUENCIES_TO_INTERVAL: dict[str, float] = {
+                                  "YEARLY": 60*60*24*365,
+                                  "MONTHLY": 60*60*24*365/12,
+                                  "WEEKLY": 60*60*24*7,
+                                  "DAILY": 60*60*24,
+                                  "HOURLY": 60*60,
+                                  "MINUTELY": 60,
+                                  "SECONDLY": 1,
+                                  }
+
 
 def read_components(s: str) -> List[vobject.base.Component]:
     """Wrapper for vobject.readComponents"""
@@ -103,6 +114,7 @@ def predict_tag_of_whole_collection(
 
 def check_and_sanitize_items(
         vobject_items: List[vobject.base.Component],
+        max_vevent_rrule_occurrence: int,
         is_collection: bool = False, tag: str = "") -> None:
     """Check vobject items for common errors and add missing UIDs.
 
@@ -232,11 +244,77 @@ def check_and_sanitize_items(
                     if ref_value_param is not None:
                         dates.params["VALUE"] = ref_value_param
             # vobject interprets recurrence rules on demand
-            try:
-                component.rruleset
-            except Exception as e:
-                raise ValueError("Invalid recurrence rules in %s in object %r"
-                                 % (component.name, component_uid)) from e
+            if hasattr(component, "rrule"):
+                # workaround for vobject < 1.0.0 as it has no limiter in "getrruleset"
+                logger.trace("Recurrence rule found in %s in object %r: %r", component.name, component_uid, component.rrule.value)
+                if not hasattr(component, "dtstart"):
+                    # e.g. VTODO
+                    rrule = vobject.icalendar.rrule.rrulestr(component.rrule.value)
+                else:
+                    dtstart = radicale_filter.date_to_datetime(component.dtstart.value)
+                    ignoretz = (
+                        not isinstance(dtstart, datetime.datetime)
+                        or dtstart.tzinfo is None
+                    )
+                    rrule = vobject.icalendar.rrule.rrulestr(component.rrule.value, ignoretz=ignoretz)
+                # early check of maximum of COUNT to avoid DoS (workaround)
+                if hasattr(rrule, "_count") and rrule._count is not None:
+                    logger.trace("Recurrence rule %r in %s in object %r contains: COUNT=%d", component.rrule.value, component.name, component_uid, rrule._count)
+                    if max_vevent_rrule_occurrence > 0 and rrule._count > max_vevent_rrule_occurrence:
+                        logger.error("Recurrence rule %r count in %s in object %r: %d (REJECTED/limit: %d)", component.rrule.value, component.name, component_uid, rrule._count, max_vevent_rrule_occurrence)
+                        raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
+                                         % (component.name, component_uid, rrule._count, max_vevent_rrule_occurrence))
+                    else:
+                        logger.debug("Recurrence rule count in %s in object %r: %d (PASSED/limit: %d)" % (component.name, component_uid, rrule._count, max_vevent_rrule_occurrence))
+                else:
+                    logger.trace("Recurrence rule %r in %s in object %r doesn't contain: COUNT", component.rrule.value, component.name, component_uid)
+                # early check of maximum of (UNTIL-DTSTART)/interval(FREQ) to avoid DoS (ugly workaround with some guessing)
+                if hasattr(rrule, "_freq") and rrule._freq is not None and hasattr(rrule, "_until") and rrule._until is not None and hasattr(component, "dtstart"):
+                    if vobject.icalendar.FREQUENCIES[rrule._freq] not in RRULE_FREQUENCIES_TO_INTERVAL:
+                        raise ValueError("Unsupported FREQ in recurrence rule in %s in object %r: %r"
+                                         % (component.name, component_uid, rrule._freq))
+                    # RRULE has known FREQ+UNTIL+DTSTART
+                    # TZ code taken from vobject/icalendar.py/getrruleset
+                    if rrule._until.tzinfo is None:
+                        rrule._until = rrule._until.replace(tzinfo=dtstart.tzinfo)
+                    if dtstart.tzinfo is not None:
+                        rrule._until = rrule._until.astimezone(dtstart.tzinfo)
+                    delta = rrule._until - dtstart
+                    seconds = delta.total_seconds()
+                    if seconds < 0:
+                        # UNTIL < DTSTART
+                        logger.error("Recurrence rule %r in %s in object %r REJECTED, UNTIL < DTSTART", component.rrule.value, component.name, component_uid)
+                        raise ValueError("Recurrence rule in %s in object %r has UNTIL < DTSTART"
+                                         % (component.name, component_uid))
+                    rrule_entries = seconds / RRULE_FREQUENCIES_TO_INTERVAL[vobject.icalendar.FREQUENCIES[rrule._freq]]
+                    if max_vevent_rrule_occurrence > 0 and rrule_entries > max_vevent_rrule_occurrence:
+                        logger.warning("Recurrence rule %r entries in %s in object %r: %d (estimated/REJECTED/limit: %d)", component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence)
+                        raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
+                                         % (component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
+                    else:
+                        logger.debug("Recurrence rule %r entries in %s in object %r: %d (estimated/PASSED/limit: %d)" % (component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
+                else:
+                    logger.trace("Recurrence rule %r in %s in object %r doesn't contain: FREQ+UNTIL", component.rrule.value, component.name, component_uid)
+                # generic check by vobject
+                try:
+                    rruleset = component.rruleset
+                except Exception as e:
+                    raise ValueError("Invalid recurrence rules in %s in object %r"
+                                     % (component.name, component_uid)) from e
+                # check limit (last resort)
+                infinite = False
+                if (";UNTIL=" not in component.rrule.value and
+                        ";COUNT=" not in component.rrule.value):
+                    infinite = True
+
+                if infinite is False:
+                    rrule_entries = len(list(rruleset))
+                    if max_vevent_rrule_occurrence > 0 and rrule_entries > max_vevent_rrule_occurrence:
+                        logger.warning("Recurrence rule %r entries in %s in object %r: %d (calculated/REJECTED/limit: %d)", component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence)
+                        raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
+                                         % (component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
+                    else:
+                        logger.debug("Recurrence rule %r entries in %s in object %r: %d (calculated/PASSED/limit: %d)", component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence)
     elif tag == "VADDRESSBOOK":
         # https://tools.ietf.org/html/rfc6352#section-5.1
         object_uids = set()
@@ -387,7 +465,7 @@ def find_time_range(vobject_item: vobject.base.Component, tag: str
     return math.floor(start.timestamp()), math.ceil(end.timestamp())
 
 
-def verify(file: str, encoding: str):
+def verify(file: str, encoding: str, max_vevent_rrule_occurrence: int):
     logger.info("Verifying item: %s", file)
     with open(file, "rb") as f:
         content_raw = f.read()
@@ -407,7 +485,7 @@ def verify(file: str, encoding: str):
     try:
         tag = radicale_item.predict_tag_of_whole_collection(vobject_items)
         if tag is not None:
-            radicale_item.check_and_sanitize_items(vobject_items, tag=tag)
+            radicale_item.check_and_sanitize_items(vobject_items, tag=tag, max_vevent_rrule_occurrence=max_vevent_rrule_occurrence)
         else:
             raise ValueError("collection tag cannot be predicted")
     except Exception as e:

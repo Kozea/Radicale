@@ -254,6 +254,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "10000000",
             "help": "maximum size of resource (default: 10 Mbyte)",
             "type": positive_int}),
+        ("max_vevent_rrule_occurrence", {
+            "value": "10000",
+            "help": "maximum occurrence by an RRULE (default: 10000)",
+            "type": positive_int}),
         ("timeout", {
             "value": "30",
             "help": "socket timeout",
@@ -813,9 +817,13 @@ This is an automated message. Please do not reply.""",
     ("headers", OrderedDict([
         ("_allow_extra", str)])),
     ("reporting", OrderedDict([
+        ("max_expand_occurrence", {
+            "value": "10000",
+            "help": "number of expand occurrences per event when reporting",
+            "type": positive_int}),
         ("max_freebusy_occurrence", {
             "value": "10000",
-            "help": "number of occurrences per event when reporting",
+            "help": "number of free-busy occurrences per event when reporting",
             "type": positive_int})]))
     ])
 

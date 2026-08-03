@@ -866,6 +866,19 @@ Limited to 80% of max_content_length to cover plain base64 encoded payload.
 
 Announced to clients requesting "max-resource-size" via PROPFIND.
 
+##### max_vevent_rrule_occurrence
+
+_(>= 3.7.8)_
+
+The maximum of occurrence by an rrule of a vevent.
+Large time frames defined in RRULE by COUNT or UNTIL could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service
+attacks on large time frames. If the limit is reached, an HTTP error
+is thrown instead of accepting the item.
+
+Default: `10000`
+
 ##### timeout
 
 Socket timeout. (seconds)
@@ -2190,6 +2203,19 @@ This is an automated message. Please do not reply.
 ```
 
 #### [reporting]
+
+##### max_expand_occurrence
+
+_(>= 3.7.8)_
+
+When returning an expanded report, a list of occurrences are
+generated based on a given time frame. Large time frames could
+generate a lot of occurrences based on the time frame supplied. This
+setting limits the lookup to prevent potential denial of service
+attacks on large time frames. If the limit is reached, an HTTP error
+is thrown instead of returning the results.
+
+Default: 10000
 
 ##### max_freebusy_occurrence
 

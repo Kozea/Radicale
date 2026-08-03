@@ -33,6 +33,9 @@
 # Announced to clients requesting "max-resource-size" via PROPFIND
 #max_resource_size = 10000000
 
+# Max occurrence by an RRULE, limit the number to prevent DoS attacks.
+#max_vevent_rrule_occurrence = 10000
+
 # Socket timeout (seconds)
 #timeout = 30
 
@@ -498,6 +501,10 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 
 
 [reporting]
+
+# When returning an expanded report, limit the number of returned
+# occurences per event to prevent DoS attacks.
+#max_expand_occurrence = 10000
 
 # When returning a free-busy report, limit the number of returned
 # occurences per event to prevent DoS attacks.

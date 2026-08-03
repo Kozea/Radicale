@@ -151,6 +151,19 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    def test_add_event_y2040(self) -> None:
+        """Add an event with year 2040."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1_y2040.ics")
+        path = "/calendar.ics/event1_y2040.ics"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "VEVENT" in answer
+        assert "Event" in answer
+        assert "UID:event" in answer
+
     @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
     def test_add_event_with_rdate_period_start_duration_single(self) -> None:
         """Add an event with RDATE/PERIOD with start+duration."""
@@ -327,6 +340,72 @@ permissions: RrWw""")
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_mixed_datetime_and_date.ics")
         self.put("/calendar.ics/event.ics", event)
+
+    def test_add_event_with_rrule_count_500_limit_100(self) -> None:
+        """Test event with RRULE COUNT=500 and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_count_500.ics")
+        self.put("/calendar.ics/event_full_day_rrule_count_500.ics", event, check=400)
+
+    def test_add_event_with_rrule_count_500_limit_600(self) -> None:
+        """Test event with RRULE COUNT=500 and limit 600."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 600}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_count_500.ics")
+        self.put("/calendar.ics/event_full_day_rrule_count_500.ics", event)
+
+    def test_add_event_with_rrule_until_2y_limit_100(self) -> None:
+        """Test event with RRULE UNTIL=+2y and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_2y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_2y.ics", event, check=400)
+
+    def test_add_event_with_rrule_until_2y_limit_800(self) -> None:
+        """Test event with RRULE UNTIL=+2y and limit 800."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 800}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_2y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_2y.ics", event)
+
+    def test_add_event_with_rrule_until_before_dtstart(self) -> None:
+        """Test event with RRULE UNTIL < DTSTART."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_before_dtstart.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_before_dtstart.ics", event, check=400)
+
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="So far not working on on 32-bit platform")
+    def test_add_event_with_rrule_until_50y_limit_100(self) -> None:
+        """Test event with RRULE UNTIL=+50y and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_50y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_50y.ics", event, check=400)
+
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="So far not working on on 32-bit platform")
+    def test_add_event_with_rrule_until_50y_limit_20000(self) -> None:
+        """Test event with RRULE UNTIL=+50y and limit 20000."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 20000}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_50y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_50y.ics", event)
+
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="So far not working on on 32-bit platform")
+    def test_add_event_with_rrule_until_5000y_limit_100(self) -> None:
+        """Test event with RRULE UNTIL=+5000y and limit 100."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 100}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_5000y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_5000y.ics", event, check=400)
+
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="So far not working on on 32-bit platform")
+    def test_add_event_with_rrule_until_5000y_limit_2000000(self) -> None:
+        """Test event with RRULE UNTIL=+5000y and limit 2000000."""
+        self.configure({"server": {"max_vevent_rrule_occurrence": 2000000}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event_full_day_rrule_until_5000y.ics")
+        self.put("/calendar.ics/event_full_day_rrule_until_5000y.ics", event)
 
     def test_add_event_with_exdate_without_rrule(self) -> None:
         """Test event with EXDATE but not having RRULE."""

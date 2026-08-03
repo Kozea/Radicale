@@ -200,9 +200,10 @@ def run() -> None:
 
     if args_ns.verify_item:
         encoding = configuration.get("encoding", "stock")
+        max_vevent_rrule_occurrence = configuration.get("server", "max_vevent_rrule_occurrence")
         logger.info("Item verification start using 'stock' encoding: %s", encoding)
         try:
-            if not item.verify(args_ns.verify_item[0], encoding):
+            if not item.verify(args_ns.verify_item[0], encoding, max_vevent_rrule_occurrence):
                 logger.critical("Item verification failed")
                 sys.exit(1)
         except Exception as e:

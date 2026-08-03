@@ -128,7 +128,8 @@ permissions: RrWw""")
                      expected_start_times: List[str],
                      expected_end_times: List[str],
                      only_dates: bool,
-                     nr_uids: int) -> None:
+                     nr_uids: int,
+                     check: int = 207) -> None:
         _, responses = self.report("/calendar.ics/",
                                    self._req_without_expand(expected_uid, start, end))
         assert len(responses) == 1
@@ -154,7 +155,9 @@ permissions: RrWw""")
         assert len(uids) == nr_uids
 
         _, responses = self.report("/calendar.ics/",
-                                   self._req_with_expand(expected_uid, start, end))
+                                   self._req_with_expand(expected_uid, start, end), check=check)
+        if check != 207:
+            return
 
         assert len(responses) == 1
 
@@ -176,17 +179,21 @@ permissions: RrWw""")
                 uids.append(line)
 
             if line.startswith("RECURRENCE-ID:"):
-                assert line in expected_recurrence_ids
+                if expected_recurrence_ids:
+                    assert line in expected_recurrence_ids
                 recurrence_ids.append(line)
 
             if line.startswith("DTSTART:"):
-                assert line in expected_start_times
+                if expected_start_times:
+                    assert line in expected_start_times
 
             if line.startswith("DTEND:"):
-                assert line in expected_end_times
+                if expected_end_times:
+                    assert line in expected_end_times
 
-        assert len(uids) == len(expected_recurrence_ids)
-        assert len(set(recurrence_ids)) == len(expected_recurrence_ids)
+        if expected_recurrence_ids:
+            assert len(uids) == len(expected_recurrence_ids)
+            assert len(set(recurrence_ids)) == len(expected_recurrence_ids)
 
     def _test_expand_max(self,
                          expected_uid: str,
@@ -289,6 +296,35 @@ permissions: RrWw""")
             1
         )
 
+    def test_report_with_expand_property_all_day_count_500_event_pass(self) -> None:
+        """Test report with expand property for all day count 500 events"""
+        self.configure({"reporting": {"max_expand_occurrence": 501}})
+        self._test_expand(
+            "event_full_day_rrule_count_500",
+            "20060103T000000Z",
+            "20080105T000000Z",
+            [],
+            [],
+            [],
+            ONLY_DATES,
+            1
+        )
+
+    def test_report_with_expand_property_all_day_count_500_event_reject(self) -> None:
+        """Test report with expand property for all day count 500 events"""
+        self.configure({"reporting": {"max_expand_occurrence": 10}})
+        self._test_expand(
+            "event_full_day_rrule_count_500",
+            "20060103T000000Z",
+            "20080105T000000Z",
+            [],
+            [],
+            [],
+            ONLY_DATES,
+            1,
+            400
+        )
+
     def test_report_with_expand_property_overridden(self) -> None:
         """Test report with expand property with overridden events"""
         self._test_expand(
@@ -326,7 +362,7 @@ permissions: RrWw""")
 
     def test_report_with_expand_property_max_occur(self) -> None:
         """Test report with expand property too many vevents"""
-        self.configure({"reporting": {"max_freebusy_occurrence": 100}})
+        self.configure({"reporting": {"max_expand_occurrence": 100}})
         self._test_expand_max(
             "event_daily_rrule_forever",
             "20060103T000000Z",
@@ -336,7 +372,7 @@ permissions: RrWw""")
 
     def test_report_with_max_occur(self) -> None:
         """Test report with too many vevents"""
-        self.configure({"reporting": {"max_freebusy_occurrence": 10}})
+        self.configure({"reporting": {"max_expand_occurrence": 10}})
 
         uid = "event_multiple_too_many"
         start = "20130901T000000Z"
