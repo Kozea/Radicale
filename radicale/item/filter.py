@@ -442,7 +442,10 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                 completed = date_to_datetime(completed.value)
                 if created is not None:
                     created = date_to_datetime(created.value)
-                    original_duration = (completed - created).total_seconds()
+                    # NOTE: kept separate from "original_duration", otherwise a
+                    # VTODO with DTSTART+DUE and also CREATED+COMPLETED would
+                    # lose its DTSTART->DUE duration (see line 2 below)
+                    completed_duration = (completed - created).total_seconds()
             elif created is not None:
                 created = date_to_datetime(created.value)
 
@@ -500,7 +503,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                 elif completed is not None and created is not None:
                     # Line 5
                     completed = reference_date + timedelta(
-                        seconds=original_duration)
+                        seconds=completed_duration)
                     if (range_fn(reference_date - SECOND,
                                  reference_date + SECOND,
                                  is_recurrence) or
