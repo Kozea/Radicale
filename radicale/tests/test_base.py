@@ -2083,6 +2083,27 @@ permissions: RrWw""")
 </C:comp-filter>"""], "todo", items=range(1, 9))
         assert "/calendar.ics/todo7.ics" in answer
 
+    def test_time_range_filter_todos_dtstart_due_completed(self) -> None:
+        """Report request with time-range filter on a completed todo which
+           also has DTSTART and DUE (rfc4791-9.9: DTSTART/DUE take
+           precedence over CREATED/COMPLETED)."""
+        # inside DTSTART..DUE, but outside CREATED..COMPLETED
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VTODO">
+        <C:time-range start="20130902T000000Z" end="20130903T000000Z"/>
+    </C:comp-filter>
+</C:comp-filter>"""], "todo", items=(10,))
+        assert "/calendar.ics/todo10.ics" in answer
+        # entirely before DTSTART and CREATED
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VTODO">
+        <C:time-range start="20130801T000000Z" end="20130901T000000Z"/>
+    </C:comp-filter>
+</C:comp-filter>"""], "todo", items=(10,))
+        assert "/calendar.ics/todo10.ics" not in answer
+
     def test_time_range_filter_events_valarm(self) -> None:
         """Report request with time-range filter on events having absolute VALARM."""
         answer = self._test_filter(["""\
