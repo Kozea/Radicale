@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.7.8.dev
+## 3.7.8
 * Fix: time-range filter on a VTODO having DTSTART/DUE and also CREATED/COMPLETED used the CREATED->COMPLETED duration instead of the DTSTART->DUE one, so completed tasks were missing from (or wrongly returned by) calendar-query REPORT results
 * Fix: sharing/proppatch: reject in case of write-access but 'p' is in permissions
 * Fix: sharing/by-map: catch collection path without trailing / (supporting "pimsync")
