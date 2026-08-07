@@ -68,6 +68,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                 return None
         else:
             path = os.path.join(self._filesystem_path, href)
+        item_stat: Optional[os.stat_result] = None
         try:
             if self._storage._use_mtime_and_size_for_item_cache is True:
                 # try to avoid "open"
@@ -78,6 +79,9 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         raise IsADirectoryError(path)
                 if not os.access(path, os.R_OK):
                     raise PermissionError(path)
+                # Single stat() reused below for both the cache hash and
+                # last_modified, instead of stat-ing the same path 3 times.
+                item_stat = os.stat(path)
             else:
                 with open(path, "rb") as f:
                     # early read of the content
@@ -95,7 +99,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         # The hash of the component in the file system. This is used to check,
         # if the entry in the cache is still valid.
         if self._storage._use_mtime_and_size_for_item_cache is True:
-            cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
+            assert item_stat is not None
+            cache_hash = self._item_cache_mtime_and_size(item_stat.st_size, item_stat.st_mtime_ns)
             if self._storage._debug_cache_actions is True:
                 logger.debug("Item cache check  for: %r with mtime and size %r", path, cache_hash)
         else:
@@ -149,7 +154,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                 logger.debug("Item cache hit    for: %r", path)
         last_modified = time.strftime(
             "%a, %d %b %Y %H:%M:%S GMT",
-            time.gmtime(os.path.getmtime(path)))
+            time.gmtime(item_stat.st_mtime if item_stat is not None
+                        else os.path.getmtime(path)))
         # Don't keep reference to ``vobject_item``, because it requires a lot
         # of memory.
         return radicale_item.Item(

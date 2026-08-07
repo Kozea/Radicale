@@ -344,6 +344,41 @@ class TestMultiFileSystem(BaseTest):
             logs = caplog.messages
             assert len([log for log in logs if "File name collision" in log]) == 2
 
+    def test_propfind_depth1_does_not_check_collisions_per_item(self) -> None:
+        """Listing a collection (PROPFIND depth:1) must not re-run the
+        filesystem collision check (path_to_filesystem) once per item.
+        """
+        self.mkcalendar("/calendar.ics/")
+        item_count = 20
+        for index in range(item_count):
+            uid = "event%d" % index
+            event = ("BEGIN:VCALENDAR\r\nVERSION:2.0\r\n"
+                     "BEGIN:VEVENT\r\nUID:%s\r\nSUMMARY:Event %d\r\n"
+                     "DTSTART:20130901T180000Z\r\nEND:VEVENT\r\n"
+                     "END:VCALENDAR\r\n" % (uid, index))
+            self.put("/calendar.ics/%s.ics" % uid, event)
+
+        call_count = 0
+        original_path_to_filesystem = pathutils.path_to_filesystem
+
+        def counting_path_to_filesystem(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return original_path_to_filesystem(*args, **kwargs)
+
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            monkeypatch.setattr(pathutils, "path_to_filesystem",
+                                counting_path_to_filesystem)
+            _, responses = self.propfind("/calendar.ics/", """\
+<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop><D:getetag/></D:prop>
+</D:propfind>
+""", HTTP_DEPTH="1")
+
+        assert len(responses) == item_count + 1
+        assert call_count < item_count
+
     @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
     @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_hook_placeholders_PUT(self, caplog) -> None:
