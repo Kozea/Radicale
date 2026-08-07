@@ -3,6 +3,11 @@
 ## 3.8.0.dev
 * Fix: storage/multifilesystem: depth:1 PROPFIND no longer re-runs the filesystem collision check (path_to_filesystem) for every item in a collection; this made listing large collections O(n^2) on file systems not detected as collision-free
 * Improve: storage/multifilesystem: avoid redundant stat() calls per item in get/upload when use_mtime_and_size_for_item_cache is enabled
+* Feature: [sharing] add sharing-by-group/realm
+* Feature: [group] with type "htgroup", "none", "from_auth" (NEW)
+* Extension: [auth] type "pam": set groups of user to be used later
+* Adjustment: reject usernames starting or ending with "@" or having more than one "@"
+* Adjustment: reject usernames containing ":"
 
 ## 3.7.8
 * Fix: time-range filter on a VTODO having DTSTART/DUE and also CREATED/COMPLETED used the CREATED->COMPLETED duration instead of the DTSTART->DUE one, so completed tasks were missing from (or wrongly returned by) calendar-query REPORT results
