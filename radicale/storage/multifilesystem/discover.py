@@ -88,7 +88,9 @@ class StoragePartDiscover(StorageBase):
 
         for href in collection._list():
             with child_context_manager(sane_path, href):
-                item = collection._get(href)
+                # We don't need to check for collisions, because the file
+                # names are from _list() (os.scandir).
+                item = collection._get(href, verify_href=False)
                 if item is not None:
                     yield item
 

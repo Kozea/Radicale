@@ -50,7 +50,8 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                              (href, self.path, e)) from e
         # store cache file
         if self._storage._use_mtime_and_size_for_item_cache is True:
-            cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
+            path_stat = os.stat(path)
+            cache_hash = self._item_cache_mtime_and_size(path_stat.st_size, path_stat.st_mtime_ns)
             if self._storage._debug_cache_actions is True:
                 logger.debug("Item cache store  for: %r with mtime and size %r", path, cache_hash)
         else:
@@ -121,7 +122,8 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
 
             # store cache file
             if self._storage._use_mtime_and_size_for_item_cache is True:
-                cache_hash = self._item_cache_mtime_and_size(os.stat(path).st_size, os.stat(path).st_mtime_ns)
+                path_stat = os.stat(path)
+                cache_hash = self._item_cache_mtime_and_size(path_stat.st_size, path_stat.st_mtime_ns)
                 if self._storage._debug_cache_actions is True:
                     logger.debug("Item cache store  for: %r with mtime and size %r", path, cache_hash)
             else:
