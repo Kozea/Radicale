@@ -21,6 +21,7 @@ Radicale tests related to group lookup.
 
 import logging
 import os
+import sys
 
 import pytest
 
