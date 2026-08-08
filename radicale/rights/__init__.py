@@ -69,6 +69,32 @@ def intersect(a: str, b: str) -> str:
     return "".join(set(a).intersection(set(b)))
 
 
+def remove(a: str, b: str) -> str:
+    """Remove rights from a defined in b
+
+    Returns all rights of ``a`` not listed in ``b``.
+
+    """
+    result = set(a)
+    for entry in set(b):
+        if entry in a:
+            result.remove(entry)
+    return "".join(result)
+
+
+def add(a: str, b: str) -> str:
+    """Add rights to a defined in b
+
+    Returns all rights of ``a`` and ``b``.
+
+    """
+    result = set(a)
+    for entry in set(b):
+        if entry not in a:
+            result.add(entry)
+    return "".join(result)
+
+
 class BaseRights:
 
     _user_groups: Set[str] = set([])

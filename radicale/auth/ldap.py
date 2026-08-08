@@ -381,8 +381,8 @@ class Auth(auth.BaseAuth):
                     tmp.append(rdns[0][1])
                 except Exception:
                     tmp.append(g)
-            self._ldap_groups = set(tmp)
-            logger.debug("_login3 LDAP groups of user: %s", ",".join(self._ldap_groups))
+            self._groups = set(tmp)
+            logger.debug("_login3 LDAP groups of user: %s", ",".join(self._groups))
 
             if self._ldap_user_attr:
                 if user_entry['attributes'][self._ldap_user_attr]:

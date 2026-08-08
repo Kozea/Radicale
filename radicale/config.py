@@ -39,8 +39,8 @@ from configparser import RawConfigParser
 from typing import (Any, Callable, ClassVar, Iterable, List, Optional,
                     Sequence, Tuple, TypeVar, Union)
 
-from radicale import (auth, hook, log, rights, sharing, storage, types, utils,
-                      web)
+from radicale import (auth, group, hook, log, rights, sharing, storage, types,
+                      utils, web)
 from radicale.hook import email
 from radicale.item import check_and_sanitize_props
 
@@ -484,6 +484,21 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "url-decode the username, set to True when clients send url-encoded email address as username",
             "type": bool})])),
+    ("group", OrderedDict([
+        ("type", {
+            "value": "none",
+            "help": "group lookup method (" + "|".join(group.INTERNAL_TYPES) + ")",
+            "type": str_or_callable,
+            "internal": group.INTERNAL_TYPES}),
+        ("htgroup_filename", {
+            "value": "/etc/radicale/groups",
+            "help": "htpgroup filename",
+            "type": filepath}),
+        ("htgroup_cache", {
+            "value": "False",
+            "help": "enable caching of htgroup file",
+            "type": bool}),
+    ])),
     ("rights", OrderedDict([
         ("type", {
             "value": "owner_only",

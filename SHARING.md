@@ -8,6 +8,10 @@ With _3.7.0_ major extension was implemented
  * added management API
  * WebUI extension using the management API
 
+With _3.8.0_ sharing-by-* membership was implemented
+ * sharing-by-group
+ * sharing-by-realm
+
 ## Sharing Implementation
 
 Implementation of sharing collections is done by using a database to lookup the URI and in case entry exists by mapping to target URI and replacing provided data on request and adjust if required data in response.
@@ -32,17 +36,22 @@ Types of supported sharing configuration:
     * `map`: map-based share (requires user authentication)
  * `PathOrToken`: token or "virtual" collection, has to be unique (PRIMARY KEY)
  * `PathMapped`: target collection
+   * share-by-group/realm: has to start with placeholder `/{user}` (_>= 3.8.0_)
  * `Conversion`: conversion method
  * `Owner`: owner of the share
- * `User`: user of the share
+ * `User`: user (or group, _>= 3.8.0_) of the share
+   * share-by-group/realm: has to start with `:` or `@` (_>= 3.8.0_)
  * `Permissions`: effective permission of the share
  * `EnabledByOwner`: control by owner
  * `EnabledByUser`: control by user
+   * share-by-group/realm: always enabled (_>= 3.8.0_)
  * `HiddenByOwner`: control by owner 
  * `HiddenByUser`: control by user
+   * share-by-group/realm: always disabled (_>= 3.8.0_)
  * `TimestampCreated`: unixtime of creation
  * `TimestampUpdated`: unixtime of last update
  * `Properties`: overlay properties (limited set whitelisted)
+   * share-by-group/realm: not supported (_>= 3.8.0_)
  * `Actions`: specific configuration
  
 `Enabled*`: _owner_ AND _user_ have to enable a share to become usable

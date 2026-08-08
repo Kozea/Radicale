@@ -40,10 +40,11 @@ dependencies = [
 
 
 [project.optional-dependencies]
-test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi"]
+test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
+pam = ["pam"]
 dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
 
 [project.scripts]

@@ -97,6 +97,11 @@ class Auth(auth.BaseAuth):
             else:
                 logger.debug("PAM user %r belongs to the required group: %r" % (login, self._group_membership))
 
+        # add groups
+        members.append(primary_group)
+        self._groups = set(members)
+        logger.debug("PAM groups of user: %s", ",".join(self._groups))
+
         # Check the password
         if self.pam_authenticate(login, password, service=self._service):
             return login

@@ -1026,6 +1026,8 @@ Available types are:
 * `ldap` _(>= 3.3.0)_  
   Use a LDAP or AD server to authenticate users by relaying credentials from clients and handle results.
 
+  User groups are supported. Requires group/type=`from_auth` _(>= 3.8.0)_.
+
 * `dovecot` _(>= 3.3.1)_  
   Use a Dovecot server to authenticate users by relaying credentials from clients and handle results.
 
@@ -1038,7 +1040,9 @@ Available types are:
   in combination with SSO support in reverse proxy (e.g. Apache+mod_auth_openidc).
 
 * `pam` _(>= 3.5.0)_  
-  Use local PAM to authenticate users by relaying credentials from client and handle result..
+  Use local PAM to authenticate users by relaying credentials from client and handle result.
+
+  User groups are supported _(>= 3.8.0)_
 
 Default: `none` _(< 3.5.0)_ / `denyall` _(>= 3.5.0)_
 
@@ -1260,6 +1264,8 @@ They also give you access to the group calendars, if those exist.
   This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
 
 Default: (unset)
+
+Requires group lookup type set to `from_auth` _(>= 3.8.0)_
 
 ##### ldap_group_members_attribute
 
@@ -1494,6 +1500,44 @@ This setting forces decoding the username.
 
 Default: `False`
 
+#### [group]
+
+_(>= 3.8.0)_
+
+##### type
+
+The method to lookup groups for username
+
+Available types are:
+
+* `none`
+  No groups lookup at all
+
+* `from_auth`
+  Group lookup by authentication type (if supported)
+
+* `htgroup`
+  Use an
+  [Apache htgroup file](https://httpd.apache.org/docs/2.4/mod/mod_authz_groupfile.html)
+  to store groups and their members
+
+Default: `none`
+
+##### htgroup_filename
+
+_(>= 3.8.0)_
+
+Path to the htgroup file.
+
+Default: `/etc/radicale/groups`
+
+##### htgroup_cache
+
+_(>= 3.8.0)_
+
+Enable caching of htgroup file based on size and mtime_ns
+
+Default: `False`
 
 #### [rights]
 
@@ -2308,6 +2352,8 @@ Default: `false`
 * If `False` it can be explicitly granted by *share* permissions: `P`
 * If `True` it can be explicitly forbidden by *share* permissions: `p`
 
+share-by-group/realm: always forbidden (_>= 3.8.0_)
+
 ##### enforce_properties_overlay
 
 _(>= 3.7.0)_
@@ -2318,6 +2364,8 @@ Default: `true`
 
 * If `False` it can be explicitly enforced by *share* permissions: `E`
 * If `True` it can be explicitly forbidden by *share* permissions: `e`
+
+share-by-group/realm: always forbidden (_>= 3.8.0_)
 
 ##### default_permissions_create_token
 

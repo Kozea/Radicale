@@ -211,6 +211,19 @@
 #urldecode_username = False
 
 
+[group]
+
+# Group lookup method
+# Value: none | from_auth | htgroup
+type = none
+
+# Htgroup filename
+#htgroup_filename = /etc/radicale/groups
+
+# Enable caching of htgroup file based on size and mtime_ns
+#htgroup_cache = False
+
+
 [rights]
 
 # Rights backend

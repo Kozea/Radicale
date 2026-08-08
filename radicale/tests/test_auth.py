@@ -149,6 +149,62 @@ class TestBaseAuthRequests(BaseTest):
             check = 401
         self._test_htpasswd("plain", "😀:🔑", "unicode", check=check)
 
+    def test_htpasswd_invalid_user_start_with_at(self) -> None:
+        """user start with @ is not permitted"""
+        self._test_htpasswd("plain", "@domain.example:test", (
+            ("@domain.example", "test", True), ("@domain.example", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_end_with_at(self) -> None:
+        """user end with @ is not permitted"""
+        self._test_htpasswd("plain", "domain.example@:test", (
+            ("domain.example@", "test", True), ("domain.example@", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_start_with_encoded_at(self) -> None:
+        """user start with encoded @ is not permitted"""
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "@domain.example:test", (
+            ("%40domain.example", "test", True), ("%40domain.example", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_end_with_encoded_at(self) -> None:
+        """user end with encoded @ is not permitted"""
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "domain.example@:test", (
+            ("domain.example%40", "test", True), ("domain.example%40", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_with_more_encoded_at(self) -> None:
+        """user with more encoded @ is not permitted"""
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "user@group@domain.example:test", (
+            ("user%40group%40domain.example", "test", True), ("user%40group%40domain.example", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_start_with_colon(self) -> None:
+        """user start with : is not permitted"""
+        try:
+            self._test_htpasswd("plain", ":group:test", (
+                (":group", "test", True), (":group", "test", False)), check=401)
+        except RuntimeError:
+            pass
+        else:
+            raise
+
+    def test_htpasswd_invalid_user_start_with_encoded_colon(self) -> None:
+        """user start with encoded : is not permitted"""
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "'%3Adomain.example:test", (
+            ("%3Adomain.example", "test", True), ("%3Adomain.example", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_end_with_encoded_colon(self) -> None:
+        """user end with encoded : is not permitted"""
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "domain.example:test", (
+            ("domain.example%3A", "test", True), ("domain.example%3A", "test", False)), check=401)
+
+    def test_htpasswd_invalid_user_with_any_encoded_colon(self) -> None:
+        """user with any encoded : is not permitted"""
+        self.configure({"auth": {"urldecode_username": "True"}})
+        self._test_htpasswd("plain", "user%3Adomain.example:test", (
+            ("user%3Adomain.example", "test", True), ("user%3Adomain.example", "test", False)), check=401)
+
     def test_htpasswd_md5(self) -> None:
         self._test_htpasswd("md5", "tmp:$apr1$BI7VKCZh$GKW4vq2hqDINMr8uv7lDY/")
 
