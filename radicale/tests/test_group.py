@@ -107,6 +107,7 @@ class TestBaseGroupRequests(BaseTest):
                     or "Group memberships (htgroup) for user 'tmp': {'group1', 'group2'}" in log
                     ]) == 0
 
+    @pytest.mark.skipif(sys.platform == "darwin" or sys.platform == 'win32', reason="not supported on MacOS or Windows")
     def test_incompatible_group_from_auth(self) -> None:
         for auth_type in ["dovecot", "imap", "remote_user", "http_remote_user", "htpasswd", "oauth2"]:
             logging.info("\n*** test: auth_type=%r, group_type=%r", "dovecot", auth_type)
