@@ -1,0 +1,28 @@
+[Unit]
+Description=Radicale CalDAV and CardDAV server
+Documentation=https://radicale.org/v3.html
+After=network.target
+Requires=network.target
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/radicale
+ExecStart=/usr/libexec/radicale/radicale
+Restart=on-failure
+Type=exec
+User=radicale
+Group=radicale
+UMask=0027
+WorkingDirectory=/var/lib/radicale
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ReadWritePaths=/var/lib/radicale/ /var/cache/radicale/
+
+[Install]
+WantedBy=multi-user.target
