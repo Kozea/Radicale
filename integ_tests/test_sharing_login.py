@@ -79,15 +79,16 @@ def test_incoming_shares(
     # 4. Max sees the incoming share
     page.click('a[data-name="incomingshares"]')
     expect(page.locator("#incomingsharingscene")).to_be_visible()
-    expect(
-        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    ).to_have_count(1)
+    row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    expect(row).to_have_count(1)
 
     expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='pathortoken']"
-        )
+        row.locator("input[data-name='pathortoken']")
     ).to_have_value(re.compile(r".*mapped/"))
+    expect(row.locator("td[data-name='sharetype']")).to_have_text("👤")
+    expect(row.locator("td[data-name='sharetype']")).to_have_attribute(
+        "title", "Direct share"
+    )
 
     # 5. Max enables and shows the share
     # Initially, it's disabled and not shown (security by default)

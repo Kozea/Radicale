@@ -116,26 +116,49 @@ export class IncomingSharingScene {
 
             let pathortoken = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=pathortoken]"));
             let owner_td = get_element(node, "[data-name=owner]");
+            let sharetype_td = get_element(node, "[data-name=sharetype]");
             let permissions_td = /** @type {HTMLElement} */ (get_element(node, "[data-name=permissions]"));
             let enabled_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=enabled]"));
             let shown_cb = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=shown]"));
             let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
 
             new UrlTextHandler(pathortoken, copy_btn).setHref(share.PathOrToken);
+
+            let isGroupOrRealm = (share.Permissions || "").includes("U");
             owner_td.textContent = trim_to_max(share.Owner, 12);
+            owner_td.title = share.Owner;
+
+            if (isGroupOrRealm) {
+                let isRealm = this._user.includes("@") || (share.Owner || "").includes("@");
+                let emoji = isRealm ? "🌐" : "👥";
+                sharetype_td.textContent = emoji;
+                sharetype_td.title = isRealm ? "Domain share" : "Group share";
+            } else {
+                sharetype_td.textContent = "👤";
+                sharetype_td.title = "Direct share";
+            }
+
             displayPermissionsOrConversion(share.Conversion, share.Permissions, permissions_td);
 
             let enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
             let shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
 
             enabled_cb.checked = enabled;
-            enabled_cb.setAttribute("title", "Enabled");
             shown_cb.checked = shown;
-            shown_cb.setAttribute("title", "Shown");
-            shown_cb.disabled = !enabled;
 
-            enabled_cb.onchange = () => { this._toggle_share(share, node); };
-            shown_cb.onchange = () => { this._toggle_share(share, node); };
+            if (isGroupOrRealm) {
+                enabled_cb.disabled = true;
+                shown_cb.disabled = true;
+                enabled_cb.setAttribute("title", "Group and domain shares cannot be disabled");
+                shown_cb.setAttribute("title", "Group and domain shares cannot be hidden");
+            } else {
+                enabled_cb.setAttribute("title", "Enabled");
+                shown_cb.setAttribute("title", "Shown");
+                shown_cb.disabled = !enabled;
+
+                enabled_cb.onchange = () => { this._toggle_share(share, node); };
+                shown_cb.onchange = () => { this._toggle_share(share, node); };
+            }
 
             this._nodes.push(node);
             this._tbody.appendChild(node);

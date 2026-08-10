@@ -65,6 +65,22 @@ SHARING_HTPASSWD_USERSWITHDOMAIN = Config(
     user_username="max@domain.tld",
 )
 
+SHARING_HTGROUP = Config(
+    name="sharing_htgroup",
+    auth_type=AuthType.HTPASSWD,
+    sharing_type=SharingType.SHARING,
+    extra_config="[group]\ntype = htgroup\nhtgroup_filename = {group_path}\n",
+)
+
+SHARING_HTGROUP_USERSWITHDOMAIN = Config(
+    name="sharing_htgroup_userswithdomain",
+    auth_type=AuthType.HTPASSWD,
+    sharing_type=SharingType.SHARING,
+    extra_config="[group]\ntype = htgroup\nhtgroup_filename = {group_path}\n",
+    admin_username="admin@domain.tld",
+    user_username="max@domain.tld",
+)
+
 SHARING_XREMOTE = Config(
     name="sharing_xremote",
     auth_type=AuthType.XREMOTE,
@@ -90,9 +106,18 @@ def start_radicale_server(
     port = get_free_port()
     config_path = tmp_path / "config"
     user_path = tmp_path / "users"
+    group_path = tmp_path / "groups"
     storage_path = tmp_path / "collections"
 
     sharing_path = tmp_path / "sharing.csv"
+
+    # Set up test htgroup file
+    with open(group_path, "w") as f:
+        f.write("group1: max user max@domain.tld user@domain.tld\n")
+        f.write("group2: max user max@domain.tld user@domain.tld\n")
+        f.write("editors: admin max admin@domain.tld max@domain.tld\n")
+
+    extra_config = config.extra_config.replace("{group_path}", str(group_path))
 
     with open(config_path, "w") as f:
         f.write(
@@ -128,7 +153,7 @@ database_path = {sharing_path}
 """
             )
 
-        f.write(f"\n{config.extra_config}\n")
+        f.write(f"\n{extra_config}\n")
 
     if config.auth_type == AuthType.HTPASSWD:
         with open(user_path, "w") as f:
