@@ -110,7 +110,7 @@ class StoragePartDiscover(StorageBase):
                     cast(multifilesystem.Storage, self), child_path)
         for group in user_groups:
             href = base64.b64encode(group.encode('utf-8')).decode('ascii')
-            logger.debug(f"searching for group calendar {group} {href}")
+            logger.debug(f"searching for group calendar '{group}' '{href}'")
             sane_child_path = f"GROUPS/{href}"
             if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
                 continue
