@@ -640,11 +640,11 @@ class ApplicationPartPropfind(ApplicationBase):
                     allowed_items.append((item, permission, raw_permissions, None))
         if self._sharing._enabled:
             if http_depth == "1":
-                logger.trace("PROPFIND: get shared collections")
                 # check for shared collections related to user, Enabled and not Hidden
                 user_lookup = user
                 if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
                     user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
+                logger.debug("PROPFIND: lookup shared collections for user=%r", user_lookup)
                 collections_share_list = self._sharing.sharing_collection_list(User=user_lookup, Enabled=True, Hidden=False)
                 if collections_share_list:
                     for share in collections_share_list:
@@ -655,9 +655,9 @@ class ApplicationPartPropfind(ApplicationBase):
                         logger.trace("PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
                         if not c_access.check("r"):
-                            logger.trace("PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
+                            logger.debug("PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
                             continue
-                        logger.trace("PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
+                        logger.debug("PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
