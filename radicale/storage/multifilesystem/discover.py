@@ -110,22 +110,25 @@ class StoragePartDiscover(StorageBase):
             with child_context_manager(sane_child_path, None):
                 yield self._collection_class(
                     cast(multifilesystem.Storage, self), child_path)
-        if self._group_collections_folder is None or len(self._group_collections_folder) == 0:
-            logger.trace("searching for collection by user group skipped because base folder is not defined")
-        else:
-            logger.trace("searching for collection by user group in folder: %r", self._group_collections_folder)
-            if os.path.isdir(pathutils.path_to_filesystem(folder, self._group_collections_folder, self._is_collision_free)):
-                for group in user_groups:
-                    href = base64.b64encode(group.encode('utf-8')).decode('ascii')
-                    sane_child_path = os.path.join(self._group_collections_folder, href)
-                    logger.debug("searching for collection by user group=%r path=%r", group, sane_child_path)
-                    if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
-                        logger.trace("searching for collection by user group=%r path=%r is not existing (skip)", group, sane_child_path)
-                        continue
-                    child_path = "/" + self._group_collections_folder + "/" + href + "/"
-                    logger.trace("searching for collection by user group with child_path: %r", child_path)
-                    with child_context_manager(sane_child_path, None):
-                        yield self._collection_class(
-                            cast(multifilesystem.Storage, self), child_path)
+        if len(user_groups) > 0:
+            if self._group_collections_folder is None or len(self._group_collections_folder) == 0:
+                logger.trace("searching for collection by user group skipped because base folder is not defined")
             else:
-                logger.trace("searching for collection by user group skipped because base folder is not existing: %r", self._group_collections_folder)
+                logger.trace("searching for collection by user group in folder: %r", self._group_collections_folder)
+                if os.path.isdir(pathutils.path_to_filesystem(folder, self._group_collections_folder, self._is_collision_free)):
+                    for group in user_groups:
+                        href = base64.b64encode(group.encode('utf-8')).decode('ascii')
+                        sane_child_path = os.path.join(self._group_collections_folder, href)
+                        logger.debug("searching for collection by user group=%r path=%r", group, sane_child_path)
+                        if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
+                            logger.trace("searching for collection by user group=%r path=%r is not existing (skip)", group, sane_child_path)
+                            continue
+                        child_path = "/" + self._group_collections_folder + "/" + href + "/"
+                        logger.trace("searching for collection by user group with child_path: %r", child_path)
+                        with child_context_manager(sane_child_path, None):
+                            yield self._collection_class(
+                                cast(multifilesystem.Storage, self), child_path)
+                else:
+                    logger.trace("searching for collection by user group skipped because base folder is not existing: %r", self._group_collections_folder)
+        else:
+            logger.trace("searching for collection by user group not required as user has no groups")
