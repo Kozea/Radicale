@@ -100,7 +100,7 @@ class Sharing(sharing.BaseSharing):
                 return None
             else:
                 # check by group
-                logger.trace("sharing/%s/get: no direct share found, run through filtered list")
+                logger.trace("sharing/%s/get: no direct share found, run through filtered list", ShareType)
                 for row in self.database_list_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=User):
                     if OnlyEnabled is True and row['EnabledByOwner'] is False:
                         continue
@@ -154,7 +154,7 @@ class Sharing(sharing.BaseSharing):
                 Conversion = row['Conversion']
             if 'Actions' in row:
                 Actions = row['Actions']
-            logger.trace("sharing: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
+            logger.trace("sharing/%s/get: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", ShareType, PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
             return {
                     "mapped": True,
                     "ShareType": ShareType,
@@ -188,7 +188,7 @@ class Sharing(sharing.BaseSharing):
         """ retrieve sharing """
         result = []
 
-        logger.trace("sharing/list/called: ShareType=%r OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
+        logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
 
         for _ShareType in sharing.SHARE_TYPES_V1:
             if ShareType is not None and _ShareType != ShareType:

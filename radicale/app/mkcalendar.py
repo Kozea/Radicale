@@ -71,6 +71,7 @@ class ApplicationPartMkcalendar(ApplicationBase):
             parent_path = pathutils.parent_path(path)
             parent_item = next(iter(self._storage.discover(parent_path)), None)
             if not parent_item:
+                logger.error("Failed MKCALENDAR request on %r: parent folder is not existing %r", path, parent_path)
                 return httputils.CONFLICT
             if (not isinstance(parent_item, storage.BaseCollection) or
                     parent_item.tag):

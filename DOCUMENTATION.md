@@ -1257,11 +1257,6 @@ For DN-valued attributes, the value of the RDN is used to determine the group na
 The implementation also supports non-DN-valued attributes: their values are taken directly.
 
 The user's group names can be used later to define rights.
-They also give you access to the group calendars, if those exist.
-* Group calendars are placed directly under *collection_root_folder*`/GROUPS/`
-  with the base64-encoded group name as the calendar folder name.
-* Group calendar folders are not created automatically.
-  This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
 
 Default: (unset)
 
@@ -1504,6 +1499,12 @@ Default: `False`
 
 _(>= 3.8.0)_
 
+User's group membership also give you access to group collections, if those exist.
+* Group collections are placed directly under *collection_root_folder*`/GROUPS/`
+  with the base64-encoded group name as the collection folder name.
+* Group collections folders are not created automatically.
+  This must be done manually. In the [LDAP-authentication section of Radicale's wiki](https://github.com/Kozea/Radicale/wiki/LDAP-authentication) you can find a script to create a group calendar.
+
 ##### type
 
 The method to lookup groups for username
@@ -1538,6 +1539,18 @@ _(>= 3.8.0)_
 Enable caching of htgroup file based on size and mtime_ns
 
 Default: `False`
+
+##### group_collections_folder
+
+_(>= 3.8.0)_
+
+Folder under *collection_root_folder* containing collections of base64 encoded group names _(>= 3.3.0)_
+
+Default: `GROUPS`
+
+Unset if not required or unwanted
+
+Note: only supported on case-sensitive file systems
 
 #### [rights]
 

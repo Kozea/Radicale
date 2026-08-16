@@ -8,6 +8,7 @@
 * Extension: [auth] type "pam": set groups of user to be used later
 * Adjustment: reject usernames starting or ending with "@" or having more than one "@"
 * Adjustment: reject usernames containing ":"
+* Add: [group] group_collections_folder replacing hardcoded "GROUPS"
 
 ## 3.7.8
 * Fix: time-range filter on a VTODO having DTSTART/DUE and also CREATED/COMPLETED used the CREATED->COMPLETED duration instead of the DTSTART->DUE one, so completed tasks were missing from (or wrongly returned by) calendar-query REPORT results

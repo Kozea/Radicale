@@ -83,6 +83,7 @@ class StorageBase(storage.BaseStorage):
     _folder_umask: str
     _config_umask: int
     _max_resource_size: int
+    _group_collections_folder: str
 
     def __init__(self, configuration: config.Configuration) -> None:
         super().__init__(configuration)
@@ -107,6 +108,7 @@ class StorageBase(storage.BaseStorage):
         self._max_resource_size = configuration.get(
             "server", "max_resource_size")
         self._max_vevent_rrule_occurrence = configuration.get("server", "max_vevent_rrule_occurrence")
+        self._group_collections_folder = configuration.get("group", "group_collections_folder")
 
     def _get_collection_root_folder(self) -> str:
         return os.path.join(self._filesystem_folder, "collection-root")

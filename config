@@ -223,6 +223,9 @@ type = none
 # Enable caching of htgroup file based on size and mtime_ns
 #htgroup_cache = False
 
+# Folder under *collection_root_folder* containing collections of base64 encoded group names
+# group_collections_folder = "GROUPS"
+
 
 [rights]
 
