@@ -19,6 +19,7 @@ Radicale tests related to group lookup.
 
 """
 
+import base64
 import logging
 import os
 import sys
@@ -27,14 +28,53 @@ import pytest
 
 import radicale
 from radicale.tests import BaseTest
+from radicale.tests.helpers import get_file_content
 
 
 class TestBaseGroupRequests(BaseTest):
-    """Tests basic requests with group lookup.
+    """Tests basic requests with group lookup."""
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
+        self.htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        self.htgroup_file_path = os.path.join(self.colpath, ".htgroup")
+        htpasswd = ["owner:ownerpw",
+                    "user1:user1pw",
+                    "user2:user2pw",
+                    ]
+        htgroup = ["group1:user1",
+                   "group2:user2",
+                   "admins:owner",
+                   ]
+        htpasswd_content = "\n".join(htpasswd)
+        htgroup_content = "\n".join(htgroup)
+        with open(self.htpasswd_file_path, "w") as f:
+            f.write(htpasswd_content)
+        with open(self.htgroup_file_path, "w") as f:
+            f.write(htgroup_content)
+        self.rights_file_path = os.path.join(self.colpath, "rights")
+        with open(self.rights_file_path, "w") as f:
+            f.write("""\
+# let user create its own base folder
+[principal]
+user: .+
+collection: {user}
+permissions: RW
 
-    We should setup auth for each type before creating the Application object.
+# let user create its own collections
+[collections]
+user: .+
+collection: {user}/[^/]+
+permissions: rw
 
-    """
+[calendarsWriter]
+groups: admins
+collection: GROUPS/[^/]+
+permissions: rw
+
+[calendarsReader]
+user: .+
+collection: GROUPS/[^/]+
+permissions: r""")
 
     def _test_htgroup(self, htpasswd_content: str, htgroup_content, check: int = 207) -> None:
         """Test htpasswd authentication with user "tmp" and password "bepo" for
@@ -138,3 +178,87 @@ class TestBaseGroupRequests(BaseTest):
                 raise
             else:
                 pass
+
+    def test_static_group_collection_discovery_by_user_group_missing_base_folder(self) -> None:
+        """static group collection discovery by user group (base64 encoded) where base folder is missing."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file",
+                                   "file": self.rights_file_path,
+                                   }})
+
+        logging.info("\n*** prepare GROUPS folder")
+
+        path_static_group1 = "/GROUPS/" + base64.b64encode("group1".encode('utf-8')).decode('ascii') + "/"
+
+        logging.info("\n*** prepare user folder")
+        path_user1 = "/user1/calendarU1.ics/"
+        self.mkcalendar(path_user1, login="user1:user1pw")
+
+        # verify PROPFIND as user1 in list
+        logging.info("\n*** PROPFIND collection DEPTH=1 user1")
+        _, responses = self.propfind("/user1/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
+        assert path_user1 in responses
+        assert path_static_group1 not in responses
+
+    def test_static_group_collection_discovery_by_user_group_success(self) -> None:
+        """static group collection discovery by user group (base64 encoded)."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file",
+                                   "file": self.rights_file_path,
+                                   }})
+
+        logging.info("\n*** prepare GROUPS folder")
+        path_static_group1 = "/GROUPS/" + base64.b64encode("group1".encode('utf-8')).decode('ascii') + "/"
+        self.mkcalendar(path_static_group1, login="owner:ownerpw", check=409)
+
+        # create GROUPS folder
+        os.mkdir(os.path.join(self.colpath, "collection-root", "GROUPS"))
+
+        # try again
+        self.mkcalendar(path_static_group1, login="owner:ownerpw")
+
+        logging.info("\n*** prepare user folder")
+        path_user1 = "/user1/calendarU1.ics/"
+        self.mkcalendar(path_user1, login="user1:user1pw")
+
+        # try upload item as owner -> ok (w permission defined)
+        logging.info("\n*** PUT to path as owner -> 201")
+        event = get_file_content("event1.ics")
+        self.put(path_static_group1, event, login="owner:ownerpw")
+
+        # verify PROPFIND as user1 in list
+        logging.info("\n*** PROPFIND collection DEPTH=1 user1")
+        _, responses = self.propfind("/user1/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
+        assert path_user1 in responses
+        assert path_static_group1 in responses
+
+        # try upload item as user1 -> fail (w permission missing)
+        logging.info("\n*** PUT to group collection as user1 -> 403")
+        event = get_file_content("event1.ics")
+        self.put(path_static_group1, event, login="user1:user1pw", check=403)
+
+        # get item as user1 -> success
+        logging.info("\n*** GET from group collection as user1")
+        self.get(path_static_group1 + "event1.ics", login="user1:user1pw")
