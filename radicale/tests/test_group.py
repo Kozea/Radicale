@@ -23,10 +23,12 @@ import base64
 import logging
 import os
 import sys
+import tempfile
 
 import pytest
 
 import radicale
+from radicale import pathutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -190,6 +192,7 @@ permissions: r
             else:
                 pass
 
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_static_group_collection_discovery_by_user_group_missing_base_folder(self) -> None:
         """static group collection discovery by user group (base64 encoded) where base folder is missing."""
         self.configure({"auth": {"type": "htpasswd",
@@ -222,6 +225,7 @@ permissions: r
         assert path_user1 in responses
         assert path_static_group1 not in responses
 
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_static_group_collection_discovery_by_user_group_success(self) -> None:
         """static group collection discovery by user group (base64 encoded)."""
         self.configure({"auth": {"type": "htpasswd",
@@ -274,6 +278,7 @@ permissions: r
         logging.info("\n*** GET from group collection as user1")
         self.get(path_static_group1 + "event1.ics", login="user1:user1pw")
 
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_static_group_collection_discovery_by_user_group_custom_folder(self) -> None:
         """static group collection discovery by user group (base64 encoded)."""
         self.configure({"auth": {"type": "htpasswd",
@@ -328,6 +333,7 @@ permissions: r
         logging.info("\n*** GET from group collection as user1")
         self.get(path_static_group1 + "event1.ics", login="user1:user1pw")
 
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_static_group_collection_discovery_by_user_group_disabled_folder(self) -> None:
         """static group collection discovery by user group (base64 encoded)."""
         self.configure({"auth": {"type": "htpasswd",
@@ -363,3 +369,40 @@ permissions: r
         # get item as user1 -> not found
         logging.info("\n*** GET from group collection as user1")
         self.get(path_static_group1 + "event1.ics", login="user1:user1pw", check=404)
+
+    @pytest.mark.skipif(pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is case sensitive")
+    def test_static_group_collection_discovery_by_user_group_not_case_sensitive(self) -> None:
+        """static group collection discovery by user group (base64 encoded)."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path,
+                                  "group_collections_folder": "",
+                                  },
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file",
+                                   "file": self.rights_file_path,
+                                   }})
+
+        path_static_group1 = "/GROUPS/" + base64.b64encode("group1".encode('utf-8')).decode('ascii') + "/"
+
+        path_static_group1 = "/GROUPS/" + base64.b64encode("group1".encode('utf-8')).decode('ascii') + "/"
+        os.mkdir(os.path.join(self.colpath, "collection-root", "GROUPS"))
+        self.mkcalendar(path_static_group1, login="owner:ownerpw")
+
+        logging.info("\n*** prepare user folder")
+        path_user1 = "/user1/calendarU1.ics/"
+        self.mkcalendar(path_user1, login="user1:user1pw")
+
+        # verify PROPFIND as user1 in list
+        logging.info("\n*** PROPFIND collection DEPTH=1 user1")
+        _, responses = self.propfind("/user1/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+<calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
+        assert path_user1 in responses
+        assert path_static_group1 not in responses
