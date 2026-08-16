@@ -214,4 +214,8 @@ class Storage(
                 logger.warning("Storage cache subfolder: %r does not exist, creating now", self._get_collection_cache_folder())
                 self._makedirs_synced(self._get_collection_cache_folder())
             logger.info("Storage cache subfolder permissions: %s", pathutils.path_permissions_as_string(self._get_collection_cache_folder()))
-        logger.info("Group collections folder: %r", self._group_collections_folder)
+        if is_collision_free_case_sensitive or self._group_collections_folder is None or len(self._group_collections_folder) == 0:
+            logger.info("Group collections folder: %r", self._group_collections_folder)
+        else:
+            logger.warning("Group collections folder disabled, file system is not case-sensitive: %r", self._group_collections_folder)
+            self._group_collections_folder = ""
