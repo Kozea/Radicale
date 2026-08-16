@@ -1550,6 +1550,8 @@ Default: `GROUPS`
 
 Unset if not required or unwanted
 
+Note: only supported on case-sensitive file systems
+
 #### [rights]
 
 ##### type
