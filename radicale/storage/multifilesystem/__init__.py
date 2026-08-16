@@ -214,3 +214,4 @@ class Storage(
                 logger.warning("Storage cache subfolder: %r does not exist, creating now", self._get_collection_cache_folder())
                 self._makedirs_synced(self._get_collection_cache_folder())
             logger.info("Storage cache subfolder permissions: %s", pathutils.path_permissions_as_string(self._get_collection_cache_folder()))
+        logger.info("Group collections folder: %r", self._group_collections_folder)

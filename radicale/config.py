@@ -498,6 +498,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "enable caching of htgroup file",
             "type": bool}),
+        ("group_collections_folder", {
+            "value": "GROUPS",
+            "help": "folder under collection_root_folder containing collections of base64 encoded group names",
+            "type": str}),
     ])),
     ("rights", OrderedDict([
         ("type", {

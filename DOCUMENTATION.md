@@ -1540,6 +1540,16 @@ Enable caching of htgroup file based on size and mtime_ns
 
 Default: `False`
 
+##### group_collections_folder
+
+_(>= 3.8.0)_
+
+Folder under *collection_root_folder* containing collections of base64 encoded group names _(>= 3.3.0)_
+
+Default: `GROUPS`
+
+Unset if not required or unwanted
+
 #### [rights]
 
 ##### type
