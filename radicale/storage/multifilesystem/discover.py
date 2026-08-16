@@ -108,13 +108,16 @@ class StoragePartDiscover(StorageBase):
             with child_context_manager(sane_child_path, None):
                 yield self._collection_class(
                     cast(multifilesystem.Storage, self), child_path)
-        for group in user_groups:
-            href = base64.b64encode(group.encode('utf-8')).decode('ascii')
-            sane_child_path = f"GROUPS/{href}"
-            logger.debug("searching for collection by user group=%r path=%r", group, sane_child_path)
-            if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
-                continue
-            child_path = f"/GROUPS/{href}/"
-            with child_context_manager(sane_child_path, None):
-                yield self._collection_class(
-                    cast(multifilesystem.Storage, self), child_path)
+        if os.path.isdir(pathutils.path_to_filesystem(folder, "GROUPS", self._is_collision_free)):
+            for group in user_groups:
+                href = base64.b64encode(group.encode('utf-8')).decode('ascii')
+                sane_child_path = f"GROUPS/{href}"
+                logger.debug("searching for collection by user group=%r path=%r", group, sane_child_path)
+                if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
+                    continue
+                child_path = f"/GROUPS/{href}/"
+                with child_context_manager(sane_child_path, None):
+                    yield self._collection_class(
+                        cast(multifilesystem.Storage, self), child_path)
+        else:
+            logger.trace("searching for collection by user group skipped because base folder is not existing: %r", "GROUPS")
