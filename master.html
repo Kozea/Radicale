@@ -1347,17 +1347,7 @@ alikes, <code>groupMembership</code> on Novell eDirectory, ...</p>
 <p>For DN-valued attributes, the value of the RDN is used to determine
 the group names. The implementation also supports non-DN-valued
 attributes: their values are taken directly.</p>
-<p>The user's group names can be used later to define rights. They also
-give you access to the group calendars, if those exist.</p>
-<ul>
-<li>Group calendars are placed directly under
-<em>collection_root_folder</em><code>/GROUPS/</code> with the
-base64-encoded group name as the calendar folder name.</li>
-<li>Group calendar folders are not created automatically. This must be
-done manually. In the <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">LDAP-authentication
-section of Radicale's wiki</a> you can find a script to create a group
-calendar.</li>
-</ul>
+<p>The user's group names can be used later to define rights.</p>
 <p>Default: (unset)</p>
 <p>Requires group lookup type set to <code>from_auth</code> <em>(&gt;=
 3.8.0)</em></p>
@@ -1567,6 +1557,17 @@ user%40example.com). This setting forces decoding the username.</p>
 <section class="level4" id="group">
 <h4>[group] <a class="headerlink" href="#group">&para;</a></h4>
 <p><em>(&gt;= 3.8.0)</em></p>
+<p>User's group membership also give you access to group collections, if
+those exist.</p>
+<ul>
+<li>Group collections are placed directly under
+<em>collection_root_folder</em><code>/GROUPS/</code> with the
+base64-encoded group name as the collection folder name.</li>
+<li>Group collections folders are not created automatically. This must
+be done manually. In the <a href="https://github.com/Kozea/Radicale/wiki/LDAP-authentication">LDAP-authentication
+section of Radicale's wiki</a> you can find a script to create a group
+calendar.</li>
+</ul>
 <section class="level5" id="type-1">
 <h5>type <a class="headerlink" href="#type-1">&para;</a></h5>
 <p>The method to lookup groups for username</p>
@@ -1591,6 +1592,15 @@ htgroup file</a> to store groups and their members</p></li>
 <p><em>(&gt;= 3.8.0)</em></p>
 <p>Enable caching of htgroup file based on size and mtime_ns</p>
 <p>Default: <code>False</code></p>
+</section>
+<section class="level5" id="group_collections_folder">
+<h5>group_collections_folder <a class="headerlink" href="#group_collections_folder">&para;</a></h5>
+<p><em>(&gt;= 3.8.0)</em></p>
+<p>Folder under <em>collection_root_folder</em> containing collections
+of base64 encoded group names <em>(&gt;= 3.3.0)</em></p>
+<p>Default: <code>GROUPS</code></p>
+<p>Unset if not required or unwanted</p>
+<p>Note: only supported on case-sensitive file systems</p>
 </section>
 </section>
 <section class="level4" id="rights">
