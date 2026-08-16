@@ -50,7 +50,7 @@
 
 # Allow reading and writing calendars and address books that are direct
 # children of the principal collection
-#[calendars]
+#[calendars-addressbooks]
 #user: .+
 #collection: {user}/[^/]+
 #permissions: rw
@@ -67,7 +67,7 @@
 
 # Allow reading all calendars and address books that are direct children of any
 # principal collection
-#[read-all-calendars]
+#[read-all-calendars-addressbooks]
 #user: .+
 #collection: [^/]+/[^/]+
 #permissions: r
@@ -83,7 +83,7 @@
 
 # Allow reading and writing all calendars and address books that are direct
 # children of any principal collection
-#[calendars]
+#[calendars-addressbooks]
 #user: .+
 #collection: [^/]+/[^/]+
 #permissions: rw
@@ -107,13 +107,13 @@
 
 # Allow reading all calendars and address books that are direct children of
 # the collection "public" for authenticated users
-#[public-calendars]
+#[public-calendars-addressbooks]
 #user: .+
 #collection: public/[^/]+
 #permissions: r
 
 # Allow access to public calendars and address books via HTTP GET for everyone
-#[public-calendars-restricted]
+#[public-calendars-addressbooks-restricted]
 #user: .*
 #collection: public/[^/]+
 #permissions: i
@@ -129,7 +129,7 @@
 
 # Allow reading all calendars and address books that are direct children of
 # the domain collection
-#[read-domain-calendars]
+#[read-domain-calendars-addressbooks]
 #user: .+@([^@]+)
 #collection: {0}/[^/]+
 #permissions: r
