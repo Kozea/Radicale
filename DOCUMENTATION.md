@@ -297,36 +297,8 @@ mkdir -p /var/cache/radicale && chown -R radicale:radicale /var/cache/radicale
 > chmod -R o= /var/lib/radicale/collections
 > ```
 
-Create the file `/etc/systemd/system/radicale.service`:
-
-```ini
-[Unit]
-Description=A simple CalDAV (calendar) and CardDAV (contact) server
-After=network.target
-Requires=network.target
-
-[Service]
-ExecStart=/usr/bin/env python3 -m radicale
-Restart=on-failure
-User=radicale
-# Deny other users access to the calendar data
-UMask=0027
-# Optional security settings
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-PrivateDevices=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectControlGroups=true
-NoNewPrivileges=true
-ReadWritePaths=/var/lib/radicale/
-# Replace with following in case dedicated cache folder should be used
-#ReadWritePaths=/var/lib/radicale/ /var/cache/radicale/
-
-[Install]
-WantedBy=multi-user.target
-```
+Copy the example file `radicale.service` from sub-directory `contrib/systemd`
+to `/etc/systemd/system/radicale.service` and modify to your local needs if required.
 
 In this system-wide implementation, Radicale will load the configuration from the file `/etc/radicale/config`.
 
