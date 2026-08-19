@@ -7128,13 +7128,16 @@ permissions: RrWw""")
             path_mapped1 = "/owner/calendarUGBL1-" + db_type + ".ics/"
             path_mapped2 = "/owner/calendarUGBL2-" + db_type + ".ics/"
             path_mapped3 = "/owner/calendarUGBL3-" + db_type + ".ics/"
+            path_mapped4 = "/owner/abookUGBL4-" + db_type + ".vcf/"
             path_shared1_r = "/{user}/calendarUGBL1-shared-by-owner-r-" + db_type + ".ics/"
             path_shared2_r = "/{user}/calendarUGBL2-shared-by-owner-r-" + db_type + ".ics/"
             path_shared3_r = "/{user}/calendarUGBL3-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared4_r = "/{user}/abookUGBL4-shared-by-owner-r-" + db_type + ".vcf/"
             path_shared_r_base = "/{user}/"
             self.mkcalendar(path_mapped1, login="owner:ownerpw")
             self.mkcalendar(path_mapped2, login="owner:ownerpw")
             self.mkcalendar(path_mapped3, login="owner:ownerpw")
+            self.create_addressbook(path_mapped4, login="owner:ownerpw")
 
             # create map
             logging.info("\n*** create map :group1/owner -> 400 (unsupported permissions)")
@@ -7197,7 +7200,27 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
-            # verify PROPFIND as user1 in list
+            logging.info("\n*** create map :group3/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group3"
+            json_dict['PathMapped'] = path_mapped4
+            json_dict['PathOrToken'] = path_shared4_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Conversion'] = "bday"
+            json_dict['Actions'] = {'config': {'conversion_bday_age_max': 99}}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # verify sharing API/list as owner
+            logging.info("\n*** API list owner")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 4
+
+            # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection DEPTH=1 user1")
             path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1")
             path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
@@ -7213,7 +7236,17 @@ permissions: RrWw""")
             assert path_shared2_r_user not in responses
             assert path_shared3_r_user in responses
 
-            # verify PROPFIND as user2 in list
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user1")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1:user1pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 2
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared1_r_user, path_shared3_r_user]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared3_r_user, path_shared1_r_user]
+
+            # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection DEPTH=1 user2")
             path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2")
             path_shared1_r_user = path_shared1_r.replace("{user}", "user2")
@@ -7228,6 +7261,26 @@ permissions: RrWw""")
             assert path_shared1_r_user not in responses
             assert path_shared2_r_user in responses
             assert path_shared3_r_user in responses
+
+            # verify sharing API/list as user2
+            logging.info("\n*** API list user2")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2:user2pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 2
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared2_r_user, path_shared3_r_user]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared3_r_user, path_shared2_r_user]
+
+            # verify sharing API/list as user3
+            path_shared4_r_user = path_shared4_r.replace("{user}", "user3")
+            logging.info("\n*** API list user3")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user3:user3pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared4_r_user]
 
             # try upload item as user1 -> fail (w permission missing)
             logging.info("\n*** PUT to shared1 as user1 -> 403")
