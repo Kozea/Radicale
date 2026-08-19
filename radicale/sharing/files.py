@@ -21,6 +21,7 @@ from typing import Union
 
 from radicale import sharing
 from radicale.log import logger
+from radicale.sharing import common
 
 """ File 'database' based sharing by token or map """
 
@@ -195,16 +196,13 @@ class Sharing(sharing.BaseSharing):
                 # skip
                 continue
 
-            if OwnerOrUser is not None:
-                owner_or_user_without_group = OwnerOrUser.split(sharing.SHARING_SEPARATOR_GROUP)[0]
-
             path = self._sharing_database_path_ShareType[_ShareType]
             with self._storage.acquire_lock("r", OwnerOrUser, path=path):
                 for entry in os.scandir(path):
                     if not entry.is_file():
                         continue
 
-                    logger.trace("sharing/list: check file: %r", entry.name)
+                    logger.trace("sharing/%s/list: check file: %r", ShareType, entry.name)
                     # read file
                     with open(entry, "rb") as fb:
                         (version, row) = pickle.load(fb)
@@ -213,89 +211,25 @@ class Sharing(sharing.BaseSharing):
                         # skip
                         continue
 
-                    logger.trace("sharing/list/row: test: %r", row)
+                    logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
 
-                    user = None
+                    row_match = common.database_common_check_row_match(
+                                                                OwnerOrUser=OwnerOrUser,
+                                                                ShareType=ShareType,
+                                                                PathOrToken=PathOrToken,
+                                                                PathMapped=PathMapped,
+                                                                User=User,
+                                                                EnabledByOwner=EnabledByOwner,
+                                                                EnabledByUser=EnabledByUser,
+                                                                HiddenByOwner=HiddenByOwner,
+                                                                HiddenByUser=HiddenByUser,
+                                                                Conversion=Conversion,
+                                                                row=row,
+                                                                )
 
-                    if ShareType is not None and row['ShareType'] != ShareType:
-                        continue
-                    if Conversion is not None and row['Conversion'] != Conversion:
-                        continue
-                    if EnabledByOwner is not None and row['EnabledByOwner'] != EnabledByOwner:
-                        continue
-                    if EnabledByUser is not None and row['EnabledByUser'] != EnabledByUser:
-                        continue
-                    if HiddenByOwner is not None and row['HiddenByOwner'] != HiddenByOwner:
-                        continue
-                    if HiddenByUser is not None and row['HiddenByUser'] != HiddenByUser:
-                        continue
-                    if PathMapped is not None and row['PathMapped'] != PathMapped:
-                        continue
-                    if OwnerOrUser is not None:
-                        if User is not None and OwnerOrUser == User:
-                            pass  # will be checked below
-                        elif row['Owner'] == owner_or_user_without_group:
-                            if PathOrToken is not None and row['PathOrToken'] != PathOrToken:
-                                continue
-                            result.append(row)
-                            continue
-                        elif User is None:
-                            user = OwnerOrUser
-                            pass  # will be checked below
-
-                    group_check = False
-                    if row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP) or row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
-                        group_check = True
-
-                    if User is not None:
-                        user = User
-
-                    if user is not None:
-                        if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
-                            if not user.endswith(row['User']):
-                                continue
-                        elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
-                            if sharing.SHARING_SEPARATOR_GROUP not in user:
-                                continue  # user has no group
-                            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
-                            groups_of_user = user.split(sharing.SHARING_SEPARATOR_GROUP)[1].split(',')
-                            Groups = row['User'].removeprefix(sharing.SHARING_SEPARATOR_GROUP).split(',')
-                            logger.trace("sharing/list/check/groups: groups_of_user=%r Groups=%r", groups_of_user, Groups)
-                            found = False
-                            for group in groups_of_user:
-                                if group in Groups:
-                                    found = True
-                                    break
-                            if found:
-                                pass
-                            else:
-                                continue
-                        elif row['User'] == user:
-                            pass
-                        else:
-                            continue
-                            if group_check and User.endswith(row['User']):
-                                pass
-                            elif row['User'] == user:
-                                pass
-                            else:
-                                continue
-
-                    row_copy = row.copy()
-
-                    if group_check and user is not None:
-                        if row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
-                            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
-                        else:
-                            user_without_group = user
-                        row_copy['PathOrToken'] = row['PathOrToken'].replace("{user}", user_without_group)  # replace placeholder
-                        row_copy['User'] = user_without_group  # replace with real user
-
-                    if PathOrToken is not None and row_copy['PathOrToken'] != PathOrToken:
-                        continue
-
-                    logger.trace("sharing/list/row: add : %r", row_copy)
-                    result.append(row_copy)
+                    if row_match is not None:
+                        logger.trace("sharing/%s/list/row: add : %r", ShareType, row_match)
+                        result.append(row_match)
 
         return result
 

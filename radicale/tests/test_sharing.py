@@ -7028,9 +7028,18 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
+            # verify sharing API/list as owner
+            logging.info("\n*** API list owner")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 2
+
             # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection user1@domain.example")
             path_shared_r_user = path_shared_r.replace("{user}", "user1@domain.example")
+            path_shared2_r_user = path_shared2_r.replace("{user}", "user1@domain.example")
             _, responses = self.propfind(path_shared_r_user, """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -7038,15 +7047,36 @@ permissions: RrWw""")
 </propfind>""", login="user1@domain.example:user1@pw")
             assert path_shared_r_user.replace('@', '%40') in responses
 
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user1@domain.example")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1@domain.example:user1@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 2
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
+
             # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection user2@domain.example")
             path_shared_r_user = path_shared_r.replace("{user}", "user2@domain.example")
+            path_shared2_r_user = path_shared2_r.replace("{user}", "user2@domain.example")
             _, responses = self.propfind(path_shared_r_user, """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
     <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
 </propfind>""", login="user2@domain.example:user2@pw")
             assert path_shared_r_user.replace('@', '%40') in responses
+
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user2@domain.example")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2@domain.example:user2@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 2
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
 
             # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection user1@domain.tld")
@@ -7057,6 +7087,14 @@ permissions: RrWw""")
     <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
 </propfind>""", login="user1@domain.tld:user1@pw", check=404)
 
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user1@domain.tld")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1@domain.tld:user1@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "not-found"
+            assert answer_dict['Lines'] == 0
+
             # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection user2@domain.tld")
             path_shared_r_user = path_shared_r.replace("{user}", "user2@domain.tld")
@@ -7065,6 +7103,14 @@ permissions: RrWw""")
 <propfind xmlns="DAV:">
     <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
 </propfind>""", login="user2@domain.tld:user2@pw", check=404)
+
+            # verify sharing API/list as user2
+            logging.info("\n*** API list user2@domain.tld")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2@domain.tld:user2@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "not-found"
+            assert answer_dict['Lines'] == 0
 
             # verify PROPFIND as user1 in list
             logging.info("\n*** PROPFIND collection DEPTH=1 user1@domain.example")
