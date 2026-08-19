@@ -386,8 +386,13 @@ def path_supports_symlink(path):
     test_dir2 = tempfile.mkdtemp(dir=path)
     os.rmdir(test_dir2)
     try:
+        logger.warning("path_supports_symlink: os.symlink call")
         os.symlink(test_dir1, test_dir2)
+        logger.warning("path_supports_symlink: os.symlink called")
     except PermissionError:
+        result = False
+    except OSError:
+        # Microsoft Windows in case of missing permission "Create symbolic links"
         result = False
     else:
         # cleanup
