@@ -27,8 +27,8 @@ from http import client
 from typing import Any, Sequence, Union
 from urllib.parse import parse_qs
 
-from radicale import (config, httputils, item, pathutils, rights, storage,
-                      types, utils)
+from radicale import (config, group, httputils, item, pathutils, rights,
+                      storage, types, utils)
 from radicale.log import logger
 
 INTERNAL_TYPES: Sequence[str] = ("csv", "files", "none")
@@ -241,6 +241,7 @@ class BaseSharing:
         self.configuration = configuration
         self._rights = rights.load(configuration)
         self._storage = storage.load(configuration)
+        self._group = group.load(configuration)
         self._auth_delay = configuration.get("auth", "delay")
         self._encoding = configuration.get("encoding", "stock")
         self._validate_user_value = configuration.get("server", "validate_user_value")
@@ -461,11 +462,15 @@ class BaseSharing:
         if not self.sharing_collection_by_map:
             logger.trace("sharing/map: not active")
         else:
+            user_lookup = User
+            if User and self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
+                user_lookup = User + SHARING_SEPARATOR_GROUP + ",".join(self._rights._user_groups)
+
             # retrieve collections depending on filter
             sharing_collection_list += self.database_list_sharing(
                 ShareType="map",
-                OwnerOrUser=User,
-                User=User,
+                OwnerOrUser=user_lookup,
+                User=user_lookup,
                 EnabledByOwner=Enabled,
                 EnabledByUser=Enabled,
                 HiddenByOwner=Hidden,
@@ -746,6 +751,9 @@ class BaseSharing:
             # anonymous users are not allowed
             return httputils.NOT_ALLOWED
 
+        if user:
+            self._rights._user_groups = self._group.groups(user)
+
         # supported API version check
         if not path.startswith("/.sharing/v1/"):
             logger.warning(api_info + ": leading part of path not matching supported API version")
@@ -1025,17 +1033,21 @@ class BaseSharing:
             if PathOrToken is not None:
                 logger.trace("" + api_info + ": filter: %r", PathOrToken)
 
+            user_lookup = user
+            if user and self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
+                user_lookup = user + SHARING_SEPARATOR_GROUP + ",".join(self._rights._user_groups)
+
             if ShareType != "all":
                 result_array = self.database_list_sharing(
                         ShareType=ShareType,
-                        OwnerOrUser=user,
+                        OwnerOrUser=user_lookup,
                         PathMapped=PathMapped,
                         PathOrToken=PathOrToken,
                         Conversion=Conversion,
                         )
             else:
                 result_array = self.database_list_sharing(
-                        OwnerOrUser=user,
+                        OwnerOrUser=user_lookup,
                         PathMapped=PathMapped,
                         PathOrToken=PathOrToken,
                         Conversion=Conversion,
