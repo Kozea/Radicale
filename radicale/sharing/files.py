@@ -195,6 +195,9 @@ class Sharing(sharing.BaseSharing):
                 # skip
                 continue
 
+            if OwnerOrUser is not None:
+                owner_or_user_without_group = OwnerOrUser.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+
             path = self._sharing_database_path_ShareType[_ShareType]
             with self._storage.acquire_lock("r", OwnerOrUser, path=path):
                 for entry in os.scandir(path):
@@ -211,6 +214,8 @@ class Sharing(sharing.BaseSharing):
                         continue
 
                     logger.trace("sharing/list/row: test: %r", row)
+
+                    user = None
 
                     if ShareType is not None and row['ShareType'] != ShareType:
                         continue
@@ -229,22 +234,31 @@ class Sharing(sharing.BaseSharing):
                     if OwnerOrUser is not None:
                         if User is not None and OwnerOrUser == User:
                             pass  # will be checked below
-                        elif (row['Owner'] != OwnerOrUser) and (row['User'] != OwnerOrUser):
+                        elif row['Owner'] == owner_or_user_without_group:
+                            if PathOrToken is not None and row['PathOrToken'] != PathOrToken:
+                                continue
+                            result.append(row)
                             continue
+                        elif User is None:
+                            user = OwnerOrUser
+                            pass  # will be checked below
 
                     group_check = False
                     if row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP) or row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
                         group_check = True
 
                     if User is not None:
+                        user = User
+
+                    if user is not None:
                         if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
-                            if not User.endswith(row['User']):
+                            if not user.endswith(row['User']):
                                 continue
                         elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
-                            if sharing.SHARING_SEPARATOR_GROUP not in User:
+                            if sharing.SHARING_SEPARATOR_GROUP not in user:
                                 continue  # user has no group
-                            user_without_group = User.split(sharing.SHARING_SEPARATOR_GROUP)[0]
-                            groups_of_user = User.split(sharing.SHARING_SEPARATOR_GROUP)[1].split(',')
+                            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+                            groups_of_user = user.split(sharing.SHARING_SEPARATOR_GROUP)[1].split(',')
                             Groups = row['User'].removeprefix(sharing.SHARING_SEPARATOR_GROUP).split(',')
                             logger.trace("sharing/list/check/groups: groups_of_user=%r Groups=%r", groups_of_user, Groups)
                             found = False
@@ -256,24 +270,24 @@ class Sharing(sharing.BaseSharing):
                                 pass
                             else:
                                 continue
-                        elif row['User'] == User:
+                        elif row['User'] == user:
                             pass
                         else:
                             continue
                             if group_check and User.endswith(row['User']):
                                 pass
-                            elif row['User'] == User:
+                            elif row['User'] == user:
                                 pass
                             else:
                                 continue
 
                     row_copy = row.copy()
 
-                    if group_check and User is not None:
+                    if group_check and user is not None:
                         if row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
-                            user_without_group = User.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+                            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
                         else:
-                            user_without_group = User
+                            user_without_group = user
                         row_copy['PathOrToken'] = row['PathOrToken'].replace("{user}", user_without_group)  # replace placeholder
                         row_copy['User'] = user_without_group  # replace with real user
 
