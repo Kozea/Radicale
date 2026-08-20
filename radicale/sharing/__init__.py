@@ -1520,7 +1520,15 @@ class BaseSharing:
 
             share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
             if share is None:
-                return httputils.NOT_FOUND
+                # retry with user (resolving group shares)
+                logger.trace(api_info + ": no share found, retry with user to resolve shared-by-group/realm")
+                share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=user, OnlyEnabled=False)
+                if share is None:
+                    return httputils.NOT_FOUND
+                else:
+                    # update not supported on shared-by-group/realm
+                    logger.warning(api_info + ": %r by user %r not supported for shared-by-group/realm", PathOrToken, user)
+                    return httputils.NOT_ALLOWED
 
             Enabled = None
             Hidden = None
