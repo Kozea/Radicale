@@ -74,7 +74,7 @@ def database_common_check_row_match(
 
     if user is not None:
         if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
-            if not user.endswith(row['User']):
+            if not user.split(':')[0].endswith(row['User']):
                 return None
         elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
             if sharing.SHARING_SEPARATOR_GROUP not in user:
@@ -100,7 +100,9 @@ def database_common_check_row_match(
     row_copy = row.copy()
 
     if group_check and user is not None:
-        if row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
+        if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
+            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+        elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
             user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
         else:
             user_without_group = user
