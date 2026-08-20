@@ -40,6 +40,10 @@ Permissions:
   - E: enable enforce properties overlay in case enforce_properties_overlay=False (>= 3.7.0)
   - e: disable enforce of properties overlay in case enforce_properties_overlay=True (>= 3.7.0)
 
+Permissions flags (automatically set by server):
+  - u: flag for group share with user placeholder (>= 3.8.0)
+  - U: flag for resolved group share with user (>= 3.8.0)
+
 Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """

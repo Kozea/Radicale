@@ -1226,7 +1226,7 @@ class BaseSharing:
                     if rights.intersect(Permissions, "EP"):
                         logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
                         return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
-                    Permissions = rights.add(Permissions, "ep")  # enforce permissions for group
+                    Permissions = rights.add(Permissions, "epu")  # enforce permissions for group including flag
 
                 logger.trace("" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
 
@@ -1354,7 +1354,7 @@ class BaseSharing:
                     if rights.intersect(Permissions, "EP"):
                         logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
                         return httputils.bad_request("Permissions are not supported for share-by-group/realm: %r" % Permissions)
-                    Permissions = rights.add(Permissions, "ep")  # enforce permissions for group
+                    Permissions = rights.add(Permissions, "epu")  # enforce permissions for group
 
             if user == share['Owner']:
                 if PathMapped is not None:

@@ -16,7 +16,7 @@
 
 from typing import Union
 
-from radicale import sharing
+from radicale import rights, sharing
 from radicale.log import logger
 
 
@@ -106,6 +106,7 @@ def database_common_check_row_match(
             user_without_group = user
         row_copy['PathOrToken'] = row['PathOrToken'].replace("{user}", user_without_group)  # replace placeholder
         row_copy['User'] = user_without_group  # replace with real user
+        row_copy['Permissions'] = rights.add(rights.remove(row_copy['Permissions'], "u"), "U")  # replace flag for resolved group
 
     if PathOrToken is not None and row_copy['PathOrToken'] != PathOrToken:
         return None

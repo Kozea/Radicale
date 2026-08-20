@@ -433,6 +433,12 @@ List shares (optional with filter) either owned or assigned as user.
 | PathMapped | str | optional |
 
  * Output: text/plain|text/csv|application/json
+   * shared-by-group/realm entries:
+       * Permissions are enriched for shared-by-group/realm entries:
+         * `u` for share with placeholder (owner view)
+         * `U` for share with resolved placeholder (user view)
+       * PathOrToken with replaced placeholder (user view)
+       * User with real user (user view)
 
  * Examples
 
