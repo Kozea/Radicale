@@ -39,7 +39,7 @@ PATH_PATTERN_STRICT: str = USER_PATTERN_STRICT + "\\/~"  # / as separator
 USER_PATTERN_STRICT_RE: str = "^[" + USER_PATTERN_STRICT + "]+$"
 PATH_PATTERN_STRICT_RE: str = "^[" + PATH_PATTERN_STRICT + "]+$"
 
-USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?']
+USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?', ',']
 PATH_BLACKLIST_MINIMAL: list = USER_BLACKLIST_MINIMAL
 
 BASE_WHITELIST_UNICODE: list = ["-", ".", "@", "_", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]

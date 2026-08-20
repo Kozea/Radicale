@@ -7028,6 +7028,14 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
+            # update map with invalid user
+            logging.info("\n*** update map @domain,@domain2/owner:r -> 400")
+            json_dict = {}
+            json_dict['User'] = "@domain.example,@domain.tld"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
             # verify sharing API/list as owner
             logging.info("\n*** API list owner")
             json_dict = {}
