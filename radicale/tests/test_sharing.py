@@ -7491,7 +7491,7 @@ permissions: RrWw""")
             logging.info("\n*** MOVE item shared1 to shared3 as user1")
             item_shared1_r_user = path_shared1_r.replace("{user}", "user1") + "event1.ics"
             item_shared3_r_user = path_shared3_r.replace("{user}", "user1") + "event1.ics"
-            self.request("MOVE", item_shared1_r_user, login="user1:user1pw", HTTP_DESTINATION="http://127.0.0.1"+item_shared3_r_user)
+            self.request("MOVE", item_shared1_r_user, login="user1:user1pw", HTTP_DESTINATION="http://127.0.0.1"+item_shared3_r_user, check=201)
 
             # get item as user2 -> 200
             logging.info("\n*** GET from shared3 as user2")
