@@ -40,7 +40,8 @@ Types of supported sharing configuration:
  * `Conversion`: conversion method
  * `Owner`: owner of the share
  * `User`: user (or group, _>= 3.8.0_) of the share
-   * share-by-group/realm: has to start with `:` or `@` (_>= 3.8.0_)
+   * share-by-group: has to start with `:` (separated by ',') (_>= 3.8.0_)
+   * share-by-realm: has to start with `@` (only one supported) (_>= 3.8.0_)
  * `Permissions`: effective permission of the share
  * `EnabledByOwner`: control by owner
  * `EnabledByUser`: control by user
