@@ -68,6 +68,9 @@ class TestSharingApiSanity(BaseTest):
                    "group12:user1 user2",
                    "group13:user1 user3",
                    "group23:user2 user3",
+                   "group101:user1@domain.example",
+                   "group102:user2@domain.example",
+                   "group112:user1@domain.example user2@domain.example",
                    ]
         htpasswd_content = "\n".join(htpasswd)
         htgroup_content = "\n".join(htgroup)
@@ -7099,6 +7102,13 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_shared_r_user
             _, headers, answer = self._sharing_api_json("map", "disable", check=403, login="user1@domain.example:user1@pw", json_dict=json_dict)
 
+            # verify sharing API/update as user1
+            logging.info("\n*** disable map @domain/user1 via 'update' -> 403")
+            json_dict = {}
+            json_dict['Enabled'] = False
+            json_dict['PathOrToken'] = path_shared_r_user
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user1@domain.example:user1@pw", json_dict=json_dict)
+
             # adjust permissions
             logging.info("\n*** update map @domain/owner:rw -> 200")
             json_dict = {}
@@ -7356,6 +7366,19 @@ permissions: RrWw""")
             assert answer_dict['Content'][0]['PathOrToken'] in [path_shared1_r_user, path_shared3_r_user]
             assert answer_dict['Content'][1]['PathOrToken'] in [path_shared3_r_user, path_shared1_r_user]
 
+            # verify sharing API/disable as user1
+            logging.info("\n*** disable map user1 -> 403")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared1_r_user
+            _, headers, answer = self._sharing_api_json("map", "disable", check=403, login="user1:user1pw", json_dict=json_dict)
+
+            # verify sharing API/update as user1
+            logging.info("\n*** disable map user1 using 'update' -> 403")
+            json_dict = {}
+            json_dict['Enabled'] = False
+            json_dict['PathOrToken'] = path_shared1_r_user
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="user1:user1pw", json_dict=json_dict)
+
             # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection DEPTH=1 user2")
             path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2")
@@ -7489,3 +7512,243 @@ permissions: RrWw""")
             logging.info("\n*** PROPPATCH shared3 as user1 -> 403")
             path_shared3_r_user = path_shared3_r.replace("{user}", "user1")
             self._proppatch_calendar_color(path_shared3_r_user, login="user1:user1pw", color="#FFFFFF", check=403)
+
+    def test_sharing_api_map_user_group_by_local_with_realm(self) -> None:
+        """share-by-map API usage tests related user group by local with realm."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "False",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped1 = "/owner/calendarUGBLR1-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendarUGBLR2-" + db_type + ".ics/"
+            path_mapped3 = "/owner/calendarUGBLR3-" + db_type + ".ics/"
+            path_mapped4 = "/owner/calendarUGBLR4-" + db_type + ".ics/"
+            path_shared1_r = "/{user}/calendarUGBLR1-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared2_r = "/{user}/calendarUGBLR2-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared3_r = "/{user}/calendarUGBLR3-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared4_r = "/{user}/calendarUGBLR4-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_r_base = "/{user}/"
+            self.mkcalendar(path_mapped1, login="owner:ownerpw")
+            self.mkcalendar(path_mapped2, login="owner:ownerpw")
+            self.mkcalendar(path_mapped3, login="owner:ownerpw")
+            self.mkcalendar(path_mapped4, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map :group101/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group101"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map :group102/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group102"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map :group101,group102/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group101,group102"
+            json_dict['PathMapped'] = path_mapped3
+            json_dict['PathOrToken'] = path_shared3_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map @domain.example/owner -> success")
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped4
+            json_dict['PathOrToken'] = path_shared4_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # verify sharing API/list as owner
+            logging.info("\n*** API list owner")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 4
+
+            # verify PROPFIND as user1
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1@domain.example")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1@domain.example")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            path_shared2_r_user = path_shared2_r.replace("{user}", "user1@domain.example")
+            path_shared3_r_user = path_shared3_r.replace("{user}", "user1@domain.example")
+            path_shared4_r_user = path_shared4_r.replace("{user}", "user1@domain.example")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.example:user1@pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user.replace('@', '%40') in responses
+            assert path_shared1_r_user.replace('@', '%40') in responses
+            assert path_shared2_r_user.replace('@', '%40') not in responses
+            assert path_shared3_r_user.replace('@', '%40') in responses
+            assert path_shared4_r_user.replace('@', '%40') in responses
+
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user1")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1@domain.example:user1@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 3
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared1_r_user, path_shared3_r_user, path_shared4_r_user]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared3_r_user, path_shared1_r_user, path_shared4_r_user]
+            assert answer_dict['Content'][2]['PathOrToken'] in [path_shared3_r_user, path_shared1_r_user, path_shared4_r_user]
+
+            # verify PROPFIND as user2
+            logging.info("\n*** PROPFIND collection DEPTH=1 user2")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2@domain.example")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user2@domain.example")
+            path_shared2_r_user = path_shared2_r.replace("{user}", "user2@domain.example")
+            path_shared3_r_user = path_shared3_r.replace("{user}", "user2@domain.example")
+            path_shared4_r_user = path_shared4_r.replace("{user}", "user2@domain.example")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user2@domain.example:user2@pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user.replace('@', '%40') in responses
+            assert path_shared1_r_user.replace('@', '%40') not in responses
+            assert path_shared2_r_user.replace('@', '%40') in responses
+            assert path_shared3_r_user.replace('@', '%40') in responses
+            assert path_shared4_r_user.replace('@', '%40') in responses
+
+            # verify sharing API/list as user2
+            logging.info("\n*** API list user2")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2@domain.example:user2@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 3
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared2_r_user, path_shared3_r_user, path_shared4_r_user]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared3_r_user, path_shared2_r_user, path_shared4_r_user]
+            assert answer_dict['Content'][2]['PathOrToken'] in [path_shared3_r_user, path_shared2_r_user, path_shared4_r_user]
+
+            # try upload item as user1 -> fail (w permission missing)
+            logging.info("\n*** PUT to shared1 as user1 -> 403")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            event = get_file_content("event1.ics")
+            self.put(path_shared1_r_user, event, login="user1@domain.example:user1@pw", check=403)
+
+            # update permissions
+            logging.info("\n*** update map :group101/owner -> success")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map @domain.example/owner -> success")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped3
+            json_dict['PathOrToken'] = path_shared3_r
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # upload item as user1 -> success
+            logging.info("\n*** PUT to shared1 as user1 -> 201")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            event = get_file_content("event1.ics")
+            self.put(path_shared1_r_user, event, login="user1@domain.example:user1@pw")
+
+            # propfind as user1 -> success
+            logging.info("\n*** PROPFIND collection user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            _, responses = self.propfind(path_shared1_r_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.example:user1@pw")
+            assert path_shared1_r_user.replace('@', '%40') in responses
+
+            # report as user1 -> success
+            logging.info("\n*** REPORT collection user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example") + "event1.ics"
+            _, responses = self.report(path_shared1_r_user, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", login="user1@domain.example:user1@pw")
+            assert item_shared1_r_user.replace('@', '%40') in responses
+
+            # report as user2 -> success
+            logging.info("\n*** REPORT collection user2")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user2@domain.example")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user2@domain.example") + "event1.ics"
+            _, responses = self.report(path_shared1_r_user, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", login="user2@domain.example:user2@pw", check=404)
+
+            # get item as user1 -> success
+            logging.info("\n*** GET from shared1 as user1")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example") + "event1.ics"
+            self.get(item_shared1_r_user, login="user1@domain.example:user1@pw")
+
+            # get item as user2 -> 404
+            logging.info("\n*** GET from shared3 as user2")
+            item_shared3_r_user = path_shared1_r.replace("{user}", "user2@domain.example") + "event1.ics"
+            self.get(item_shared3_r_user, login="user2@domain.example:user2@pw", check=404)
+
+            # move item as user1 -> success
+            logging.info("\n*** MOVE item shared1 to shared3 as user1")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example") + "event1.ics"
+            item_shared3_r_user = path_shared3_r.replace("{user}", "user1@domain.example") + "event1.ics"
+            self.request("MOVE", item_shared1_r_user, login="user1@domain.example:user1@pw", HTTP_DESTINATION="http://127.0.0.1"+item_shared3_r_user, check=201)
+
+            # get item as user2 -> 200
+            logging.info("\n*** GET from shared3 as user2")
+            item_shared3_r_user = path_shared3_r.replace("{user}", "user2@domain.example") + "event1.ics"
+            self.get(item_shared3_r_user, login="user2@domain.example:user2@pw")
+
+            # delete item as user1 -> 404
+            logging.info("\n*** DELETE from shared1 as user1 -> 404")
+            item_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example") + "event1.ics"
+            self.delete(item_shared1_r_user, login="user1@domain.example:user1@pw", check=404)
+
+            # delete item as user1
+            logging.info("\n*** DELETE from shared3 as user1 -> 200")
+            item_shared3_r_user = path_shared3_r.replace("{user}", "user1@domain.example") + "event1.ics"
+            self.delete(item_shared3_r_user, login="user1@domain.example:user1@pw")
