@@ -111,6 +111,7 @@ class Sharing(sharing.BaseSharing):
                 break
 
         if found:
+            logger.trace("sharing/get/hit : %r", row)
             Hidden: bool = (row['HiddenByOwner'] or row['HiddenByUser'])
             Properties: Union[dict, None] = None
             Conversion: Union[str, None] = None

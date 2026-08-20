@@ -1507,7 +1507,7 @@ class BaseSharing:
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
-            logger.trace("sharing/API/POST/" + action)
+            logger.trace(api_info)
 
             if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)

@@ -7007,7 +7007,7 @@ permissions: RrWw""")
             self.mkcalendar(path_mapped2, login="owner:ownerpw")
 
             # create map
-            logging.info("\n*** create map @domain/owner:rP -> success")
+            logging.info("\n*** create map @domain/owner:r -> success")
             json_dict = {}
             json_dict['User'] = "@domain.example"
             json_dict['PathMapped'] = path_mapped
@@ -7018,7 +7018,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # create map
-            logging.info("\n*** create map @domain/owner:rP -> success")
+            logging.info("\n*** create map @domain/owner:r -> success")
             json_dict = {}
             json_dict['User'] = "@domain.example"
             json_dict['PathMapped'] = path_mapped2
@@ -7126,7 +7126,7 @@ permissions: RrWw""")
 </propfind>""", login="user2@domain.example:user2@pw")
             assert path_shared_r_user.replace('@', '%40') in responses
 
-            # verify sharing API/list as user1
+            # verify sharing API/list as user2
             logging.info("\n*** API list user2@domain.example")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2@domain.example:user2@pw", json_dict=json_dict)
