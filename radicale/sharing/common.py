@@ -16,11 +16,12 @@
 
 from typing import Union
 
-from radicale import sharing
+from radicale import rights, sharing
 from radicale.log import logger
 
 
 def database_common_check_row_match(
+                                      row: dict,
                                       OwnerOrUser: Union[str, None] = None,
                                       ShareType: Union[str, None] = None,
                                       PathOrToken: Union[str, None] = None,
@@ -31,12 +32,8 @@ def database_common_check_row_match(
                                       HiddenByOwner: Union[bool, None] = None,
                                       HiddenByUser: Union[bool, None] = None,
                                       Conversion: Union[str, None] = None,
-                                      row: Union[dict, None] = None,
                                       ) -> Union[dict, None]:
     """Returns given row if matching conditions."""
-
-    if row is None:
-        return None
 
     if OwnerOrUser is not None:
         owner_or_user_without_group = OwnerOrUser.split(sharing.SHARING_SEPARATOR_GROUP)[0]
@@ -109,6 +106,7 @@ def database_common_check_row_match(
             user_without_group = user
         row_copy['PathOrToken'] = row['PathOrToken'].replace("{user}", user_without_group)  # replace placeholder
         row_copy['User'] = user_without_group  # replace with real user
+        row_copy['Permissions'] = rights.add(rights.remove(row_copy['Permissions'], "u"), "U")  # replace flag for resolved group
 
     if PathOrToken is not None and row_copy['PathOrToken'] != PathOrToken:
         return None

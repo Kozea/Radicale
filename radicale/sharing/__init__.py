@@ -1226,7 +1226,7 @@ class BaseSharing:
                     if rights.intersect(Permissions, "EP"):
                         logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
                         return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
-                    Permissions = rights.add(Permissions, "ep")  # enforce permissions for group
+                    Permissions = rights.add(Permissions, "epu")  # enforce permissions for group including flag
 
                 logger.trace("" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
 
@@ -1354,7 +1354,7 @@ class BaseSharing:
                     if rights.intersect(Permissions, "EP"):
                         logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
                         return httputils.bad_request("Permissions are not supported for share-by-group/realm: %r" % Permissions)
-                    Permissions = rights.add(Permissions, "ep")  # enforce permissions for group
+                    Permissions = rights.add(Permissions, "epu")  # enforce permissions for group
 
             if user == share['Owner']:
                 if PathMapped is not None:
@@ -1507,7 +1507,7 @@ class BaseSharing:
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
-            logger.trace("sharing/API/POST/" + action)
+            logger.trace(api_info)
 
             if ShareType not in SHARE_TYPES_V1:
                 logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
@@ -1520,7 +1520,15 @@ class BaseSharing:
 
             share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
             if share is None:
-                return httputils.NOT_FOUND
+                # retry with user (resolving group shares)
+                logger.trace(api_info + ": no share found, retry with user to resolve shared-by-group/realm")
+                share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=user, OnlyEnabled=False)
+                if share is None:
+                    return httputils.NOT_FOUND
+                else:
+                    # update not supported on shared-by-group/realm
+                    logger.warning(api_info + ": %r by user %r not supported for shared-by-group/realm", PathOrToken, user)
+                    return httputils.NOT_ALLOWED
 
             Enabled = None
             Hidden = None

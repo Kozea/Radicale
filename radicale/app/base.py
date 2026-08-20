@@ -39,7 +39,7 @@ PATH_PATTERN_STRICT: str = USER_PATTERN_STRICT + "\\/~"  # / as separator
 USER_PATTERN_STRICT_RE: str = "^[" + USER_PATTERN_STRICT + "]+$"
 PATH_PATTERN_STRICT_RE: str = "^[" + PATH_PATTERN_STRICT + "]+$"
 
-USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?']
+USER_BLACKLIST_MINIMAL: list = [":", "'", '"', '*', '?', ',']
 PATH_BLACKLIST_MINIMAL: list = USER_BLACKLIST_MINIMAL
 
 BASE_WHITELIST_UNICODE: list = ["-", ".", "@", "_", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
@@ -96,9 +96,6 @@ def _check_user_format(self: storage.BaseStorage,
         if enforceUser:
             # group/realm identifiers
             return False
-        else:
-            # strip 1st char
-            user = user[1:]
     if enforceUser:
         if user.count(sharing.SHARING_SEPARATOR_GROUP) > 0:
             # not allowed (avoid injecting a group)
@@ -109,6 +106,27 @@ def _check_user_format(self: storage.BaseStorage,
     if (user.endswith(sharing.SHARING_SEPARATOR_GROUP) or user.endswith(sharing.SHARING_SEPARATOR_REALM)):
         # group/realm identifiers
         return False
+    if user.startswith(sharing.SHARING_SEPARATOR_GROUP):
+        # strip 1st char
+        user = user[1:]
+        for user_group in user.split(','):
+            logger.trace("_check_user_format investigate group %r", user_group)
+            if validation_type == "strict":
+                if re.search(USER_PATTERN_STRICT_RE, user_group) is None:
+                    return False
+            else:
+                if not _check_format(self,
+                                     user_group,
+                                     USER_BLACKLIST_MINIMAL,
+                                     USER_WHITELIST_UNICODE,
+                                     validation_type,
+                                     ):
+                    return False
+        # all passed
+        return True
+    else:
+        pass
+
     if validation_type == "strict":
         return (re.search(USER_PATTERN_STRICT_RE, user) is not None)
     else:

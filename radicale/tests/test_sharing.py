@@ -7007,7 +7007,7 @@ permissions: RrWw""")
             self.mkcalendar(path_mapped2, login="owner:ownerpw")
 
             # create map
-            logging.info("\n*** create map @domain/owner:rP -> success")
+            logging.info("\n*** create map @domain/owner:r -> success")
             json_dict = {}
             json_dict['User'] = "@domain.example"
             json_dict['PathMapped'] = path_mapped
@@ -7018,7 +7018,7 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # create map
-            logging.info("\n*** create map @domain/owner:rP -> success")
+            logging.info("\n*** create map @domain/owner:r -> success")
             json_dict = {}
             json_dict['User'] = "@domain.example"
             json_dict['PathMapped'] = path_mapped2
@@ -7028,6 +7028,31 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
 
+            # update map with invalid user
+            logging.info("\n*** update map @domain,@domain2/owner:r -> 400")
+            json_dict = {}
+            json_dict['User'] = "@domain.example,@domain.tld"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            # update map with flag permissions
+            logging.info("\n*** update map @domain/owner:ru -> 400")
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            json_dict['Permissions'] = "ru"
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map @domain/owner:rU -> 400")
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            json_dict['Permissions'] = "rU"
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
             # verify sharing API/list as owner
             logging.info("\n*** API list owner")
             json_dict = {}
@@ -7035,6 +7060,11 @@ permissions: RrWw""")
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] != "not-found"
             assert answer_dict['Lines'] == 2
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared_r, path_shared2_r]
+            assert answer_dict['Content'][1]['PathOrToken'] in [path_shared_r, path_shared2_r]
+            for permission in ["e", "p", "u", "r"]:
+                assert permission in answer_dict['Content'][0]['Permissions']
+                assert permission in answer_dict['Content'][1]['Permissions']
 
             # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection user1@domain.example")
@@ -7056,6 +7086,34 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 2
             assert answer_dict['Content'][0]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
             assert answer_dict['Content'][1]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
+            for permission in ["e", "p", "U", "r"]:
+                assert permission in answer_dict['Content'][0]['Permissions']
+                assert permission in answer_dict['Content'][1]['Permissions']
+            for permission in ["u", "w"]:
+                assert permission not in answer_dict['Content'][0]['Permissions']
+                assert permission not in answer_dict['Content'][1]['Permissions']
+
+            # verify sharing API/disable as user1
+            logging.info("\n*** disable map @domain/user1 -> 403")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared_r_user
+            _, headers, answer = self._sharing_api_json("map", "disable", check=403, login="user1@domain.example:user1@pw", json_dict=json_dict)
+
+            # adjust permissions
+            logging.info("\n*** update map @domain/owner:rw -> 200")
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared2_r
+            json_dict['Permissions'] = "rw"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection user2@domain.example")
@@ -7068,7 +7126,7 @@ permissions: RrWw""")
 </propfind>""", login="user2@domain.example:user2@pw")
             assert path_shared_r_user.replace('@', '%40') in responses
 
-            # verify sharing API/list as user1
+            # verify sharing API/list as user2
             logging.info("\n*** API list user2@domain.example")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2@domain.example:user2@pw", json_dict=json_dict)
@@ -7077,6 +7135,12 @@ permissions: RrWw""")
             assert answer_dict['Lines'] == 2
             assert answer_dict['Content'][0]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
             assert answer_dict['Content'][1]['PathOrToken'] in [path_shared_r_user, path_shared2_r_user]
+            for permission in ["e", "p", "U", "r", "w"]:
+                assert permission in answer_dict['Content'][0]['Permissions']
+                assert permission in answer_dict['Content'][1]['Permissions']
+            for permission in ["u"]:
+                assert permission not in answer_dict['Content'][0]['Permissions']
+                assert permission not in answer_dict['Content'][1]['Permissions']
 
             # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection user1@domain.tld")
