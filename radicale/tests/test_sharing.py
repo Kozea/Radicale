@@ -6977,8 +6977,8 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
 
-    def test_sharing_api_map_user_group_by_domain(self) -> None:
-        """share-by-map API usage tests related user group by domain."""
+    def test_sharing_api_map_user_group_by_realm(self) -> None:
+        """share-by-map API usage tests related user group by realm."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
