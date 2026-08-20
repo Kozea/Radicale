@@ -214,6 +214,7 @@ class Sharing(sharing.BaseSharing):
                     logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
 
                     row_match = common.database_common_check_row_match(
+                                                                row=row,
                                                                 OwnerOrUser=OwnerOrUser,
                                                                 ShareType=ShareType,
                                                                 PathOrToken=PathOrToken,
@@ -224,7 +225,6 @@ class Sharing(sharing.BaseSharing):
                                                                 HiddenByOwner=HiddenByOwner,
                                                                 HiddenByUser=HiddenByUser,
                                                                 Conversion=Conversion,
-                                                                row=row,
                                                                 )
 
                     if row_match is not None:

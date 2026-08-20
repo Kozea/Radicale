@@ -21,6 +21,7 @@ from radicale.log import logger
 
 
 def database_common_check_row_match(
+                                      row: dict,
                                       OwnerOrUser: Union[str, None] = None,
                                       ShareType: Union[str, None] = None,
                                       PathOrToken: Union[str, None] = None,
@@ -31,12 +32,8 @@ def database_common_check_row_match(
                                       HiddenByOwner: Union[bool, None] = None,
                                       HiddenByUser: Union[bool, None] = None,
                                       Conversion: Union[str, None] = None,
-                                      row: Union[dict, None] = None,
                                       ) -> Union[dict, None]:
     """Returns given row if matching conditions."""
-
-    if row is None:
-        return None
 
     if OwnerOrUser is not None:
         owner_or_user_without_group = OwnerOrUser.split(sharing.SHARING_SEPARATOR_GROUP)[0]
