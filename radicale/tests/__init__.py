@@ -245,7 +245,7 @@ class BaseTest:
             return status, {}
         assert answer is not None
         responses = self.parse_responses(answer)
-        assert len(responses) == 1 and path in responses
+        assert len(responses) == 1 and path.replace('@', '%40') in responses
         return status, responses
 
     def mkcalendar(self, path: str, data: Optional[str] = None,
