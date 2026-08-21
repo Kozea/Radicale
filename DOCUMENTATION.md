@@ -2119,6 +2119,16 @@ _(>= 3.5.5)_
 
 Password to authenticate with SMTP server.
 Leave empty to disable authentication (e.g. using local mail server).
+Prefer `smtp_password_file` when deploying with a secrets manager.
+
+Default: (unset)
+
+##### smtp_password_file
+
+_(>= 3.5.11)_
+
+Path of a file containing the SMTP server password (for example `/run/secrets/smtp_password`).
+When set, the file contents are used instead of `smtp_password` (trailing newlines are stripped).
 
 Default: (unset)
 

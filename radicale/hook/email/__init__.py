@@ -61,6 +61,10 @@ PLUGIN_CONFIG_SCHEMA = {
             "value": "",
             "type": str
         },
+        "smtp_password_file": {
+            "value": "",
+            "type": str
+        },
         "from_email": {
             "value": "",
             "type": str
@@ -914,13 +918,18 @@ def _read_event(vobject_data: str) -> EmailEvent:
 class Hook(BaseHook):
     def __init__(self, configuration):
         super().__init__(configuration)
+        smtp_password = self.configuration.get("hook", "smtp_password")
+        smtp_password_file = self.configuration.get("hook", "smtp_password_file")
+        if smtp_password_file:
+            with open(smtp_password_file, "r", encoding="utf-8") as file:
+                smtp_password = file.read().rstrip("\n")
         self.email_config = EmailConfig(
             host=self.configuration.get("hook", "smtp_server"),
             port=self.configuration.get("hook", "smtp_port"),
             security=self.configuration.get("hook", "smtp_security"),
             ssl_verify_mode=self.configuration.get("hook", "smtp_ssl_verify_mode"),
             username=self.configuration.get("hook", "smtp_username"),
-            password=self.configuration.get("hook", "smtp_password"),
+            password=smtp_password,
             from_email=self.configuration.get("hook", "from_email"),
             send_mass_emails=self.configuration.get("hook", "mass_email"),
             dryrun=self.configuration.get("hook", "dryrun"),

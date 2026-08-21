@@ -509,6 +509,7 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 #smtp_ssl_verify_mode = REQUIRED
 #smtp_username =
 #smtp_password =
+#smtp_password_file = /run/secrets/smtp_password
 #from_email =
 #mass_email = False
 #new_or_added_to_event_template =
