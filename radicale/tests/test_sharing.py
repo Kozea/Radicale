@@ -7752,3 +7752,144 @@ permissions: RrWw""")
             logging.info("\n*** DELETE from shared3 as user1 -> 200")
             item_shared3_r_user = path_shared3_r.replace("{user}", "user1@domain.example") + "event1.ics"
             self.delete(item_shared3_r_user, login="user1@domain.example:user1@pw")
+
+    def test_sharing_api_map_overlap_user_group_by_local_with_realm(self) -> None:
+        """share-by-map API usage tests related user group by local with realm and overlap."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "False",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped1 = "/owner/calendarUGBLRO1-" + db_type + ".ics/"
+            path_shared1_r = "/{user}/calendarUGBLRO1-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared1u_r = "/user1@domain.example/calendarUGBLRO1-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_r_base = "/{user}/"
+            self.mkcalendar(path_mapped1, login="owner:ownerpw")
+
+            # verify PROPFIND collection as owner
+            logging.info("\n*** PROPFIND collection owner")
+            privileges_list = self._propfind_privileges(path_mapped1, login="owner:ownerpw")
+            logging.debug("response: %r", privileges_list)
+            assert "D:read" in privileges_list
+            assert "D:write-content" in privileges_list
+            assert "D:write-properties" in privileges_list
+            assert "D:write" in privileges_list
+            assert "D:all" in privileges_list
+
+            # create map
+            logging.info("\n*** create map :group101/owner -> success")
+            json_dict = {}
+            json_dict['User'] = ":group101"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1_r
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1@domain.example:user1@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared1_r_user]
+            assert "w" not in answer_dict['Content'][0]['Permissions']
+            assert "U" in answer_dict['Content'][0]['Permissions']
+
+            # verify PROPFIND list as user1
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1@domain.example")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1@domain.example")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.example:user1@pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user.replace('@', '%40') in responses
+            assert path_shared1_r_user.replace('@', '%40') in responses
+
+            # verify PROPFIND collection as user1
+            logging.info("\n*** PROPFIND collection user1@domain.example")
+            privileges_list = self._propfind_privileges(path_shared1_r_user, login="user1@domain.example:user1@pw")
+            logging.debug("response: %r", privileges_list)
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
+
+            # create map
+            logging.info("\n*** create map user1@domain.example/owner -> success")
+            json_dict = {}
+            json_dict['User'] = "user1@domain.example"
+            json_dict['PathMapped'] = path_mapped1
+            json_dict['PathOrToken'] = path_shared1u_r
+            json_dict['Permissions'] = "rw"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            # accept map
+            logging.info("\n*** accept map user1@domain.example/owner -> success")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared1u_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user1@domain.example:user1@pw", json_dict=json_dict)
+
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared1u_r
+            _, headers, answer = self._sharing_api_json("map", "unhide", check=200, login="user1@domain.example:user1@pw", json_dict=json_dict)
+
+            # verify sharing API/list as user1
+            logging.info("\n*** API list user1 (overwritten)")
+            json_dict = {}
+            _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1@domain.example:user1@pw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] != "not-found"
+            assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['PathOrToken'] in [path_shared1u_r]
+            assert "w" in answer_dict['Content'][0]['Permissions']
+            assert "U" not in answer_dict['Content'][0]['Permissions']
+
+            # verify PROPFIND list as user1
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1@domain.example")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1@domain.example")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1@domain.example")
+            _, responses = self.propfind(path_shared_r_base_user, """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
+</propfind>""", login="user1@domain.example:user1@pw", HTTP_DEPTH="1")
+            assert path_shared_r_base_user.replace('@', '%40') in responses
+            assert path_shared1_r_user.replace('@', '%40') in responses
+
+            # verify PROPFIND collection as user1
+            logging.info("\n*** PROPFIND collection user1@domain.example")
+            privileges_list = self._propfind_privileges(path_shared1_r_user, login="user1@domain.example:user1@pw")
+            logging.debug("response: %r", privileges_list)
+            assert "D:read" in privileges_list
+            assert "D:write-content" in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
