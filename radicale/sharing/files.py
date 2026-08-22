@@ -133,7 +133,7 @@ class Sharing(sharing.BaseSharing):
             if version != DB_VERSION:
                 return {"status": "error"}
 
-            if User is not None and row['User'] != User:
+            if User is not None and row['User'] != User.split(sharing.SHARING_SEPARATOR_GROUP)[0]:
                 return None
             elif OnlyEnabled is True and row['EnabledByOwner'] is not True:
                 return None
