@@ -7893,3 +7893,121 @@ permissions: RrWw""")
             assert "D:write-properties" not in privileges_list
             assert "D:write" not in privileges_list
             assert "D:all" not in privileges_list
+
+    def test_sharing_api_map_collissions(self) -> None:
+        """share-by-map API usage tests related to collissions."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "False",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped_o1 = "/owner1/calendarO1-" + db_type + ".ics/"
+            path_mapped_o2 = "/owner2/calendarO2-" + db_type + ".ics/"
+            path_shared_ug = "/{user}/calendarO-shared-by-owner-" + db_type + ".ics/"
+            path_shared_u1 = "/user1/calendarO-shared-by-owner-" + db_type + ".ics/"
+            path_shared_r_base = "/{user}/"
+            self.mkcalendar(path_mapped_o1, login="owner1:owner1pw")
+            self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
+
+            # verify PROPFIND collection as owner*
+            logging.info("\n*** PROPFIND collection owner1")
+            privileges_list = self._propfind_privileges(path_mapped_o1, login="owner1:owner1pw")
+
+            logging.info("\n*** PROPFIND collection owner2")
+            privileges_list = self._propfind_privileges(path_mapped_o2, login="owner2:owner2pw")
+
+            # create direct maps with placeholder
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_mapped_o1
+            json_dict['PathOrToken'] = path_shared_ug
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+
+            logging.info("\n*** create map with placeholder user1/owner1 -> 403")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            # create shared-by-realm maps without placeholder
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathOrToken'] = path_shared_u1
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+
+            logging.info("\n*** create map without placeholder :group101/owner1 -> 200")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            # create direct maps
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathOrToken'] = path_shared_u1
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+
+            logging.info("\n*** create map user1/owner -> 404")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner1 -> 200")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map user1/owner2 -> 409")
+            json_dict['PathMapped'] = path_mapped_o2
+            _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner2:owner2pw", json_dict=json_dict)
+
+            # create shared-by-realm maps with placeholder
+            json_dict = {}
+            json_dict['User'] = "@domain.example"
+            json_dict['PathOrToken'] = path_shared_ug
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+
+            logging.info("\n*** create map :group101/owner1 -> 200")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            json_dict['PathMapped'] = path_mapped_o2
+            _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner2:owner2pw", json_dict=json_dict)
+
+            # create shared-by-group maps with placeholder
+            json_dict = {}
+            json_dict['User'] = ":group101"
+            json_dict['PathOrToken'] = path_shared_ug
+            json_dict['Permissions'] = "r"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+
+            logging.info("\n*** create map :group101/owner1 -> 200")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner1:owner1pw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            json_dict['PathMapped'] = path_mapped_o2
+            _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner2:owner2pw", json_dict=json_dict)
