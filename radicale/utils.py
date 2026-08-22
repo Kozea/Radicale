@@ -111,6 +111,7 @@ def vobject_supports_vcard4() -> bool:
 
 # global cache
 vobject_supports_period_cache: Union[bool, None] = None
+vobject_has_no_AttributeError_cache: Union[bool, None] = None
 
 
 def vobject_supports_period() -> bool:
@@ -144,6 +145,60 @@ END:VCALENDAR
     else:
         vobject_supports_period_cache = True
     return vobject_supports_period_cache
+
+
+def vobject_has_no_AttributeError() -> bool:
+    """Check if vobject has no AttributeError on event8 (requires version > 0.9.9)."""
+    global vobject_has_no_AttributeError_cache
+
+    if vobject_has_no_AttributeError_cache is not None:
+        return vobject_has_no_AttributeError_cache
+
+    # from radicale/tests/static/event8.ics
+    content_test = """
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Mozilla.org/NONSGML Mozilla Calendar V1.1//EN
+BEGIN:VTIMEZONE
+TZID:Europe/Paris
+BEGIN:STANDARD
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+TZNAME:CET
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3
+TZNAME:CEST
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:event8
+DTSTART;TZID=Europe/Paris:20170601T080000
+DTEND;TZID=Europe/Paris:20170601T090000
+CREATED:20170601T060000Z
+DTSTAMP:20170601T060000Z
+LAST-MODIFIED:20170601T060000Z
+RDATE;TZID=Europe/Paris:20170701T080000
+SUMMARY:event8
+TRANSP:OPAQUE
+X-MOZ-GENERATION:1
+END:VEVENT
+END:VCALENDAR
+"""
+    obj = vobject.readOne(content_test)
+
+    try:
+        obj.serialize()
+    except Exception:
+        vobject_has_no_AttributeError_cache = False
+    else:
+        vobject_has_no_AttributeError_cache = True
+    return vobject_has_no_AttributeError_cache
 
 
 def packages_version():

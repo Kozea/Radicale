@@ -164,6 +164,19 @@ permissions: RrWw""")
         assert "Event" in answer
         assert "UID:event" in answer
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
+    def test_add_event_event8(self) -> None:
+        """Add an event event8."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event8.ics")
+        path = "/calendar.ics/event8"
+        self.put(path, event)
+        _, headers, answer = self.request("GET", path, check=200)
+        assert "ETag" in headers
+        assert headers["Content-Type"] == "text/calendar; charset=utf-8"
+        assert "VEVENT" in answer
+        assert "UID:event" in answer
+
     @pytest.mark.skipif(not utils.vobject_supports_period(), reason="vobject <= 0.9.9 does not support PERIOD")
     def test_add_event_with_rdate_period_start_duration_single(self) -> None:
         """Add an event with RDATE/PERIOD with start+duration."""
@@ -335,6 +348,7 @@ permissions: RrWw""")
         assert xml.tag == xmlutils.make_clark("D:error")
         assert xml.find(xmlutils.make_clark("C:no-uid-conflict")) is not None
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_add_event_with_mixed_datetime_and_date(self) -> None:
         """Test event with DTSTART as DATE-TIME and EXDATE as DATE."""
         self.mkcalendar("/calendar.ics/")
@@ -407,18 +421,21 @@ permissions: RrWw""")
         event = get_file_content("event_full_day_rrule_until_5000y.ics")
         self.put("/calendar.ics/event_full_day_rrule_until_5000y.ics", event)
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_add_event_with_exdate_without_rrule(self) -> None:
         """Test event with EXDATE but not having RRULE."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_exdate_without_rrule.ics")
         self.put("/calendar.ics/event.ics", event)
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_add_event_exdate_no_tz(self) -> None:
         """Test event where EXDATE has no tzinfo."""
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event_issue2151.ics")
         self.put("/calendar.ics/event_issue2151.ics", event)
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_add_event_dtstart_no_tz_exdate_tz(self) -> None:
         """Test event where DTSTART has no tzinfo but EXDATE."""
         self.mkcalendar("/calendar.ics/")
@@ -1657,6 +1674,7 @@ permissions: RrWw""")
     </C:comp-filter>
 </C:comp-filter>"""])
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_text_match_filter(self) -> None:
         """Report request with text-match filter on calendar."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
@@ -1753,6 +1771,7 @@ permissions: RrWw""")
     </C:comp-filter>
 </C:comp-filter>"""])
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_time_range_filter_events(self) -> None:
         """Report request with time-range filter on events."""
         answer = self._test_filter(["""\
@@ -1905,6 +1924,7 @@ permissions: RrWw""")
 </C:comp-filter>"""], items=(11,))
         assert "/calendar.ics/event11.ics" not in answer
 
+    @pytest.mark.skipif(not utils.vobject_has_no_AttributeError(), reason="vobject <= 0.9.9 has issues with event")
     def test_time_range_filter_without_comp_filter(self) -> None:
         """Report request with time-range filter without comp-filter on events."""
         answer = self._test_filter(["""\
