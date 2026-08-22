@@ -77,6 +77,10 @@ If given, properties are stored in JSON format in CSV.
 
 File-based configuration store is using encoded `PathOrToken` as filename for each config. File contains the data stored as "dict" in binary Python "pickle" format (same is also used for item cache files).
 
+## Sharing Lookup Handling
+
+Dedicated configured share for a specific user overrules a share-by-group/realm in case resolved `PathOrToken` is equal.
+
 ## Sharing Request Handling
 
 ### CxDAV requests

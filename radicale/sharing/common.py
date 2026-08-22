@@ -73,13 +73,13 @@ def database_common_check_row_match(
         user = User
 
     if user is not None:
+        user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
         if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
-            if not user.endswith(row['User']):
+            if not user.split(':')[0].endswith(row['User']):
                 return None
         elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
             if sharing.SHARING_SEPARATOR_GROUP not in user:
                 return None  # user has no group
-            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
             groups_of_user = user.split(sharing.SHARING_SEPARATOR_GROUP)[1].split(',')
             Groups = row['User'].removeprefix(sharing.SHARING_SEPARATOR_GROUP).split(',')
             logger.trace("sharing/common/check_row_match/groups: groups_of_user=%r Groups=%r", groups_of_user, Groups)
@@ -92,7 +92,7 @@ def database_common_check_row_match(
                 pass
             else:
                 return None
-        elif row['User'] == user:
+        elif row['User'] == user_without_group:
             pass
         else:
             return None
@@ -100,7 +100,9 @@ def database_common_check_row_match(
     row_copy = row.copy()
 
     if group_check and user is not None:
-        if row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
+        if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
+            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+        elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
             user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
         else:
             user_without_group = user
