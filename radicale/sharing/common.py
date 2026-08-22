@@ -114,3 +114,26 @@ def database_common_check_row_match(
         return None
 
     return row_copy
+
+
+def database_common_filter_resolved_duplicate_shares(rows_unfiltered: list[dict]) -> list[dict]:
+    """Filter duplicate shares created by resolving placeholders."""
+    result: list[dict] = []
+    rows: dict[str, dict] = {}
+
+    for row in rows_unfiltered:
+        if row["PathOrToken"] not in rows:
+            logger.trace("sharing/common/list/row: add : %r", row)
+            rows[row["PathOrToken"]] = row
+        else:
+            logger.trace("sharing/common/list/row: chk : %r", rows[row["PathOrToken"]])
+            if "U" in rows[row["PathOrToken"]]["Permissions"]:
+                # replace resolved group share by more specific
+                rows[row["PathOrToken"]] = row
+                logger.trace("sharing/common/list/row: repl: %r", row)
+            else:
+                logger.trace("sharing/common/list/row: skip: %r", row)
+
+    for key in rows:
+        result.append(rows[key])
+    return result

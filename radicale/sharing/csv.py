@@ -154,7 +154,6 @@ class Sharing(sharing.BaseSharing):
         """ retrieve sharing """
         row: dict
         index = 0
-        rows: dict[str, dict] = {}
         result: list[dict] = []
 
         with self._storage.acquire_lock("r", path=self._sharing_db_file):
@@ -181,23 +180,10 @@ class Sharing(sharing.BaseSharing):
                                                             HiddenByUser=HiddenByUser,
                                                             Conversion=Conversion,
                                                             )
-
                 if row_match is not None:
-                    if row_match["PathOrToken"] not in rows:
-                        logger.trace("sharing/%s/list/row: add : %r", ShareType, row_match)
-                        rows[row_match["PathOrToken"]] = row_match
-                    else:
-                        logger.trace("sharing/%s/list/row: chk : %r", ShareType, rows[row_match["PathOrToken"]])
-                        if "U" in rows[row_match["PathOrToken"]]["Permissions"]:
-                            # replace resolved group share by more specific
-                            rows[row_match["PathOrToken"]] = row_match
-                            logger.trace("sharing/%s/list/row: repl: %r", ShareType, row_match)
-                        else:
-                            logger.trace("sharing/%s/list/row: skip: %r", ShareType, row_match)
+                    result.append(row_match)
 
-            for key in rows:
-                result.append(rows[key])
-            return result
+        return common.database_common_filter_resolved_duplicate_shares(result)
 
     def database_create_sharing(self,
                                 ShareType: str,
