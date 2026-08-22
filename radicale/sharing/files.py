@@ -187,7 +187,6 @@ class Sharing(sharing.BaseSharing):
                               Conversion: Union[str, None] = None,
                               ) -> list[dict]:
         """ retrieve sharing """
-        rows: dict[str, dict] = {}
         result: list[dict] = []
 
         logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)

@@ -7924,16 +7924,8 @@ permissions: RrWw""")
             path_mapped_o2 = "/owner2/calendarO2-" + db_type + ".ics/"
             path_shared_ug = "/{user}/calendarO-shared-by-owner-" + db_type + ".ics/"
             path_shared_u1 = "/user1/calendarO-shared-by-owner-" + db_type + ".ics/"
-            path_shared_r_base = "/{user}/"
             self.mkcalendar(path_mapped_o1, login="owner1:owner1pw")
             self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
-
-            # verify PROPFIND collection as owner*
-            logging.info("\n*** PROPFIND collection owner1")
-            privileges_list = self._propfind_privileges(path_mapped_o1, login="owner1:owner1pw")
-
-            logging.info("\n*** PROPFIND collection owner2")
-            privileges_list = self._propfind_privileges(path_mapped_o2, login="owner2:owner2pw")
 
             # create direct maps with placeholder
             json_dict = {}
