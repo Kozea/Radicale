@@ -154,7 +154,8 @@ class Sharing(sharing.BaseSharing):
         """ retrieve sharing """
         row: dict
         index = 0
-        result = []
+        rows: dict[str, dict] = {}
+        result: list[dict] = []
 
         with self._storage.acquire_lock("r", path=self._sharing_db_file):
             logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
@@ -182,9 +183,20 @@ class Sharing(sharing.BaseSharing):
                                                             )
 
                 if row_match is not None:
-                    logger.trace("sharing/%s/list/row: add : %r", ShareType, row_match)
-                    result.append(row_match)
+                    if row_match["PathOrToken"] not in rows:
+                        logger.trace("sharing/%s/list/row: add : %r", ShareType, row_match)
+                        rows[row_match["PathOrToken"]] = row_match
+                    else:
+                        logger.trace("sharing/%s/list/row: chk : %r", ShareType, rows[row_match["PathOrToken"]])
+                        if "U" in rows[row_match["PathOrToken"]]["Permissions"]:
+                            # replace resolved group share by more specific
+                            rows[row_match["PathOrToken"]] = row_match
+                            logger.trace("sharing/%s/list/row: repl: %r", ShareType, row_match)
+                        else:
+                            logger.trace("sharing/%s/list/row: skip: %r", ShareType, row_match)
 
+            for key in rows:
+                result.append(rows[key])
             return result
 
     def database_create_sharing(self,
