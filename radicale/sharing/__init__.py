@@ -1210,6 +1210,10 @@ class BaseSharing:
                         logger.warning(api_info + ": PathOrToken=%r has to start with placeholder for 'user' using group User=%r", PathOrToken, User)
                         return httputils.NOT_ALLOWED
                 else:
+                    if PathOrToken.startswith("/{user}/"):
+                        # placeholder exists
+                        logger.warning(api_info + ": PathOrToken=%r starts with placeholder for 'user' without group User=%r", PathOrToken, User)
+                        return httputils.NOT_ALLOWED
                     access = Access(self._rights, User, PathOrToken)
                     if not access.check("r"):
                         logger.warning(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
