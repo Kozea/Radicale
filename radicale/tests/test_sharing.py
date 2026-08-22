@@ -108,7 +108,7 @@ class TestSharingApiSanity(BaseTest):
         logging.info("response: %r", responses)
         if check != 207:
             return {}
-        response = responses[path]
+        response = responses[path.replace('@', '%40')]
         assert not isinstance(response, int)
         return response
 
