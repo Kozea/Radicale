@@ -271,12 +271,16 @@ export class CreateEditShareScene {
             let is_conversion = conversion != "none";
             let enabled_by_owner = is_conversion ? true : this._enabled_checkbox.checked;
             let hidden_by_owner = is_conversion ? false : this._hidden_checkbox.checked;
+            let userVal = (this._edit && this._share) ? (this._share.User || "") : this._shareuser_input.value.trim();
+            let isGroupOrRealm = userVal.startsWith(":") || userVal.startsWith("@");
             let permissions = is_conversion ? "r" : (this._permissions_rw_radio.checked ? "rw" : "r");
-            let allowPropertiesWrite = this._properties_write_allow.checked;
-            if (allowPropertiesWrite) {
-                permissions = permissions + "P";
-            } else {
-                permissions = permissions + "p";
+            if (!isGroupOrRealm) {
+                let allowPropertiesWrite = this._properties_write_allow.checked;
+                if (allowPropertiesWrite) {
+                    permissions = permissions + "P";
+                } else {
+                    permissions = permissions + "p";
+                }
             }
             /** @type {string} */ let conversion_value = conversion;
 
@@ -336,6 +340,12 @@ export class CreateEditShareScene {
                 new_actions.config = new_config;
             }
 
+            let cleanHref = this._sharehref_input.value.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+            let userPrefix = isGroupOrRealm ? "{user}" : userVal;
+            let pathOrToken = (this._edit && this._share)
+                ? this._share.PathOrToken
+                : (this._shareType === "map" ? "/" + userPrefix + "/" + cleanHref + "/" : "");
+
             let new_share = new Share({
                 ShareType: this._shareType,
                 PathMapped: this._pathMapped,
@@ -345,8 +355,8 @@ export class CreateEditShareScene {
                 HiddenByOwner: hidden_by_owner,
                 HiddenByUser: (this._edit && this._share) ? this._share.HiddenByUser : null,
                 Properties: properties,
-                User: (this._edit && this._share) ? this._share.User : this._shareuser_input.value,
-                PathOrToken: (this._edit && this._share) ? this._share.PathOrToken : (this._shareType === "map" ? "/" + this._shareuser_input.value + "/" + this._sharehref_input.value + "/" : ""),
+                User: (this._edit && this._share) ? this._share.User : userVal,
+                PathOrToken: pathOrToken,
                 Conversion: conversion_value,
                 Actions: new_actions,
             });
@@ -402,7 +412,24 @@ export class CreateEditShareScene {
 
         let hasWriteProperties = this._collection.has_permission(Permission.WRITE_PROPERTIES);
 
-        if (this._edit || this._shareType === "map") {
+        let initial_permissions = (this._edit && this._share && this._share.Permissions) ? this._share.Permissions : "";
+        if (initial_permissions.toLowerCase().includes("w")) {
+            this._permissions_rw_radio.checked = true;
+        } else {
+            this._permissions_ro_radio.checked = true;
+        }
+
+        if (this._edit && this._share) {
+            if (initial_permissions.includes("P")) {
+                this._properties_write_allow.checked = true;
+            } else if (initial_permissions.includes("p")) {
+                this._properties_write_deny.checked = true;
+            } else if (hasWriteProperties) {
+                this._properties_write_allow.checked = true;
+            } else {
+                this._properties_write_deny.checked = true;
+            }
+        } else if (this._shareType === "map") {
             if (hasWriteProperties) {
                 this._properties_write_allow.checked = true;
             } else {
