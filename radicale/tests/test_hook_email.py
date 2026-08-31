@@ -263,7 +263,7 @@ permissions: RrWw""")
         assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
         assert len([log for log in logs if "Hello everyone" in log]) == 0
 
-    def test_smtp_password_file(self, tmp_path) -> None:
+    def test_smtp_password_file(self) -> None:
         from radicale.hook.email import Hook
 
         secret = os.path.join(self.colpath, "smtp_password")
