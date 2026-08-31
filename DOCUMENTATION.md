@@ -2125,7 +2125,7 @@ Default: (unset)
 
 ##### smtp_password_file
 
-_(>= 3.5.11)_
+_(>= 3.8.0)_
 
 Path of a file containing the SMTP server password (for example `/run/secrets/smtp_password`).
 When set, the file contents are used instead of `smtp_password` (trailing newlines are stripped).
