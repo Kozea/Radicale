@@ -901,12 +901,36 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
 
+            logging.info("\n*** GET item using token")
+            self.get(token + "event1.ics", check=200)
+
+            logging.info("\n*** PUT item using token -> 403 (read-only)")
+            event2 = get_file_content("event2.ics")
+            self.put(token + "event2.ics", event2, check=403)
+
+            logging.info("\n*** update token for rwp")
+            json_dict = {}
+            json_dict['PathOrToken'] = token
+            json_dict['Permissions'] = "rwp"
+            _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['ApiVersion'] == 1
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** PUT item using token -> 201")
+            event2 = get_file_content("event2.ics")
+            self.put(token + "event2.ics", event2, check=201)
+
             logging.info("\n*** fetch collection using invalid token")
             _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=403)
 
             logging.info("\n*** fetch collection using token")
             _, headers, answer = self.request("GET", token, check=200)
             assert "UID:event" in answer
+            assert "UID:event2" in answer
+
+            logging.info("\n*** DELETE item using token -> 200")
+            self.delete(token + "event2.ics", check=200)
 
             logging.info("\n*** disable token (form->text)")
             form_array = ["PathOrToken=" + token]

@@ -48,8 +48,11 @@ def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
         # backmap; quote so the encoded href and raw share path compare
         mapped = quote(share['PathMapped'])
         token = quote(str(share['PathOrToken']))
+        logger.trace("DELETE/xml_delete: href=%r (orig)", href_element.text)
         if href_element.text.startswith(base_prefix + mapped):
             href_element.text = base_prefix + token + href_element.text.removeprefix(base_prefix + mapped)
+            if not mapped.endswith('/') and href_element.text.endswith('/'):
+                href_element.text = href_element.text + mapped.rsplit('/', maxsplit=1)[1]
         logger.trace("DELETE/xml_delete: href=%r (backmapped)", href_element.text)
     response.append(href_element)
 
