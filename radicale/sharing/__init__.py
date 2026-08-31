@@ -601,10 +601,10 @@ class BaseSharing:
         if self.sharing_collection_by_token:
             logger.trace("sharing/token/resolver: check path: %r", path)
             if path.startswith("/.token/"):
-                pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)$')
+                pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)')
                 match = pattern.match(path)
                 if not match:
-                    logger.trace("sharing/token/resolver: unsupported token: %r", path)
+                    logger.notice("sharing/token/resolver: unsupported token: %r", path)
                     return {'error': 'token-not-supported'}
                 else:
                     # TODO add token validity checks
@@ -621,6 +621,10 @@ class BaseSharing:
                     if result['EnabledByOwner'] is not True:
                         logger.info("sharing/%s: resolved path %r->%r, User=%r not enabled by owner", "token", path, result['PathMapped'], result['Owner'])
                         return {'error': 'token-not-enabled'}
+
+                    path_suffix = path.removeprefix(match[1])
+                    if path_suffix:
+                        result['PathMapped'] = result['PathMapped'] + path_suffix
 
                     logger.info("sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
                     return result
