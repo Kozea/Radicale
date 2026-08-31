@@ -601,7 +601,7 @@ class BaseSharing:
         if self.sharing_collection_by_token:
             logger.trace("sharing/token/resolver: check path: %r", path)
             if path.startswith("/.token/"):
-                pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)$')
+                pattern = re.compile('^(/.token/' + TOKEN_PATTERN_V1 + '/)')
                 match = pattern.match(path)
                 if not match:
                     logger.trace("sharing/token/resolver: unsupported token: %r", path)
