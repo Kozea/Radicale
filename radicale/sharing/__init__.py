@@ -18,6 +18,7 @@
 import base64
 import io
 import json
+import posixpath
 import re
 import socket
 import uuid
@@ -621,6 +622,10 @@ class BaseSharing:
                     if result['EnabledByOwner'] is not True:
                         logger.info("sharing/%s: resolved path %r->%r, User=%r not enabled by owner", "token", path, result['PathMapped'], result['Owner'])
                         return {'error': 'token-not-enabled'}
+
+                    path_suffix = path.removeprefix(match[1])
+                    if path_suffix:
+                        result['PathMapped'] = posixpath.join(result['PathMapped'], path_suffix)
 
                     logger.info("sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
                     return result

@@ -901,12 +901,19 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self._sharing_api_form("token", "enable", check=200, login="owner:ownerpw", form_array=form_array)
             assert "Status='success'" in answer
 
+            logging.info("\n*** PUT item using token")
+            event2 = get_file_content("event2.ics")
+            self.put(token + "event2.ics", event2, check=201,
+                     HTTP_IF_NONE_MATCH="*",
+                     content_type="text/calendar; charset=utf-8")
+
             logging.info("\n*** fetch collection using invalid token")
             _, headers, answer = self.request("GET", "/.token/v1/invalidtoken/", check=403)
 
             logging.info("\n*** fetch collection using token")
             _, headers, answer = self.request("GET", token, check=200)
             assert "UID:event" in answer
+            assert "UID:event2" in answer
 
             logging.info("\n*** disable token (form->text)")
             form_array = ["PathOrToken=" + token]
