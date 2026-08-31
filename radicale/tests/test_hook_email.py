@@ -266,14 +266,15 @@ permissions: RrWw""")
     def test_smtp_password_file(self, tmp_path) -> None:
         from radicale.hook.email import Hook
 
-        secret = tmp_path / "smtp_password"
-        secret.write_text("file-secret\n", encoding="utf-8")
+        secret = os.path.join(self.colpath, "smtp_password")
+        with open(secret, "w") as f:
+            f.write("file-secret\n")
         self.configure({
             "hook": {
                 "type": "email",
                 "smtp_server": "localhost",
                 "smtp_password": "inline-secret",
-                "smtp_password_file": str(secret),
+                "smtp_password_file": secret,
                 "dryrun": "True",
             }
         })
