@@ -921,8 +921,11 @@ class Hook(BaseHook):
         smtp_password = self.configuration.get("hook", "smtp_password")
         smtp_password_file = self.configuration.get("hook", "smtp_password_file")
         if smtp_password_file:
-            with open(smtp_password_file, "r", encoding="utf-8") as file:
-                smtp_password = file.read().rstrip("\n")
+            try:
+                with open(smtp_password_file, "r", encoding="utf-8") as file:
+                    smtp_password = file.read().rstrip("\n")
+            except Exception as e:
+                logger.error("Email hook option 'smtp_password_file' provided but not readable: %r (%r)", smtp_password_file, e)
         self.email_config = EmailConfig(
             host=self.configuration.get("hook", "smtp_server"),
             port=self.configuration.get("hook", "smtp_port"),

@@ -267,8 +267,6 @@ permissions: RrWw""")
         from radicale.hook.email import Hook
 
         secret = os.path.join(self.colpath, "smtp_password")
-        with open(secret, "w") as f:
-            f.write("file-secret\n")
         self.configure({
             "hook": {
                 "type": "email",
@@ -278,5 +276,9 @@ permissions: RrWw""")
                 "dryrun": "True",
             }
         })
+        hook = Hook(self.configuration)
+        assert hook.email_config.password == "inline-secret"
+        with open(secret, "w") as f:
+            f.write("file-secret\n")
         hook = Hook(self.configuration)
         assert hook.email_config.password == "file-secret"
