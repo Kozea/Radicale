@@ -176,7 +176,7 @@ class StorageBase(storage.BaseStorage):
         except PermissionError as e:
             logger.error(
                 "Cannot create storage path %r (Permission denied). "
-                "Check that [storage] filesystem_folder matches a writable Docker/volume mount "
+                "Check that [storage] filesystem_folder matches a writable container/volume mount "
                 "and is owned by the radicale user. Parent permissions: %s / Effective user: %s",
                 filesystem_path,
                 pathutils.path_permissions_as_string(parent_filesystem_path),

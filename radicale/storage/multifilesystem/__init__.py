@@ -205,7 +205,7 @@ class Storage(
         except PermissionError as e:
             logger.error(
                 "Permission denied while accessing storage path %r. "
-                "Check that [storage] filesystem_folder matches a writable Docker/volume mount "
+                "Check that [storage] filesystem_folder matches a writable container/volume mount "
                 "and is owned by the radicale user. Directory permissions: %s / Effective user: %s",
                 self._get_collection_root_folder(),
                 pathutils.path_permissions_as_string(self._get_collection_root_folder()),
