@@ -1,6 +1,7 @@
 # This file is related to Radicale - CalDAV and CardDAV server
 # for email notifications
 # Copyright © 2025-2025 Nate Harris
+# Copyright © 2026-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
