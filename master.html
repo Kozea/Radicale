@@ -2097,7 +2097,18 @@ authentication (e.g. using local mail server).</p>
 <h5>smtp_password <a class="headerlink" href="#smtp_password">&para;</a></h5>
 <p><em>(&gt;= 3.5.5)</em></p>
 <p>Password to authenticate with SMTP server. Leave empty to disable
-authentication (e.g. using local mail server).</p>
+authentication (e.g. using local mail server). Prefer
+<code>smtp_password_file</code> when deploying with a secrets
+manager.</p>
+<p>Default: (unset)</p>
+</section>
+<section class="level5" id="smtp_password_file">
+<h5>smtp_password_file <a class="headerlink" href="#smtp_password_file">&para;</a></h5>
+<p><em>(&gt;= 3.8.0)</em></p>
+<p>Path of a file containing the SMTP server password (for example
+<code>/run/secrets/smtp_password</code>). When set, the file contents
+are used instead of <code>smtp_password</code> (trailing newlines are
+stripped).</p>
 <p>Default: (unset)</p>
 </section>
 <section class="level5" id="from_email">
