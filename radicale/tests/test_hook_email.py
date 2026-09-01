@@ -262,3 +262,23 @@ permissions: RrWw""")
         # Should NOT have a log saying that no email is sent (email won't actually be sent due to dryrun)
         assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
         assert len([log for log in logs if "Hello everyone" in log]) == 0
+
+    def test_smtp_password_file(self) -> None:
+        from radicale.hook.email import Hook
+
+        secret = os.path.join(self.colpath, "smtp_password")
+        self.configure({
+            "hook": {
+                "type": "email",
+                "smtp_server": "localhost",
+                "smtp_password": "inline-secret",
+                "smtp_password_file": secret,
+                "dryrun": "True",
+            }
+        })
+        hook = Hook(self.configuration)
+        assert hook.email_config.password == "inline-secret"
+        with open(secret, "w") as f:
+            f.write("file-secret\n")
+        hook = Hook(self.configuration)
+        assert hook.email_config.password == "file-secret"

@@ -688,11 +688,15 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": str}),
         ("smtp_password", {
             "value": "",
-            "help": "SMTP server password",
+            "help": "SMTP server password (prefer smtp_password_file for secrets)",
+            "type": str}),
+        ("smtp_password_file", {
+            "value": "",
+            "help": "Path of the file containing the SMTP server password",
             "type": str}),
         ("from_email", {
             "value": "",
-            "help": "SMTP server password",
+            "help": "Email address to use as sender in email notifications",
             "type": str}),
         ("mass_email", {
             "value": "False",

@@ -11,6 +11,7 @@
 * Add: [group] group_collections_folder replacing hardcoded "GROUPS"
 * Fix: pathutils: detect missing permission to create symbolic link on Microsoft Windows
 * Fix: sharing-by-token: requests to dedicated items
+* Extension: [hook] add option for "smtp_password_file"
 
 ## 3.7.8
 * Fix: time-range filter on a VTODO having DTSTART/DUE and also CREATED/COMPLETED used the CREATED->COMPLETED duration instead of the DTSTART->DUE one, so completed tasks were missing from (or wrongly returned by) calendar-query REPORT results
