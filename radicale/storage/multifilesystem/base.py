@@ -174,7 +174,14 @@ class StorageBase(storage.BaseStorage):
         try:
             os.makedirs(filesystem_path, exist_ok=True)
         except PermissionError as e:
-            logger.error("Directory permissions: %s / Effective user: %s", pathutils.path_permissions_as_string(parent_filesystem_path), utils.user_groups_as_string())
+            logger.error(
+                "Cannot create storage path %r (Permission denied). "
+                "Check that [storage] filesystem_folder matches a writable container/volume mount "
+                "and is owned by the radicale user. Parent permissions: %s / Effective user: %s",
+                filesystem_path,
+                pathutils.path_permissions_as_string(parent_filesystem_path),
+                utils.user_groups_as_string(),
+            )
             raise e
         except Exception:
             raise

@@ -203,7 +203,14 @@ class Storage(
                 if self._use_mtime_and_size_for_item_cache is False:
                     logger.info("Storage cache using mtime and size for 'item' may be an option in case of performance issues")
         except PermissionError as e:
-            logger.error("Directory permissions: %s / Effective user: %s", pathutils.path_permissions_as_string(self._get_collection_root_folder()), utils.user_groups_as_string())
+            logger.error(
+                "Permission denied while accessing storage path %r. "
+                "Check that [storage] filesystem_folder matches a writable container/volume mount "
+                "and is owned by the radicale user. Directory permissions: %s / Effective user: %s",
+                self._get_collection_root_folder(),
+                pathutils.path_permissions_as_string(self._get_collection_root_folder()),
+                utils.user_groups_as_string(),
+            )
             raise e
         except Exception:
             logger.warning("Storage item mtime resolution test result not successful")
