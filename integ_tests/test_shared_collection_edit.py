@@ -60,37 +60,71 @@ def test_shared_collection_property_edit(page: Page, radicale_server: str) -> No
     # Allow properties write
     page.check("#newshare_attr_properties_write_allow")
     page.click('#createeditsharescene button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
     page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
 
     # 3. Admin logs out
     page.click('a[data-name="logout"]')
+    expect(page.locator("#loginscene")).to_be_visible()
 
     # 4. Max logs in
     page.fill('#loginscene input[data-name="user"]', config.user_username)
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
+    expect(page.locator("#collectionsscene")).to_be_visible()
+    expect(page.locator("#loadingscene")).to_be_hidden()
 
     # 5. Max enables the shared collection
     page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
     row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    expect(row).to_have_count(1)
     expect(row.locator("input[data-name='pathortoken']")).to_have_value(
         re.compile("shared-mapped")
     )
-    row.locator("input[data-name='enabled']").check()
-    row.locator("input[data-name='shown']").check()
+    page.check(
+        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
+    )
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).not_to_be_disabled()
+
+    page.check(
+        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+    )
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).to_be_checked()
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).not_to_be_disabled()
+
     page.click('#incomingsharingscene button[data-name="close"]')
+    expect(page.locator("#incomingsharingscene")).to_be_hidden()
 
     # 6. Verify "Edit" button is visible
     shared_article = page.locator("article:not(.hidden)").filter(
         has=page.locator("[data-name='title']", has_text="Shared")
     )
+    expect(shared_article).to_be_visible()
     shared_article.hover()
     expect(shared_article.locator("a[data-name='edit']")).to_be_visible()
 
     # 7. Max edits the collection
     shared_article.locator("a[data-name='edit']").click()
+    expect(page.locator("#editcollectionscene")).to_be_visible()
     page.fill('#editcollectionscene input[data-name="displayname"]', "Renamed by Max")
     page.click('#editcollectionscene button[data-name="submit"]')
+    expect(page.locator("#editcollectionscene")).to_be_hidden()
 
     # 8. Verify the change
     expect(

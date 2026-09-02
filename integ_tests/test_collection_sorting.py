@@ -61,15 +61,22 @@ def test_collection_sorting(page: Page, radicale_server: str) -> None:
     page.locator('input[data-name="shareuser"]').fill(config.user_username)
     page.locator('input[data-name="sharehref"]').fill("m-shared")
     page.click('#createeditsharescene button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
     page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
 
     # 3. Admin logs out
     page.click('a[data-name="logout"]')
+    expect(page.locator("#loginscene")).to_be_visible()
 
     # 4. Max logs in
     page.fill('#loginscene input[data-name="user"]', config.user_username)
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
+    expect(page.locator("#collectionsscene")).to_be_visible()
+    expect(page.locator("#loadingscene")).to_be_hidden()
 
     # 5. Max creates his own "B" and "Y"
     create_named_collection(page, "Y")
@@ -77,13 +84,35 @@ def test_collection_sorting(page: Page, radicale_server: str) -> None:
 
     # 6. Max enables the shared collection "M"
     page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
     row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    expect(row).to_have_count(1)
     expect(row.locator("input[data-name='pathortoken']")).to_have_value(
         re.compile("m-shared")
     )
-    row.locator("input[data-name='enabled']").check()
-    row.locator("input[data-name='shown']").check()
+    page.check(
+        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
+    )
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).not_to_be_disabled()
+    page.check(
+        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+    )
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).to_be_checked()
+    expect(
+        page.locator(
+            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
+        )
+    ).not_to_be_disabled()
     page.click('#incomingsharingscene button[data-name="close"]')
+    expect(page.locator("#incomingsharingscene")).to_be_hidden()
 
     # 7. Verify the order
     # Expected: "B", "Y" (Owned), then "M" (Shared)
