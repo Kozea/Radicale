@@ -209,3 +209,86 @@ def test_update_sharing_by_group_or_realm_in_ui(
     expect(article.locator('a[data-name="edit"]')).to_be_visible()
     expect(article.locator('a[data-name="share"]')).to_be_hidden()
     expect(article.locator('a[data-name="delete"]')).to_be_hidden()
+
+
+@pytest.mark.parametrize(
+    "radicale_server_config,share_user,share_href",
+    [
+        (SHARING_HTGROUP, ":editors", "shared_editors_group"),
+        (SHARING_HTGROUP_USERSWITHDOMAIN, "@domain.tld", "shared_domain_realm"),
+    ],
+    ids=["group_with_owner", "realm_with_owner"],
+)
+def test_sharing_by_group_including_owner_does_not_duplicate_in_ui(
+    page: Page,
+    radicale_server: str,
+    radicale_server_config: Config,
+    share_user: str,
+    share_href: str,
+) -> None:
+    """Test that sharing to a group/realm that includes the owner:
+    1. Does not show the collection twice in the owner's main collections list.
+    2. Does not show the share in the owner's incoming shares list.
+    3. Displays correctly for other group members.
+    """
+    # 1. Admin logs in and creates a collection
+    login(page, radicale_server, radicale_server_config)
+    create_collection(page, radicale_server)
+
+    # Verify admin has 1 collection
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+
+    # 2. Admin creates a share for group/realm which includes admin
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+    page.click('button[data-name="sharebymap"]')
+    page.locator('input[data-name="shareuser"]').fill(share_user)
+    page.locator('input[data-name="sharehref"]').fill(share_href)
+    page.click('#createeditsharescene button[data-name="submit"]')
+
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+
+    # 3. Verify admin still sees only 1 collection (not duplicated)
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+    article = page.locator("article:not(.hidden)").first
+    expect(article.locator('[data-name="shared-by"]')).to_be_hidden()
+
+    # 4. Verify admin has NO incoming shares
+    page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    ).to_have_count(0)
+    expect(
+        page.locator("#incomingsharingscene [data-name='nosharesmessage']")
+    ).to_be_visible()
+    page.click('#incomingsharingscene button[data-name="close"]')
+
+    # 5. Admin logs out
+    page.click('a[data-name="logout"]')
+
+    # 6. Member user logs in
+    page.fill(
+        '#loginscene input[data-name="user"]', radicale_server_config.user_username
+    )
+    page.fill('#loginscene input[data-name="password"]', "userpassword")
+    page.click('button:has-text("Next")')
+
+    # 7. Member user sees 1 collection (the shared one)
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+    user_article = page.locator("article:not(.hidden)").first
+    expect(user_article.locator('[data-name="shared-by"]')).to_be_visible()
+    expect(user_article.locator('[data-name="shared-by-owner"]')).to_have_text(
+        radicale_server_config.admin_username
+    )
+
+    # 8. Member user sees 1 incoming share
+    page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#incomingsharingscene button[data-name="close"]')

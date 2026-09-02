@@ -35,6 +35,23 @@ import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareColle
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 
 /**
+ * Finds a matching map share for a given collection href and current user.
+ * @param {string} collectionHref
+ * @param {import("../api/sharing.js").Share[]} shares
+ * @param {string} currentUser
+ * @returns {import("../api/sharing.js").Share | undefined}
+ */
+function find_matching_map_share(collectionHref, shares, currentUser) {
+    let collHref = decodeURIComponent(collectionHref || "").replace(/\/+$/, "");
+    let cleanUser = decodeURIComponent(currentUser || "");
+    return (shares || []).find(s => {
+        if (s.ShareType !== "map") return false;
+        let shareTarget = decodeURIComponent(s.PathOrToken || "").replace("{user}", cleanUser).replace(/\/+$/, "");
+        return collHref === shareTarget || collHref.endsWith(shareTarget);
+    });
+}
+
+/**
  * @implements {Scene}
  */
 export class CollectionsScene {
@@ -140,12 +157,8 @@ export class CollectionsScene {
      */
     _sort_collections(collections, shares) {
         collections.sort((a, b) => {
-            const getShare = (/** @type {Collection} */ col) => (shares || []).find(
-                s => (s.ShareType === "map") &&
-                    decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "") === decodeURIComponent(col.href || "").replace(/\/+$/, ""));
-
-            const shareA = getShare(a);
-            const shareB = getShare(b);
+            const shareA = find_matching_map_share(a.href, shares, this._user);
+            const shareB = find_matching_map_share(b.href, shares, this._user);
 
             const ownedA = !shareA || shareA.Owner === this._user;
             const ownedB = !shareB || shareB.Owner === this._user;
@@ -227,10 +240,7 @@ export class CollectionsScene {
 
         let share_info = get_element(node, "[data-name=shared-by]");
         let transformed_from = get_element(node, "[data-name=transformed-from]");
-        let collHref = decodeURIComponent(collection.href || "").replace(/\/+$/, "");
-        let share = (shares || []).find(
-            s => s.ShareType === "map" &&
-                collHref.endsWith(decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "")));
+        let share = find_matching_map_share(collection.href, shares, this._user);
         if (share) {
             if (share.Owner !== this._user) {
                 share_info.classList.remove("hidden");
@@ -322,10 +332,21 @@ export class CollectionsScene {
             this._errorHandler.clearError();
         }
 
-        this._sort_collections(collections, shares);
+        let visible_collections = collections.filter((collection) => {
+            let share = find_matching_map_share(collection.href, shares, this._user);
+            if (share && share.Owner === this._user) {
+                let conversion = (share.Conversion || "").toLowerCase();
+                if (conversion === "none" || conversion === "") {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        this._sort_collections(visible_collections, shares);
         this._clear_collections_display();
 
-        collections.forEach((collection) => {
+        visible_collections.forEach((collection) => {
             this._render_collection(collection, shares);
         });
     }
