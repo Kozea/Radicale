@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.8.1.dev
+
 ## 3.8.0
 * Fix: storage/multifilesystem: depth:1 PROPFIND no longer re-runs the filesystem collision check (path_to_filesystem) for every item in a collection; this made listing large collections O(n^2) on file systems not detected as collision-free
 * Improve: storage/multifilesystem: avoid redundant stat() calls per item in get/upload when use_mtime_and_size_for_item_cache is enabled
