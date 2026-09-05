@@ -522,6 +522,9 @@ def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
     logger.trace("item/convert_vcf_to_ics: resolve placeholders: %r", text)
 
     for placeholder in placeholder_mapping:
+        # logger.trace("item/convert_vcf_to_ics: placeholder=%r -> placeholder_mapping=%r", placeholder, placeholder_mapping[placeholder])
+        if type(placeholder_mapping[placeholder]) is list:
+            placeholder_mapping[placeholder] = ','.join(placeholder_mapping[placeholder])
         text = text.replace(placeholder, placeholder_mapping[placeholder])
 
     logger.trace("item/convert_vcf_to_ics: resolve [..|..] in  : %r", text)
