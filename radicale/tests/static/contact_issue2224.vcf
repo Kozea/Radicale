@@ -1,0 +1,12 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:+//IDN bitfire.at//DAVx5/4.2.6-ose ez-vcard/0.11.3
+UID:5e35b019-8a3a-f051-82ef-cf2a4938f4a2
+BDAY:1970-01-01
+CATEGORIES:xxxxxx
+EMAIL;TYPE=home:xxxxxxxxxxxxxxxxxxxx
+FN:Pretty Long With-Hyphen Name
+N:Name;Pretty;Long,With-Hyphen;;
+REV:2023-01-03T17:46:41Z
+TEL;TYPE=cell:xxxxxxxxxxxxxx
+END:VCARD

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.8.1.dev
+* Fix: sharing/bday-conversion: add missing support for comma separated text components in vcard field N (name)
 
 ## 3.8.0
 * Fix: storage/multifilesystem: depth:1 PROPFIND no longer re-runs the filesystem collision check (path_to_filesystem) for every item in a collection; this made listing large collections O(n^2) on file systems not detected as collision-free
