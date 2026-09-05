@@ -5435,6 +5435,21 @@ permissions: RrWw""")
         # empty {fn} must expose the '!fn!' marker so the fallback resolves
         assert "DESCRIPTION:no-fn" in serialized
 
+    def test_sharing_bday_conversion_issue_2224(self) -> None:
+        """BDAY-to-ICS conversion of a VCARD reported in issue 2224.
+        """
+        vcard = vobject.readOne(get_file_content("contact_issue2224.vcf"))
+
+        class _StubCollection:
+            path = "test"
+
+        item = Item(collection=cast(storage.BaseCollection, _StubCollection()),
+                    vobject_item=vcard, href="contact_issue2224.vcf")
+        converted = item.convert_vcf_to_ics(ShareActions={"config": {
+            "conversion_bday_summary_template": "[{n:f} {n:g}|{fn}|{nickname}] ({year}) (BDAY)",
+            "conversion_bday_description_template": "BDAY={year}-{month}-{day}"}})
+        assert converted is not None
+
     def test_sharing_api_map_vcf_bday_age_template(self) -> None:
         """share-by-map with conversion=bday template tests with age."""
         self.configure({"auth": {"type": "htpasswd",
