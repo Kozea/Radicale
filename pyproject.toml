@@ -46,6 +46,7 @@ argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
 pam = ["pam"]
 dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
+caldav_test = ["caldav>=3.0", "caldav-server-tester>=1.2,<2"]
 
 [project.scripts]
 radicale = "radicale.__main__:run"
@@ -56,7 +57,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.tox]
 min_version = "4.0"
-envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "html5validator"]
+envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "caldav_compat_test", "html5validator"]
 
 [tool.tox.env.py]
 extras = ["test"]
@@ -220,13 +221,20 @@ setenv = { PLAYWRIGHT_BROWSERS_PATH = "{toxworkdir}/.playwright" }
 commands_pre = [["playwright", "install", "chromium"]]
 commands = [["pytest", "integ_tests"]]
 
+[tool.tox.env.caldav_compat_test]
+extras = ["caldav_test"]
+deps = [
+    "pytest"
+]
+commands = [["pytest", "caldav_compat_tests"]]
+
 [tool.tox.env.html5validator]
 deps = ["html5validator-2"]
 commands = [["html5validator", "--root", "radicale/web/internal_data/", "--also-check-css"]]
 
 
 [tool.pytest.ini_options]
-norecursedirs = ["integ_tests"]
+norecursedirs = ["integ_tests", "caldav_compat_tests"]
 
 
 [tool.setuptools]
@@ -234,7 +242,7 @@ platforms = ["Any"]
 include-package-data = false
 
 [tool.setuptools.packages.find]
-exclude = ["*.tests", "integ_tests"] # *.tests.*; tests.*; tests
+exclude = ["*.tests", "integ_tests", "caldav_compat_tests"] # *.tests.*; tests.*; tests
 namespaces = false
 
 [tool.setuptools.package-data]
@@ -266,7 +274,7 @@ exclude = "(^|/)build($|/)"
 [tool.coverage.run]
 branch = true
 source = ["radicale"]
-omit = ["tests/*", "*/tests/*", "integ_tests/*", "*/integ_tests/*"]
+omit = ["tests/*", "*/tests/*", "integ_tests/*", "*/integ_tests/*", "caldav_compat_tests/*", "*/caldav_compat_tests/*"]
 
 [tool.coverage.report]
 # Regexes for lines to exclude from consideration
