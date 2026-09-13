@@ -224,6 +224,8 @@ commands = [["pytest", "integ_tests"]]
 [tool.tox.env.caldav_compat_test]
 extras = ["caldav_test"]
 deps = [
+    "caldav",
+    "caldav_server_tester",
     "pytest"
 ]
 commands = [["pytest", "caldav_compat_tests"]]
