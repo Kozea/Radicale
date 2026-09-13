@@ -2709,17 +2709,33 @@ permissions: RrWw""")
         assert type(pl["PayloadContent"]) is list
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
+        assert pl["PayloadContent"][0]["CalDAVPort"] == 80
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "http://127.0.0.1/"
 
     def test_apple_mobileconfig_authorized_SSL(self) -> None:
         self.configure({"auth": {"type": "none"}})
         path = "/.mobileconfig"
-        _, headers, body = self.request("GET", path, check=200, login="appleuser:", SSL_PROTOCOL="TLS1.2")
+        _, headers, body = self.request("GET", path, check=200, login="appleuser:", SSL_PROTOCOL="TLS1.2", HTTP_X_FORWARDED_PROTO="https", HTTP_X_FORWARDED_HOST="localhost", HTTP_X_FORWARDED_PORT="8443")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
         pl = plistlib.loads(body)
         assert pl["PayloadType"] == "Configuration"
         assert type(pl["PayloadContent"]) is list
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is True
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "https://localhost:8443/"
+
+    def test_apple_mobileconfig_authorized_scriptname(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        path = "/.mobileconfig"
+        _, headers, body = self.request("GET", path, check=200, login="appleuser:", SCRIPT_NAME="/radicale")
+        assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
+        pl = plistlib.loads(body)
+        assert pl["PayloadType"] == "Configuration"
+        assert type(pl["PayloadContent"]) is list
+        assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
+        assert pl["PayloadContent"][0]["CalDAVPort"] == 80
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "http://127.0.0.1/radicale/"
 
     def test_well_known(self) -> None:
         for path in ["/.well-known/caldav", "/.well-known/carddav"]:

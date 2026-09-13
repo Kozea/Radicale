@@ -95,35 +95,49 @@ class ApplicationPartGet(ApplicationBase):
                 logger.notice("Access to path %r not allowed for unauthenticated user", path)
                 return httputils.NOT_ALLOWED
             logger.debug("Request path %r by user %r", path, user)
-            host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
+            (host, port) = utils.get_server_netloc(environ, force_port=True).split(':')
             useSSL: int = 0
-            if environ.get("SSL_PROTOCOL"):
+            url: str = "http"
+            if environ.get("SSL_PROTOCOL") or environ.get("HTTP_X_FORWARDED_PROTO", "") == "https":
                 useSSL = 1
+                url += "s"
+            url += "://" + host
+            if (useSSL == 1 and port != "443") or (useSSL == 0 and port != "80"):
+                # only add non-default port to URL
+                url += ":" + port
+            if len(base_prefix) > 0:
+                url += base_prefix
+            url += "/"
+            uuid_suffix_input: str = "user=" + user + ":host=" + host + ":port=" + port + ":usessl=" + str(useSSL) + ":url=" + url
             pl: dict = dict(
                       PayloadType="Configuration",
                       PayloadVersion=1,
                       PayloadIdentifier="org.radicale.mobileconfig." + user,
-                      PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:config:user=" + user + ":host=" + host + ":usessl=" + str(useSSL))[:32])),
+                      PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:config:" + uuid_suffix_input)[:32])),
                       PayloadDisplayName="Radicale Calendar+Contacts",
                       PayloadContent=[
                           dict(
                             PayloadType="com.apple.caldav.account",
                             PayloadVersion=1,
                             PayloadIdentifier="org.radicale.mobileconfig." + user + ".caldav",
-                            PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:caldav:user=" + user + ":host=" + host + ":usessl=" + str(useSSL))[:32])),
+                            PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:caldav:" + uuid_suffix_input)[:32])),
                             CalDAVAccountDescription="Radicale Calendar",
                             CalDAVHostName=host,
+                            CalDAVPort=int(port),
                             CalDAVUsername=user,
+                            CalDAVPrincipalURL=url,
                             CalDAVUseSSL=(useSSL == 1)
                             ),
                           dict(
                             PayloadType="com.apple.cardddav.account",
                             PayloadVersion=1,
                             PayloadIdentifier="org.radicale.mobileconfig." + user + ".cardddav",
-                            PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:carddav:user=" + user + ":host=" + host + ":usessl=" + str(useSSL))[:32])),
+                            PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:carddav:" + uuid_suffix_input)[:32])),
                             CalDAVAccountDescription="Radicale Contacts",
                             CalDAVHostName=host,
+                            CalDAVPort=int(port),
                             CalDAVUsername=user,
+                            CalDAVPrincipalURL=url,
                             CalDAVUseSSL=(useSSL == 1)
                             )
                         ]
