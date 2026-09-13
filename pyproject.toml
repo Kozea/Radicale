@@ -46,7 +46,7 @@ argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
 pam = ["pam"]
 dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
-caldav_test = ["caldav>=3.0", "caldav-server-tester>=1.2,<2"]
+caldav_test = ["pytest>=7", "caldav>=3.0; python_version >= '3.10'", "caldav-server-tester>=1.2,<2; python_version >= '3.10'"]
 
 [project.scripts]
 radicale = "radicale.__main__:run"
