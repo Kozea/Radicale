@@ -198,37 +198,38 @@ class Sharing(sharing.BaseSharing):
 
             path = self._sharing_database_path_ShareType[_ShareType]
             with self._storage.acquire_lock("r", OwnerOrUser, path=path):
-                for entry in os.scandir(path):
-                    if not entry.is_file():
-                        continue
+                with os.scandir(path) as entries:
+                    for entry in entries:
+                        if not entry.is_file():
+                            continue
 
-                    logger.trace("sharing/%s/list: check file: %r", ShareType, entry.name)
-                    # read file
-                    with open(entry, "rb") as fb:
-                        (version, row) = pickle.load(fb)
+                        logger.trace("sharing/%s/list: check file: %r", ShareType, entry.name)
+                        # read file
+                        with open(entry, "rb") as fb:
+                            (version, row) = pickle.load(fb)
 
-                    if version != DB_VERSION:
-                        # skip
-                        continue
+                        if version != DB_VERSION:
+                            # skip
+                            continue
 
-                    logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
+                        logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
 
-                    row_match = common.database_common_check_row_match(
-                                                                row=row,
-                                                                OwnerOrUser=OwnerOrUser,
-                                                                ShareType=ShareType,
-                                                                PathOrToken=PathOrToken,
-                                                                PathMapped=PathMapped,
-                                                                User=User,
-                                                                EnabledByOwner=EnabledByOwner,
-                                                                EnabledByUser=EnabledByUser,
-                                                                HiddenByOwner=HiddenByOwner,
-                                                                HiddenByUser=HiddenByUser,
-                                                                Conversion=Conversion,
-                                                                )
+                        row_match = common.database_common_check_row_match(
+                                                                    row=row,
+                                                                    OwnerOrUser=OwnerOrUser,
+                                                                    ShareType=ShareType,
+                                                                    PathOrToken=PathOrToken,
+                                                                    PathMapped=PathMapped,
+                                                                    User=User,
+                                                                    EnabledByOwner=EnabledByOwner,
+                                                                    EnabledByUser=EnabledByUser,
+                                                                    HiddenByOwner=HiddenByOwner,
+                                                                    HiddenByUser=HiddenByUser,
+                                                                    Conversion=Conversion,
+                                                                    )
 
-                    if row_match is not None:
-                        result.append(row_match)
+                        if row_match is not None:
+                            result.append(row_match)
 
         return common.database_common_filter_resolved_duplicate_shares(result)
 
