@@ -20,6 +20,7 @@
 
 import plistlib
 import posixpath
+import urllib
 import uuid
 from http import client
 from typing import Union
@@ -109,6 +110,7 @@ class ApplicationPartGet(ApplicationBase):
                 url += base_prefix
             url += "/"
             uuid_suffix_input: str = "user=" + user + ":host=" + host + ":port=" + port + ":usessl=" + str(useSSL) + ":url=" + url
+            content_disposition = "attachement; filename=x-apple-aspen-config__user_" + user + "__url_" + urllib.parse.quote(url, safe='') + ".mobileconfig"
             pl: dict = dict(
                       PayloadType="Configuration",
                       PayloadVersion=1,
@@ -142,7 +144,10 @@ class ApplicationPartGet(ApplicationBase):
                             )
                         ]
                       )
-            headers: dict = {"Content-Type": "application/x-apple-aspen-config"}
+            headers: dict = {
+                    "Content-Type": "application/x-apple-aspen-config",
+                    "Content-Disposition": content_disposition,
+                    }
             answer = plistlib.dumps(pl).decode()
             return client.OK, headers, answer, None
         permissions_filter = None
