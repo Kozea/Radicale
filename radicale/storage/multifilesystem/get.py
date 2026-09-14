@@ -42,15 +42,16 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         self._item_cache_cleaned = False
 
     def _list(self) -> Iterator[str]:
-        for entry in os.scandir(self._filesystem_path):
-            if not entry.is_file():
-                continue
-            href = entry.name
-            if not pathutils.is_safe_filesystem_path_component(href):
-                if not href.startswith(".Radicale"):
-                    logger.debug("Skipping item %r in %r", href, self.path)
-                continue
-            yield href
+        with os.scandir(self._filesystem_path) as entries:
+            for entry in entries:
+                if not entry.is_file():
+                    continue
+                href = entry.name
+                if not pathutils.is_safe_filesystem_path_component(href):
+                    if not href.startswith(".Radicale"):
+                        logger.debug("Skipping item %r in %r", href, self.path)
+                    continue
+                yield href
 
     def _get(self, href: str, verify_href: bool = True
              ) -> Optional[radicale_item.Item]:

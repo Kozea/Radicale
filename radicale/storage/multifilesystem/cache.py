@@ -125,6 +125,7 @@ class CollectionPartCache(CollectionBase):
 
     def _clean_item_cache(self) -> None:
         cache_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "item")
-        self._clean_cache(cache_folder, (
-            e.name for e in os.scandir(cache_folder) if not
-            os.path.isfile(os.path.join(self._filesystem_path, e.name))))
+        with os.scandir(cache_folder) as entries:
+            names = [e.name for e in entries if not
+                     os.path.isfile(os.path.join(self._filesystem_path, e.name))]
+        self._clean_cache(cache_folder, names)

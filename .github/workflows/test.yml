@@ -337,3 +337,17 @@ jobs:
         run: uv run --extra dev playwright install --with-deps
       - name: Run Integration Tests
         run: uv run --extra dev pytest integ_tests/ -v
+
+  caldav-compat-test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    needs: [test-ubuntu-python-newest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Install uv
+        run: pip install uv
+      - name: Run CalDAV compatibility tests
+        run: uv run --extra caldav_test pytest caldav_compat_tests/ -v

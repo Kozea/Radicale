@@ -76,8 +76,9 @@ class CollectionPartHistory(CollectionBase):
         """Returns the hrefs of all deleted items that are still in the
         history cache."""
         history_folder = self._storage._get_collection_cache_subfolder(self._filesystem_path, ".Radicale.cache", "history")
-        with contextlib.suppress(FileNotFoundError):
-            for entry in os.scandir(history_folder):
+        with contextlib.suppress(FileNotFoundError), \
+                os.scandir(history_folder) as entries:
+            for entry in entries:
                 href = entry.name
                 if not pathutils.is_safe_filesystem_path_component(href):
                     continue

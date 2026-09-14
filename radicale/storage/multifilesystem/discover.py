@@ -96,20 +96,21 @@ class StoragePartDiscover(StorageBase):
                 if item is not None:
                     yield item
 
-        for entry in os.scandir(filesystem_path):
-            if not entry.is_dir():
-                continue
-            href = entry.name
-            if not pathutils.is_safe_filesystem_path_component(href):
-                if not href.startswith(".Radicale"):
-                    logger.debug("Skipping collection %r in %r",
-                                 href, sane_path)
-                continue
-            sane_child_path = posixpath.join(sane_path, href)
-            child_path = pathutils.unstrip_path(sane_child_path, True)
-            with child_context_manager(sane_child_path, None):
-                yield self._collection_class(
-                    cast(multifilesystem.Storage, self), child_path)
+        with os.scandir(filesystem_path) as entries:
+            for entry in entries:
+                if not entry.is_dir():
+                    continue
+                href = entry.name
+                if not pathutils.is_safe_filesystem_path_component(href):
+                    if not href.startswith(".Radicale"):
+                        logger.debug("Skipping collection %r in %r",
+                                     href, sane_path)
+                    continue
+                sane_child_path = posixpath.join(sane_path, href)
+                child_path = pathutils.unstrip_path(sane_child_path, True)
+                with child_context_manager(sane_child_path, None):
+                    yield self._collection_class(
+                        cast(multifilesystem.Storage, self), child_path)
         if len(user_groups) > 0:
             if self._group_collections_folder is None or len(self._group_collections_folder) == 0:
                 logger.trace("searching for collection by user group skipped because base folder is not defined")
