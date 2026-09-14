@@ -98,19 +98,14 @@ class ApplicationPartGet(ApplicationBase):
             logger.debug("Request path %r by user %r", path, user)
             (host, port) = utils.get_server_netloc(environ, force_port=True).split(':')
             useSSL: int = 0
-            url: str = "http"
             if environ.get("SSL_PROTOCOL") or environ.get("HTTP_X_FORWARDED_PROTO", "") == "https":
                 useSSL = 1
-                url += "s"
-            url += "://" + host
-            if (useSSL == 1 and port != "443") or (useSSL == 0 and port != "80"):
-                # only add non-default port to URL
-                url += ":" + port
+            uri: str = ""
             if len(base_prefix) > 0:
-                url += base_prefix
-            url += "/"
-            uuid_suffix_input: str = "user=" + user + ":host=" + host + ":port=" + port + ":usessl=" + str(useSSL) + ":url=" + url
-            content_disposition = "attachement; filename=x-apple-aspen-config__user_" + user + "__url_" + urllib.parse.quote(url, safe='') + ".mobileconfig"
+                uri += base_prefix
+            uri += "/"
+            uuid_suffix_input: str = "user=" + user + ":host=" + host + ":port=" + port + ":usessl=" + str(useSSL) + ":uri=" + uri
+            content_disposition = "attachement; filename=x-apple-aspen-config__user_" + user + "__" + host.replace('.', '_') + "__" + str(port) + "__" + urllib.parse.quote(uri, safe='') + ".mobileconfig"
             pl: dict = dict(
                       PayloadType="Configuration",
                       PayloadVersion=1,
@@ -127,7 +122,7 @@ class ApplicationPartGet(ApplicationBase):
                             CalDAVHostName=host,
                             CalDAVPort=int(port),
                             CalDAVUsername=user,
-                            CalDAVPrincipalURL=url,
+                            CalDAVPrincipalURL=uri,
                             CalDAVUseSSL=(useSSL == 1)
                             ),
                           dict(
@@ -139,7 +134,7 @@ class ApplicationPartGet(ApplicationBase):
                             CalDAVHostName=host,
                             CalDAVPort=int(port),
                             CalDAVUsername=user,
-                            CalDAVPrincipalURL=url,
+                            CalDAVPrincipalURL=uri,
                             CalDAVUseSSL=(useSSL == 1)
                             )
                         ]

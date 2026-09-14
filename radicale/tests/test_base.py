@@ -2710,7 +2710,7 @@ permissions: RrWw""")
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
         assert pl["PayloadContent"][0]["CalDAVPort"] == 80
-        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "http://127.0.0.1/"
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/"
 
     def test_apple_mobileconfig_authorized_SSL(self) -> None:
         self.configure({"auth": {"type": "none"}})
@@ -2722,7 +2722,7 @@ permissions: RrWw""")
         assert type(pl["PayloadContent"]) is list
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is True
-        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "https://localhost:8443/"
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/"
 
     def test_apple_mobileconfig_authorized_scriptname(self) -> None:
         self.configure({"auth": {"type": "none"}})
@@ -2735,7 +2735,7 @@ permissions: RrWw""")
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
         assert pl["PayloadContent"][0]["CalDAVPort"] == 80
-        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "http://127.0.0.1/radicale/"
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/radicale/"
 
     def test_well_known(self) -> None:
         for path in ["/.well-known/caldav", "/.well-known/carddav"]:
