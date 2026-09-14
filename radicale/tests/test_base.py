@@ -2704,7 +2704,7 @@ permissions: RrWw""")
         path = "/.mobileconfig"
         _, headers, body = self.request("GET", path, check=200, login="appleuser:")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
-        if sys.version_info < (3, 12):
+        if sys.version_info < (3, 13):
             pl = plistlib.loads(body.encode("utf-8"))
         else:
             pl = plistlib.loads(body)
@@ -2720,7 +2720,7 @@ permissions: RrWw""")
         path = "/.mobileconfig"
         _, headers, body = self.request("GET", path, check=200, login="appleuser:", SSL_PROTOCOL="TLS1.2", HTTP_X_FORWARDED_PROTO="https", HTTP_X_FORWARDED_HOST="localhost", HTTP_X_FORWARDED_PORT="8443")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
-        if sys.version_info < (3, 12):
+        if sys.version_info < (3, 13):
             pl = plistlib.loads(body.encode("utf-8"))
         else:
             pl = plistlib.loads(body)
@@ -2735,7 +2735,7 @@ permissions: RrWw""")
         path = "/.mobileconfig"
         _, headers, body = self.request("GET", path, check=200, login="appleuser:", SCRIPT_NAME="/radicale")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
-        if sys.version_info < (3, 12):
+        if sys.version_info < (3, 13):
             pl = plistlib.loads(body.encode("utf-8"))
         else:
             pl = plistlib.loads(body)
