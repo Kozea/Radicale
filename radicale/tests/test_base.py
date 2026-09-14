@@ -2704,7 +2704,10 @@ permissions: RrWw""")
         path = "/.mobileconfig"
         _, headers, body = self.request("GET", path, check=200, login="appleuser:")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
-        pl = plistlib.loads(body)
+        if sys.version_info < (3, 10):
+            pl = plistlib.loads(body.encode("utf-8"))
+        else:
+            pl = plistlib.loads(body)
         assert pl["PayloadType"] == "Configuration"
         assert type(pl["PayloadContent"]) is list
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
@@ -2717,7 +2720,10 @@ permissions: RrWw""")
         path = "/.mobileconfig"
         _, headers, body = self.request("GET", path, check=200, login="appleuser:", SSL_PROTOCOL="TLS1.2", HTTP_X_FORWARDED_PROTO="https", HTTP_X_FORWARDED_HOST="localhost", HTTP_X_FORWARDED_PORT="8443")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
-        pl = plistlib.loads(body)
+        if sys.version_info < (3, 10):
+            pl = plistlib.loads(body.encode("utf-8"))
+        else:
+            pl = plistlib.loads(body)
         assert pl["PayloadType"] == "Configuration"
         assert type(pl["PayloadContent"]) is list
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
@@ -2729,7 +2735,10 @@ permissions: RrWw""")
         path = "/.mobileconfig"
         _, headers, body = self.request("GET", path, check=200, login="appleuser:", SCRIPT_NAME="/radicale")
         assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
-        pl = plistlib.loads(body)
+        if sys.version_info < (3, 10):
+            pl = plistlib.loads(body.encode("utf-8"))
+        else:
+            pl = plistlib.loads(body)
         assert pl["PayloadType"] == "Configuration"
         assert type(pl["PayloadContent"]) is list
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
