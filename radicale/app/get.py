@@ -105,7 +105,7 @@ class ApplicationPartGet(ApplicationBase):
                 uri += base_prefix
             uri += "/"
             uuid_suffix_input: str = "user=" + user + ":host=" + host + ":port=" + port + ":usessl=" + str(useSSL) + ":uri=" + uri
-            content_disposition = "attachement; filename=x-apple-aspen-config__user_" + user + "__" + host.replace('.', '_') + "__" + str(port) + "__" + urllib.parse.quote(uri, safe='') + ".mobileconfig"
+            content_disposition = "attachement; filename=x-apple-aspen-config--" + user + "--" + host.replace('.', '_') + "--" + str(port) + "--" + urllib.parse.quote(uri.replace('/', '_'), safe='') + ".mobileconfig"
             pl: dict = dict(
                       PayloadType="Configuration",
                       PayloadVersion=1,
