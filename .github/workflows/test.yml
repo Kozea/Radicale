@@ -163,24 +163,6 @@ jobs:
           . venv/bin/activate
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
-  test-ubuntu-python-oldest:
-    name: Test Python:oldest Ubuntu:latest
-    needs: [lint, test-ubuntu-python-newest, test-python-32bit]
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ['3.9']
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Test dependencies
-        run: pip install tox
-      - name: Test with oldest Python on Ubuntu
-        run: tox -c pyproject.toml -e py
-
   test-otheros-python-newest:
     name: Test MacOS/Windows:latest Python:newest
     needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-ntfs, test-ubuntu-python-newest-with-vfat, test-ubuntu-python-newest-with-vfat-utf8]
@@ -199,13 +181,13 @@ jobs:
       - name: Test with latest Python on other OS
         run: tox -c pyproject.toml -e py
 
-  test-otheros-python-oldest:
-    name: Test MacOS/Windows:latest Python:oldest
-    needs: [lint, test-ubuntu-python-oldest, test-otheros-python-newest]
+  test-ubuntu-python-versions:
+    name: Test Ubuntu:latest Python:Matrix
+    needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
-        python-version: ['3.9']
+        os: [ubuntu-latest]
+        python-version: ['3.13', '3.12', '3.11', '3.10', '3.9', 'pypy-3.11', 'pypy-3.10', 'pypy-3.9']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -214,16 +196,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
         run: pip install tox
-      - name: Test with oldest Python on other OS
+      - name: Test with older Python on Ubuntu
         run: tox -c pyproject.toml -e py
 
-  test-python-versions:
-    name: Test Ubuntu/MacOS/Windows:latest Python:Matrix
-    needs: [lint, test-otheros-python-oldest, test-otheros-python-newest, test-ubuntu-python-oldest, test-ubuntu-python-newest]
+  test-otheros-python-versions:
+    name: Test MacOS/Windows:latest Python:Matrix
+    needs: [lint, test-otheros-python-newest, test-ubuntu-python-versions]
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13', 'pypy-3.9', 'pypy-3.10', 'pypy-3.11']
+        os: [macos-latest, windows-latest]
+        python-version: ['3.13', '3.12', '3.11', '3.10', '3.9', 'pypy-3.11', 'pypy-3.10', 'pypy-3.9']
         exclude:
           - os: windows-latest
             python-version: 'pypy-3.9'
@@ -239,7 +221,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Test dependencies
         run: pip install tox
-      - name: Test with older Python
+      - name: Test with older Python on MacOS/Windows
         run: tox -c pyproject.toml -e py
 
   coveralls-test:

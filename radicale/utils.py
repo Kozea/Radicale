@@ -19,6 +19,7 @@
 
 import datetime
 import os
+import re
 import ssl
 import sys
 import textwrap
@@ -29,7 +30,7 @@ from typing import Callable, Sequence, Tuple, Type, TypeVar, Union
 
 import vobject
 
-from radicale import config
+from radicale import config, types
 from radicale.log import logger
 
 if sys.platform != "win32":
@@ -586,3 +587,19 @@ def sha256_bytes(content: bytes) -> str:
     _hash = sha256()
     _hash.update(content)
     return _hash.hexdigest()
+
+
+def get_server_netloc(environ: types.WSGIEnviron, force_port: bool = False):
+    if environ.get("HTTP_X_FORWARDED_HOST"):
+        host = environ["HTTP_X_FORWARDED_HOST"]
+        proto = environ.get("HTTP_X_FORWARDED_PROTO") or "http"
+        port = "443" if proto == "https" else "80"
+        port = environ.get("HTTP_X_FORWARDED_PORT") or port
+    else:
+        host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
+        proto = environ["wsgi.url_scheme"]
+        port = environ["SERVER_PORT"]
+    if (not force_port and port == ("443" if proto == "https" else "80") or
+            re.search(r":\d+$", host)):
+        return host
+    return host + ":" + port

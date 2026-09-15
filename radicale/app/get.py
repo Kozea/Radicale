@@ -18,12 +18,16 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import plistlib
 import posixpath
+import urllib
+import uuid
 from http import client
 from typing import Union
 from urllib.parse import quote
 
-from radicale import httputils, pathutils, sharing, storage, types, xmlutils
+from radicale import (httputils, pathutils, sharing, storage, types, utils,
+                      xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
 
@@ -85,6 +89,62 @@ class ApplicationPartGet(ApplicationBase):
                 return httputils.redirect(location, client.MOVED_PERMANENTLY)
             # Dispatch /.web path to web module
             return self._web.get(environ, base_prefix, path, user, request_info)
+        # Catch /.mobileconfig (dynamically generated)
+        # https://developer.apple.com/business/documentation/Configuration-Profile-Reference.pdf
+        if path == "/.mobileconfig":
+            if user is None or user == "":
+                logger.notice("Access to path %r not allowed for unauthenticated user", path)
+                return httputils.NOT_ALLOWED
+            logger.debug("Request path %r by user %r", path, user)
+            (host, port) = utils.get_server_netloc(environ, force_port=True).split(':')
+            useSSL: int = 0
+            if environ.get("SSL_PROTOCOL") or environ.get("HTTP_X_FORWARDED_PROTO", "") == "https":
+                useSSL = 1
+            uri: str = ""
+            if len(base_prefix) > 0:
+                uri += base_prefix
+            uri += "/"
+            uuid_suffix_input: str = "user=" + user + ":host=" + host + ":port=" + port + ":usessl=" + str(useSSL) + ":uri=" + uri
+            content_disposition = "attachement; filename=x-apple-aspen-config--" + user + "--" + host.replace('.', '_') + "--" + str(port) + "--" + urllib.parse.quote(uri.replace('/', '_'), safe='') + ".mobileconfig"
+            pl: dict = dict(
+                      PayloadType="Configuration",
+                      PayloadVersion=1,
+                      PayloadIdentifier="org.radicale.mobileconfig." + user,
+                      PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:config:" + uuid_suffix_input)[:32])),
+                      PayloadDisplayName="Radicale Calendar+Contacts",
+                      PayloadContent=[
+                          dict(
+                            PayloadType="com.apple.caldav.account",
+                            PayloadVersion=1,
+                            PayloadIdentifier="org.radicale.mobileconfig." + user + ".caldav",
+                            PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:caldav:" + uuid_suffix_input)[:32])),
+                            CalDAVAccountDescription="Radicale Calendar",
+                            CalDAVHostName=host,
+                            CalDAVPort=int(port),
+                            CalDAVUsername=user,
+                            CalDAVPrincipalURL=uri,
+                            CalDAVUseSSL=(useSSL == 1)
+                            ),
+                          dict(
+                            PayloadType="com.apple.cardddav.account",
+                            PayloadVersion=1,
+                            PayloadIdentifier="org.radicale.mobileconfig." + user + ".cardddav",
+                            PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:carddav:" + uuid_suffix_input)[:32])),
+                            CalDAVAccountDescription="Radicale Contacts",
+                            CalDAVHostName=host,
+                            CalDAVPort=int(port),
+                            CalDAVUsername=user,
+                            CalDAVPrincipalURL=uri,
+                            CalDAVUseSSL=(useSSL == 1)
+                            )
+                        ]
+                      )
+            headers: dict = {
+                    "Content-Type": "application/x-apple-aspen-config",
+                    "Content-Disposition": content_disposition,
+                    }
+            answer = plistlib.dumps(pl).decode()
+            return client.OK, headers, answer, None
         permissions_filter = None
         share = None
         if self._sharing._enabled:

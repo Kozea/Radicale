@@ -24,6 +24,7 @@ Radicale tests with simple requests.
 import datetime
 import logging
 import os
+import plistlib
 import posixpath
 import sys
 import urllib
@@ -2693,6 +2694,57 @@ permissions: RrWw""")
         # it should still exist after deletion
         self.delete("/")
         self.propfind("/")
+
+    def test_apple_mobileconfig_unauthorized(self) -> None:
+        path = "/.mobileconfig"
+        _, headers, body = self.request("GET", path, check=401)
+
+    def test_apple_mobileconfig_authorized(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        path = "/.mobileconfig"
+        _, headers, body = self.request("GET", path, check=200, login="appleuser:")
+        assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
+        if sys.version_info < (3, 13):
+            pl = plistlib.loads(body.encode("utf-8"))
+        else:
+            pl = plistlib.loads(body)
+        assert pl["PayloadType"] == "Configuration"
+        assert type(pl["PayloadContent"]) is list
+        assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
+        assert pl["PayloadContent"][0]["CalDAVPort"] == 80
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/"
+
+    def test_apple_mobileconfig_authorized_SSL(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        path = "/.mobileconfig"
+        _, headers, body = self.request("GET", path, check=200, login="appleuser:", SSL_PROTOCOL="TLS1.2", HTTP_X_FORWARDED_PROTO="https", HTTP_X_FORWARDED_HOST="localhost", HTTP_X_FORWARDED_PORT="8443")
+        assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
+        if sys.version_info < (3, 13):
+            pl = plistlib.loads(body.encode("utf-8"))
+        else:
+            pl = plistlib.loads(body)
+        assert pl["PayloadType"] == "Configuration"
+        assert type(pl["PayloadContent"]) is list
+        assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][0]["CalDAVUseSSL"] is True
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/"
+
+    def test_apple_mobileconfig_authorized_scriptname(self) -> None:
+        self.configure({"auth": {"type": "none"}})
+        path = "/.mobileconfig"
+        _, headers, body = self.request("GET", path, check=200, login="appleuser:", SCRIPT_NAME="/radicale")
+        assert headers.get("Content-Type") == 'application/x-apple-aspen-config; charset=utf-8'
+        if sys.version_info < (3, 13):
+            pl = plistlib.loads(body.encode("utf-8"))
+        else:
+            pl = plistlib.loads(body)
+        assert pl["PayloadType"] == "Configuration"
+        assert type(pl["PayloadContent"]) is list
+        assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
+        assert pl["PayloadContent"][0]["CalDAVPort"] == 80
+        assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/radicale/"
 
     def test_well_known(self) -> None:
         for path in ["/.well-known/caldav", "/.well-known/carddav"]:

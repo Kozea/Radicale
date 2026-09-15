@@ -24,26 +24,10 @@ import re
 from http import client
 from urllib.parse import unquote, urlparse
 
-from radicale import httputils, pathutils, sharing, storage, types
+from radicale import httputils, pathutils, sharing, storage, types, utils
 from radicale.app import base as app_base
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
-
-
-def get_server_netloc(environ: types.WSGIEnviron, force_port: bool = False):
-    if environ.get("HTTP_X_FORWARDED_HOST"):
-        host = environ["HTTP_X_FORWARDED_HOST"]
-        proto = environ.get("HTTP_X_FORWARDED_PROTO") or "http"
-        port = "443" if proto == "https" else "80"
-        port = environ.get("HTTP_X_FORWARDED_PORT") or port
-    else:
-        host = environ.get("HTTP_HOST") or environ["SERVER_NAME"]
-        proto = environ["wsgi.url_scheme"]
-        port = environ["SERVER_PORT"]
-    if (not force_port and port == ("443" if proto == "https" else "80") or
-            re.search(r":\d+$", host)):
-        return host
-    return host + ":" + port
 
 
 class ApplicationPartMove(ApplicationBase):
@@ -63,7 +47,7 @@ class ApplicationPartMove(ApplicationBase):
             if to_url.port is None:
                 to_netloc_with_port += (":443" if to_url.scheme == "https"
                                         else ":80")
-            if to_netloc_with_port != get_server_netloc(environ, force_port=True):
+            if to_netloc_with_port != utils.get_server_netloc(environ, force_port=True):
                 logger.info("Unsupported destination address: %r", raw_dest)
                 # Remote destination server, not supported
                 return httputils.REMOTE_DESTINATION
