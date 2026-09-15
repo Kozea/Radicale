@@ -183,7 +183,6 @@ jobs:
 
   test-ubuntu-python-versions:
     name: Test Ubuntu:latest Python:Matrix
-    name: Test Python:oldest Ubuntu:latest
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
