@@ -2450,7 +2450,8 @@ Default: `99`
 Radicale has been tested with:
 
 * [Android](https://android.com/) with
-  [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid),
+  [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid) or
+  [KashCal](https://f-droid.org/packages/org.onekash.kashcal),
 * [OneCalendar](https://www.onecalendar.nl/)
 * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
   [Contacts](https://wiki.gnome.org/Apps/Contacts) and
