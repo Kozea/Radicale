@@ -21,6 +21,7 @@
 
 import { delete_collection } from "../api/api.js";
 import { get_auth_header } from "../api/common.js";
+import { ROOT_PATH, SERVER } from "../constants.js";
 import { Collection, CollectionType, Permission } from "../models/collection.js";
 import { extract_title } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
@@ -73,6 +74,8 @@ export class CollectionsScene {
         this._new_btn = get_element(this._html_scene, "[data-name=new]");
         this._upload_btn = get_element(this._html_scene, "[data-name=upload]");
         this._incomingshares_btn = get_element(this._html_scene, "[data-name=incomingshares]");
+        /** @type {HTMLAnchorElement} */
+        this._mobileconfig_btn = /** @type {HTMLAnchorElement} */ (get_element(this._html_scene, "[data-name=mobileconfig]"));
         this._error_div = get_element(this._html_scene, "[data-name=collectionsscene_error]");
 
         /** @type {Array<HTMLElement>} */ this._nodes = [];
@@ -193,6 +196,47 @@ export class CollectionsScene {
     }
 
     /**
+     * Download a file from the server, authenticated with user/password if available.
+     * Extracts filename from Content-Disposition header if present, falling back to fallback_filename.
+     *
+     * @param {string} url
+     * @param {string} [fallback_filename]
+     */
+    _download_file(url, fallback_filename) {
+        let auth = get_auth_header(this._user, this._password);
+        let headers = auth ? {
+            'Authorization': auth
+        } : undefined;
+        fetch(url, { headers: headers }).then((response) => {
+            if (response.ok) {
+                let filename = fallback_filename;
+                let disposition = response.headers.get("Content-Disposition");
+                if (disposition) {
+                    let match = disposition.match(/filename\*?=(?:UTF-8'')?("?[^";\n]*"?)/i);
+                    if (match && match[1]) {
+                        filename = decodeURIComponent(match[1].replace(/^["']|["']$/g, ''));
+                    }
+                }
+                return response.blob().then((blob) => ({ blob, filename }));
+            }
+            throw new Error("Download failed: " + response.statusText);
+        }).then(({ blob, filename }) => {
+            let blob_url = window.URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.href = blob_url;
+            if (filename) {
+                a.download = filename;
+            }
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blob_url);
+        })["catch"]((error) => {
+            this._errorHandler.setError(error.message);
+        });
+    }
+
+    /**
      * @param {Collection} collection
      * @param {import("../api/sharing.js").Share[]} shares
      */
@@ -284,27 +328,8 @@ export class CollectionsScene {
         download_btn.href = href;
         download_btn.onclick = (event) => {
             event.preventDefault();
-            let auth = get_auth_header(this._user, this._password);
-            let headers = auth ? {
-                'Authorization': auth
-            } : undefined;
-            fetch(href, { headers: headers }).then(function (response) {
-                if (response.ok) {
-                    return response.blob();
-                }
-                throw new Error("Download failed: " + response.statusText);
-            }).then(function (blob) {
-                let url = window.URL.createObjectURL(blob);
-                let a = document.createElement("a");
-                a.href = url;
-                a.download = (collection.displayname || collection.href).replace(/\/+$/, "") + (collection.type === CollectionType.ADDRESSBOOK ? ".vcf" : ".ics");
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            })["catch"]((error) => {
-                this._errorHandler.setError(error.message);
-            });
+            let fallback = (collection.displayname || collection.href).replace(/\/+$/, "") + (collection.type === CollectionType.ADDRESSBOOK ? ".vcf" : ".ics");
+            this._download_file(href, fallback);
         };
         if (collection.type == CollectionType.WEBCAL) {
             if (download_btn.parentElement) {
@@ -361,6 +386,12 @@ export class CollectionsScene {
         this._new_btn.onclick = () => this._onnew();
         this._upload_btn.onclick = () => this._onupload();
         this._incomingshares_btn.onclick = () => this._onincomingshares();
+        const mobileconfig_url = SERVER + ROOT_PATH + ".mobileconfig";
+        this._mobileconfig_btn.href = mobileconfig_url;
+        this._mobileconfig_btn.onclick = (event) => {
+            event.preventDefault();
+            this._download_file(mobileconfig_url, (this._user ? `${this._user}.mobileconfig` : "radicale.mobileconfig"));
+        };
         collectionsCache.getChildCollections(this._user, this._password, this._principal_collection, (e) => this._errorwrapper(e), (c, s, ce) => this._show_collections(c, s, ce));
         collectionsCache.getServerFeatures(this._user, this._password, (e) => this._errorwrapper(e), maybe_enable_sharing_options);
     }
@@ -370,6 +401,9 @@ export class CollectionsScene {
         this._new_btn.onclick = null;
         this._upload_btn.onclick = null;
         this._incomingshares_btn.onclick = null;
+        if (this._mobileconfig_btn) {
+            this._mobileconfig_btn.onclick = null;
+        }
         this._clear_collections_display();
     }
 

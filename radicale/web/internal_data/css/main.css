@@ -517,6 +517,17 @@ summary:hover {
     background-color: var(--badge_icon-bg-color);
 }
 
+.emoji_icon,
+.fabcontainer a .emoji_icon,
+.fabcontainer a[data-name=mobileconfig] {
+    font-size: 24pt !important;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fabcontainer-a-color);
+}
+
 .smalltext {
     font-size: 75% !important;
 }
