@@ -324,6 +324,11 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     needs: [test-ubuntu-python-newest]
+    env:
+      # Pinned to a known-good release; bump deliberately (see
+      # caldav_compat_tests/README.md) and update EXPECTED_DEVIATIONS
+      # in the same PR if the new version changes observed behaviour.
+      CALDAV_SERVER_TESTER_VERSION: '1.2.0'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -332,4 +337,4 @@ jobs:
       - name: Install uv
         run: pip install uv
       - name: Run CalDAV compatibility tests
-        run: uv run --extra caldav_test pytest caldav_compat_tests/ -v
+        run: uv run --extra caldav_test --with "caldav-server-tester==${{ env.CALDAV_SERVER_TESTER_VERSION }}" pytest caldav_compat_tests/ -v

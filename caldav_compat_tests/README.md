@@ -35,6 +35,15 @@ pip install -e ".[caldav_test]"
 pytest caldav_compat_tests
 ```
 
+## Pinned `caldav-server-tester` version
+
+CI pins `caldav-server-tester` to a known-good version
+(`CALDAV_SERVER_TESTER_VERSION` in the `caldav-compat-test` job of
+`.github/workflows/test.yml`) so that a new release of that library can't
+turn this job red on unrelated PRs. Bump it deliberately in its own PR,
+updating `EXPECTED_DEVIATIONS` in the same PR if the new version changes
+observed behaviour.
+
 ## Updating the baseline
 
 If a change to Radicale (or a new release of `caldav-server-tester`)
