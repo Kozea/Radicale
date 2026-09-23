@@ -49,12 +49,20 @@ class Config:
     extra_config: str = ""
     admin_username: str = "admin"
     user_username: str = "max"
+    permit_properties_overlay: bool = True
 
 
 SHARING_HTPASSWD = Config(
     name="sharing_htpasswd",
     auth_type=AuthType.HTPASSWD,
     sharing_type=SharingType.SHARING,
+)
+
+SHARING_HTPASSWD_NO_OVERLAY = Config(
+    name="sharing_htpasswd_no_overlay",
+    auth_type=AuthType.HTPASSWD,
+    sharing_type=SharingType.SHARING,
+    permit_properties_overlay=False,
 )
 
 SHARING_HTPASSWD_USERSWITHDOMAIN = Config(
@@ -148,7 +156,7 @@ collection_by_map = true
 collection_by_token = true
 permit_create_token = true
 permit_create_map = true
-permit_properties_overlay = true
+permit_properties_overlay = {str(config.permit_properties_overlay).lower()}
 database_path = {sharing_path}
 """
             )
