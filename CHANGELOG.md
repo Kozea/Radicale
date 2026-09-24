@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.8.2.dev
+
 ## 3.8.1
 * Add: tests: optional caldav-server-tester based CalDAV compatibility test suite (caldav_compat_tests)
 * Fix: sharing/bday-conversion: add missing support for comma separated text components in vcard field N (name)
