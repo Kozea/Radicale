@@ -145,8 +145,8 @@ export class CreateEditCollectionScene {
                 }
                 this._create_edit_req = null;
                 if (error1) {
-                    this._errorHandler.setError(error1);
                     pop_scene();
+                    this._errorHandler.setError(error1);
                 } else {
                     collectionsCache.invalidate();
                     pop_to_parent();

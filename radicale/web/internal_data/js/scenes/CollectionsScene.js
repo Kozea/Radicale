@@ -298,11 +298,17 @@ export class CollectionsScene {
                 share_option.removeAttribute("data-name");
             }
             delete_btn.classList.add("hidden");
-
             let has_write_permission = /w/i.test(share.Permissions || "");
             let has_write_properties = /P/i.test(share.Permissions || "") || collection.has_permission(Permission.WRITE_PROPERTIES);
 
             if (has_write_permission || has_write_properties) {
+                edit_btn.classList.remove("hidden");
+            } else {
+                edit_btn.classList.add("hidden");
+            }
+        } else {
+            let has_write_properties = collection.has_permission(Permission.WRITE_PROPERTIES);
+            if (has_write_properties) {
                 edit_btn.classList.remove("hidden");
             } else {
                 edit_btn.classList.add("hidden");
