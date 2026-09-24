@@ -6,6 +6,8 @@
 * Improvement: rights/from_file: extend detection of conflicting/unsupported permissions on startup
 * Fix: sharing: fix logic of permit/deny permissions for map (mM) and token (tT)
 * Add: support for /.mobileconfig for authenticated user
+* Fix: WebUI sharing/propatch issue
+* Fix: storage/sharing close unguarded os.scandir() iterators
 
 ## 3.8.0
 * Fix: storage/multifilesystem: depth:1 PROPFIND no longer re-runs the filesystem collision check (path_to_filesystem) for every item in a collection; this made listing large collections O(n^2) on file systems not detected as collision-free
