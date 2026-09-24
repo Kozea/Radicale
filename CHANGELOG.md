@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.8.1.dev
+## 3.8.1
 * Add: tests: optional caldav-server-tester based CalDAV compatibility test suite (caldav_compat_tests)
 * Fix: sharing/bday-conversion: add missing support for comma separated text components in vcard field N (name)
 * Improvement: rights/from_file: extend detection of conflicting/unsupported permissions on startup
