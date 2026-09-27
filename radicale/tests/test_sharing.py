@@ -4917,7 +4917,7 @@ permissions: RrWw""")
         <D:getetag/>
     </D:prop>
 </C:calendar-query>""", login="user:userpw")
-            logging.debug("resonses: %r", responses)
+            logging.debug("responses: %r", responses)
             assert path_shared_r + "contact2-with-bday.ics" in responses
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
@@ -4934,7 +4934,7 @@ permissions: RrWw""")
    <href>""" + path_shared_r + "contact2-with-bday.ics" + """</href>
    <href>""" + path_shared_r + "contact3-with-bday.ics" + """</href>
 </C:calendar-multiget>""", login="user:userpw")
-            logging.debug("resonses: %r", responses)
+            logging.debug("responses: %r", responses)
             assert path_shared_r + "contact2-with-bday.ics" in responses
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
@@ -4981,7 +4981,7 @@ permissions: RrWw""")
      </C:comp-filter>
    </C:filter>
 </C:calendar-query>""", login="user:userpw")
-            logging.debug("resonses: %r", responses)
+            logging.debug("responses: %r", responses)
             assert path_shared_r + "contact2-with-bday.ics" in responses
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
@@ -4996,7 +4996,7 @@ permissions: RrWw""")
      <getetag />
    </prop>
 </propfind>""", login="user:userpw", HTTP_DEPTH="1")
-            logging.debug("resonses: %r", responses)
+            logging.debug("responses: %r", responses)
             assert path_shared_r + "contact2-with-bday.ics" in responses
             assert path_shared_r + "contact3-with-bday.ics" in responses
             assert path_shared_r + "contact1.ics" not in responses
@@ -5644,7 +5644,7 @@ permissions: RrWw""")
             logging.info("\n*** GET collection user limit age (age:5) -> ok")
             self.configure({"sharing": {
                 "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] (BDAY)",
-                "conversion_bday_description_template": "AGE=[{age}|MAX-in-the-past|MAX-in-the-past]",
+                "conversion_bday_description_template": "AGE=[{age}|MAX-in-the-past]",
                 "conversion_bday_alarm_trigger_template": "",
                 }})
             _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
@@ -6404,7 +6404,7 @@ permissions: RrWw""")
         <D:getetag/>
     </D:prop>
 </C:calendar-query>""", login="owner:ownerpw")
-            logging.debug("resonses: %r", responses)
+            logging.debug("responses: %r", responses)
             assert path_shared + "contact2-with-bday.ics" in responses
             assert path_shared + "contact3-with-bday.ics" in responses
             assert path_shared + "contact1.ics" not in responses
@@ -6418,7 +6418,7 @@ permissions: RrWw""")
         <D:getetag/>
     </D:prop>
 </C:calendar-query>""", login="owner:ownerpw", x_forwarded_for="127.0.0.2")
-            logging.debug("resonses: %r", responses)
+            logging.debug("responses: %r", responses)
             assert script_name + path_shared + "contact2-with-bday.ics" in responses
             assert script_name + path_shared + "contact3-with-bday.ics" in responses
             assert script_name + path_shared + "contact1.ics" not in responses
