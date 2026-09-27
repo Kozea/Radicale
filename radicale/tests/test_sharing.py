@@ -5616,7 +5616,6 @@ permissions: RrWw""")
             assert type(responses[path_shared_r + "contact2-with-bday.ics"]['C:calendar-data']) is tuple
             status, element = responses[path_shared_r + "contact2-with-bday.ics"]['C:calendar-data']
             logging.debug("responses (calendar data): %r", element.text)
-            # TODO: check filter once working
 
             # update template
             logging.info("\n*** update map(bday) user/owner:r (age:5) -> ok")
