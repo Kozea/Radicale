@@ -286,16 +286,23 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         # memory.
         item, filters_matched = retrieved_items.pop(0)
         if filters and not filters_matched:
+            item_href = item.href
+            collection_path = collection.path
+            if share:
+                # backmap
+                collection_path = share['PathOrToken'].removeprefix("/")
+                if share['Conversion'] == "bday" and item_href is not None:
+                    item_href = item_href.removesuffix(".vcf") + ".ics"
             try:
                 if not all(test_filter(collection_tag, item, filter_)
                            for filter_ in main_filters):
                     continue
             except ValueError as e:
                 raise ValueError("Failed to filter item %r from %r: %s" %
-                                 (item.href, collection.path, e)) from e
+                                 (item_href, collection_path, e)) from e
             except Exception as e:
                 raise RuntimeError("Failed to filter item %r from %r: %s" %
-                                   (item.href, collection.path, e)) from e
+                                   (item_href, collection_path, e)) from e
 
         found_props = []
         not_found_props = []
