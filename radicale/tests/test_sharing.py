@@ -5593,6 +5593,31 @@ permissions: RrWw""")
             assert "DESCRIPTION:AGE=99" not in answer
             assert "DESCRIPTION:AGE=100" not in answer
 
+            # get elements as user
+            logging.info("\n*** REPORT collection entries user with timerange filter -> ok")
+            _, responses = self.report(path_shared_r, """\
+<?xml version="1.0"?>
+<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+   <D:prop>
+     <C:calendar-data />
+   </D:prop>
+   <C:filter>
+     <C:comp-filter name="VCALENDAR">
+        <C:comp-filter name="VEVENT">
+          <C:time-range start="20130801T000000Z" end="20151001T000000Z"/>
+        </C:comp-filter>
+     </C:comp-filter>
+   </C:filter>
+</C:calendar-query>""", login="user:userpw")
+            logging.debug("responses: %r", responses)
+            assert path_shared_r + "contact2-with-bday.ics" in responses
+            assert type(responses) is dict
+            assert type(responses[path_shared_r + "contact2-with-bday.ics"]) is dict
+            assert type(responses[path_shared_r + "contact2-with-bday.ics"]['C:calendar-data']) is tuple
+            status, element = responses[path_shared_r + "contact2-with-bday.ics"]['C:calendar-data']
+            logging.debug("responses (calendar data): %r", element.text)
+            # TODO: check filter once working
+
             # update template
             logging.info("\n*** update map(bday) user/owner:r (age:5) -> ok")
             json_dict = {}
