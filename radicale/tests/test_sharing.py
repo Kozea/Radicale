@@ -5594,7 +5594,7 @@ permissions: RrWw""")
             assert "DESCRIPTION:AGE=100" not in answer
 
             # get elements as user
-            logging.info("\n*** REPORT collection entries user with timerange filter -> ok")
+            logging.info("\n*** REPORT collection entries user with timerange filter (which is triggering filter code, but having no affect) -> ok")
             _, responses = self.report(path_shared_r, """\
 <?xml version="1.0"?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
