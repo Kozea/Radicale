@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.8.2.dev
+* Fix: sharing/bday-conversion: add proper RRULE and RECURRENCE-ID in case of "age" support is triggered
 
 ## 3.8.1
 * Add: tests: optional caldav-server-tester based CalDAV compatibility test suite (caldav_compat_tests)

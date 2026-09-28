@@ -907,7 +907,13 @@ class Item:
 
             # set UID
             if vevent_enable_age:
-                uid_value = uid + "-AGE-" + str(age)
+                uid_value = uid + "-AGE"
+                if age == 0:
+                    # set RRULE to first event covering 0 - age_max
+                    vevent.add('rrule').value = "FREQ=YEARLY;COUNT=" + str(age_max + 1)
+                else:
+                    # set RECURRENCE-ID to subsequent events
+                    vevent.add('recurrence-id').value = dtstart
             else:
                 uid_value = uid
             vevent.add('uid').value = uid_value
