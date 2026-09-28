@@ -5594,17 +5594,19 @@ permissions: RrWw""")
             assert "DESCRIPTION:AGE=100" not in answer
 
             # get elements as user
-            logging.info("\n*** REPORT collection entries user with timerange filter (which is triggering filter code, but having no affect) -> ok")
+            logging.info("\n*** REPORT collection entries user with expand+timerange filter -> ok")
             _, responses = self.report(path_shared_r, """\
 <?xml version="1.0"?>
 <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
    <D:prop>
-     <C:calendar-data />
+     <C:calendar-data>
+         <C:expand start="20140701T000000Z" end="20150630T000000Z" />
+     </C:calendar-data>
    </D:prop>
    <C:filter>
      <C:comp-filter name="VCALENDAR">
         <C:comp-filter name="VEVENT">
-          <C:time-range start="20130801T000000Z" end="20151001T000000Z"/>
+          <C:time-range start="20140701T000000Z" end="20150630T000000Z"/>
         </C:comp-filter>
      </C:comp-filter>
    </C:filter>
@@ -5616,6 +5618,12 @@ permissions: RrWw""")
             assert type(responses[path_shared_r + "contact2-with-bday.ics"]['C:calendar-data']) is tuple
             status, element = responses[path_shared_r + "contact2-with-bday.ics"]['C:calendar-data']
             logging.debug("responses (calendar data): %r", element.text)
+            assert "DESCRIPTION:AGE=44" not in element.text
+            assert "DESCRIPTION:AGE=45" in element.text
+            assert "DESCRIPTION:AGE=46" not in element.text
+            assert "RECURRENCE-ID:20140101" not in element.text
+            assert "RECURRENCE-ID:20150101" in element.text
+            assert "RECURRENCE-ID:20160101" not in element.text
 
             # update template
             logging.info("\n*** update map(bday) user/owner:r (age:5) -> ok")
