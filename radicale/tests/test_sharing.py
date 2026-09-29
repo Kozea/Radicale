@@ -5387,6 +5387,148 @@ permissions: RrWw""")
             assert "Test-FN-C3 (1990/5)" in answer
             assert "Test-FN-C3 (1990/6)" in answer
 
+    def test_sharing_api_map_vcf_bday_change_template(self) -> None:
+        """share-by-map with conversion=bday change template tests."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_properties_overlay": "True",
+                                    "enforce_properties_overlay": "True",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "response_header_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped = "/owner/adressbook-" + db_type + ".vcf/"
+            path_shared_r = "/user/calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped, login="owner:ownerpw")
+
+            contact2 = get_file_content("contact2-with-bday.vcf")
+            path2 = path_mapped + "/contact2-with-bday.vcf"
+            path_shared_2 = path_shared_r + "/contact2-with-bday.ics"
+            self.put(path2, contact2, login="owner:ownerpw")
+
+            # create map
+            logging.info("\n*** create map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Conversion'] = "bday"
+            json_dict['Permissions'] = "rP"
+            json_dict['Enabled'] = True
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # enable map by user
+            logging.info("\n*** enable map(bday) by user")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict=json_dict)
+
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] ({year}) (BDAY)",
+                "conversion_bday_description_template": "BDAY={year}-{month}-{day}",
+                }})
+
+            logging.info("\n*** GET collection owner -> ok")
+            _, headers, answer = self.request("GET", path_mapped, login="owner:ownerpw")
+            etag_collection_vcf = headers['ETag']
+
+            # verify content as user
+            logging.info("\n*** GET item user format:default -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (1970) (BDAY)" in answer
+            assert "X-RADICALE-NAME:contact2-with-bday.ics" in answer
+            etag1 = headers['ETag']
+            assert etag1.startswith('"bda0')
+
+            logging.info("\n*** GET collection user format:default -> ok")
+            _, headers, answer = self.request("GET", path_shared_r, login="user:userpw")
+            assert "SUMMARY:Test-FN (1970) (BDAY)" in answer
+            etag1_collection_ics = headers['ETag']
+            assert etag1_collection_ics.startswith('"bda0')
+
+            logging.info("\n*** GET item user format:default (2nd time) -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (1970) (BDAY)" in answer
+            assert "X-RADICALE-NAME:contact2-with-bday.ics" in answer
+            etag2 = headers['ETag']
+            assert etag2.startswith('"bda0')
+
+            logging.info("\n*** GET collection user format:default (2nd time) -> ok")
+            _, headers, answer = self.request("GET", path_shared_r, login="user:userpw")
+            etag2_collection_ics = headers['ETag']
+            assert etag2_collection_ics.startswith('"bda0')
+
+            # compare etag (have to be equal)
+            assert etag2 == etag1
+            assert etag2_collection_ics == etag1_collection_ics
+
+            # change template
+            self.configure({"sharing": {
+                "conversion_bday_summary_template": "[{fn}|{n:f} {n:g} {n:a}|{nickname}] ({year}) (BDAYTEST)",
+                "conversion_bday_description_template": "BDAYTEST={year}-{month}-{day}",
+                }})
+
+            logging.info("\n*** GET item user format:default (template changed) -> ok")
+            _, headers, answer = self.request("GET", path_shared_2, login="user:userpw")
+            assert "SUMMARY:Test-FN (1970) (BDAYTEST)" in answer
+            assert "X-RADICALE-NAME:contact2-with-bday.ics" in answer
+            etag3 = headers['ETag']
+            assert etag3.startswith('"bda0')
+
+            logging.info("\n*** GET collection user (template changed) -> ok")
+            _, headers, answer = self.request("GET", path_shared_r, login="user:userpw")
+            assert "SUMMARY:Test-FN (1970) (BDAYTEST)" in answer
+            assert "X-RADICALE-NAME:contact2-with-bday.ics" in answer
+            etag3_collection_ics = headers['ETag']
+            assert etag3_collection_ics.startswith('"bda0')
+
+            # compare etag (may not be equal)
+            logging.info("\n*** GET item (ics) user  ETag: comparison")
+            logging.info("\n** GET item (ics) user  ETag: %s (template orig)", etag2)
+            logging.info("\n** GET item (ics) user  ETag: %s (template mod )", etag3)
+            assert etag3 != etag2
+            assert etag3[49:] == etag2[49:]
+
+            logging.info("\n*** GET collection (ics) user  ETag: comparison")
+            logging.info("\n** GET collection (ics) user  ETag: %s (template orig)", etag2_collection_ics)
+            logging.info("\n** GET collection (ics) user  ETag: %s (template mod )", etag3_collection_ics)
+            assert etag3_collection_ics != etag2_collection_ics
+            assert etag3_collection_ics[49:] == etag2_collection_ics[49:]
+
+            logging.info("\n*** GET collection (ics) user vs (vcf) owner ETag: comparison")
+            logging.info("\n** GET collection (ics) user  ETag: %s (template orig)", etag2_collection_ics)
+            logging.info("\n** GET collection (vcf) owner ETag: %s (vcf)", etag_collection_vcf)
+            assert etag2_collection_ics != etag_collection_vcf
+            assert etag2_collection_ics[49:] == etag_collection_vcf[49:]
+
+            logging.info("\n*** GET collection (ics) user vs (vcf) owner ETag: comparison")
+            logging.info("\n** GET collection (ics) user  ETag: %s (template mod)", etag3_collection_ics)
+            logging.info("\n** GET collection (vcf) owner ETag: %s (vcf)", etag_collection_vcf)
+            assert etag3_collection_ics != etag_collection_vcf
+            assert etag3_collection_ics[49:] == etag_collection_vcf[49:]
+
     def test_sharing_bday_conversion_empty_fn(self) -> None:
         """BDAY-to-ICS conversion of a VCARD with an empty FN property.
 
