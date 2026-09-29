@@ -189,6 +189,8 @@ permissions: r
                          })
             except RuntimeError:
                 raise
+            except ModuleNotFoundError:
+                pass
             else:
                 pass
 
