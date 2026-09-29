@@ -4940,7 +4940,11 @@ permissions: RrWw""")
             assert path_shared_r + "contact1.ics" not in responses
 
             # verify content as user
-            logging.info("\n*** GET item as  user -> ok")
+            logging.info("\n*** GET item (vcf) as user -> 404")
+            _, headers, answer = self.request("GET", path_shared_r + "contact2-with-bday.vcf", login="user:userpw", check=404)
+
+            # verify content as user
+            logging.info("\n*** GET item (ics) as user -> ok")
             _, headers, answer = self.request("GET", path_shared_r + "contact2-with-bday.ics", login="user:userpw")
             logging.debug("resonse: %r", answer)
             assert "BEGIN:VCARD" not in answer
@@ -5040,12 +5044,12 @@ permissions: RrWw""")
 
             contact2 = get_file_content("contact2-with-bday.vcf")
             path2 = path_mapped + "/contact2-with-bday.vcf"
-            path_shared_2 = path_shared_r + "/contact2-with-bday.vcf"
+            path_shared_2 = path_shared_r + "/contact2-with-bday.ics"
             self.put(path2, contact2, login="owner:ownerpw")
 
             contact3 = get_file_content("contact3-with-bday.vcf")
             path3 = path_mapped + "/contact3-with-bday.vcf"
-            path_shared_3 = path_shared_r + "/contact3-with-bday.vcf"
+            path_shared_3 = path_shared_r + "/contact3-with-bday.ics"
             self.put(path3, contact3, login="owner:ownerpw")
 
             # create map
@@ -5462,7 +5466,7 @@ permissions: RrWw""")
 
             contact2 = get_file_content("contact2-with-bday.vcf")
             path2 = path_mapped + "/contact2-with-bday.vcf"
-            path_shared_2 = path_shared_r + "/contact2-with-bday.vcf"
+            path_shared_2 = path_shared_r + "/contact2-with-bday.ics"
             self.put(path2, contact2, login="owner:ownerpw")
 
             # create map
@@ -5758,7 +5762,7 @@ permissions: RrWw""")
 
             contact2 = get_file_content("contact4-with-bday-no-year.vcf")
             path2 = path_mapped + "/contact4-with-bday-no-year.vcf"
-            path_shared_2 = path_shared_r + "/contact4-with-bday-no-year.vcf"
+            path_shared_2 = path_shared_r + "/contact4-with-bday-no-year.ics"
             self.put(path2, contact2, login="owner:ownerpw")
 
             # create map
@@ -5860,12 +5864,12 @@ permissions: RrWw""")
 
             contact2 = get_file_content("contact2-with-bday.vcf")
             path2 = path_mapped_2 + "/contact2-with-bday.vcf"
-            path_shared_2 = path_shared_2r + "/contact2-with-bday.vcf"
+            path_shared_2 = path_shared_2r + "/contact2-with-bday.ics"
             self.put(path2, contact2, login="owner:ownerpw")
 
             contact3 = get_file_content("contact3-with-bday.vcf")
             path3 = path_mapped_3 + "/contact3-with-bday.vcf"
-            path_shared_3 = path_shared_3r + "/contact3-with-bday.vcf"
+            path_shared_3 = path_shared_3r + "/contact3-with-bday.ics"
             self.put(path3, contact3, login="owner:ownerpw")
 
             # create map

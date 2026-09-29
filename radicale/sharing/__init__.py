@@ -657,6 +657,8 @@ class BaseSharing:
                         OnlyEnabled=False,
                         User=user)
                 if result:
+                    if result['Conversion'] == "bday" and not path.endswith(".ics"):
+                        return None
                     result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
                     logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
 
