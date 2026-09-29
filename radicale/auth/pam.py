@@ -42,7 +42,7 @@ class Auth(auth.BaseAuth):
             import pam
             self.pam = pam
         except ImportError as e:
-            raise RuntimeError("PAM authentication requires the Python pam module") from e
+            raise ModuleNotFoundError("PAM authentication requires the Python pam module") from e
         self._service = configuration.get("auth", "pam_service")
         logger.info("auth.pam_service: %s" % self._service)
         self._group_membership = configuration.get("auth", "pam_group_membership")

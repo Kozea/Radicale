@@ -82,7 +82,7 @@ class Auth(auth.BaseAuth):
                 self._ldap_module_version = 2
                 self.ldap = ldap
             except ImportError as e:
-                raise RuntimeError("LDAP authentication requires the ldap3 or ldap module") from e
+                raise ModuleNotFoundError("LDAP authentication requires the ldap3 or ldap module") from e
 
         self._ldap_ignore_attribute_create_modify_timestamp = configuration.get("auth", "ldap_ignore_attribute_create_modify_timestamp")
         self._ldap_uri = configuration.get("auth", "ldap_uri")
