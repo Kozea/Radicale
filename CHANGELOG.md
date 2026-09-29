@@ -2,6 +2,10 @@
 
 ## 3.8.2.dev
 * Fix: sharing/bday-conversion: add proper RRULE and RECURRENCE-ID in case of "age" support is triggered
+* Fix: sharing/bday-conversion: do not serve item.vcf in parallel of item.ics
+* Fix: sharing/bday-conversion: adjust etag depending on template (item) or content (collection)
+* Fix: sharing/propfind: remove unexpected additional shares listed in case of request on collection with HTTP_DEPTH=1
+* Add: sharing/bday-conversion: X-RADICALE-NAME to generated bday items
 
 ## 3.8.1
 * Add: tests: optional caldav-server-tester based CalDAV compatibility test suite (caldav_compat_tests)
