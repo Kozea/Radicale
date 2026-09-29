@@ -648,6 +648,8 @@ class ApplicationPartPropfind(ApplicationBase):
                 if collections_share_list:
                     for share in collections_share_list:
                         c_share = share['PathOrToken']
+                        if not c_share.startswith(path):
+                            continue
                         c_path = share['PathMapped']
                         c_user = share['Owner']
                         c_permissions_filter = share['Permissions']
