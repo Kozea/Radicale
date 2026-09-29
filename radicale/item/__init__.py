@@ -889,6 +889,11 @@ class Item:
         else:
             uid = match[1] + match[2] + match[3] + "@" + name.replace(" ", "-") + UID_SUFFIX
 
+        # create new href
+        href = self.href
+        if href is not None:
+            href = href.removesuffix(".vcf") + ".ics"
+
         age = 0
         while age <= age_max:
             # create EVENT
@@ -962,16 +967,22 @@ class Item:
             if description != "":
                 vevent.add('description').value = replace_placeholders(description, placeholder_mapping)
 
+            # set X-RADICALE-NAME
+            vevent.add('X-RADICALE-NAME').value = href
+
             # increase age
             age = age + 1
 
-        href = self.href
-        if href is not None:
-            href = href.removesuffix(".vcf") + ".ics"
-
+        # set etag (64 <hexdigits>) by
+        #   4 chars special token: 'bda0'
+        #   8 chars date         : YYYYMMDD
+        #   2 chars separator    : 00
+        #  32 chars              : leading template hash
+        #   2 chars separator    : 00
+        #  16 chars              : trailing original etag
         etag = self.etag
-        # replace 14 leading chars of etag "<hexdigits>" by special format bda0YYYYMMDD00
-        etag = '"bda0' + bdayS + '00' + etag[15:]
+        template_hash = utils.sha256_str(summary + description + ','.join(categories) + alarm_trigger)[:32]
+        etag = '"bda0' + bdayS + '00' + template_hash + '00' + etag[49:]
 
         item_new: Item = Item(
                 collection=self.collection,
