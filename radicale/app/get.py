@@ -198,12 +198,23 @@ class ApplicationPartGet(ApplicationBase):
                 headers["Content-Disposition"] = content_disposition
             if share and share['Conversion'] == "bday":
                 if isinstance(item, storage.BaseCollection):
-                    # convert VCF to ICS
+                    # convert collection VCF to ICS
                     answer = item.serialize(vcf_to_ics=True, ShareActions=share['Actions'])
+                    # set etag header (64 <hexdigits>)
+                    #   4 chars special token: 'bda0'
+                    #   8 chars date         : 00000000
+                    #   2 chars separator    : 00
+                    #  32 chars              : leading content hash
+                    #   2 chars separator    : 00
+                    #  16 chars              : trailing original etag
+                    headers["ETag"] = '"bda0' + '00000000' + '00' + utils.sha256_str(answer)[:32] + '00' + item.etag[49:]
                 else:
+                    # convert item VCF to ICS
                     item_converted = item.convert_vcf_to_ics(ShareActions=share['Actions'])
                     if item_converted is not None:
                         answer = item_converted.serialize()
+                        # set etag header
+                        headers["ETag"] = item_converted.etag
                     else:
                         return httputils.NOT_FOUND
             else:
