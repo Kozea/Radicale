@@ -747,6 +747,14 @@ class Item:
         else:
             pass
 
+        # convert last_modified (format: 'Wed, 30 Sep 2026 05:58:48 GMT') into dtstamp
+        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (last_modified): %r", self.last_modified)
+        if self.last_modified is not None:
+            dtstamp = vobject.icalendar.dateTimeToString(datetime.datetime.strptime(self.last_modified, "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=datetime.timezone.utc), convertToUTC=True)
+        else:
+            dtstamp = "19700101T000000Z"  # default
+        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (dtstamp): %r", dtstamp)
+
         bday = self.vobject_item.bday
         logger.trace("item/convert_vcf_to_ics: has bday (ok): %r -> %r", self.href, bday.value)
 
@@ -959,6 +967,11 @@ class Item:
             # set RRULE
             if not vevent_enable_age:
                 vevent.add('rrule').value = "FREQ=YEARLY"
+
+            # overtake dtstamp
+            vevent.add('dtstamp')
+            vevent.dtstamp.isNative = False
+            vevent.dtstamp.value = dtstamp
 
             # add transparency
             vevent.add('transp').value = "TRANSPARENT"
