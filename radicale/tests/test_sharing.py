@@ -28,6 +28,7 @@ import re
 import sys
 import tempfile
 import urllib
+from time import sleep
 from typing import Dict, Sequence, Tuple, Union, cast
 
 import pytest
@@ -5475,7 +5476,8 @@ permissions: RrWw""")
             etag2 = headers['ETag']
             assert etag2.startswith('"bda0')
 
-            logging.info("\n*** GET collection user format:default (2nd time) -> ok")
+            logging.info("\n*** GET collection user format:default (2nd time after 2 seconds sleep) -> ok")
+            sleep(2)
             _, headers, answer = self.request("GET", path_shared_r, login="user:userpw")
             etag2_collection_ics = headers['ETag']
             assert etag2_collection_ics.startswith('"bda0')
