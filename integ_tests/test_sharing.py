@@ -596,3 +596,67 @@ def test_both_sharing_disabled(
     page.hover("article:not(.hidden)")
 
     expect(page.locator('article:not(.hidden) a[data-name="share"]')).to_be_hidden()
+
+
+def test_card_permissions_badge_rw(
+    context: BrowserContext, page: Page, radicale_server: str, config: Config
+) -> None:
+    login(page, radicale_server, config, context=context)
+    create_collection(page, radicale_server)
+    # Verify owned collection has RW badge and no shared-by
+    owned_article = page.locator("article:not(.hidden)").first
+    expect(owned_article.locator('[data-name="permissions"] [data-name="rw"]')).to_be_visible()
+    expect(owned_article.locator('[data-name="permissions"] [data-name="ro"]')).to_be_hidden()
+    expect(owned_article.locator('[data-name="shared-by"]')).to_be_hidden()
+
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+
+    page.click('button[data-name="sharebymap"]')
+    page.click('label[for="newshare_attr_permissions_rw"]')
+    page.locator('input[data-name="shareuser"]').fill(config.user_username)
+    page.locator('input[data-name="sharehref"]').fill("rw-shared")
+    page.click('#createeditsharescene button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
+
+    # Switch to recipient user
+    if config.auth_type == AuthType.XREMOTE:
+        context.set_extra_http_headers({"X-Remote-User": config.user_username})
+        page.goto(radicale_server)
+    else:
+        page.click('a[data-name="logout"]')
+        expect(page.locator("#loginscene")).to_be_visible()
+        page.fill('#loginscene input[data-name="user"]', config.user_username)
+        page.fill('#loginscene input[data-name="password"]', "userpassword")
+        page.click('button:has-text("Next")')
+    expect(page.locator("#collectionsscene")).to_be_visible()
+    expect(page.locator("#loadingscene")).to_be_hidden()
+
+    # Enable and show incoming share
+    page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
+    row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    expect(row).to_have_count(1)
+    page.check("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']")
+    page.check("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']")
+    page.click('#incomingsharingscene button[data-name="close"]')
+    expect(page.locator("#incomingsharingscene")).to_be_hidden()
+
+    # Verify RW badge is visible on the card before the type
+    shared_article = page.locator("article:not(.hidden)").filter(
+        has=page.locator('[data-name="shared-by-owner"]', has_text=config.admin_username)
+    )
+    expect(shared_article).to_be_visible()
+    expect(shared_article.locator('[data-name="shared-by"]')).to_be_visible()
+    expect(shared_article.locator('[data-name="shared-by-owner"]')).to_have_text(config.admin_username)
+    expect(shared_article.locator('[data-name="permissions"] [data-name="rw"]')).to_be_visible()
+    expect(shared_article.locator('[data-name="permissions"] [data-name="ro"]')).to_be_hidden()
+
+    # Verify order in small element: shared-by, then permissions badge (rw)
+    small_text = shared_article.locator('small').first.inner_text()
+    assert f"👥 shared by {config.admin_username}" in small_text
+    assert "rw" in small_text

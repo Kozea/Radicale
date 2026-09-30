@@ -111,11 +111,21 @@ def test_shared_collection_property_edit(page: Page, radicale_server: str) -> No
     page.click('#incomingsharingscene button[data-name="close"]')
     expect(page.locator("#incomingsharingscene")).to_be_hidden()
 
-    # 6. Verify "Edit" button is visible
+    # 6. Verify "Edit" button and permissions badge is visible
     shared_article = page.locator("article:not(.hidden)").filter(
         has=page.locator("[data-name='title']", has_text="Shared")
     )
     expect(shared_article).to_be_visible()
+    expect(shared_article.locator('[data-name="shared-by"]')).to_be_visible()
+    expect(shared_article.locator('[data-name="shared-by-owner"]')).to_have_text(
+        config.admin_username
+    )
+    expect(
+        shared_article.locator('[data-name="permissions"] [data-name="ro"]')
+    ).to_be_visible()
+    expect(
+        shared_article.locator('[data-name="permissions"] [data-name="rw"]')
+    ).to_be_hidden()
     shared_article.hover()
     expect(shared_article.locator("a[data-name='edit']")).to_be_visible()
 
