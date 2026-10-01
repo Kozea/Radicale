@@ -27,6 +27,7 @@ import { extract_title } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { bytesToHumanReadable, get_element, get_element_by_id } from "../utils/misc.js";
+import { displayPermissions } from "../utils/permissions.js";
 import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
@@ -253,6 +254,8 @@ export class CollectionsScene {
         /** @type {HTMLElement} */ let share_btn = get_element(node, "[data-name=share]");
         /** @type {HTMLAnchorElement} */ let download_btn = /** @type {HTMLAnchorElement} */ (get_element(node, "[data-name=download]"));
         /** @type {HTMLButtonElement} */ let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
+        /** @type {HTMLElement} */ let permissions_container = get_element(node, "[data-name=permissions]");
+        /** @type {HTMLElement} */ let share_option = get_element(node, "[data-name=shareoption]");
         if (collection.color) {
             color_form.style.background = collection.color;
         }
@@ -272,7 +275,10 @@ export class CollectionsScene {
             }
         });
 
-        let share_option = get_element(node, "[data-name=shareoption]");
+        if (permissions_container) {
+            displayPermissions(collection, permissions_container);
+        }
+
         let can_share = collection.has_permission(Permission.SHARE_MAP) || collection.has_permission(Permission.SHARE_TOKEN);
         if (share_option) {
             if (can_share) {

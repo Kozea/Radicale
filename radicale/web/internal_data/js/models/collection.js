@@ -101,11 +101,15 @@ export class CollectionType {
 
 export class Permission {
     // Private Fields
+    static #_WRITE = "D:write";
+    static #_WRITE_CONTENT = "D:write-content";
     static #_WRITE_PROPERTIES = "D:write-properties";
     static #_SHARE_MAP = "RADICALE:share-map";
     static #_SHARE_TOKEN = "RADICALE:share-token";
 
     // Accessors for "get" functions only (no "set" functions)
+    static get WRITE() { return this.#_WRITE; }
+    static get WRITE_CONTENT() { return this.#_WRITE_CONTENT; }
     static get WRITE_PROPERTIES() { return this.#_WRITE_PROPERTIES; }
     static get SHARE_MAP() { return this.#_SHARE_MAP; }
     static get SHARE_TOKEN() { return this.#_SHARE_TOKEN; }

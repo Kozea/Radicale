@@ -16,7 +16,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { CollectionType, Permission } from "../models/collection.js";
 import { get_element } from "../utils/misc.js";
+
+/**
+ * @param {string | import("../models/collection.js").Collection | boolean} permissions
+ * @param {HTMLElement} node
+ */
+export function displayPermissions(permissions, node) {
+  const roElement = get_element(node, "[data-name=ro]");
+  const rwElement = get_element(node, "[data-name=rw]");
+  let is_write = false;
+  if (typeof permissions === "boolean") {
+    is_write = permissions;
+  } else if (typeof permissions === "string") {
+    is_write = permissions.toLowerCase().includes('w');
+  } else if (permissions && typeof permissions.has_permission === "function") {
+    if (permissions.type === CollectionType.WEBCAL) {
+      is_write = false;
+    } else {
+      is_write = permissions.has_permission(Permission.WRITE) ||
+        permissions.has_permission(Permission.WRITE_CONTENT);
+    }
+  }
+  if (is_write) {
+    rwElement.classList.remove("hidden");
+    rwElement.setAttribute("title", "Read and write");
+    roElement.classList.add("hidden");
+  } else {
+    roElement.classList.remove("hidden");
+    roElement.setAttribute("title", "Read-only");
+    rwElement.classList.add("hidden");
+  }
+}
 
 /**
  * @param {string} conversion
@@ -24,27 +56,19 @@ import { get_element } from "../utils/misc.js";
  * @param {HTMLElement} node
  */
 export function displayPermissionsOrConversion(conversion, permissions, node) {
-  const conversionElement = get_element(node, "[data-name=conversion]");
-  const roElement = get_element(node, "[data-name=ro]");
-  const rwElement = get_element(node, "[data-name=rw]");
+  const conversionElement = node.querySelector("[data-name=conversion]");
   let fixedConversion = (conversion || "").toLowerCase();
-  if (fixedConversion != "none" && fixedConversion != "") {
+  if (conversionElement && fixedConversion !== "none" && fixedConversion !== "") {
     conversionElement.classList.remove("hidden");
     conversionElement.setAttribute("title", "Converted");
-    roElement.classList.add("hidden");
-    rwElement.classList.add("hidden");
+    const roElement = node.querySelector("[data-name=ro]");
+    const rwElement = node.querySelector("[data-name=rw]");
+    if (roElement) roElement.classList.add("hidden");
+    if (rwElement) rwElement.classList.add("hidden");
   } else {
-    permissions = (permissions || "").toLowerCase();
-    if (permissions.includes('w')) {
-      rwElement.classList.remove("hidden");
-      rwElement.setAttribute("title", "Read and write");
-      roElement.classList.add("hidden");
-      conversionElement.classList.add("hidden");
-    } else {
-      roElement.classList.remove("hidden");
-      roElement.setAttribute("title", "Read-only");
-      rwElement.classList.add("hidden");
+    if (conversionElement) {
       conversionElement.classList.add("hidden");
     }
+    displayPermissions(permissions, node);
   }
 }

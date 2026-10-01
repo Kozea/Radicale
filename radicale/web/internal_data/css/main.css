@@ -762,6 +762,7 @@ button.inline {
     padding: 0.25em 0.6em;
     font-size: 75%;
     font-weight: 700;
+    font-style: normal;
     line-height: 1;
     text-align: center;
     white-space: nowrap;
