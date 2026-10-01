@@ -15,7 +15,17 @@
 * <https://github.com/feathericons/feather/blob/main/icons/repeat.svg>
 * MIT License
 
-## eye.svg
+## minus-circle.svg
+
+* <https://github.com/feathericons/feather/blob/main/icons/minus-circle.svg>
+* MIT License
+
+## check-circle.svg
+
+* <https://github.com/feathericons/feather/blob/main/icons/check-circle.svg>
+* MIT License
+
+### eye.svg
 
 * <https://www.svgrepo.com/svg/509920/eye>
 * MIT License

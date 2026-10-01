@@ -19,6 +19,7 @@ Integration tests for sharing pages
 """
 
 import pathlib
+import re
 from typing import Any, Generator
 
 import pytest
@@ -636,15 +637,21 @@ def test_card_permissions_badge_rw(
     expect(page.locator("#collectionsscene")).to_be_visible()
     expect(page.locator("#loadingscene")).to_be_hidden()
 
-    # Enable and show incoming share
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    expect(row).to_have_count(1)
-    page.check("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']")
-    page.check("tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']")
-    page.click('#incomingsharingscene button[data-name="close"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()
+    # Verify incoming share card is immediately visible as disabled
+    shared_article_disabled = page.locator("article:not(.hidden)").filter(
+        has=page.locator('[data-name="shared-by-owner"]', has_text=config.admin_username)
+    )
+    expect(shared_article_disabled).to_be_visible()
+    expect(shared_article_disabled).to_have_class(re.compile(r"\bshare-disabled\b"))
+
+    # Enable and show incoming share via card toggle buttons
+    shared_article_disabled.hover()
+    enabled_btn = shared_article_disabled.locator('button[data-name="enabled"]')
+    shown_btn = shared_article_disabled.locator('button[data-name="shown"]')
+    enabled_btn.click(force=True)
+    expect(shown_btn).not_to_be_disabled()
+    shown_btn.click(force=True)
+    expect(shown_btn).not_to_be_disabled()
 
     # Verify RW badge is visible on the card before the type
     shared_article = page.locator("article:not(.hidden)").filter(

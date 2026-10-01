@@ -21,6 +21,7 @@
 
 import { delete_collection } from "../api/api.js";
 import { get_auth_header } from "../api/common.js";
+import { update_incoming_share } from "../api/sharing.js";
 import { ROOT_PATH, SERVER } from "../constants.js";
 import { Collection, CollectionType, Permission } from "../models/collection.js";
 import { extract_title } from "../utils/collection_utils.js";
@@ -31,9 +32,8 @@ import { displayPermissions } from "../utils/permissions.js";
 import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
 import { DeleteConfirmationScene } from "./DeleteConfirmationScene.js";
-import { IncomingSharingScene } from "./IncomingSharingScene.js";
 import { Scene, push_scene } from "./scene_manager.js";
-import { ShareCollectionScene, maybe_enable_sharing_options } from "./ShareCollectionScene.js";
+import { ShareCollectionScene } from "./ShareCollectionScene.js";
 import { UploadCollectionScene } from "./UploadCollectionScene.js";
 
 /**
@@ -53,6 +53,189 @@ function find_matching_map_share(collectionHref, shares) {
         let shareTarget = decode_and_strip_trailing_slashes(s.PathOrToken);
         return collHref === shareTarget || collHref.endsWith(shareTarget);
     });
+}
+
+/**
+ * Checks whether a share is an incoming map share for the given user.
+ * @param {import("../api/sharing.js").Share} share
+ * @param {string} currentUser
+ * @returns {boolean}
+ */
+function is_incoming_map_share(share, currentUser) {
+    if (share.ShareType !== "map" || share.Owner === currentUser) {
+        return false;
+    }
+    let cleanUser = decodeURIComponent(currentUser || "");
+    let prefix = "/" + cleanUser + "/";
+    let target = decodeURIComponent(share.PathOrToken || "").replace("{user}", cleanUser);
+    if (!target.startsWith("/")) {
+        target = "/" + target;
+    }
+    return target.startsWith(prefix);
+}
+
+/**
+ * Creates a synthetic Collection object from an incoming Share.
+ * @param {import("../api/sharing.js").Share} share
+ * @param {string} currentUser
+ * @returns {Collection}
+ */
+function create_synthetic_collection_from_share(share, currentUser) {
+    let cleanUser = decodeURIComponent(currentUser || "");
+    let href = decodeURIComponent(share.PathOrToken || "").replace("{user}", cleanUser);
+    if (!href.startsWith("/")) {
+        href = "/" + href;
+    }
+    if (!href.endsWith("/")) {
+        href += "/";
+    }
+
+    let is_addressbook = strip_trailing_slashes(share.PathMapped).endsWith(".vcf") && share.Conversion !== "bday";
+    let type = is_addressbook ? CollectionType.ADDRESSBOOK : CollectionType.CALENDAR;
+    let pathName = strip_trailing_slashes(href).split("/").pop() || "";
+    let displayname = (share.Properties && share.Properties["D:displayname"]) || pathName;
+    let description = (share.Properties && (share.Properties["C:calendar-description"] || share.Properties["CR:addressbook-description"])) || "";
+    let color = (share.Properties && (share.Properties["ICAL:calendar-color"] || share.Properties["INF:addressbook-color"])) || "";
+
+    /** @type {Array<string>} */
+    let permissions = [];
+    if (/w/i.test(share.Permissions || "")) {
+        permissions.push(Permission.WRITE, Permission.WRITE_CONTENT);
+    }
+    if (/P/i.test(share.Permissions || "")) {
+        permissions.push(Permission.WRITE_PROPERTIES);
+    }
+
+    return new Collection(
+        href,
+        type,
+        displayname,
+        description,
+        color,
+        0,
+        0,
+        "",
+        permissions,
+        ""
+    );
+}
+
+/**
+ * Finds incoming map shares that do not yet have a matching collection in the collections list.
+ * @param {Collection[]} collections
+ * @param {import("../api/sharing.js").Share[]} shares
+ * @param {string} currentUser
+ * @returns {Collection[]}
+ */
+function get_missing_incoming_collections(collections, shares, currentUser) {
+    /** @type {Array<Collection>} */
+    let missing = [];
+    (shares || []).forEach((share) => {
+        if (!is_incoming_map_share(share, currentUser)) {
+            return;
+        }
+        let already_present = collections.some(c => Boolean(find_matching_map_share(c.href, [share])));
+        if (!already_present) {
+            missing.push(create_synthetic_collection_from_share(share, currentUser));
+        }
+    });
+    return missing;
+}
+
+/**
+ * Updates CSS classes, toggle button states, and action button visibility for an incoming share card.
+ * @param {HTMLElement} node
+ * @param {import("../api/sharing.js").Share} share
+ * @param {HTMLButtonElement} enabled_btn
+ * @param {HTMLButtonElement} shown_btn
+ * @param {HTMLElement} edit_btn
+ * @param {HTMLAnchorElement} download_btn
+ * @param {Collection} collection
+ */
+function update_share_card_state(node, share, enabled_btn, shown_btn, edit_btn, download_btn, collection) {
+    let isGroupOrRealm = (share.Permissions || "").includes("U");
+    let enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
+    let shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
+
+    // Card styling
+    if (!enabled) {
+        node.classList.add("share-disabled");
+        node.classList.remove("share-hidden");
+    } else if (!shown) {
+        node.classList.remove("share-disabled");
+        node.classList.add("share-hidden");
+    } else {
+        node.classList.remove("share-disabled");
+        node.classList.remove("share-hidden");
+    }
+
+    // Enabled button
+    /** @type {HTMLImageElement | null} */
+    let enabled_icon = enabled_btn.querySelector("img");
+    if (enabled) {
+        enabled_btn.classList.add("active", "green");
+        enabled_btn.classList.remove("inactive");
+        enabled_btn.title = "Enabled";
+        if (enabled_icon) {
+            enabled_icon.src = "css/icons/check-circle.svg";
+            enabled_icon.alt = "Enabled";
+        }
+    } else {
+        enabled_btn.classList.add("inactive");
+        enabled_btn.classList.remove("active", "green");
+        enabled_btn.title = "Disabled";
+        if (enabled_icon) {
+            enabled_icon.src = "css/icons/minus-circle.svg";
+            enabled_icon.alt = "Disabled";
+        }
+    }
+
+    // Shown button
+    if (shown) {
+        shown_btn.classList.add("active", "green");
+        shown_btn.classList.remove("inactive");
+        shown_btn.title = "Shown";
+    } else {
+        shown_btn.classList.add("inactive");
+        shown_btn.classList.remove("active", "green");
+        shown_btn.title = "Hidden";
+    }
+
+    // Group / realm shares
+    if (isGroupOrRealm) {
+        enabled_btn.disabled = true;
+        shown_btn.disabled = true;
+        enabled_btn.title = "Group and domain shares cannot be disabled";
+        shown_btn.title = "Group and domain shares cannot be hidden";
+    } else {
+        enabled_btn.disabled = false;
+        shown_btn.disabled = !enabled;
+    }
+
+    // Action buttons (edit and download)
+    let has_write_permission = /w/i.test(share.Permissions || "");
+    let has_write_properties = /P/i.test(share.Permissions || "") || collection.has_permission(Permission.WRITE_PROPERTIES);
+    if (enabled && (has_write_permission || has_write_properties)) {
+        edit_btn.classList.remove("hidden");
+        if (edit_btn.parentElement) {
+            edit_btn.parentElement.classList.remove("hidden");
+        }
+    } else {
+        edit_btn.classList.add("hidden");
+        if (edit_btn.parentElement) {
+            edit_btn.parentElement.classList.add("hidden");
+        }
+    }
+
+    if (collection.type == CollectionType.WEBCAL || !enabled) {
+        if (download_btn.parentElement) {
+            download_btn.parentElement.classList.add("hidden");
+        }
+    } else {
+        if (download_btn.parentElement) {
+            download_btn.parentElement.classList.remove("hidden");
+        }
+    }
 }
 
 /**
@@ -76,7 +259,6 @@ export class CollectionsScene {
         this._template = get_element(this._html_scene, "[data-name=collectiontemplate]");
         this._new_btn = get_element(this._html_scene, "[data-name=new]");
         this._upload_btn = get_element(this._html_scene, "[data-name=upload]");
-        this._incomingshares_btn = get_element(this._html_scene, "[data-name=incomingshares]");
         /** @type {HTMLAnchorElement} */
         this._mobileconfig_btn = /** @type {HTMLAnchorElement} */ (get_element(this._html_scene, "[data-name=mobileconfig]"));
         this._error_div = get_element(this._html_scene, "[data-name=collectionsscene_error]");
@@ -99,16 +281,6 @@ export class CollectionsScene {
         try {
             let upload_scene = new UploadCollectionScene(this._user, this._password, this._principal_collection);
             push_scene(upload_scene);
-        } catch (err) {
-            console.error(err);
-        }
-        return false;
-    }
-
-    _onincomingshares() {
-        try {
-            let incoming_sharing_scene = new IncomingSharingScene(this._user, this._password);
-            push_scene(incoming_sharing_scene);
         } catch (err) {
             console.error(err);
         }
@@ -158,19 +330,118 @@ export class CollectionsScene {
     }
 
     /**
+     * @param {import("../api/sharing.js").Share} share
+     * @param {HTMLElement} node
+     * @param {HTMLButtonElement} enabled_btn
+     * @param {HTMLButtonElement} shown_btn
+     * @param {HTMLElement} edit_btn
+     * @param {HTMLAnchorElement} download_btn
+     * @param {Collection} collection
+     */
+    _toggle_share_enabled(share, node, enabled_btn, shown_btn, edit_btn, download_btn, collection) {
+        if (enabled_btn.disabled) return;
+        enabled_btn.disabled = true;
+        shown_btn.disabled = true;
+
+        let old_enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
+        let old_hidden = share.HiddenByUser !== null ? share.HiddenByUser : false;
+
+        share.EnabledByUser = !old_enabled;
+        this._errorHandler.clearError();
+        update_share_card_state(node, share, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+        enabled_btn.disabled = true;
+        shown_btn.disabled = true;
+
+        update_incoming_share(this._user, this._password, share, (error) => {
+            if (error) {
+                this._errorHandler.setError(error);
+                share.EnabledByUser = old_enabled;
+                share.HiddenByUser = old_hidden;
+                update_share_card_state(node, share, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+            } else {
+                collectionsCache.invalidate();
+                enabled_btn.disabled = false;
+                shown_btn.disabled = !share.EnabledByUser;
+            }
+        });
+    }
+
+    /**
+     * @param {import("../api/sharing.js").Share} share
+     * @param {HTMLElement} node
+     * @param {HTMLButtonElement} enabled_btn
+     * @param {HTMLButtonElement} shown_btn
+     * @param {HTMLElement} edit_btn
+     * @param {HTMLAnchorElement} download_btn
+     * @param {Collection} collection
+     */
+    _toggle_share_shown(share, node, enabled_btn, shown_btn, edit_btn, download_btn, collection) {
+        if (shown_btn.disabled) return;
+        enabled_btn.disabled = true;
+        shown_btn.disabled = true;
+
+        let old_hidden = share.HiddenByUser !== null ? share.HiddenByUser : false;
+
+        share.HiddenByUser = !old_hidden;
+        this._errorHandler.clearError();
+        update_share_card_state(node, share, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+        enabled_btn.disabled = true;
+        shown_btn.disabled = true;
+
+        update_incoming_share(this._user, this._password, share, (error) => {
+            if (error) {
+                this._errorHandler.setError(error);
+                share.HiddenByUser = old_hidden;
+                update_share_card_state(node, share, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+            } else {
+                collectionsCache.invalidate();
+                enabled_btn.disabled = false;
+                shown_btn.disabled = false;
+            }
+        });
+    }
+
+    /**
+     * Sorts collections into 4 tiers, alphabetically by title within each tier:
+     * - Tier 1: Own collections (not an incoming share, or owned by current user)
+     * - Tier 2: Active incoming shares (enabled: true, shown: true)
+     * - Tier 3: Hidden incoming shares (enabled: true, shown: false)
+     * - Tier 4: Disabled incoming shares (enabled: false)
      * @param {Collection[]} collections
      * @param {import("../api/sharing.js").Share[]} shares
      */
     _sort_collections(collections, shares) {
+        /**
+         * @param {Collection} collection
+         * @returns {number}
+         */
+        const get_tier = (collection) => {
+            const share = find_matching_map_share(collection.href, shares);
+            // Tier 1: Own collections (not an incoming share, or owned by current user)
+            if (!share || share.Owner === this._user) {
+                return 1;
+            }
+            const enabled = share.EnabledByUser !== null ? share.EnabledByUser : true;
+            const shown = share.HiddenByUser !== null ? !share.HiddenByUser : true;
+            // Tier 2: Active incoming shares (both enabled and shown)
+            if (enabled && shown) {
+                return 2;
+            }
+            // Tier 3: Hidden incoming shares (enabled, but hidden)
+            if (enabled && !shown) {
+                return 3;
+            }
+            // Tier 4: Disabled incoming shares (disabled; hidden status irrelevant)
+            return 4;
+        };
+
         collections.sort((a, b) => {
-            const shareA = find_matching_map_share(a.href, shares);
-            const shareB = find_matching_map_share(b.href, shares);
+            const tierA = get_tier(a);
+            const tierB = get_tier(b);
 
-            const ownedA = !shareA || shareA.Owner === this._user;
-            const ownedB = !shareB || shareB.Owner === this._user;
-
-            if (ownedA && !ownedB) return -1;
-            if (!ownedA && ownedB) return 1;
+            if (tierA !== tierB) {
+                return tierA - tierB;
+            }
 
             return extract_title(a).localeCompare(extract_title(b));
         });
@@ -261,6 +532,10 @@ export class CollectionsScene {
         /** @type {HTMLButtonElement} */ let freebusy_copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-freebusy-url]"));
         /** @type {HTMLElement} */ let permissions_container = get_element(node, "[data-name=permissions]");
         /** @type {HTMLElement} */ let share_option = get_element(node, "[data-name=shareoption]");
+        /** @type {HTMLElement} */ let share_control_enabled_li = get_element(node, "[data-name=share-control-enabled]");
+        /** @type {HTMLElement} */ let share_control_shown_li = get_element(node, "[data-name=share-control-shown]");
+        /** @type {HTMLButtonElement} */ let enabled_btn = /** @type {HTMLButtonElement} */ (get_element(node, "button[data-name=enabled]"));
+        /** @type {HTMLButtonElement} */ let shown_btn = /** @type {HTMLButtonElement} */ (get_element(node, "button[data-name=shown]"));
         if (collection.color) {
             color_form.style.background = collection.color;
         }
@@ -293,38 +568,6 @@ export class CollectionsScene {
             }
         }
 
-        let share_info = get_element(node, "[data-name=shared-by]");
-        let transformed_from = get_element(node, "[data-name=transformed-from]");
-        let share = find_matching_map_share(collection.href, shares);
-        if (share) {
-            if (share.Owner !== this._user) {
-                share_info.classList.remove("hidden");
-                get_element(node, "[data-name=shared-by-owner]").textContent = share.Owner;
-            } else {
-                transformed_from.classList.remove("hidden");
-            }
-            let share_option = get_element(node, "[data-name=shareoption]");
-            if (share_option) {
-                share_option.classList.add("hidden");
-                share_option.removeAttribute("data-name");
-            }
-            delete_btn.classList.add("hidden");
-            let has_write_permission = /w/i.test(share.Permissions || "");
-            let has_write_properties = /P/i.test(share.Permissions || "") || collection.has_permission(Permission.WRITE_PROPERTIES);
-
-            if (has_write_permission || has_write_properties) {
-                edit_btn.classList.remove("hidden");
-            } else {
-                edit_btn.classList.add("hidden");
-            }
-        } else {
-            let has_write_properties = collection.has_permission(Permission.WRITE_PROPERTIES);
-            if (has_write_properties) {
-                edit_btn.classList.remove("hidden");
-            } else {
-                edit_btn.classList.add("hidden");
-            }
-        }
         title_form.textContent = collection.displayname || decodeURIComponent(collection.href);
         if (title_form.textContent.length > 30) {
             title_form.classList.add("smalltext");
@@ -340,8 +583,10 @@ export class CollectionsScene {
             }
             contentcount_form.textContent = contentcount_form_txt;
         }
+
         let href = window.location.origin + collection.href;
         new UrlTextHandler(url_form, copy_btn).setHref(href);
+        let share = find_matching_map_share(collection.href, shares);
         let bday_transform = Boolean(share &&
             (share.Conversion || "").toLowerCase() === "bday");
         if (CollectionType.is_subset(CollectionType.CALENDAR, collection.type) &&
@@ -359,6 +604,75 @@ export class CollectionsScene {
         if (collection.type == CollectionType.WEBCAL) {
             if (download_btn.parentElement) {
                 download_btn.parentElement.classList.add("hidden");
+            }
+        }
+
+        let share_info = get_element(node, "[data-name=shared-by]");
+        let transformed_from = get_element(node, "[data-name=transformed-from]");
+        let is_incoming_share = false;
+        if (share) {
+            if (share.Owner !== this._user) {
+                is_incoming_share = true;
+                share_info.classList.remove("hidden");
+                get_element(node, "[data-name=shared-by-owner]").textContent = share.Owner;
+
+                share_control_enabled_li.classList.remove("hidden");
+                share_control_shown_li.classList.remove("hidden");
+
+                update_share_card_state(node, share, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+
+                enabled_btn.onclick = () => {
+                    this._toggle_share_enabled(share, node, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+                };
+                shown_btn.onclick = () => {
+                    this._toggle_share_shown(share, node, enabled_btn, shown_btn, edit_btn, download_btn, collection);
+                };
+            } else {
+                transformed_from.classList.remove("hidden");
+                share_control_enabled_li.classList.add("hidden");
+                share_control_shown_li.classList.add("hidden");
+            }
+            let share_option = get_element(node, "[data-name=shareoption]");
+            if (share_option) {
+                share_option.classList.add("hidden");
+                share_option.removeAttribute("data-name");
+            }
+            delete_btn.classList.add("hidden");
+            if (delete_btn.parentElement) {
+                delete_btn.parentElement.classList.add("hidden");
+            }
+            if (!is_incoming_share) {
+                let has_write_properties = collection.has_permission(Permission.WRITE_PROPERTIES);
+                if (has_write_properties) {
+                    edit_btn.classList.remove("hidden");
+                    if (edit_btn.parentElement) {
+                        edit_btn.parentElement.classList.remove("hidden");
+                    }
+                } else {
+                    edit_btn.classList.add("hidden");
+                    if (edit_btn.parentElement) {
+                        edit_btn.parentElement.classList.add("hidden");
+                    }
+                }
+            }
+        } else {
+            share_control_enabled_li.classList.add("hidden");
+            share_control_shown_li.classList.add("hidden");
+            delete_btn.classList.remove("hidden");
+            if (delete_btn.parentElement) {
+                delete_btn.parentElement.classList.remove("hidden");
+            }
+            let has_write_properties = collection.has_permission(Permission.WRITE_PROPERTIES);
+            if (has_write_properties) {
+                edit_btn.classList.remove("hidden");
+                if (edit_btn.parentElement) {
+                    edit_btn.parentElement.classList.remove("hidden");
+                }
+            } else {
+                edit_btn.classList.add("hidden");
+                if (edit_btn.parentElement) {
+                    edit_btn.parentElement.classList.add("hidden");
+                }
             }
         }
         delete_btn.onclick = () => { return this._ondelete(collection); };
@@ -393,6 +707,9 @@ export class CollectionsScene {
             return true;
         });
 
+        let missing_incoming = get_missing_incoming_collections(visible_collections, shares, this._user);
+        visible_collections.push(...missing_incoming);
+
         this._sort_collections(visible_collections, shares);
         this._clear_collections_display();
 
@@ -410,7 +727,6 @@ export class CollectionsScene {
         this._html_scene.classList.remove("hidden");
         this._new_btn.onclick = () => this._onnew();
         this._upload_btn.onclick = () => this._onupload();
-        this._incomingshares_btn.onclick = () => this._onincomingshares();
         const mobileconfig_url = SERVER + ROOT_PATH + ".mobileconfig";
         this._mobileconfig_btn.href = mobileconfig_url;
         this._mobileconfig_btn.onclick = (event) => {
@@ -418,14 +734,12 @@ export class CollectionsScene {
             this._download_file(mobileconfig_url, (this._user ? `${this._user}.mobileconfig` : "radicale.mobileconfig"));
         };
         collectionsCache.getChildCollections(this._user, this._password, this._principal_collection, (e) => this._errorwrapper(e), (c, s, ce) => this._show_collections(c, s, ce));
-        collectionsCache.getServerFeatures(this._user, this._password, (e) => this._errorwrapper(e), maybe_enable_sharing_options);
     }
 
     hide() {
         this._html_scene.classList.add("hidden");
         this._new_btn.onclick = null;
         this._upload_btn.onclick = null;
-        this._incomingshares_btn.onclick = null;
         if (this._mobileconfig_btn) {
             this._mobileconfig_btn.onclick = null;
         }

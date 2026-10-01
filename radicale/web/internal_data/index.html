@@ -63,9 +63,6 @@
         <a href="" class="blue" data-name="upload" title="Upload an addressbook or calendar">
           <img src="css/icons/upload.svg" class="icon" alt="⬆️">
         </a>
-        <a href="" class="blue" data-name="incomingshares" title="Incoming Shares">
-          <img src="css/icons/share.svg" class="icon" alt="🔗">
-        </a>
         <a href="" class="blue" data-name="mobileconfig" title="Mobileconfig">
           <span class="emoji_icon">📲</span>
         </a>
@@ -101,6 +98,14 @@
         </div>
         <p data-name="description">Description</p>
         <ul>
+          <li class="hidden" data-name="share-control-enabled">
+            <button type="button" class="share-btn" data-name="enabled" title="Enabled">
+              <img src="css/icons/check-circle.svg" class="icon" alt="Enabled">
+            </button>
+          </li>
+          <li class="hidden" data-name="share-control-shown">
+            <button type="button" class="share-btn" data-name="shown" title="Shown">👁️</button>
+          </li>
           <li>
             <a href="" title="Download" class="green" data-name="download">
               <img src="css/icons/download.svg" class="icon" alt="🔗">
@@ -237,44 +242,6 @@
       </div>
       <form>
         <button type="button" class="green" data-name="cancel">Close</button>
-      </form>
-      <span class="error hidden" data-name="error"></span>
-    </section>
-
-    <section id="incomingsharingscene" class="container hidden">
-      <h1>Incoming Shares</h1>
-      <p>Manage shares that others have shared with you.</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Path</th>
-            <th>Owner</th>
-            <th title="Share Type">🔗</th>
-            <th title="Permissions">🔑</th>
-            <th title="Enabled">✔️</th>
-            <th title="Shown">👁️</th>
-          </tr>
-        </thead>
-        <tbody data-name="incomingsharesbody">
-          <tr data-name="incomingsharerowtemplate" class="hidden">
-            <td>
-              <div class="url-input-wrapper">
-                <input type="text" data-name="pathortoken" value="" readonly="" class="inline selectall">
-                <button type="button" class="copy-btn" data-name="copy-url" title="copy">⧉</button>
-              </div>
-            </td>
-            <td data-name="owner"></td>
-            <td data-name="sharetype"></td>
-            <td data-name="permissions"><span class="pill" data-name="rw">rw</span><span class="pill"
-                data-name="ro">ro</span><span data-name="conversion">⟿</span></td>
-            <td><input type="checkbox" data-name="enabled"></td>
-            <td><input type="checkbox" data-name="shown"></td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="hidden" data-name="nosharesmessage">No incoming shares</p>
-      <form>
-        <button type="button" class="green" data-name="close">Close</button>
       </form>
       <span class="error hidden" data-name="error"></span>
     </section>

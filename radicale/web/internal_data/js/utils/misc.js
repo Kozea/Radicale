@@ -152,20 +152,6 @@ export function get_element(node, selector) {
 }
 
 /**
- * Trim a string to the given maximum number of characters
- *
- * @param {string} str
- * @param {number} max
- * @returns {string}
- */
-export function trim_to_max(str, max) {
-    if (str.length > max - 2) {
-        return str.substring(0, max) + "...";
-    }
-    return str;
-}
-
-/**
  * Strip trailing slashes from a string.
  * @param {string} str
  * @return {string}

@@ -28,6 +28,7 @@ from playwright.sync_api import Page, expect
 from integ_tests.common import (SHARING_HTPASSWD,
                                 SHARING_HTPASSWD_USERSWITHDOMAIN, Config,
                                 create_collection, login,
+                                share_collection_to_user,
                                 start_radicale_server)
 
 
@@ -51,20 +52,12 @@ def test_incoming_shares(
     login(page, radicale_server, radicale_server_config)
     create_collection(page, radicale_server)
 
-    page.hover("article:not(.hidden)")
-    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
-    page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill(
-        radicale_server_config.user_username
+    share_collection_to_user(
+        page,
+        recipient=radicale_server_config.user_username,
+        share_href="mapped",
+        permissions=permissions,
     )
-    page.locator('input[data-name="sharehref"]').fill("mapped")
-    if permissions == "rw":
-        page.check("#newshare_attr_permissions_rw")
-    page.click('#createeditsharescene button[data-name="submit"]')
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#sharecollectionscene button[data-name="cancel"]')
 
     # 2. Admin logs out
     page.click('a[data-name="logout"]')
@@ -75,70 +68,40 @@ def test_incoming_shares(
     )
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
+    expect(page.locator("#collectionsscene")).to_be_visible()
+    expect(page.locator("#loadingscene")).to_be_hidden()
 
-    # 4. Max sees the incoming share
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    expect(row).to_have_count(1)
+    # 4. Max sees the incoming share card (initially disabled, not shown)
+    article = page.locator("article:not(.hidden)").first
+    expect(article).to_be_visible()
+    expect(article).to_have_class(re.compile(r"\bshare-disabled\b"))
+    expect(article).not_to_have_class(re.compile(r"\bshare-hidden\b"))
 
-    expect(
-        row.locator("input[data-name='pathortoken']")
-    ).to_have_value(re.compile(r".*mapped/"))
-    expect(row.locator("td[data-name='sharetype']")).to_have_text("👤")
-    expect(row.locator("td[data-name='sharetype']")).to_have_attribute(
-        "title", "Direct share"
-    )
+    article.hover()
+    enabled_btn = article.locator('button[data-name="enabled"]')
+    shown_btn = article.locator('button[data-name="shown"]')
+    expect(enabled_btn).to_have_attribute("title", "Disabled")
+    expect(enabled_btn).to_have_class(re.compile(r"\binactive\b"))
+    expect(shown_btn).to_be_disabled()
+    expect(shown_btn).to_have_attribute("title", "Hidden")
+    expect(shown_btn).to_have_class(re.compile(r"\binactive\b"))
 
-    # 5. Max enables and shows the share
-    # Initially, it's disabled and not shown (security by default)
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
-        )
-    ).not_to_be_checked()
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_checked()
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).to_be_disabled()
+    # 5. Max enables the share -> becomes share-hidden
+    enabled_btn.click(force=True)
+    expect(enabled_btn).not_to_be_disabled()
+    expect(article).not_to_have_class(re.compile(r"\bshare-disabled\b"))
+    expect(article).to_have_class(re.compile(r"\bshare-hidden\b"))
+    expect(enabled_btn).to_have_attribute("title", "Enabled")
+    expect(shown_btn).not_to_be_disabled()
 
-    # Enable it
-    page.check(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
-    )
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_disabled()
-
-    # Show it
-    page.check(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-    )
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).to_be_checked()
-    # This is needed due to a potential race condition.
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_disabled()
+    # Max shows the share -> active card
+    shown_btn.click(force=True)
+    expect(shown_btn).not_to_be_disabled()
+    expect(article).not_to_have_class(re.compile(r"\bshare-disabled\b"))
+    expect(article).not_to_have_class(re.compile(r"\bshare-hidden\b"))
+    expect(shown_btn).to_have_attribute("title", "Shown")
 
     # 6. Verify "shared by admin" and button visibility in the collection article
-    page.click('#incomingsharingscene button[data-name="close"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()
-
-    article = page.locator("article:not(.hidden)").first
     expect(article.locator('[data-name="shared-by"]')).to_be_visible()
     expect(article.locator('[data-name="shared-by-owner"]')).to_have_text(
         radicale_server_config.admin_username
@@ -153,36 +116,4 @@ def test_incoming_shares(
     expect(article.locator('a[data-name="delete"]')).to_be_hidden()
 
     # Edit button is visible if either data write or property write is allowed.
-    # In the test environment, permit_properties_overlay is true, so it's always visible.
     expect(article.locator('a[data-name="edit"]')).to_be_visible()
-
-    # 7. Assert no error was shown
-    expect(page.locator('#incomingsharingscene span[data-name="error"]')).to_be_hidden()
-
-
-def test_no_incoming_shares_message(
-    page: Page, radicale_server: str, radicale_server_config: Config
-) -> None:
-    # 1. Max logs in
-    page.goto(radicale_server)
-    page.fill(
-        '#loginscene input[data-name="user"]', radicale_server_config.user_username
-    )
-    page.fill('#loginscene input[data-name="password"]', "userpassword")
-    page.click('button:has-text("Next")')
-
-    # 2. Max goes to incoming shares scene
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-
-    # 3. Verify that the table is hidden and the message is visible
-    expect(page.locator("#incomingsharingscene table")).to_be_hidden()
-    expect(
-        page.locator('#incomingsharingscene [data-name="nosharesmessage"]')
-    ).to_be_visible()
-    expect(
-        page.locator('#incomingsharingscene [data-name="nosharesmessage"]')
-    ).to_have_text("No incoming shares")
-
-    page.click('#incomingsharingscene button[data-name="close"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()

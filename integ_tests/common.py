@@ -20,6 +20,7 @@ Common utilities for integration tests for radicale
 
 import os
 import pathlib
+import re
 import socket
 import subprocess
 import sys
@@ -175,11 +176,12 @@ database_path = {sharing_path}
     env["PYTHONPATH"] = repo_root + os.pathsep + env.get("PYTHONPATH", "")
 
     # Run the server
+    log_file = (tmp_path / "radicale.log").open("w+", encoding="utf-8")
     process = subprocess.Popen(
         [sys.executable, "-m", "radicale", "--config", str(config_path)],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
     )
 
     # Wait for the server to start listening
@@ -190,21 +192,28 @@ database_path = {sharing_path}
                 break
         except (OSError, ConnectionRefusedError):
             if process.poll() is not None:
-                _stdout, stderr = process.communicate()
+                log_file.seek(0)
+                stderr = log_file.read()
                 raise RuntimeError(
-                    f"Radicale failed to start (code {process.returncode}):\n{stderr.decode()}"
+                    f"Radicale failed to start (code {process.returncode}):\n{stderr}"
                 )
             time.sleep(0.1)
     else:
         process.terminate()
-        process.wait()
+        process.wait(timeout=5)
         raise RuntimeError("Timeout waiting for Radicale to start")
 
-    yield f"http://127.0.0.1:{port}"
-
-    # Cleanup
-    process.terminate()
-    process.wait()
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        # Cleanup
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        log_file.close()
 
 
 def login(
@@ -231,3 +240,45 @@ def login(
 def create_collection(page: Page, radicale_server: str) -> None:
     page.click('.fabcontainer a[data-name="new"]')
     page.click('#createcollectionscene button[data-name="submit"]')
+
+
+def create_named_collection(page: Page, name: str) -> None:
+    page.click('.fabcontainer a[data-name="new"]')
+    page.fill('#createcollectionscene input[data-name="displayname"]', name)
+    page.click('#createcollectionscene button[data-name="submit"]')
+    expect(page.locator("#createcollectionscene")).to_be_hidden()
+
+
+def share_collection_to_user(
+    page: Page,
+    collection_title: Optional[str] = None,
+    recipient: str = "max",
+    share_href: str = "shared",
+    permissions: str = "ro",
+    allow_properties_write: bool = False,
+) -> None:
+    if collection_title:
+        article = page.locator("article:not(.hidden)").filter(
+            has=page.locator(
+                "[data-name='title']",
+                has_text=re.compile(f"^{re.escape(collection_title)}$"),
+            )
+        )
+    else:
+        article = page.locator("article:not(.hidden)").first
+    article.hover()
+    article.locator("a[data-name='share']").click(force=True)
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+    page.click('button[data-name="sharebymap"]')
+    page.locator('input[data-name="shareuser"]').fill(recipient)
+    page.locator('input[data-name="sharehref"]').fill(share_href)
+    if permissions == "rw":
+        page.check("#newshare_attr_permissions_rw")
+    if allow_properties_write:
+        page.check("#newshare_attr_properties_write_allow")
+    page.click('#createeditsharescene button[data-name="submit"]')
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()

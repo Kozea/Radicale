@@ -19,7 +19,6 @@ Integration tests for group and realm sharing support in the Web UI.
 """
 
 import pathlib
-import re
 from typing import Any, Generator
 from urllib.parse import urlparse
 
@@ -29,6 +28,7 @@ from playwright.sync_api import Page, expect
 from integ_tests.common import (SHARING_HTGROUP,
                                 SHARING_HTGROUP_USERSWITHDOMAIN, Config,
                                 create_collection, login,
+                                share_collection_to_user,
                                 start_radicale_server)
 
 
@@ -63,18 +63,7 @@ def test_sharing_by_group_or_realm_in_ui(
     create_collection(page, radicale_server)
 
     # 2. Admin opens share scene and creates share-by-group or share-by-realm
-    page.hover("article:not(.hidden)")
-    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
-    page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill(share_user)
-    page.locator('input[data-name="sharehref"]').fill(share_href)
-    page.click('#createeditsharescene button[data-name="submit"]')
-
-    # Verify share map row is displayed
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#sharecollectionscene button[data-name="cancel"]')
+    share_collection_to_user(page, recipient=share_user, share_href=share_href)
 
     # 3. Admin logs out
     page.click('a[data-name="logout"]')
@@ -86,50 +75,21 @@ def test_sharing_by_group_or_realm_in_ui(
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
 
-    # 5. User checks incoming shares scene
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    expect(row).to_have_count(1)
-
-    expect(
-        row.locator("input[data-name='pathortoken']")
-    ).to_have_value(re.compile(rf".*{share_href}/"))
-
-    # a) Check for the emoji and title in the share type column
-    expected_emoji = "👥" if share_user.startswith(":") else "🌐"
-    expected_title = "Group share" if share_user.startswith(":") else "Domain share"
-    expect(row.locator("td[data-name='sharetype']")).to_have_text(expected_emoji)
-    expect(row.locator("td[data-name='sharetype']")).to_have_attribute(
-        "title", expected_title
-    )
-    expect(row.locator("td[data-name='owner']")).to_have_attribute(
-        "title", radicale_server_config.admin_username
-    )
-    expect(row.locator("td[data-name='owner']")).to_contain_text(
-        radicale_server_config.admin_username[:10]
-    )
-
-    # b) Check that the enabled and shown buttons (checkboxes) are disabled
-    enabled_cb = row.locator("input[data-name='enabled']")
-    shown_cb = row.locator("input[data-name='shown']")
-    expect(enabled_cb).to_be_disabled()
-    expect(shown_cb).to_be_disabled()
-    expect(enabled_cb).to_have_attribute(
-        "title", "Group and domain shares cannot be disabled"
-    )
-    expect(shown_cb).to_have_attribute(
-        "title", "Group and domain shares cannot be hidden"
-    )
-
-    page.click('#incomingsharingscene button[data-name="close"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()
-
-    # 6. Verify shared collection is displayed on user's collections page
+    # 5. Verify shared collection is displayed on user's collections page
     article = page.locator("article:not(.hidden)").first
     expect(article.locator('[data-name="shared-by"]')).to_be_visible()
     expect(article.locator('[data-name="shared-by-owner"]')).to_have_text(
         radicale_server_config.admin_username
+    )
+    enabled_btn = article.locator('button[data-name="enabled"]')
+    shown_btn = article.locator('button[data-name="shown"]')
+    expect(enabled_btn).to_be_disabled()
+    expect(shown_btn).to_be_disabled()
+    expect(enabled_btn).to_have_attribute(
+        "title", "Group and domain shares cannot be disabled"
+    )
+    expect(shown_btn).to_have_attribute(
+        "title", "Group and domain shares cannot be hidden"
     )
 
 
@@ -193,19 +153,10 @@ def test_update_sharing_by_group_or_realm_in_ui(
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
 
-    # 6. User verifies incoming share permissions
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    incoming_row = page.locator(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden)"
-    )
-    expect(incoming_row).to_have_count(1)
-    expect(incoming_row.locator('[data-name="rw"]')).to_be_visible()
-    expect(incoming_row.locator('[data-name="ro"]')).to_be_hidden()
-    page.click('#incomingsharingscene button[data-name="close"]')
-
-    # 7. Member user has write access on the collection (edit button visible)
+    # 6. Member user verifies permissions badge and has write access on the collection (edit button visible)
     article = page.locator("article:not(.hidden)").first
+    expect(article.locator('[data-name="permissions"] [data-name="rw"]')).to_be_visible()
+    expect(article.locator('[data-name="permissions"] [data-name="ro"]')).to_be_hidden()
     article.hover()
     expect(article.locator('a[data-name="edit"]')).to_be_visible()
     expect(article.locator('a[data-name="share"]')).to_be_hidden()
@@ -229,8 +180,7 @@ def test_sharing_by_group_including_owner_does_not_duplicate_in_ui(
 ) -> None:
     """Test that sharing to a group/realm that includes the owner:
     1. Does not show the collection twice in the owner's main collections list.
-    2. Does not show the share in the owner's incoming shares list.
-    3. Displays correctly for other group members.
+    2. Displays correctly for other group members without duplication.
     """
     # 1. Admin logs in and creates a collection
     login(page, radicale_server, radicale_server_config)
@@ -240,59 +190,30 @@ def test_sharing_by_group_including_owner_does_not_duplicate_in_ui(
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
 
     # 2. Admin creates a share for group/realm which includes admin
-    page.hover("article:not(.hidden)")
-    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
-    page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill(share_user)
-    page.locator('input[data-name="sharehref"]').fill(share_href)
-    page.click('#createeditsharescene button[data-name="submit"]')
-
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#sharecollectionscene button[data-name="cancel"]')
+    share_collection_to_user(page, recipient=share_user, share_href=share_href)
 
     # 3. Verify admin still sees only 1 collection (not duplicated)
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
     article = page.locator("article:not(.hidden)").first
     expect(article.locator('[data-name="shared-by"]')).to_be_hidden()
 
-    # 4. Verify admin has NO incoming shares
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    expect(
-        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    ).to_have_count(0)
-    expect(
-        page.locator("#incomingsharingscene [data-name='nosharesmessage']")
-    ).to_be_visible()
-    page.click('#incomingsharingscene button[data-name="close"]')
-
-    # 5. Admin logs out
+    # 4. Admin logs out
     page.click('a[data-name="logout"]')
 
-    # 6. Member user logs in
+    # 5. Member user logs in
     page.fill(
         '#loginscene input[data-name="user"]', radicale_server_config.user_username
     )
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
 
-    # 7. Member user sees 1 collection (the shared one)
+    # 6. Member user sees 1 collection (the shared one)
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
     user_article = page.locator("article:not(.hidden)").first
     expect(user_article.locator('[data-name="shared-by"]')).to_be_visible()
     expect(user_article.locator('[data-name="shared-by-owner"]')).to_have_text(
         radicale_server_config.admin_username
     )
-
-    # 8. Member user sees 1 incoming share
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    expect(
-        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#incomingsharingscene button[data-name="close"]')
 
 
 @pytest.mark.parametrize(
@@ -314,8 +235,7 @@ def test_sharing_by_group_including_owner_same_href_shown_in_ui(
     and Share Href is the same as the collection's Href:
     1. The collection remains visible in the owner's web UI.
     2. Owner has full edit/share/delete options and no 'shared-by' or 'transformed-from' badges.
-    3. Owner has NO incoming shares.
-    4. Group members see the shared collection and 1 incoming share.
+    3. Group members see the shared collection without duplication.
     """
     # 1. Admin logs in and creates a collection
     login(page, radicale_server, radicale_server_config)
@@ -329,17 +249,7 @@ def test_sharing_by_group_including_owner_same_href_shown_in_ui(
     coll_name = urlparse(collection_url).path.strip("/").split("/")[-1]
 
     # 2. Admin creates a share with share_href equal to coll_name
-    page.hover("article:not(.hidden)")
-    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
-    page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill(share_user)
-    page.locator('input[data-name="sharehref"]').fill(coll_name)
-    page.click('#createeditsharescene button[data-name="submit"]')
-
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#sharecollectionscene button[data-name="cancel"]')
+    share_collection_to_user(page, recipient=share_user, share_href=coll_name)
 
     # 3. Verify admin STILL sees 1 collection (does not disappear!)
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
@@ -350,39 +260,20 @@ def test_sharing_by_group_including_owner_same_href_shown_in_ui(
     expect(article.locator('a[data-name="share"]')).to_be_visible()
     expect(article.locator('a[data-name="delete"]')).to_be_visible()
 
-    # 4. Verify admin has NO incoming shares
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    expect(
-        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    ).to_have_count(0)
-    expect(
-        page.locator("#incomingsharingscene [data-name='nosharesmessage']")
-    ).to_be_visible()
-    page.click('#incomingsharingscene button[data-name="close"]')
-
-    # 5. Admin logs out
+    # 4. Admin logs out
     page.click('a[data-name="logout"]')
 
-    # 6. Member user logs in
+    # 5. Member user logs in
     page.fill(
         '#loginscene input[data-name="user"]', radicale_server_config.user_username
     )
     page.fill('#loginscene input[data-name="password"]', "userpassword")
     page.click('button:has-text("Next")')
 
-    # 7. Member user sees 1 collection (the shared one)
+    # 6. Member user sees 1 collection (the shared one)
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
     user_article = page.locator("article:not(.hidden)").first
     expect(user_article.locator('[data-name="shared-by"]')).to_be_visible()
     expect(user_article.locator('[data-name="shared-by-owner"]')).to_have_text(
         radicale_server_config.admin_username
     )
-
-    # 8. Member user sees 1 incoming share
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    expect(
-        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#incomingsharingscene button[data-name="close"]')
