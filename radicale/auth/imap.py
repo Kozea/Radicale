@@ -20,7 +20,7 @@ import ssl
 import sys
 from typing import Union
 
-from radicale import auth
+from radicale import auth, utils
 from radicale.log import logger
 
 
@@ -91,5 +91,7 @@ class Auth(auth.BaseAuth):
             connection.logout()
             return login
         except (OSError, imaplib.IMAP4.error) as e:
-            logger.error("Failed to communicate with IMAP server %r: %s" % ("[%s]:%d" % (self._host, self._port), e))
+            logger.error(
+                "Failed to communicate with IMAP server %s: %s",
+                utils.format_address((self._host, self._port)), e)
             return ""

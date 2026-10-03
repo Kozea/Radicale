@@ -178,7 +178,9 @@ class Auth(auth.BaseAuth):
         hv = hash_value.encode()
         if len(pw) > self.BCRYPT_MAX_PWLEN:
             pw = pw[:self.BCRYPT_MAX_PWLEN]
-            logger.warning("Bcrypt passwords can not be longer than %d characters, truncated" % self.BCRYPT_MAX_PWLEN)
+            logger.warning(
+                "Bcrypt passwords can not be longer than %d characters, truncated",
+                self.BCRYPT_MAX_PWLEN)
         if self._encryption == "autodetect" and len(hv) != 60:
             return self._plain_fallback("BCRYPT", hv, pw)
         else:
@@ -293,7 +295,8 @@ class Auth(auth.BaseAuth):
             if init is True:
                 raise RuntimeError("Failed to load htpasswd file %r: %s" % (self._filename, e)) from e
             else:
-                logger.warning("Failed to load htpasswd file on re-read: %r" % self._filename)
+                logger.warning(
+                    "Failed to load htpasswd file on re-read: %r", self._filename)
                 htpasswd_ok = False
         htpasswd_size = os.stat(self._filename).st_size
         htpasswd_mtime_ns = os.stat(self._filename).st_mtime_ns
@@ -334,7 +337,10 @@ class Auth(auth.BaseAuth):
             if (self._htpasswd_ok is False):
                 if (self._htpasswd_not_ok_time > 0):
                     if (current_time - self._htpasswd_not_ok_time) > self._htpasswd_not_ok_reminder_seconds:
-                        logger.warning("htpasswd file still contains issues (REMINDER, check warnings in the past): %r" % self._filename)
+                        logger.warning(
+                            "htpasswd file still contains issues (REMINDER, "
+                            "check warnings in the past): %r",
+                            self._filename)
                         self._htpasswd_not_ok_time = current_time
                 else:
                     self._htpasswd_not_ok_time = current_time

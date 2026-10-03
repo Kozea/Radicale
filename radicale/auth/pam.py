@@ -44,10 +44,10 @@ class Auth(auth.BaseAuth):
         except ImportError as e:
             raise ModuleNotFoundError("PAM authentication requires the Python pam module") from e
         self._service = configuration.get("auth", "pam_service")
-        logger.info("auth.pam_service: %s" % self._service)
+        logger.info("auth.pam_service: %s", self._service)
         self._group_membership = configuration.get("auth", "pam_group_membership")
         if (self._group_membership):
-            logger.info("auth.pam_group_membership: %s" % self._group_membership)
+            logger.info("auth.pam_group_membership: %s", self._group_membership)
         else:
             logger.warning("auth.pam_group_membership: (empty, nothing to check / INSECURE)")
 
@@ -63,18 +63,18 @@ class Auth(auth.BaseAuth):
         try:
             pwd.getpwnam(login).pw_uid
         except KeyError:
-            logger.debug("PAM user not found: %r" % login)
+            logger.debug("PAM user not found: %r", login)
             return ""
         else:
-            logger.debug("PAM user found: %r" % login)
+            logger.debug("PAM user found: %r", login)
 
         # Check whether the user has a primary group (mandatory)
         try:
             # Get user primary group
             primary_group = grp.getgrgid(pwd.getpwnam(login).pw_gid).gr_name
-            logger.debug("PAM user %r has primary group: %r" % (login, primary_group))
+            logger.debug("PAM user %r has primary group: %r", login, primary_group)
         except KeyError:
-            logger.debug("PAM user has no primary group: %r" % login)
+            logger.debug("PAM user has no primary group: %r", login)
             return ""
 
         # Obtain supplementary groups
@@ -92,10 +92,14 @@ class Auth(auth.BaseAuth):
         # (primary or supplementary)
         if (self._group_membership):
             if (primary_group != self._group_membership) and (login not in members):
-                logger.warning("PAM user %r belongs not to the required group: %r" % (login, self._group_membership))
+                logger.warning(
+                    "PAM user %r belongs not to the required group: %r",
+                    login, self._group_membership)
                 return ""
             else:
-                logger.debug("PAM user %r belongs to the required group: %r" % (login, self._group_membership))
+                logger.debug(
+                    "PAM user %r belongs to the required group: %r",
+                    login, self._group_membership)
 
         # add groups
         members.append(primary_group)
@@ -106,5 +110,7 @@ class Auth(auth.BaseAuth):
         if self.pam_authenticate(login, password, service=self._service):
             return login
         else:
-            logger.debug("PAM authentication not successful for user: %r (service %r)" % (login, self._service))
+            logger.debug(
+                "PAM authentication not successful for user: %r (service %r)",
+                login, self._service)
             return ""

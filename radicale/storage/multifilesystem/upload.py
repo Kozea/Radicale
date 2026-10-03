@@ -92,7 +92,7 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
         self._storage._makedirs_synced(cache_folder)
         for item in items:
             uid = item.uid
-            logger.debug("Store item from list with uid: '%s'" % uid)
+            logger.debug("Store item from list with uid: '%s'", uid)
             cache_content = self._item_cache_content(item)
             for href in get_safe_free_hrefs(uid):
                 path = os.path.join(self._filesystem_path, href)
