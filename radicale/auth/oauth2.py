@@ -39,7 +39,7 @@ class Auth(auth.BaseAuth):
         if not self._endpoint:
             logger.error("auth.oauth2_token_endpoint URL missing")
             raise RuntimeError("OAuth2 token endpoint URL is required")
-        logger.info("auth OAuth2 token endpoint: %s" % (self._endpoint))
+        logger.info("auth OAuth2 token endpoint: %s", self._endpoint)
 
     def _login(self, login, password):
         """Validate credentials.
@@ -66,6 +66,8 @@ class Auth(auth.BaseAuth):
             ):
                 return login
         except OSError as e:
-            logger.critical("Failed to authenticate against OAuth2 server %s: %s" % (self._endpoint, e))
-        logger.warning("User failed to authenticate using OAuth2: %r" % login)
+            logger.critical(
+                "Failed to authenticate against OAuth2 server %s: %s",
+                self._endpoint, e)
+        logger.warning("User failed to authenticate using OAuth2: %r", login)
         return ""

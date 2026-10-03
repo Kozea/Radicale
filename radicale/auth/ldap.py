@@ -119,33 +119,33 @@ class Auth(auth.BaseAuth):
         if self._ldap_ssl_ca_file and self._ldap_security not in ("tls", "starttls"):
             logger.warning("Config setting 'ldap_ssl_ca_file' useless without encrypted LDAP connection")
 
-        logger.info("auth.ldap_uri               : %r" % self._ldap_uri)
-        logger.info("auth.ldap_base              : %r" % self._ldap_base)
-        logger.info("auth.ldap_reader_dn         : %r" % self._ldap_reader_dn)
-        logger.info("auth.ldap_filter            : %r" % self._ldap_filter)
+        logger.info("auth.ldap_uri               : %r", self._ldap_uri)
+        logger.info("auth.ldap_base              : %r", self._ldap_base)
+        logger.info("auth.ldap_reader_dn         : %r", self._ldap_reader_dn)
+        logger.info("auth.ldap_filter            : %r", self._ldap_filter)
         if self._ldap_user_attr:
-            logger.info("auth.ldap_user_attribute    : %r" % self._ldap_user_attr)
+            logger.info("auth.ldap_user_attribute    : %r", self._ldap_user_attr)
         else:
             logger.info("auth.ldap_user_attribute    : (not provided)")
         if self._ldap_groups_attr:
-            logger.info("auth.ldap_groups_attribute  : %r" % self._ldap_groups_attr)
+            logger.info("auth.ldap_groups_attribute  : %r", self._ldap_groups_attr)
         else:
             logger.info("auth.ldap_groups_attribute  : (not provided)")
         if self._ldap_group_base:
-            logger.info("auth.ldap_group_base        : %r" % self._ldap_group_base)
+            logger.info("auth.ldap_group_base        : %r", self._ldap_group_base)
         else:
             logger.info("auth.ldap_group_base        : (not provided, using ldap_base)")
             self._ldap_group_base = self._ldap_base
         if self._ldap_group_filter:
-            logger.info("auth.ldap_group_filter      : %r" % self._ldap_group_filter)
+            logger.info("auth.ldap_group_filter      : %r", self._ldap_group_filter)
         else:
             logger.info("auth.ldap_group_filter      : (not provided)")
         if self._ldap_group_members_attr:
-            logger.info("auth.ldap_group_members_attr: %r" % self._ldap_group_members_attr)
+            logger.info("auth.ldap_group_members_attr: %r", self._ldap_group_members_attr)
         else:
             logger.info("auth.ldap_group_members_attr: (not provided)")
         if ldap_secret_file_path:
-            logger.info("auth.ldap_secret_file_path  : %r" % ldap_secret_file_path)
+            logger.info("auth.ldap_secret_file_path  : %r", ldap_secret_file_path)
             if self._ldap_secret:
                 logger.info("auth.ldap_secret            : (from file)")
         else:
@@ -155,10 +155,10 @@ class Auth(auth.BaseAuth):
         if self._ldap_reader_dn and not self._ldap_secret:
             logger.error("auth.ldap_secret           : (not provided)")
             raise RuntimeError("LDAP authentication requires ldap_secret for ldap_reader_dn")
-        logger.info("auth.ldap_security          : %s" % self._ldap_security)
-        logger.info("auth.ldap_ssl_verify_mode   : %s" % self._ldap_ssl_verify_mode)
+        logger.info("auth.ldap_security          : %s", self._ldap_security)
+        logger.info("auth.ldap_ssl_verify_mode   : %s", self._ldap_ssl_verify_mode)
         if self._ldap_ssl_ca_file:
-            logger.info("auth.ldap_ssl_ca_file       : %r" % self._ldap_ssl_ca_file)
+            logger.info("auth.ldap_ssl_ca_file       : %r", self._ldap_ssl_ca_file)
         else:
             logger.info("auth.ldap_ssl_ca_file       : (not provided)")
         if self._ldap_ignore_attribute_create_modify_timestamp:
@@ -168,7 +168,7 @@ class Auth(auth.BaseAuth):
             self._ldap_attributes.append(self._ldap_groups_attr)
         if self._ldap_user_attr:
             self._ldap_attributes.append(self._ldap_user_attr)
-        logger.info("ldap_attributes             : %r" % self._ldap_attributes)
+        logger.info("ldap_attributes             : %r", self._ldap_attributes)
 
     def _login2(self, login: str, password: str) -> str:
         try:

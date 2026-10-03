@@ -111,9 +111,9 @@ class Storage(
             logger.warning("Storage item mtime resolution test not possible, cannot set utime on file: %r (%s)", path, e)
             os.remove(path)
             raise ValueError  # do not raise a hard PermissionError
-        logger.debug("Storage item mtime resoultion test set: %d ns" % MTIME_NS_TEST)
+        logger.debug("Storage item mtime resoultion test set: %d ns", MTIME_NS_TEST)
         mtime_ns = os.stat(path).st_mtime_ns - mtime_ns
-        logger.debug("Storage item mtime resoultion test get: %d ns" % mtime_ns)
+        logger.debug("Storage item mtime resoultion test get: %d ns", mtime_ns)
         # start analysis
         precision = 1
         mtime_ns_test = MTIME_NS_TEST
@@ -194,12 +194,20 @@ class Storage(
             (precision, precision_unit, unit) = self._analyse_mtime()
             if precision >= 100000000:
                 # >= 100 ms
-                logger.warning("Storage item mtime resolution test result: %d %s (VERY RISKY ON PRODUCTION SYSTEMS)" % (precision_unit, unit))
+                logger.warning(
+                    "Storage item mtime resolution test result: %d %s "
+                    "(VERY RISKY ON PRODUCTION SYSTEMS)",
+                    precision_unit, unit)
             elif precision >= 10000000:
                 # >= 10 ms
-                logger.warning("Storage item mtime resolution test result: %d %s (RISKY ON PRODUCTION SYSTEMS)" % (precision_unit, unit))
+                logger.warning(
+                    "Storage item mtime resolution test result: %d %s "
+                    "(RISKY ON PRODUCTION SYSTEMS)",
+                    precision_unit, unit)
             else:
-                logger.info("Storage item mtime resolution test result: %d %s" % (precision_unit, unit))
+                logger.info(
+                    "Storage item mtime resolution test result: %d %s",
+                    precision_unit, unit)
                 if self._use_mtime_and_size_for_item_cache is False:
                     logger.info("Storage cache using mtime and size for 'item' may be an option in case of performance issues")
         except PermissionError as e:
