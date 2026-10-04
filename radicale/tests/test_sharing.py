@@ -8140,6 +8140,14 @@ permissions: RrWw""")
             assert path_shared_r_base_user in responses
             assert path_shared1_r_user in responses
 
+            # verify PROPFIND as user1
+            logging.info("\n*** PROPFIND collection DEPTH=1 user1 (extended)")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            privileges_list = self._propfind_privileges(path_shared1_r_user, login="user1:user1pw")
+            assert "D:write" in privileges_list
+            assert "D:read" in privileges_list
+
             # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection DEPTH=1 user2")
             path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2")
@@ -8151,6 +8159,14 @@ permissions: RrWw""")
 </propfind>""", login="user2:user2pw", HTTP_DEPTH="1")
             assert path_shared_r_base_user in responses
             assert path_shared1_r_user in responses
+
+            # verify PROPFIND as user2
+            logging.info("\n*** PROPFIND collection DEPTH=1 user2 (extended)")
+            path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user2")
+            privileges_list = self._propfind_privileges(path_shared1_r_user, login="user2:user2pw")
+            assert "D:write" not in privileges_list
+            assert "D:read" in privileges_list
 
     def test_sharing_api_map_user_group_by_local_with_realm(self) -> None:
         """share-by-map API usage tests related user group by local with realm."""
