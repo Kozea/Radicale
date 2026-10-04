@@ -677,6 +677,9 @@ class ApplicationPartPropfind(ApplicationBase):
                         for item, permission, raw_permissions in c_allowed_items:
                             if isinstance(item, storage.BaseCollection):
                                 uri = pathutils.unstrip_path(item.path, True)
+                                if share['Conversion'] != "bday" and uri in collection_uris:
+                                    logger.trace("PROPFIND: shared collection skipped (source existing): %r", uri)
+                                    continue
                                 # backmap
                                 if uri.startswith(share['PathMapped']):
                                     uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
