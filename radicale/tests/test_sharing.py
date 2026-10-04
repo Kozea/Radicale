@@ -752,7 +752,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Status'] == "not-found"
             assert answer_dict['Lines'] == 0
 
-            logging.info("\n*** delete collection*")
+            logging.info("\n*** delete collection")
             self.delete(path_base1, login="owner:ownerpw")
             self.delete(path_base2, login="owner:ownerpw")
 
