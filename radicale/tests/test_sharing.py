@@ -1527,18 +1527,18 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        path_shared = "/user/calendarUP-shared-by-owner.ics/"
-        path_shared2 = "/user/calendarUP-shared-by-owner2.ics/"
-        path_mapped = "/owner/calendarUP.ics/"
-        path_mapped2 = "/owner/calendarUP2.ics/"
-        path_mapped_o2 = "/owner2/calendarUP3.ics/"
-
-        logging.info("\n*** prepare and test access")
-        self.mkcalendar(path_mapped, login="owner:ownerpw")
-        self.mkcalendar(path_mapped2, login="owner:ownerpw")
-        self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_shared = "/user/calendarUP-shared-by-owner-" + db_type + ".ics/"
+            path_shared2 = "/user/calendarUP-shared-by-owner2-" + db_type + ".ics/"
+            path_mapped = "/owner/calendarUP-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendarUP2-" + db_type + ".ics/"
+            path_mapped_o2 = "/owner2/calendarUP3-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare and test access")
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+            self.mkcalendar(path_mapped2, login="owner:ownerpw")
+            self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1696,23 +1696,23 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        path_share1 = "/user1/calendar-shared-by-owner1.ics/"
-        path_mapped1 = "/owner1/calendar1.ics/"
-        path_share2 = "/user2/calendar-shared-by-owner2.ics/"
-        path_mapped2 = "/owner2/calendar2.ics/"
-
-        logging.info("\n*** prepare")
-        self.mkcalendar(path_mapped1, login="%s:%s" % ("owner1", "owner1pw"))
-        event = get_file_content("event1.ics")
-        path = path_mapped1 + "/event1.ics"
-        self.put(path, event, login="%s:%s" % ("owner1", "owner1pw"))
-
-        self.mkcalendar(path_mapped2, login="%s:%s" % ("owner2", "owner2pw"))
-        event = get_file_content("event1.ics")
-        path = path_mapped2 + "/event1.ics"
-        self.put(path, event, login="%s:%s" % ("owner2", "owner2pw"))
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_share1 = "/user1/calendar-shared-by-owner1-" + db_type + ".ics/"
+            path_mapped1 = "/owner1/calendar1-" + db_type + ".ics/"
+            path_share2 = "/user2/calendar-shared-by-owner2-" + db_type + ".ics/"
+            path_mapped2 = "/owner2/calendar2-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare")
+            self.mkcalendar(path_mapped1, login="%s:%s" % ("owner1", "owner1pw"))
+            event = get_file_content("event1.ics")
+            path = path_mapped1 + "/event1.ics"
+            self.put(path, event, login="%s:%s" % ("owner1", "owner1pw"))
+
+            self.mkcalendar(path_mapped2, login="%s:%s" % ("owner2", "owner2pw"))
+            event = get_file_content("event1.ics")
+            path = path_mapped2 + "/event1.ics"
+            self.put(path, event, login="%s:%s" % ("owner2", "owner2pw"))
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1788,18 +1788,18 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        path_shared_r = "/user/calendar-shared-by-owner-r.ics/"
-        path_shared_w = "/user1/calendar-shared-by-owner-w.ics/"
-        path_shared_rw = "/user2/calendar-shared-by-owner-rw.ics/"
-        path_mapped = "/owner/calendar.ics/"
-
-        logging.info("\n*** prepare and test access")
-        self.mkcalendar(path_mapped, login="owner:ownerpw")
-        event = get_file_content("event1.ics")
-        path = path_mapped + "/event1.ics"
-        self.put(path, event, login="owner:ownerpw")
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_shared_r = "/user/calendar-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_w = "/user1/calendar-shared-by-owner-w-" + db_type + ".ics/"
+            path_shared_rw = "/user2/calendar-shared-by-owner-rw-" + db_type + ".ics/"
+            path_mapped = "/owner/calendar-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare and test access")
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+            event = get_file_content("event1.ics")
+            path = path_mapped + "/event1.ics"
+            self.put(path, event, login="owner:ownerpw")
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2719,16 +2719,16 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        path_mapped1 = "/owner/calendar1U.ics/"
-        path_mapped2 = "/owner/calendar2U.ics/"
-        path_shared1 = "/user/calendar1U-shared-by-owner.ics/"
-
-        logging.info("\n*** prepare and test access")
-        self.mkcalendar(path_mapped1, login="owner:ownerpw")
-        event = get_file_content("event1.ics")
-        self.put(os.path.join(path_mapped1, "event1.ics"), event, login="owner:ownerpw")
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_mapped1 = "/owner/calendar1U-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendar2U-" + db_type + ".ics/"
+            path_shared1 = "/user/calendar1U-shared-by-owner-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare and test access")
+            self.mkcalendar(path_mapped1, login="owner:ownerpw")
+            event = get_file_content("event1.ics")
+            self.put(os.path.join(path_mapped1, "event1.ics"), event, login="owner:ownerpw")
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
