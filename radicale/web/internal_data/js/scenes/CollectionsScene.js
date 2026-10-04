@@ -45,7 +45,6 @@ import { UploadCollectionScene } from "./UploadCollectionScene.js";
  */
 function find_matching_map_share(collectionHref, shares, currentUser) {
     let collHref = decodeURIComponent(collectionHref || "").replace(/\/+$/, "");
-    let cleanUser = decodeURIComponent(currentUser || "");
     return (shares || []).find(s => {
         if (s.ShareType !== "map") return false;
         let shareTarget = decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "");

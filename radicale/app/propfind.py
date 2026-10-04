@@ -690,7 +690,7 @@ class ApplicationPartPropfind(ApplicationBase):
                                     logger.trace("PROPFIND: shared collection append: %r", uri)
                                     collection_uris[uri] = 2
                                 else:
-                                    logger.trace("PROPFIND: shared collection skipped (already added): %r", uri)
+                                    logger.trace("PROPFIND: shared collection skipped (backmapped already existing): %r", uri)
                             else:
                                 allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                         shares[c_share] = share
