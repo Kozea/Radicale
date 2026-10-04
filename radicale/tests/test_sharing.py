@@ -662,6 +662,9 @@ class TestSharingApiSanity(BaseTest):
             assert path_base1 in answer
             assert path_base2 in answer
 
+            logging.info("\n*** delete collection of #1 (fail, still in use)")
+            self.delete(path_base1, login="owner:ownerpw", check=403)
+
             logging.info("\n*** delete token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "delete", check=200, login="owner:ownerpw", form_array=form_array)
@@ -736,6 +739,9 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Status'] == "success"
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['HiddenByOwner'] is False
+
+            logging.info("\n*** delete collection of #2 (fail, still in use)")
+            self.delete(path_base2, login="owner:ownerpw", check=403)
 
             logging.info("\n*** delete token#2 (json->json)")
             json_dict = {}
@@ -1966,6 +1972,40 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** fetch event as owner -> fail")
             _, headers, answer = self.request("GET", path_mapped + "event3.ics", check=404, login="owner:ownerpw")
 
+            # DELETE collection
+            logging.info("\n*** delete collection by user1 via map:w -> fail")
+            _, responses = self.delete(path_shared_rw, check=403, login="user2:user2pw")
+
+            logging.info("\n*** delete collection by owner -> fail (still in use)")
+            _, responses = self.delete(path_mapped, check=403, login="owner:ownerpw")
+
+            logging.info("\n*** delete map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete map user1/owner:w -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_w
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete map user2/owner:rw -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_rw
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete collection by owner -> ok (no longer in use)")
+            _, responses = self.delete(path_mapped, check=200, login="owner:ownerpw")
+
     def test_sharing_api_map_report_access(self) -> None:
         """share-by-map API usage tests related to report."""
         self.configure({"auth": {"type": "htpasswd",
@@ -2815,6 +2855,20 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self.request("GET", path_shared1, check=200, login="user:userpw")
 
             # cleanup
+            logging.info("\n*** delete collection -> 403 (still in use)")
+            self.delete(path_mapped2, login="owner:ownerpw", check=403)
+
+            # delete map
+            logging.info("\n*** delete map user/owner:path_mapped2 -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared1
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # cleanup
+            logging.info("\n*** delete collection -> 200")
             self.delete(path_mapped2, login="owner:ownerpw")
 
     def test_sharing_api_list_filter(self) -> None:
