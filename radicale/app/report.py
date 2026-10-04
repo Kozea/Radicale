@@ -46,6 +46,130 @@ from radicale.log import logger
 DT_FORMAT_TIMESTAMP: str = '%Y%m%dT%H%M%SZ'
 DT_FORMAT_DATE: str = '%Y%m%d'
 
+FreeBusyPeriod = Tuple[datetime.datetime, datetime.datetime, str]
+
+
+def _to_utc(value: datetime.datetime) -> datetime.datetime:
+    if not isinstance(value, datetime.datetime):
+        value = datetime.datetime.combine(value, datetime.datetime.min.time())
+    if value.tzinfo is None:
+        return value.replace(tzinfo=vobject.icalendar.utc)
+    return value.astimezone(vobject.icalendar.utc)
+
+
+def _merge_freebusy_periods(periods: List[FreeBusyPeriod]) -> List[FreeBusyPeriod]:
+    grouped: dict = {}
+    for start, end, fbtype in periods:
+        grouped.setdefault(fbtype, []).append((start, end))
+    merged: List[FreeBusyPeriod] = []
+    for fbtype, ranges in grouped.items():
+        ranges.sort()
+        current_start, current_end = ranges[0]
+        for start, end in ranges[1:]:
+            if start <= current_end:
+                if end > current_end:
+                    current_end = end
+            else:
+                merged.append((current_start, current_end, fbtype))
+                current_start, current_end = start, end
+        merged.append((current_start, current_end, fbtype))
+    merged.sort()
+    return merged
+
+
+def render_freebusy(periods: List[FreeBusyPeriod],
+                    range_start: datetime.datetime,
+                    range_end: datetime.datetime) -> str:
+    cal = vobject.iCalendar()
+    vfb = cal.add('vfreebusy')
+    vfb.add('dtstamp').value = _to_utc(datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0))
+    vfb.add('dtstart').value = _to_utc(range_start)
+    vfb.add('dtend').value = _to_utc(range_end)
+    for start, end, fbtype in _merge_freebusy_periods(periods):
+        fb = vfb.add('freebusy')
+        fb.value = [(_to_utc(start), _to_utc(end))]
+        fb.params['FBTYPE'] = [fbtype]
+    return cal.serialize()
+
+
+def _prop_text(prop: Optional[vobject.base.ContentLine]) -> str:
+    if prop is None:
+        return ""
+    value = prop.value
+    if not isinstance(value, str):
+        value = str(value)
+    return value.strip().upper()
+
+
+def _fbtype_for_component(component: vobject.base.Component) -> Optional[str]:
+    if _prop_text(getattr(component, "transp", None)) not in ("", "OPAQUE"):
+        return None
+    status = _prop_text(getattr(component, "status", None))
+    if status in ("", "CONFIRMED"):
+        return "BUSY"
+    if status == "CANCELLED":
+        return "FREE"
+    if status == "TENTATIVE":
+        return "BUSY-TENTATIVE"
+    return "BUSY"
+
+
+def freebusy_periods(item: radicale_item.Item,
+                     range_start: datetime.datetime,
+                     range_end: datetime.datetime,
+                     max_occurrence: int) -> List[FreeBusyPeriod]:
+    if item.component_name != 'VEVENT':
+        return []
+    range_start = _to_utc(range_start)
+    range_end = _to_utc(range_end)
+    holder: List[Optional[vobject.base.Component]] = [None]
+    periods: List[FreeBusyPeriod] = []
+    examined = 0
+
+    def component_fn(component: vobject.base.Component) -> bool:
+        holder[0] = component
+        return _fbtype_for_component(component) is not None
+
+    def range_fn(occurrence_start: datetime.datetime,
+                 occurrence_end: datetime.datetime,
+                 is_recurrence: bool) -> bool:
+        nonlocal examined
+        occurrence_start = _to_utc(occurrence_start)
+        occurrence_end = _to_utc(occurrence_end)
+        if range_end < occurrence_start and not is_recurrence:
+            return True
+        if not (range_start < occurrence_end and occurrence_start < range_end):
+            return False
+        examined += 1
+        if max_occurrence > 0 and examined >= max_occurrence:
+            return True
+        component = holder[0]
+        if component is None:
+            return False
+        fbtype = _fbtype_for_component(component)
+        if fbtype is None:
+            return False
+        start = occurrence_start
+        end = occurrence_end
+        if start < range_start:
+            start = range_start
+        if end > range_end:
+            end = range_end
+        if end <= start:
+            return False
+        periods.append((start, end, fbtype))
+        return False
+
+    def infinity_fn(occurrence_start: datetime.datetime) -> bool:
+        return False
+
+    radicale_filter.visit_time_ranges(
+        item.vobject_item, "VEVENT", range_fn, infinity_fn, component_fn)
+    if max_occurrence > 0 and examined >= max_occurrence:
+        raise ValueError("FREEBUSY occurrences limit of {} hit"
+                         .format(max_occurrence))
+    return periods
+
 
 def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                      collection: storage.BaseCollection, encoding: str,
@@ -87,7 +211,10 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
 
-    cal = vobject.iCalendar()
+    range_start, range_end = radicale_filter.parse_time_range(time_range_element)
+    range_start = _to_utc(range_start)
+    range_end = _to_utc(range_end)
+    periods: List[FreeBusyPeriod] = []
     collection_tag = collection.tag
     while retrieved_items:
         # Second filtering before evaluating occurrences.
@@ -106,44 +233,9 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
                 raise RuntimeError("Failed to free-busy filter item %r from %r: %s" %
                                    (item.href, collection.path, e)) from e
 
-        fbtype = None
-        if item.component_name == 'VEVENT':
-            transp = getattr(item.vobject_item.vevent, 'transp', None)
-            if transp and transp.value != 'OPAQUE':
-                continue
-
-            status = getattr(item.vobject_item.vevent, 'status', None)
-            if not status or status.value == 'CONFIRMED':
-                fbtype = 'BUSY'
-            elif status.value == 'CANCELLED':
-                fbtype = 'FREE'
-            elif status.value == 'TENTATIVE':
-                fbtype = 'BUSY-TENTATIVE'
-            else:
-                # Could do fbtype = status.value for x-name, I prefer this
-                fbtype = 'BUSY'
-
-        # TODO: coalesce overlapping periods
-
-        if max_occurrence > 0:
-            n_occurrences = max_occurrence+1
-        else:
-            n_occurrences = 0
-        occurrences = radicale_filter.time_range_fill(item.vobject_item,
-                                                      time_range_element,
-                                                      "VEVENT",
-                                                      n=n_occurrences)
-        if max_occurrence > 0 and len(occurrences) >= max_occurrence:
-            raise ValueError("FREEBUSY occurrences limit of {} hit"
-                             .format(max_occurrence))
-
-        for occurrence in occurrences:
-            vfb = cal.add('vfreebusy')
-            vfb.add('dtstamp').value = item.vobject_item.vevent.dtstamp.value
-            vfb.add('dtstart').value, vfb.add('dtend').value = occurrence
-            if fbtype:
-                vfb.add('fbtype').value = fbtype
-    return (client.OK, cal.serialize())
+        periods.extend(freebusy_periods(
+            item, range_start, range_end, max_occurrence))
+    return (client.OK, render_freebusy(periods, range_start, range_end))
 
 
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
@@ -910,6 +1002,15 @@ class ApplicationPartReport(ApplicationBase):
 
             if xml_content is not None and \
                xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
+                if not isinstance(item, storage.BaseCollection):
+                    logger.warning(
+                        "Invalid free-busy-query REPORT on non-collection %r", path)
+                    status = client.FORBIDDEN
+                    xml_answer = xmlutils.webdav_error("D:supported-report")
+                    headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
+                    request_info["status"] = status
+                    return (status, headers, self._xml_response(xml_answer, request_info),
+                            xmlutils.pretty_xml(xml_content))
                 max_occurrence = self.configuration.get("reporting", "max_freebusy_occurrence")
                 try:
                     status, body = free_busy_report(
@@ -919,8 +1020,13 @@ class ApplicationPartReport(ApplicationBase):
                     logger.warning(
                         "Bad REPORT request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
+                if not isinstance(body, str):
+                    headers = {"Content-Type": "text/xml; charset=%s" % self._encoding}
+                    request_info["status"] = status
+                    return (status, headers, self._xml_response(body, request_info),
+                            xmlutils.pretty_xml(xml_content))
                 headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
-                return status, headers, str(body), xmlutils.pretty_xml(xml_content)
+                return status, headers, body, xmlutils.pretty_xml(xml_content)
             else:
                 max_occurrence = self.configuration.get("reporting", "max_expand_occurrence")
                 try:

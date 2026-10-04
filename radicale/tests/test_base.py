@@ -39,6 +39,27 @@ from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
 
+def _utc(value: datetime.datetime) -> datetime.datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=datetime.timezone.utc)
+    return value.astimezone(datetime.timezone.utc)
+
+
+def _period_end(period: Tuple) -> datetime.datetime:
+    start, end = period
+    if isinstance(end, datetime.timedelta):
+        return _utc(start + end)
+    return _utc(end)
+
+
+def _freebusy_periods(vfb: vobject.base.Component) -> List[Tuple[datetime.datetime, datetime.datetime, str]]:
+    periods = []
+    for fb in vfb.freebusy_list:
+        fbtype = fb.params.get("FBTYPE", ["BUSY"])[0]
+        periods.append((_utc(fb.value[0][0]), _period_end(fb.value[0]), fbtype))
+    return periods
+
+
 class TestBaseRequests(BaseTest):
     """Tests with simple requests."""
 
@@ -2326,44 +2347,264 @@ permissions: RrWw""")
             filename = "event{}.ics".format(i)
             event = get_file_content(filename)
             self.put(posixpath.join(calendar_path, filename), event)
-        code, responses = self.report(calendar_path, """\
+        overlapping = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:overlap-secret
+SUMMARY:Hidden title
+DESCRIPTION:Hidden details
+LOCATION:Hidden place
+ORGANIZER:mailto:hidden@example.com
+ATTENDEE:mailto:hidden@example.com
+DTSTART:20130831T120000Z
+DTEND:20130901T150000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(posixpath.join(calendar_path, "overlap.ics"), overlapping)
+        trailing = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:trailing-secret
+SUMMARY:Hidden trailing
+DTSTART:20130908T200000Z
+DTEND:20130909T020000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(posixpath.join(calendar_path, "trailing.ics"), trailing)
+        freebusy_query = """\
 <?xml version="1.0" encoding="utf-8" ?>
 <C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
     <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
-</C:free-busy-query>""", 200, is_xml=False)
-        for response in responses.values():
-            assert isinstance(response, vobject.base.Component)
-        assert len(responses) == 1
-        vcalendar = list(responses.values())[0]
-        assert isinstance(vcalendar, vobject.base.Component)
-        assert len(vcalendar.vfreebusy_list) == 3
+</C:free-busy-query>"""
+        status, headers, answer = self.request(
+            "REPORT", calendar_path, freebusy_query, check=200)
+        assert headers["Content-Type"].startswith("text/calendar")
+        for secret in ("SUMMARY", "DESCRIPTION", "LOCATION", "ORGANIZER",
+                       "ATTENDEE", "UID", "Hidden title", "Hidden trailing",
+                       "hidden@example.com", "overlap-secret", "trailing-secret",
+                       "event1", "event2", "event10", "Jane Doe",
+                       "20130902T150158"):
+            assert secret not in answer
+        assert "\nFBTYPE" not in answer
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        vfb = vcalendar.vfreebusy
+        window_start = datetime.datetime(2013, 9, 1, 14, 0, tzinfo=datetime.timezone.utc)
+        window_end = datetime.datetime(2013, 9, 8, 22, 0, tzinfo=datetime.timezone.utc)
+        assert _utc(vfb.dtstart.value) == window_start
+        assert _utc(vfb.dtend.value) == window_end
+        periods = _freebusy_periods(vfb)
+        utc = datetime.timezone.utc
+        assert (window_start, datetime.datetime(2013, 9, 1, 15, 0, tzinfo=utc), "BUSY") in periods
+        assert (datetime.datetime(2013, 9, 1, 16, 0, tzinfo=utc),
+                datetime.datetime(2013, 9, 1, 17, 0, tzinfo=utc), "BUSY") in periods
+        assert (datetime.datetime(2013, 9, 2, 16, 0, tzinfo=utc),
+                datetime.datetime(2013, 9, 2, 17, 0, tzinfo=utc), "BUSY") in periods
+        assert (datetime.datetime(2013, 9, 8, 20, 0, tzinfo=utc), window_end, "BUSY") in periods
+        for start, end, _fbtype in periods:
+            assert window_start <= start and end <= window_end
         types = {}
-        for vfb in vcalendar.vfreebusy_list:
-            fbtype_val = vfb.fbtype.value
-            if fbtype_val not in types:
-                types[fbtype_val] = 0
-            types[fbtype_val] += 1
-        assert types == {'BUSY': 2, 'FREE': 1}
+        for _start, _end, fbtype_val in periods:
+            types[fbtype_val] = types.get(fbtype_val, 0) + 1
+        assert types == {'BUSY': 4, 'FREE': 1}
+
+        status, headers, answer = self.request(
+            "REPORT", posixpath.join(calendar_path, "event1.ics"),
+            freebusy_query, check=403)
+        assert headers["Content-Type"].startswith("text/xml")
+        assert "text/calendar" not in headers["Content-Type"]
+        for secret in ("SUMMARY", "BEGIN:VEVENT", "event1", "Jane Doe"):
+            assert secret not in answer
+        error_xml = DefusedET.fromstring(answer)
+        assert error_xml.tag == xmlutils.make_clark("D:error")
+        assert error_xml.find(xmlutils.make_clark("D:supported-report")) is not None
 
         # Test max_freebusy_occurrence limit
         self.configure({"reporting": {"max_freebusy_occurrence": 1}})
-        code, responses = self.report(calendar_path, """\
-<?xml version="1.0" encoding="utf-8" ?>
-<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
-    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
-</C:free-busy-query>""", 400, is_xml=False)
+        code, responses = self.report(calendar_path, freebusy_query, 400, is_xml=False)
 
         # Test max_freebusy_occurrence set to 0 (limit disabled)
         self.configure({"reporting": {"max_freebusy_occurrence": 0}})
-        code, responses = self.report(calendar_path, """\
-<?xml version="1.0" encoding="utf-8" ?>
-<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
-    <C:time-range start="20130901T140000Z" end="20130908T220000Z"/>
-</C:free-busy-query>""", 200, is_xml=False)
+        code, responses = self.report(calendar_path, freebusy_query, 200, is_xml=False)
         assert len(responses) == 1
         vcalendar = list(responses.values())[0]
         assert isinstance(vcalendar, vobject.base.Component)
-        assert len(vcalendar.vfreebusy_list) == 3
+        assert len(vcalendar.vfreebusy_list) == 1
+        assert len(vcalendar.vfreebusy.freebusy_list) == 5
+
+    def test_report_free_busy_recurrence_and_case(self) -> None:
+        """Per-instance FBTYPE, including overrides and enumerated case."""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        series = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:series-secret
+SUMMARY:Secret series
+DTSTART:20130902T100000Z
+DTEND:20130902T110000Z
+RRULE:FREQ=DAILY;COUNT=4
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:series-secret
+SUMMARY:Secret cancelled
+RECURRENCE-ID:20130903T100000Z
+DTSTART:20130903T100000Z
+DTEND:20130903T110000Z
+STATUS:CANCELLED
+END:VEVENT
+BEGIN:VEVENT
+UID:series-secret
+SUMMARY:Secret moved
+RECURRENCE-ID:20130904T100000Z
+DTSTART:20130904T150000Z
+DTEND:20130904T160000Z
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:series-secret
+SUMMARY:Secret transparent
+RECURRENCE-ID:20130905T100000Z
+DTSTART:20130905T100000Z
+DTEND:20130905T110000Z
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(posixpath.join(calendar_path, "series.ics"), series)
+        tentative = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:tentative-secret
+SUMMARY:Secret tentative
+DTSTART:20130902T180000Z
+DTEND:20130902T190000Z
+TRANSP:opaque
+STATUS:tentative
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(posixpath.join(calendar_path, "tentative.ics"), tentative)
+        hidden_master = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-master-secret
+SUMMARY:Secret hidden master
+DTSTART:20130902T200000Z
+DTEND:20130902T210000Z
+RRULE:FREQ=DAILY;COUNT=2
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:hidden-master-secret
+SUMMARY:Secret shown override
+RECURRENCE-ID:20130903T200000Z
+DTSTART:20130903T200000Z
+DTEND:20130903T210000Z
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(posixpath.join(calendar_path, "hidden.ics"), hidden_master)
+        query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130902T000000Z" end="20130906T000000Z"/>
+</C:free-busy-query>"""
+        status, headers, answer = self.request("REPORT", calendar_path, query, check=200)
+        for secret in ("SUMMARY", "UID", "series-secret", "Secret series",
+                       "Secret cancelled", "Secret moved", "Secret tentative",
+                       "Secret hidden master", "Secret shown override"):
+            assert secret not in answer
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        periods = set(_freebusy_periods(vcalendar.vfreebusy))
+        utc = datetime.timezone.utc
+
+        def at(day: int, hour: int) -> datetime.datetime:
+            return datetime.datetime(2013, 9, day, hour, 0, tzinfo=utc)
+        assert (at(2, 10), at(2, 11), "BUSY") in periods
+        assert (at(3, 10), at(3, 11), "FREE") in periods
+        assert (at(4, 10), at(4, 11), "BUSY") not in periods
+        assert (at(4, 15), at(4, 16), "BUSY") in periods
+        assert (at(5, 10), at(5, 11), "BUSY") not in periods
+        assert (at(5, 10), at(5, 11), "FREE") not in periods
+        assert (at(2, 18), at(2, 19), "BUSY-TENTATIVE") in periods
+        assert (at(2, 20), at(2, 21), "BUSY") not in periods
+        assert (at(3, 20), at(3, 21), "BUSY") in periods
+
+    def test_report_free_busy_transparent_limit(self) -> None:
+        """Transparent recurrences are not expanded into free-busy periods."""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:transparent-secret
+SUMMARY:Secret transparent series
+DTSTART:20100101T100000Z
+DTEND:20100101T110000Z
+RRULE:FREQ=DAILY
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(posixpath.join(calendar_path, "transparent.ics"), event)
+        week = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20100101T000000Z" end="20100108T000000Z"/>
+</C:free-busy-query>"""
+        status, headers, answer = self.request(
+            "REPORT", calendar_path, week, check=200)
+        assert headers["Content-Type"].startswith("text/calendar")
+        for secret in ("SUMMARY", "UID", "transparent-secret",
+                       "Secret transparent series", "TRANSPARENT", "RRULE"):
+            assert secret not in answer
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        assert "freebusy" not in vcalendar.vfreebusy.contents
+
+        self.configure({"reporting": {"max_freebusy_occurrence": 4}})
+        multiyear = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20100101T000000Z" end="20130101T000000Z"/>
+</C:free-busy-query>"""
+        status, headers, answer = self.request(
+            "REPORT", calendar_path, multiyear, check=200)
+        assert headers["Content-Type"].startswith("text/calendar")
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        assert "freebusy" not in vcalendar.vfreebusy.contents
+        assert "transparent-secret" not in answer
+        open_ended = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20100101T000000Z"/>
+</C:free-busy-query>"""
+        self.configure({"reporting": {"max_freebusy_occurrence": 0}})
+        status, headers, answer = self.request(
+            "REPORT", calendar_path, open_ended, check=200)
+        assert headers["Content-Type"].startswith("text/calendar")
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        assert "freebusy" not in vcalendar.vfreebusy.contents
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None, **kwargs

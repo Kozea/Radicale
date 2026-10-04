@@ -282,7 +282,8 @@ def time_range_fill(vobject_item: vobject.base.Component,
 
 def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                       range_fn: Callable[[datetime, datetime, bool], bool],
-                      infinity_fn: Callable[[datetime], bool]) -> None:
+                      infinity_fn: Callable[[datetime], bool],
+                      component_fn: Optional[Callable[[vobject.base.Component], Optional[bool]]] = None) -> None:
     """Visit all time ranges in the component/property ``child_name`` of
     `vobject_item`` with visitors ``range_fn`` and ``infinity_fn``.
 
@@ -293,6 +294,9 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     ``infinity_fn`` gets called when an infinite recurrence rule is detected
     with ``start`` datetime as argument. If the function returns True, the
     operation is cancelled.
+
+    ``component_fn``, if given, is called for each VEVENT before its
+    occurrences are visited. If it returns False, that VEVENT is skipped.
 
     See rfc4791-9.9.
 
@@ -353,6 +357,9 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     if child_name == "VEVENT":
         for child, is_recurrence, recurrences in get_children(
                 vobject_item.vevent_list):
+            if component_fn is not None and component_fn(child) is False:
+                continue
+
             # TODO: check if there's a timezone
             try:
                 dtstart = child.dtstart.value
@@ -405,8 +412,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                         original_duration = duration.total_seconds()
                     if duration.total_seconds() > 0:
                         # Line 2
-                        if range_fn(dtstart, dtstart + duration,
-                                    is_recurrence):
+                        if range_fn(dtstart, dtstart + duration, is_recurrence):
                             return
                     else:
                         # Line 3
