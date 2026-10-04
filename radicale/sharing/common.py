@@ -72,6 +72,8 @@ def database_common_check_row_match(
     if User is not None:
         user = User
 
+    logger.trace("sharing/common/check_row_match: initial checks passed, group_check=%s user=%r User=%r", group_check, user, User)
+
     if user is not None:
         user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
         if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
@@ -123,16 +125,16 @@ def database_common_filter_resolved_duplicate_shares(rows_unfiltered: list[dict]
 
     for row in rows_unfiltered:
         if row["PathOrToken"] not in rows:
-            logger.trace("sharing/common/list/row: add : %r", row)
+            logger.trace("sharing/common/filter/row: add : %r", row)
             rows[row["PathOrToken"]] = row
         else:
-            logger.trace("sharing/common/list/row: chk : %r", rows[row["PathOrToken"]])
+            logger.trace("sharing/common/filter/row: chk : %r", rows[row["PathOrToken"]])
             if "U" in rows[row["PathOrToken"]]["Permissions"]:
                 # replace resolved group share by more specific
                 rows[row["PathOrToken"]] = row
-                logger.trace("sharing/common/list/row: repl: %r", row)
+                logger.trace("sharing/common/filter/row: repl: %r", row)
             else:
-                logger.trace("sharing/common/list/row: skip: %r", row)
+                logger.trace("sharing/common/filter/row: skip: %r", row)
 
     for key in rows:
         result.append(rows[key])
