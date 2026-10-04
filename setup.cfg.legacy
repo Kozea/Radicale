@@ -1,3 +1,8 @@
+########################################################################
+# THIS LEGACY FILE IS STILL REQUIRED FOR BUILDING ON EL8
+# https://src.fedoraproject.org/rpms/radicale/blob/epel8/f/radicale.spec
+########################################################################
+
 [tool:pytest]
 
 [tox:tox]

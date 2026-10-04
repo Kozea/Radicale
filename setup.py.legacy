@@ -17,6 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+########################################################################
+# THIS LEGACY FILE IS STILL REQUIRED FOR BUILDING ON EL8
+# https://src.fedoraproject.org/rpms/radicale/blob/epel8/f/radicale.spec
+########################################################################
+
 from setuptools import find_packages, setup
 
 # When the version is updated, a new section in the CHANGELOG.md file must be
