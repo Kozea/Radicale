@@ -663,7 +663,7 @@ class TestSharingApiSanity(BaseTest):
             assert path_base2 in answer
 
             logging.info("\n*** delete collection of #1 (fail, still in use)")
-            self.delete(path_base1, login="owner:ownerpw", check=403)
+            self.delete(path_base1, login="owner:ownerpw", check=409)
 
             logging.info("\n*** delete token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
@@ -741,7 +741,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Content'][0]['HiddenByOwner'] is False
 
             logging.info("\n*** delete collection of #2 (fail, still in use)")
-            self.delete(path_base2, login="owner:ownerpw", check=403)
+            self.delete(path_base2, login="owner:ownerpw", check=409)
 
             logging.info("\n*** delete token#2 (json->json)")
             json_dict = {}
@@ -1977,7 +1977,7 @@ class TestSharingApiSanity(BaseTest):
             _, responses = self.delete(path_shared_rw, check=403, login="user2:user2pw")
 
             logging.info("\n*** delete collection by owner -> fail (still in use)")
-            _, responses = self.delete(path_mapped, check=403, login="owner:ownerpw")
+            _, responses = self.delete(path_mapped, check=409, login="owner:ownerpw")
 
             logging.info("\n*** delete map user/owner:r -> ok")
             json_dict = {}
@@ -2855,8 +2855,8 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self.request("GET", path_shared1, check=200, login="user:userpw")
 
             # cleanup
-            logging.info("\n*** delete collection -> 403 (still in use)")
-            self.delete(path_mapped2, login="owner:ownerpw", check=403)
+            logging.info("\n*** delete collection -> 409 (still in use)")
+            self.delete(path_mapped2, login="owner:ownerpw", check=409)
 
             # delete map
             logging.info("\n*** delete map user/owner:path_mapped2 -> ok")
