@@ -6,6 +6,13 @@
 * Fix: sharing/bday-conversion: adjust etag depending on template (item) or content (collection)
 * Fix: sharing/propfind: remove unexpected additional shares listed in case of request on collection with HTTP_DEPTH=1
 * Add: sharing/bday-conversion: X-RADICALE-NAME to generated bday items
+* Fix: sharing/propfind: suppress (resolved) shares having same URI as native ones
+* Fix: sharing/mkcol+mkcalendar: detect conflict with existing resolved shares
+* Fix: WebUI/sharing: display permissions and share-by-group
+* Performance: guard expensive logging with isEnabledFor (where missed)
+* Performance: use lazy formatting for logger calls (where missed)
+* Fix: delete/sharing: neither allow resolved share nor still mapped collections to be deleted
+* Fix: sharing: resolved share resulting in same path as original requested will not have precedence
 
 ## 3.8.1
 * Add: tests: optional caldav-server-tester based CalDAV compatibility test suite (caldav_compat_tests)
