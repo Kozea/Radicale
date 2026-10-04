@@ -79,10 +79,18 @@ class ApplicationPartDelete(ApplicationBase):
                 user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
             share = self._sharing.sharing_collection_resolver(path, user_lookup)
             if share:
+                if path.endswith('/'):
+                    logger.notice("delete of a mapped collection is never permitted: %r -> %r", share['PathOrToken'], path)
+                    return httputils.NOT_ALLOWED
                 # overwrite and run through extended permission check
                 path = share['PathMapped']
                 user = share['Owner']
                 permissions_filter = share['Permissions']
+            else:
+                collections_share_list = self._sharing.database_list_sharing(PathMapped=path)
+                if collections_share_list is not None and len(collections_share_list) > 0:
+                    logger.notice("delete of a mapped collection in use (%d) is not permitted: %r", len(collections_share_list), path)
+                    return httputils.NOT_ALLOWED
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
