@@ -611,6 +611,7 @@ class ApplicationPartPropfind(ApplicationBase):
         except socket.timeout:
             logger.debug("Client timed out", exc_info=True)
             return httputils.REQUEST_TIMEOUT
+        collection_uris: dict = {}
         with self._storage.acquire_lock("r", user):
             logger.trace("PROPFIND: discover path=%r depth=%s", path, http_depth)
             items_iter = iter(self._storage.discover(
@@ -636,8 +637,16 @@ class ApplicationPartPropfind(ApplicationBase):
                             else:
                                 continue
                     allowed_items.append((item, permission, raw_permissions, share['Conversion']))
+                    if isinstance(item, storage.BaseCollection):
+                        uri = pathutils.unstrip_path(item.path, True)
+                        logger.trace("PROPFIND: append collection (share+conversion): %r", uri)
+                        collection_uris[uri] = 1
                 else:
                     allowed_items.append((item, permission, raw_permissions, None))
+                    if isinstance(item, storage.BaseCollection):
+                        uri = pathutils.unstrip_path(item.path, True)
+                        logger.trace("PROPFIND: append collection: %r", uri)
+                        collection_uris[uri] = 1
         if self._sharing._enabled:
             if http_depth == "1":
                 # check for shared collections related to user, Enabled and not Hidden
@@ -658,12 +667,26 @@ class ApplicationPartPropfind(ApplicationBase):
                         if not c_access.check("r"):
                             logger.debug("PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
                             continue
-                        logger.debug("PROPFIND: append shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
+                        logger.debug("PROPFIND: lookup shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
                         for item, permission, raw_permissions in c_allowed_items:
-                            allowed_items.append((item, permission, raw_permissions, share['Conversion']))
+                            if isinstance(item, storage.BaseCollection):
+                                uri = pathutils.unstrip_path(item.path, True)
+                                # backmap
+                                if uri.startswith(share['PathMapped']):
+                                    uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
+                                if share['Conversion'] == "bday" and uri.endswith(".vcf"):
+                                    uri = uri.removesuffix(".vcf") + ".ics"
+                                if uri not in collection_uris:
+                                    allowed_items.append((item, permission, raw_permissions, share['Conversion']))
+                                    logger.trace("PROPFIND: shared collection append: %r", uri)
+                                    collection_uris[uri] = 2
+                                else:
+                                    logger.trace("PROPFIND: shared collection skipped (already added): %r", uri)
+                            else:
+                                allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                         shares[c_share] = share
 
         headers = {"DAV": httputils.DAV_HEADERS,
