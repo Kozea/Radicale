@@ -11,6 +11,7 @@ With _3.7.0_ major extension was implemented
 With _3.8.0_ sharing-by-* membership was implemented
  * sharing-by-group
  * sharing-by-realm
+ * precedence: native user collection over (resolved) shared collection in case of same URI
 
 ## Sharing Implementation
 
