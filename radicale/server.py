@@ -247,7 +247,7 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         pass  # Disable request logging.
 
     def log_error(self, format_: str, *args: Any) -> None:
-        logger.error("An error occurred during request: %s", format_ % args)
+        logger.error("An error occurred during request: " + format_, *args)
 
     def get_environ(self) -> Dict[str, Any]:
         env = super().get_environ()
@@ -315,15 +315,23 @@ def serve(configuration: config.Configuration,
             try:
                 getaddrinfo = socket.getaddrinfo(address_port[0], address_port[1], 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             except OSError as e:
-                logger.warning("cannot retrieve IPv4 or IPv6 address of '%s': %s" % (utils.format_address(address_port), e))
+                logger.warning(
+                    "cannot retrieve IPv4 or IPv6 address of '%s': %s",
+                    utils.format_address(address_port), e)
                 continue
-            logger.debug("getaddrinfo of '%s': %s" % (utils.format_address(address_port), getaddrinfo))
+            logger.debug(
+                "getaddrinfo of '%s': %s",
+                utils.format_address(address_port), getaddrinfo)
             for (address_family, socket_kind, socket_proto, socket_flags, socket_address) in getaddrinfo:
-                logger.debug("try to create server socket on '%s'" % (utils.format_address(socket_address)))
+                logger.debug(
+                    "try to create server socket on '%s'",
+                    utils.format_address(socket_address))
                 try:
                     server = server_class(configuration, address_family, (socket_address[0], socket_address[1]), RequestHandler)
                 except OSError as e:
-                    logger.warning("cannot create server socket on '%s': %s" % (utils.format_address(socket_address), e))
+                    logger.warning(
+                        "cannot create server socket on '%s': %s",
+                        utils.format_address(socket_address), e)
                     continue
                 servers[server.socket] = server
                 server.set_app(application)

@@ -55,7 +55,8 @@ class StoragePartMove(StorageBase):
         except FileNotFoundError:
             pass
         except OSError as e:
-            logger.error("Failed to move cache file %r => %r %s" % (move_from, move_to, e))
+            logger.error(
+                "Failed to move cache file %r => %r %s", move_from, move_to, e)
             pass
         else:
             self._makedirs_synced(to_cache_folder)
