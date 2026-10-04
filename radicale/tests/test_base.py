@@ -35,6 +35,7 @@ import pytest
 import vobject
 
 from radicale import pathutils, storage, utils, xmlutils
+from radicale.item import get_etag
 from radicale.tests import RESPONSES, BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -2605,6 +2606,179 @@ END:VCALENDAR
         vcalendar = vobject.readOne(answer)
         assert len(vcalendar.vfreebusy_list) == 1
         assert "freebusy" not in vcalendar.vfreebusy.contents
+
+    def test_get_freebusy_view(self) -> None:
+        """GET/HEAD ?view=freebusy returns one VFREEBUSY and no event details."""
+        self.configure({"auth": {"type": "none"}})
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-secret
+SUMMARY:Hidden title
+DESCRIPTION:Hidden details
+LOCATION:Hidden place
+ORGANIZER:mailto:hidden@example.com
+ATTENDEE:mailto:hidden@example.com
+DTSTART:20130901T160000Z
+DTEND:20130901T170000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.put(event_path, event)
+        other = event.replace("hidden-secret", "other-secret").replace(
+            "Hidden title", "Other secret").replace(
+                "20130901T160000Z", "20130901T180000Z").replace(
+                    "20130901T170000Z", "20130901T190000Z")
+        self.put(posixpath.join(calendar_path, "other.ics"), other)
+        _, headers, full = self.request("GET", calendar_path, check=200)
+        assert "Hidden title" in full
+        assert "Last-Modified" in headers
+        collection_etag = headers["ETag"]
+
+        query = "view=freebusy&start=20130901T140000Z&end=20130901T180000Z"
+        _, headers, answer = self.request(
+            "GET", calendar_path, check=200, QUERY_STRING=query)
+        assert headers["Content-Type"].startswith("text/calendar")
+        assert "Last-Modified" not in headers
+        assert headers["ETag"] == get_etag(answer)
+        assert headers["ETag"] != collection_etag
+        assert headers["Content-Disposition"] == (
+            "attachment; filename*=utf-8''Calendar-freebusy.ics")
+        for secret in ("SUMMARY", "DESCRIPTION", "LOCATION", "ORGANIZER",
+                       "ATTENDEE", "UID", "Hidden title", "Hidden details",
+                       "Hidden place", "hidden@example.com", "hidden-secret",
+                       "Other secret", "other-secret", "BEGIN:VEVENT"):
+            assert secret not in answer
+        assert answer.count("BEGIN:VFREEBUSY") == 1
+        assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        utc = datetime.timezone.utc
+        window_start = datetime.datetime(2013, 9, 1, 14, 0, tzinfo=utc)
+        window_end = datetime.datetime(2013, 9, 1, 18, 0, tzinfo=utc)
+        assert _utc(vcalendar.vfreebusy.dtstart.value) == window_start
+        assert _utc(vcalendar.vfreebusy.dtend.value) == window_end
+        assert _freebusy_periods(vcalendar.vfreebusy) == [
+            (datetime.datetime(2013, 9, 1, 16, 0, tzinfo=utc),
+             datetime.datetime(2013, 9, 1, 17, 0, tzinfo=utc), "BUSY")]
+
+        _, headers, answer = self.request(
+            "HEAD", calendar_path, check=200, QUERY_STRING=query)
+        assert answer == ""
+        assert headers["ETag"].startswith('"') and headers["ETag"].endswith('"')
+        assert len(headers["ETag"]) == 66
+        assert "Last-Modified" not in headers
+
+        replacement = event.replace("Hidden title", "Replaced title")
+        self.request("PUT", event_path, replacement, check=405,
+                     QUERY_STRING="view=freebusy")
+        self.request("PUT", event_path, replacement, check=405,
+                     QUERY_STRING="view=freebusy&view=x")
+        self.request("DELETE", event_path, check=405, QUERY_STRING="view=freebusy")
+        self.request("REPORT", calendar_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T140000Z" end="20130901T180000Z"/>
+</C:free-busy-query>""", check=405, QUERY_STRING="view=freebusy")
+        _, _, answer = self.request("GET", event_path, check=200)
+        assert "Hidden title" in answer
+        assert "Replaced title" not in answer
+
+        _, _, answer = self.request(
+            "GET", calendar_path, check=400,
+            QUERY_STRING="view=freebusy&view=other")
+        assert "Hidden title" not in answer
+        assert "BEGIN:VEVENT" not in answer
+        for bad_query in (
+                "view=freebusy&start=20130901T000000Z",
+                "view=freebusy&end=20130902T000000Z",
+                "view=freebusy&start=20130902T000000Z&end=20130901T000000Z",
+                "view=freebusy&start=20130901T160000z&end=20130902T000000Z",
+                "view=freebusy&start=20130901T000000Z&start=20130902T000000Z"
+                "&end=20130903T000000Z"):
+            self.request("GET", calendar_path, check=400, QUERY_STRING=bad_query)
+        _, _, answer = self.request(
+            "GET", calendar_path, check=200,
+            QUERY_STRING="view=freebusy&start=20130901T160000Z&end=20130901T160000Z")
+        vcalendar = vobject.readOne(answer)
+        assert _utc(vcalendar.vfreebusy.dtstart.value) == _utc(
+            vcalendar.vfreebusy.dtend.value)
+        assert "freebusy" not in vcalendar.vfreebusy.contents
+        assert "Hidden title" not in answer
+
+        self.create_addressbook("/contacts.vcf/")
+        _, _, answer = self.request(
+            "GET", "/contacts.vcf/", check=403, login="tmp:x",
+            QUERY_STRING="view=freebusy")
+        assert "BEGIN:VCARD" not in answer
+        _, _, answer = self.request(
+            "GET", event_path, check=403, login="tmp:x", QUERY_STRING=query)
+        assert "Hidden title" not in answer
+        assert "BEGIN:VEVENT" not in answer
+
+        utc = datetime.timezone.utc
+        today = datetime.datetime.now(utc).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        inside = today.replace(hour=12)
+        outside = (today - datetime.timedelta(days=3)).replace(hour=12)
+
+        def timed_event(uid: str, summary: str, start: datetime.datetime) -> str:
+            end = start + datetime.timedelta(hours=1)
+            return """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:%s
+SUMMARY:%s
+DTSTART:%s
+DTEND:%s
+END:VEVENT
+END:VCALENDAR
+""" % (uid, summary, start.strftime("%Y%m%dT%H%M%SZ"),
+                end.strftime("%Y%m%dT%H%M%SZ"))
+
+        self.put(posixpath.join(calendar_path, "inside.ics"),
+                 timed_event("inside-secret", "Inside secret", inside))
+        self.put(posixpath.join(calendar_path, "outside.ics"),
+                 timed_event("outside-secret", "Outside secret", outside))
+        self.configure({"reporting": {"freebusy_view_past_days": 1,
+                                      "freebusy_view_future_days": 1}})
+        _, _, answer = self.request(
+            "GET", calendar_path, check=200, QUERY_STRING="view=freebusy")
+        for secret in ("Inside secret", "Outside secret", "Hidden title",
+                       "inside-secret", "outside-secret", "SUMMARY", "UID"):
+            assert secret not in answer
+        vcalendar = vobject.readOne(answer)
+        assert len(vcalendar.vfreebusy_list) == 1
+        assert _utc(vcalendar.vfreebusy.dtstart.value) == today - datetime.timedelta(days=1)
+        assert _utc(vcalendar.vfreebusy.dtend.value) == today + datetime.timedelta(days=1)
+        periods = _freebusy_periods(vcalendar.vfreebusy)
+        assert (inside, inside + datetime.timedelta(hours=1), "BUSY") in periods
+        assert (outside, outside + datetime.timedelta(hours=1), "BUSY") not in periods
+
+        self.configure({"reporting": {"freebusy_view_past_days": 0,
+                                      "freebusy_view_future_days": 0}})
+        _, _, answer = self.request(
+            "GET", calendar_path, check=200, QUERY_STRING="view=freebusy")
+        vcalendar = vobject.readOne(answer)
+        assert _utc(vcalendar.vfreebusy.dtstart.value) == today
+        assert _utc(vcalendar.vfreebusy.dtend.value) == today
+        assert "freebusy" not in vcalendar.vfreebusy.contents
+        with pytest.raises(RuntimeError):
+            self.configure({"reporting": {"freebusy_view_past_days": -1}})
+
+        self.configure({"reporting": {"max_freebusy_occurrence": 1}})
+        _, _, answer = self.request(
+            "GET", calendar_path, check=400,
+            QUERY_STRING="view=freebusy&start=20130901T000000Z&end=20130902T000000Z")
+        assert "Hidden title" not in answer
+        assert "Other secret" not in answer
 
     def _report_sync_token(
             self, calendar_path: str, sync_token: Optional[str] = None, **kwargs

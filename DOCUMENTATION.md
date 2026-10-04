@@ -2269,6 +2269,29 @@ is thrown instead of returning the results.
 
 Default: 10000
 
+##### freebusy_view_past_days
+
+_(>= 3.8.2)_
+
+Number of days before today included in the default window of the
+read-only free/busy view (`GET` or `HEAD` with `?view=freebusy`). The
+window starts at midnight UTC. `0` starts the window at midnight UTC
+today. A request that provides both `start` and `end`
+(`YYYYMMDDTHHMMSSZ`) overrides this default and
+`freebusy_view_future_days`.
+
+Default: 365
+
+##### freebusy_view_future_days
+
+_(>= 3.8.2)_
+
+Number of days after today included in the default window of the
+read-only free/busy view. The window ends at midnight UTC that many
+days ahead. `0` ends the window at midnight UTC today.
+
+Default: 365
+
 #### [sharing]
 
 _(>= 3.7.0)_

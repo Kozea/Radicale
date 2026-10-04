@@ -171,27 +171,20 @@ def freebusy_periods(item: radicale_item.Item,
     return periods
 
 
-def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
-                     collection: storage.BaseCollection, encoding: str,
-                     unlock_storage_fn: Callable[[], None],
-                     max_occurrence: int
-                     ) -> Tuple[int, Union[ET.Element, str]]:
-    # NOTE: this function returns both an Element and a string because
-    # free-busy reports are an edge-case on the return type according
-    # to the spec.
-
-    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
-    if xml_request is None:
-        return client.MULTI_STATUS, multistatus
-    root = xml_request
-    if (root.tag == xmlutils.make_clark("C:free-busy-query") and
-            collection.tag != "VCALENDAR"):
-        logger.warning("Invalid REPORT method %r on %r requested",
-                       xmlutils.make_human_tag(root.tag), path)
-        return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
-
-    time_range_element = root.find(xmlutils.make_clark("C:time-range"))
-    assert isinstance(time_range_element, ET.Element)
+def freebusy_collection_text(collection: storage.BaseCollection,
+                             range_start: datetime.datetime,
+                             range_end: datetime.datetime,
+                             max_occurrence: int,
+                             unlock_storage_fn: Callable[[], None],
+                             time_range_element: Optional[ET.Element] = None
+                             ) -> str:
+    range_start = _to_utc(range_start)
+    range_end = _to_utc(range_end)
+    if time_range_element is None:
+        time_range_element = ET.Element(
+            xmlutils.make_clark("C:time-range"),
+            attrib={"start": range_start.strftime(DT_FORMAT_TIMESTAMP),
+                    "end": range_end.strftime(DT_FORMAT_TIMESTAMP)})
 
     # Build a single filter from the free busy query for retrieval
     # TODO: filter for VFREEBUSY in additional to VEVENT but
@@ -211,9 +204,6 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
     # !!! Don't access storage after this !!!
     unlock_storage_fn()
 
-    range_start, range_end = radicale_filter.parse_time_range(time_range_element)
-    range_start = _to_utc(range_start)
-    range_end = _to_utc(range_end)
     periods: List[FreeBusyPeriod] = []
     collection_tag = collection.tag
     while retrieved_items:
@@ -235,7 +225,34 @@ def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Eleme
 
         periods.extend(freebusy_periods(
             item, range_start, range_end, max_occurrence))
-    return (client.OK, render_freebusy(periods, range_start, range_end))
+    return render_freebusy(periods, range_start, range_end)
+
+
+def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
+                     collection: storage.BaseCollection, encoding: str,
+                     unlock_storage_fn: Callable[[], None],
+                     max_occurrence: int
+                     ) -> Tuple[int, Union[ET.Element, str]]:
+    # NOTE: this function returns both an Element and a string because
+    # free-busy reports are an edge-case on the return type according
+    # to the spec.
+
+    multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
+    if xml_request is None:
+        return client.MULTI_STATUS, multistatus
+    root = xml_request
+    if (root.tag == xmlutils.make_clark("C:free-busy-query") and
+            collection.tag != "VCALENDAR"):
+        logger.warning("Invalid REPORT method %r on %r requested",
+                       xmlutils.make_human_tag(root.tag), path)
+        return client.FORBIDDEN, xmlutils.webdav_error("D:supported-report")
+
+    time_range_element = root.find(xmlutils.make_clark("C:time-range"))
+    assert isinstance(time_range_element, ET.Element)
+    range_start, range_end = radicale_filter.parse_time_range(time_range_element)
+    return (client.OK, freebusy_collection_text(
+        collection, range_start, range_end, max_occurrence,
+        unlock_storage_fn, time_range_element))
 
 
 def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],

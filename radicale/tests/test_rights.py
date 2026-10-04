@@ -634,6 +634,75 @@ END:VCALENDAR
             assert "Hidden title" not in answer
             assert "hidden-secret" not in answer
 
+    def test_from_file_freebusy_view(self) -> None:
+        """Permission f or i can read the free-busy view and not event details."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[write-all]
+user: tmp
+collection: .*
+permissions: RrWw
+[freebusy]
+user: other
+collection: public/[^/]*
+permissions: f
+[limited]
+user: limited
+collection: public/[^/]*
+permissions: i""")
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\nother:bepo\nlimited:bepo\n")
+        self.configure({
+            "rights": {"type": "from_file", "file": rights_file_path},
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": "plain"}})
+        self.mkcol("/public/", login="tmp:bepo")
+        calendar_path = "/public/calendar/"
+        self.mkcalendar(calendar_path, login="tmp:bepo")
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-secret
+SUMMARY:Hidden title
+DESCRIPTION:Hidden details
+DTSTART:20130901T160000Z
+DTEND:20130901T170000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(calendar_path + "event.ics", event, login="tmp:bepo")
+        query = "view=freebusy&start=20130901T000000Z&end=20130902T000000Z"
+        _, _, answer = self.request(
+            "GET", calendar_path, check=403, login="other:bepo")
+        assert "Hidden title" not in answer
+        assert "Hidden details" not in answer
+        _, headers, answer = self.request(
+            "GET", calendar_path, check=200, login="other:bepo",
+            QUERY_STRING=query)
+        assert headers["Content-Type"].startswith("text/calendar")
+        assert answer.count("BEGIN:VFREEBUSY") == 1
+        assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+        for secret in ("SUMMARY", "DESCRIPTION", "UID", "Hidden title",
+                       "Hidden details", "hidden-secret", "BEGIN:VEVENT"):
+            assert secret not in answer
+        _, _, answer = self.request(
+            "GET", calendar_path, check=200, login="limited:bepo")
+        assert "Hidden title" in answer
+        assert "Hidden details" in answer
+        _, _, answer = self.request(
+            "GET", calendar_path, check=200, login="limited:bepo",
+            QUERY_STRING=query)
+        assert answer.count("BEGIN:VFREEBUSY") == 1
+        assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+        for secret in ("SUMMARY", "DESCRIPTION", "UID", "Hidden title",
+                       "Hidden details", "hidden-secret", "BEGIN:VEVENT"):
+            assert secret not in answer
+
     def test_custom(self) -> None:
         """Custom rights management."""
         self._test_rights("radicale.tests.custom.rights", "", "/", "r", 401)
