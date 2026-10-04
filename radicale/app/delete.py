@@ -109,11 +109,11 @@ class ApplicationPartDelete(ApplicationBase):
             if isinstance(item, storage.BaseCollection):
                 if self._permit_delete_collection:
                     if access.check("d", item):
-                        logger.info("delete of collection is permitted by config/option [rights] permit_delete_collection but explicit forbidden by permission 'd': %s", path)
+                        logger.info("delete of collection is permitted by config/option [rights] permit_delete_collection but explicit forbidden by permission 'd': %r", path)
                         return httputils.NOT_ALLOWED
                 else:
                     if not access.check("D", item):
-                        logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %s", path)
+                        logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %r", path)
                         return httputils.NOT_ALLOWED
                 if self._hook.enabled:
                     for i in item.get_all():
