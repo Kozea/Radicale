@@ -593,12 +593,15 @@ class ApplicationPartPropfind(ApplicationBase):
                 user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
             share = self._sharing.sharing_collection_resolver(path, user_lookup)
             if share:
-                # overwrite and run through extended permission check
-                path = share['PathMapped']
-                user = share['Owner']
-                permissions_filter = share['Permissions']
-                shares[share['PathOrToken']] = share
-                logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
+                if path != share['PathMapped']:
+                    # overwrite and run through extended permission check
+                    path = share['PathMapped']
+                    user = share['Owner']
+                    permissions_filter = share['Permissions']
+                    shares[share['PathOrToken']] = share
+                    logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
+                else:
+                    logger.trace("PROPFIND/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
