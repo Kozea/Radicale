@@ -7804,6 +7804,10 @@ permissions: RrWw""")
             path_shared_r_base = "/{user}/"
             self.mkcalendar(path_mapped1, login="user1:user1pw")
 
+            path_mapped_addressbook = "/user1/addressbook-" + db_type + ".vcf/"
+            path_shared_bday = "/{user}/bday-" + db_type + ".ics/"
+            self.create_addressbook(path_mapped_addressbook, login="user1:user1pw")
+
             # create map
             logging.info("\n*** create map :group1/user1 -> success")
             json_dict = {}
@@ -7815,13 +7819,24 @@ permissions: RrWw""")
             json_dict['Hidden'] = False
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="user1:user1pw", json_dict=json_dict)
 
+            # create map
+            logging.info("\n*** create map(bday) :group1/user1 -> success")
+            json_dict = {}
+            json_dict['User'] = ":group12"
+            json_dict['PathMapped'] = path_mapped_addressbook
+            json_dict['PathOrToken'] = path_shared_bday
+            json_dict['Conversion'] = "bday"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="user1:user1pw", json_dict=json_dict)
+
             # verify sharing API/list as user1
             logging.info("\n*** API list user1")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1:user1pw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] != "not-found"
-            assert answer_dict['Lines'] == 1
+            assert answer_dict['Lines'] == 2
 
             # verify sharing API/list as user2
             logging.info("\n*** API list user2")
@@ -7829,25 +7844,29 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2:user2pw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] != "not-found"
-            assert answer_dict['Lines'] == 1
+            assert answer_dict['Lines'] == 2
 
             # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection DEPTH=1 user1 (self-shared suppressed)")
             path_shared_r_base_user = path_shared_r_base.replace("{user}", "user1")
             path_shared1_r_user = path_shared1_r.replace("{user}", "user1")
+            path_shared_bday_user = path_shared_bday.replace("{user}", "user1")
             _, responses = self.propfind(path_shared_r_base_user, """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
     <calendar-home-set xmlns="urn:ietf:params:xml:ns:caldav" />
 </propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
             assert path_shared_r_base_user in responses
-            assert path_shared1_r_user in responses
+            assert path_shared1_r_user not in responses
             assert path_mapped1 in responses
+            assert path_mapped_addressbook in responses
+            assert path_shared_bday_user in responses
 
             # verify PROPFIND as user2
             logging.info("\n*** PROPFIND collection DEPTH=1 user2")
             path_shared_r_base_user = path_shared_r_base.replace("{user}", "user2")
             path_shared1_r_user = path_shared1_r.replace("{user}", "user2")
+            path_shared_bday_user = path_shared_bday.replace("{user}", "user2")
             _, responses = self.propfind(path_shared_r_base_user, """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
@@ -7856,6 +7875,8 @@ permissions: RrWw""")
             assert path_shared_r_base_user in responses
             assert path_shared1_r_user in responses
             assert path_mapped1 not in responses
+            assert path_mapped_addressbook not in responses
+            assert path_shared_bday_user in responses
 
     def test_sharing_api_map_user_group_incl_self_equal_name_bday_conflict_by_local(self) -> None:
         """share-by-map API usage tests related user group by local incl self."""
