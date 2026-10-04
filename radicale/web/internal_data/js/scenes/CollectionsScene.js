@@ -48,7 +48,7 @@ function find_matching_map_share(collectionHref, shares, currentUser) {
     let cleanUser = decodeURIComponent(currentUser || "");
     return (shares || []).find(s => {
         if (s.ShareType !== "map") return false;
-        let shareTarget = decodeURIComponent(s.PathOrToken || "").replace("{user}", cleanUser).replace(/\/+$/, "");
+        let shareTarget = decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "");
         return collHref === shareTarget || collHref.endsWith(shareTarget);
     });
 }
