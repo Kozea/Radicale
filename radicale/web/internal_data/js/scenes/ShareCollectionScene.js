@@ -29,7 +29,7 @@ import { extract_title } from "../utils/collection_utils.js";
 
 import { update_title_and_description } from "../utils/collection_utils.js";
 import { ErrorHandler } from "../utils/error.js";
-import { get_element, get_element_by_id } from "../utils/misc.js";
+import { decode_and_strip_trailing_slashes, get_element, get_element_by_id } from "../utils/misc.js";
 import { displayPermissionsOrConversion } from "../utils/permissions.js";
 import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditShareScene } from "./CreateEditShareScene.js";
@@ -222,9 +222,9 @@ function add_share_rows(user, password, collection, shares) {
   shares.forEach(function (share) {
     let pathortoken = share["PathOrToken"] || "";
     let pathmapped = share["PathMapped"] || "";
-    let decodedHref = decodeURIComponent(collection.href).replace(/\/+$/, "") + "/";
-    let decodedPathMapped = decodeURIComponent(pathmapped).replace(/\/+$/, "") + "/";
-    let decodedPathOrToken = decodeURIComponent(pathortoken).replace(/\/+$/, "") + "/";
+    let decodedHref = decode_and_strip_trailing_slashes(collection.href) + "/";
+    let decodedPathMapped = decode_and_strip_trailing_slashes(pathmapped) + "/";
+    let decodedPathOrToken = decode_and_strip_trailing_slashes(pathortoken) + "/";
 
     if (
       decodedHref.includes(decodedPathMapped) ||

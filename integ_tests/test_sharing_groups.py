@@ -21,6 +21,7 @@ Integration tests for group and realm sharing support in the Web UI.
 import pathlib
 import re
 from typing import Any, Generator
+from urllib.parse import urlparse
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -255,6 +256,99 @@ def test_sharing_by_group_including_owner_does_not_duplicate_in_ui(
     expect(page.locator("article:not(.hidden)")).to_have_count(1)
     article = page.locator("article:not(.hidden)").first
     expect(article.locator('[data-name="shared-by"]')).to_be_hidden()
+
+    # 4. Verify admin has NO incoming shares
+    page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    ).to_have_count(0)
+    expect(
+        page.locator("#incomingsharingscene [data-name='nosharesmessage']")
+    ).to_be_visible()
+    page.click('#incomingsharingscene button[data-name="close"]')
+
+    # 5. Admin logs out
+    page.click('a[data-name="logout"]')
+
+    # 6. Member user logs in
+    page.fill(
+        '#loginscene input[data-name="user"]', radicale_server_config.user_username
+    )
+    page.fill('#loginscene input[data-name="password"]', "userpassword")
+    page.click('button:has-text("Next")')
+
+    # 7. Member user sees 1 collection (the shared one)
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+    user_article = page.locator("article:not(.hidden)").first
+    expect(user_article.locator('[data-name="shared-by"]')).to_be_visible()
+    expect(user_article.locator('[data-name="shared-by-owner"]')).to_have_text(
+        radicale_server_config.admin_username
+    )
+
+    # 8. Member user sees 1 incoming share
+    page.click('a[data-name="incomingshares"]')
+    expect(page.locator("#incomingsharingscene")).to_be_visible()
+    expect(
+        page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#incomingsharingscene button[data-name="close"]')
+
+
+@pytest.mark.parametrize(
+    "radicale_server_config,share_user",
+    [
+        (SHARING_HTGROUP, ":editors"),
+        (SHARING_HTGROUP_USERSWITHDOMAIN, "@domain.tld"),
+    ],
+    ids=["group_with_owner_same_href", "realm_with_owner_same_href"],
+)
+def test_sharing_by_group_including_owner_same_href_shown_in_ui(
+    page: Page,
+    radicale_server: str,
+    radicale_server_config: Config,
+    share_user: str,
+) -> None:
+    """Test for issue #2250:
+    When a collection is shared with a group/realm including the owner,
+    and Share Href is the same as the collection's Href:
+    1. The collection remains visible in the owner's web UI.
+    2. Owner has full edit/share/delete options and no 'shared-by' or 'transformed-from' badges.
+    3. Owner has NO incoming shares.
+    4. Group members see the shared collection and 1 incoming share.
+    """
+    # 1. Admin logs in and creates a collection
+    login(page, radicale_server, radicale_server_config)
+    create_collection(page, radicale_server)
+
+    # Extract the collection's name/href
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+    collection_url = page.locator(
+        "article:not(.hidden) input[data-name='url']"
+    ).input_value()
+    coll_name = urlparse(collection_url).path.strip("/").split("/")[-1]
+
+    # 2. Admin creates a share with share_href equal to coll_name
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True, strict=True)
+    page.click('button[data-name="sharebymap"]')
+    page.locator('input[data-name="shareuser"]').fill(share_user)
+    page.locator('input[data-name="sharehref"]').fill(coll_name)
+    page.click('#createeditsharescene button[data-name="submit"]')
+
+    expect(
+        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
+    ).to_have_count(1)
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+
+    # 3. Verify admin STILL sees 1 collection (does not disappear!)
+    expect(page.locator("article:not(.hidden)")).to_have_count(1)
+    article = page.locator("article:not(.hidden)").first
+    expect(article.locator('[data-name="shared-by"]')).to_be_hidden()
+    expect(article.locator('[data-name="transformed-from"]')).to_be_hidden()
+    article.hover()
+    expect(article.locator('a[data-name="share"]')).to_be_visible()
+    expect(article.locator('a[data-name="delete"]')).to_be_visible()
 
     # 4. Verify admin has NO incoming shares
     page.click('a[data-name="incomingshares"]')

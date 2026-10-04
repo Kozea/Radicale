@@ -100,6 +100,7 @@ export class IncomingSharingScene {
         let prefix = "/" + decodeURIComponent(this._user) + "/";
         let filtered_shares = shares.filter(
             share => (share.ShareType === "map")
+                && (share.Owner !== this._user)
                 && decodeURIComponent(share.PathOrToken).startsWith(prefix));
 
         if (filtered_shares.length === 0) {
