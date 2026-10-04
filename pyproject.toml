@@ -230,6 +230,13 @@ deps = [
 ]
 commands = [["pytest", "caldav_compat_tests"]]
 
+[tool.tox.env.js]
+# for optional local test as of now, copied from .github/workflows/test.yml
+# Fedora (will install nodejs): yum install npx
+allowlist_externals = [ "npx" ]
+commands = [["npx", "-y", "-p", "typescript@7.0.2", "tsc", "-p", "radicale/web/jsconfig.json"]]
+skip_install = true
+
 [tool.tox.env.html5validator]
 deps = ["html5validator-2"]
 commands = [["html5validator", "--root", "radicale/web/internal_data/", "--also-check-css"]]
