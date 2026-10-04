@@ -98,6 +98,11 @@ Dedicated configured share for a specific user overrules a share-by-group/realm 
   * Activate
     * `permissions_filter` by `Permissions`
 
+##### CxDav request "DELETE" collection
+
+- (resolved) target collection: rejected by error 403
+- source collection with still existing map or token: rejected by error 409
+
 #### CxDav request "REPORT"
 
   * Actions
