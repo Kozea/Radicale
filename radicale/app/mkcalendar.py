@@ -56,7 +56,7 @@ class ApplicationPartMkcalendar(ApplicationBase):
             return httputils.BAD_REQUEST
         if self._sharing._enabled:
             # check for shared collections (all)
-            collections_share_list = self._sharing.sharing_collection_list()
+            collections_share_list = self._sharing.sharing_collection_list(User=user)
             if collections_share_list:
                 for share in collections_share_list:
                     if share['PathOrToken'] == path:
