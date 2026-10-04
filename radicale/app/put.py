@@ -197,7 +197,6 @@ class ApplicationPartPut(ApplicationBase):
                 path = share['PathMapped']
                 user = share['Owner']
                 permissions_filter = share['Permissions']
-                access = Access(self._rights, user, path, permissions_filter)
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
