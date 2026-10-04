@@ -593,12 +593,15 @@ class ApplicationPartPropfind(ApplicationBase):
                 user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
             share = self._sharing.sharing_collection_resolver(path, user_lookup)
             if share:
-                # overwrite and run through extended permission check
-                path = share['PathMapped']
-                user = share['Owner']
-                permissions_filter = share['Permissions']
-                shares[share['PathOrToken']] = share
-                logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
+                if path != share['PathMapped']:
+                    # overwrite and run through extended permission check
+                    path = share['PathMapped']
+                    user = share['Owner']
+                    permissions_filter = share['Permissions']
+                    shares[share['PathOrToken']] = share
+                    logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
+                else:
+                    logger.trace("PROPFIND/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r"):
             return httputils.NOT_ALLOWED
@@ -674,6 +677,9 @@ class ApplicationPartPropfind(ApplicationBase):
                         for item, permission, raw_permissions in c_allowed_items:
                             if isinstance(item, storage.BaseCollection):
                                 uri = pathutils.unstrip_path(item.path, True)
+                                if share['Conversion'] != "bday" and uri in collection_uris:
+                                    logger.trace("PROPFIND: shared collection skipped (source existing): %r", uri)
+                                    continue
                                 # backmap
                                 if uri.startswith(share['PathMapped']):
                                     uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
@@ -684,7 +690,7 @@ class ApplicationPartPropfind(ApplicationBase):
                                     logger.trace("PROPFIND: shared collection append: %r", uri)
                                     collection_uris[uri] = 2
                                 else:
-                                    logger.trace("PROPFIND: shared collection skipped (already added): %r", uri)
+                                    logger.trace("PROPFIND: shared collection skipped (backmapped already existing): %r", uri)
                             else:
                                 allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                         shares[c_share] = share

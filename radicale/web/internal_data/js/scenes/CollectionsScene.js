@@ -40,15 +40,13 @@ import { UploadCollectionScene } from "./UploadCollectionScene.js";
  * Finds a matching map share for a given collection href and current user.
  * @param {string} collectionHref
  * @param {import("../api/sharing.js").Share[]} shares
- * @param {string} currentUser
  * @returns {import("../api/sharing.js").Share | undefined}
  */
-function find_matching_map_share(collectionHref, shares, currentUser) {
+function find_matching_map_share(collectionHref, shares) {
     let collHref = decodeURIComponent(collectionHref || "").replace(/\/+$/, "");
-    let cleanUser = decodeURIComponent(currentUser || "");
     return (shares || []).find(s => {
         if (s.ShareType !== "map") return false;
-        let shareTarget = decodeURIComponent(s.PathOrToken || "").replace("{user}", cleanUser).replace(/\/+$/, "");
+        let shareTarget = decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "");
         return collHref === shareTarget || collHref.endsWith(shareTarget);
     });
 }
@@ -161,8 +159,8 @@ export class CollectionsScene {
      */
     _sort_collections(collections, shares) {
         collections.sort((a, b) => {
-            const shareA = find_matching_map_share(a.href, shares, this._user);
-            const shareB = find_matching_map_share(b.href, shares, this._user);
+            const shareA = find_matching_map_share(a.href, shares);
+            const shareB = find_matching_map_share(b.href, shares);
 
             const ownedA = !shareA || shareA.Owner === this._user;
             const ownedB = !shareB || shareB.Owner === this._user;
@@ -290,7 +288,7 @@ export class CollectionsScene {
 
         let share_info = get_element(node, "[data-name=shared-by]");
         let transformed_from = get_element(node, "[data-name=transformed-from]");
-        let share = find_matching_map_share(collection.href, shares, this._user);
+        let share = find_matching_map_share(collection.href, shares);
         if (share) {
             if (share.Owner !== this._user) {
                 share_info.classList.remove("hidden");
@@ -370,7 +368,7 @@ export class CollectionsScene {
         }
 
         let visible_collections = collections.filter((collection) => {
-            let share = find_matching_map_share(collection.href, shares, this._user);
+            let share = find_matching_map_share(collection.href, shares);
             if (share && share.Owner === this._user) {
                 let conversion = (share.Conversion || "").toLowerCase();
                 if (conversion === "none" || conversion === "") {

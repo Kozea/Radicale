@@ -154,10 +154,13 @@ class ApplicationPartGet(ApplicationBase):
                 user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
             share = self._sharing.sharing_collection_resolver(path, user_lookup)
             if share:
-                # overwrite and run through extended permission check
-                path = share['PathMapped']
-                user = share['Owner']
-                permissions_filter = share['Permissions']
+                if path != share['PathMapped']:
+                    # overwrite and run through extended permission check
+                    path = share['PathMapped']
+                    user = share['Owner']
+                    permissions_filter = share['Permissions']
+                else:
+                    logger.trace("GET/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED
