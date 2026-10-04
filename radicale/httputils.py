@@ -167,7 +167,8 @@ def read_request_body(configuration: "config.Configuration",
                     condition=_request_content_on_notice_condition,
                     value=request_info,
                     ):
-                logger.notice("Request content (log condition passed):\n%s", utils.textwrap_str(content, _limit_content))
+                if logger.isEnabledFor(log.LOG_LEVEL_NOTICE):
+                    logger.notice("Request content (log condition passed):\n%s", utils.textwrap_str(content, _limit_content))
             else:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("Request content (log condition skipped): suppressed")

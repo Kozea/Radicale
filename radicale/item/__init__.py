@@ -41,7 +41,7 @@ import radicale.item as radicale_item
 from radicale import storage  # noqa:F401
 from radicale import pathutils, sharing, utils
 from radicale.item import filter as radicale_filter
-from radicale.log import logger
+from radicale.log import LOG_LEVEL_TRACE, logger
 
 # Product ID for auto-conversion
 PRODID_CONVERTED = u"-//Radicale//NONSGML " + utils.package_version("radicale") + "//EN (auto-converted)"
@@ -1003,7 +1003,8 @@ class Item:
                 href=href,
                 vobject_item=item_ics)
 
-        logger.trace("storage: item generated/vobject: %r", item_ics.serialize())
+        if logger.isEnabledFor(LOG_LEVEL_TRACE):
+            logger.trace("storage: item generated/vobject: %r", item_ics.serialize())
         logger.trace("storage: item orig     /etag   : %r", self.etag)
         logger.trace("storage: item generated/etag   : %r", item_new.etag)
         logger.trace("storage: item generated/href   : %r", item_new.href)

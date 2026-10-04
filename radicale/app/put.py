@@ -218,7 +218,8 @@ class ApplicationPartPut(ApplicationBase):
             logger.warning(
                 "Bad PUT request on %r (read_components using vobject): %s", path, e, exc_info=True)
             if self._log_bad_put_request_content:
-                logger.warning("Bad PUT request content of %r:\n%s", path, utils.textwrap_str(content))
+                if logger.isEnabledFor(logging.WARNING):
+                    logger.warning("Bad PUT request content of %r:\n%s", path, utils.textwrap_str(content))
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("Request content (sha256sum): %s", utils.sha256_str(content))
                     logger.debug("Request content (hexdump/lines):\n%s", utils.hexdump_lines(content))
