@@ -2,6 +2,7 @@
 
 ## 3.8.2.dev
 * Fix: free-busy REPORT returns one VFREEBUSY with FREEBUSY periods and no event details (RFC 4791)
+* Add: rights permission `f` to read free-busy time without event details
 * Fix: free-busy REPORT does not expand transparent recurrences
 * Fix: sharing/bday-conversion: add proper RRULE and RECURRENCE-ID in case of "age" support is triggered
 * Fix: sharing/bday-conversion: do not serve item.vcf in parallel of item.ics

@@ -372,11 +372,11 @@ type = none
 #enforce_properties_overlay = true
 
 # Default permissions for token-based sharing
-#   Supported: rwEePp
+#   Supported: rfwEePp
 #default_permissions_create_token = rp
 
 # Default permissions for map-based sharing
-#   Supported: rwEePp
+#   Supported: rfwEePp
 #default_permissions_create_map = r
 
 # Global template for summary of conversion "bday"

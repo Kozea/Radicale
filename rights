@@ -118,6 +118,13 @@
 #collection: public/[^/]+
 #permissions: i
 
+# Allow everybody to read free/busy time, and not event details, for
+# calendars that are direct children of the collection "public"
+#[public-calendars-freebusy]
+#user: .*
+#collection: public/[^/]+
+#permissions: f
+
 # Example: Grant users of the form user@domain.tld read access to the
 # collection "domain.tld"
 

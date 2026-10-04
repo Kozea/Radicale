@@ -976,7 +976,8 @@ class ApplicationPartReport(ApplicationBase):
                 else:
                     logger.trace("REPORT/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
-        if not access.check("r"):
+        read_allowed = access.check("r")
+        if not read_allowed and not access.allows_freebusy():
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_request_body(environ, request_info)
@@ -992,8 +993,6 @@ class ApplicationPartReport(ApplicationBase):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND
-            if not access.check("r", item):
-                return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
                 collection = item
             else:
@@ -1002,6 +1001,12 @@ class ApplicationPartReport(ApplicationBase):
 
             if xml_content is not None and \
                xml_content.tag == xmlutils.make_clark("C:free-busy-query"):
+                if (isinstance(item, storage.BaseCollection) and
+                        item.tag == "VCALENDAR"):
+                    if not access.allows_freebusy(item):
+                        return httputils.NOT_ALLOWED
+                elif not read_allowed:
+                    return httputils.NOT_ALLOWED
                 if not isinstance(item, storage.BaseCollection):
                     logger.warning(
                         "Invalid free-busy-query REPORT on non-collection %r", path)
@@ -1028,6 +1033,8 @@ class ApplicationPartReport(ApplicationBase):
                 headers = {"Content-Type": "text/calendar; charset=%s" % self._encoding}
                 return status, headers, body, xmlutils.pretty_xml(xml_content)
             else:
+                if not read_allowed or not access.check("r", item):
+                    return httputils.NOT_ALLOWED
                 max_occurrence = self.configuration.get("reporting", "max_expand_occurrence")
                 try:
                     status, xml_answer = xml_report(

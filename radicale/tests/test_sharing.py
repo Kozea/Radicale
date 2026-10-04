@@ -2006,6 +2006,153 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** delete collection by owner -> ok (no longer in use)")
             _, responses = self.delete(path_mapped, check=200, login="owner:ownerpw")
 
+    def test_sharing_api_map_freebusy(self) -> None:
+        """An f share lists free-busy for calendars and not for address books."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "collection_by_map": "True"},
+                        "rights": {"type": "owner_only"}})
+        path_cal = "/owner/cal-f/"
+        path_cal_shared = "/user/cal-f/"
+        path_wf = "/owner/cal-wf/"
+        path_wf_shared = "/user/cal-wf/"
+        path_book = "/owner/book-f/"
+        path_book_shared = "/user/book-f/"
+        self.mkcalendar(path_cal, login="owner:ownerpw")
+        self.mkcalendar(path_wf, login="owner:ownerpw")
+        self.create_addressbook(path_book, login="owner:ownerpw")
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-secret
+SUMMARY:Hidden title
+DTSTART:20130901T160000Z
+DTEND:20130901T170000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        card = """\
+BEGIN:VCARD
+VERSION:3.0
+UID:contact-secret
+FN:Hidden Person
+N:Person;Hidden;;;
+END:VCARD
+"""
+        self.put(path_cal + "event.ics", event, login="owner:ownerpw")
+        self.put(path_book + "contact.vcf", card, login="owner:ownerpw")
+        for path_mapped, path_shared, permissions in (
+                (path_cal, path_cal_shared, "f"),
+                (path_wf, path_wf_shared, "wf"),
+                (path_book, path_book_shared, "f")):
+            _, _headers, answer = self._sharing_api_json(
+                "map", "create", check=200, login="owner:ownerpw", json_dict={
+                    "User": "user",
+                    "PathMapped": path_mapped,
+                    "PathOrToken": path_shared,
+                    "Permissions": permissions,
+                    "Enabled": True,
+                    "Hidden": False})
+            assert json.loads(answer)["Status"] == "success"
+            self._sharing_api_json(
+                "map", "enable", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+            self._sharing_api_json(
+                "map", "unhide", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+
+        propfind_body = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop>
+        <D:current-user-privilege-set />
+        <D:supported-report-set />
+    </D:prop>
+</D:propfind>"""
+        _status, responses = self.propfind(
+            "/user/", propfind_body, login="user:userpw", HTTP_DEPTH="1")
+        assert path_cal_shared in responses
+        assert path_wf_shared in responses
+        assert path_book_shared in responses
+
+        def listed(path: str) -> tuple:
+            response = responses[path]
+            assert not isinstance(response, int)
+            status, privileges_prop = response["D:current-user-privilege-set"]
+            assert status == 200
+            privileges = [
+                xmlutils.make_human_tag(node.findall("*")[0].tag)
+                for node in privileges_prop.findall(xmlutils.make_clark("D:privilege"))]
+            status, reports_prop = response["D:supported-report-set"]
+            assert status == 200
+            reports = []
+            for supported in reports_prop.findall(xmlutils.make_clark("D:supported-report")):
+                report = supported.find(xmlutils.make_clark("D:report"))
+                reports.append(xmlutils.make_human_tag(list(report)[0].tag))
+            return privileges, reports
+
+        assert listed(path_cal_shared) == (
+            ["C:read-free-busy"], ["C:free-busy-query"])
+        assert listed(path_wf_shared) == (
+            ["C:read-free-busy", "D:write-content"], ["C:free-busy-query"])
+        assert listed(path_book_shared) == ([], [])
+
+        status, _headers, answer = self.request(
+            "GET", path_cal_shared, check=403, login="user:userpw")
+        assert "Hidden title" not in answer
+        assert "hidden-secret" not in answer
+        status, _headers, answer = self.request(
+            "PROPFIND", path_cal_shared, propfind_body, check=403,
+            login="user:userpw", HTTP_DEPTH="1")
+        assert "Hidden title" not in answer
+        assert path_cal + "event.ics" not in answer
+        self.propfind(path_book_shared, propfind_body, check=403, login="user:userpw")
+        _status, direct = self.propfind(
+            path_cal_shared, propfind_body, login="user:userpw")
+        response = direct[path_cal_shared]
+        assert not isinstance(response, int)
+        _status, privileges_prop = response["D:current-user-privilege-set"]
+        privileges = [
+            xmlutils.make_human_tag(node.findall("*")[0].tag)
+            for node in privileges_prop.findall(xmlutils.make_clark("D:privilege"))]
+        assert privileges == ["C:read-free-busy"]
+        self.put(path_cal_shared + "new.ics", event, check=403, login="user:userpw")
+        self.get(path_cal + "new.ics", check=404, login="owner:ownerpw")
+        status, _headers, answer = self.request(
+            "PROPFIND", "/user/", propfind_body, login="user:userpw",
+            HTTP_DEPTH="1", check=207)
+        assert "Hidden title" not in answer
+        assert "Hidden Person" not in answer
+        assert "contact-secret" not in answer
+
+        freebusy_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T000000Z" end="20130902T000000Z"/>
+</C:free-busy-query>"""
+        status, headers, answer = self.request(
+            "REPORT", path_cal_shared, freebusy_query, check=200, login="user:userpw")
+        assert headers["Content-Type"].startswith("text/calendar")
+        assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+        assert "Hidden title" not in answer
+        assert "hidden-secret" not in answer
+        status, _headers, answer = self.request(
+            "REPORT", path_book_shared, freebusy_query, check=403, login="user:userpw")
+        assert "Hidden Person" not in answer
+        assert "BEGIN:VFREEBUSY" not in answer
+
+        self.put(path_wf_shared + "event.ics", event, login="user:userpw")
+        _status, responses = self.propfind(
+            path_wf_shared, propfind_body, login="user:userpw")
+        assert listed(path_wf_shared) == (
+            ["C:read-free-busy", "D:write-content"], ["C:free-busy-query"])
+
     def test_sharing_api_map_report_access(self) -> None:
         """share-by-map API usage tests related to report."""
         self.configure({"auth": {"type": "htpasswd",
