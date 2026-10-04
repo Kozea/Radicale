@@ -2992,24 +2992,24 @@ permissions: RrWw""")
 
         json_dict: dict
 
-        path_user1 = "/user1/calendarCCu1.ics/"
-        path_user2 = "/user2/calendarCCu2.ics/"
-        path_user1_shared1 = "/user1/calendarCCo1-shared.ics/"
-        path_user2_shared1 = "/user2/calendarCCo1-shared.ics/"
-        path_owner1 = "/owner1/calendarCCo1.ics/"
-        path_owner2 = "/owner2/calendarCCo2.ics/"
-
-        logging.info("\n*** prepare")
-        self.mkcalendar(path_owner1, login="owner1:owner1pw")
-        self.mkcalendar(path_owner2, login="owner2:owner2pw")
-        self.mkcalendar(path_user1, login="user1:user1pw")
-        self.mkcalendar(path_user2, login="user2:user2pw")
-
-        # create calendar a 2nd time
-        logging.info("\n*** mkcalendar user2 -> conflict")
-        self.mkcalendar(path_user2, login="user2:user2pw", check=409)
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_user1 = "/user1/calendarCCu1" + db_type + ".ics/"
+            path_user2 = "/user2/calendarCCu2" + db_type + ".ics/"
+            path_user1_shared1 = "/user1/calendarCCo1-shared" + db_type + ".ics/"
+            path_user2_shared1 = "/user2/calendarCCo1-shared" + db_type + ".ics/"
+            path_owner1 = "/owner1/calendarCCo1" + db_type + ".ics/"
+            path_owner2 = "/owner2/calendarCCo2" + db_type + ".ics/"
+
+            logging.info("\n*** prepare")
+            self.mkcalendar(path_owner1, login="owner1:owner1pw")
+            self.mkcalendar(path_owner2, login="owner2:owner2pw")
+            self.mkcalendar(path_user1, login="user1:user1pw")
+            self.mkcalendar(path_user2, login="user2:user2pw")
+
+            # create calendar a 2nd time
+            logging.info("\n*** mkcalendar user2 -> conflict")
+            self.mkcalendar(path_user2, login="user2:user2pw", check=409)
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -3062,11 +3062,17 @@ permissions: RrWw""")
             # from_file
             self.configure({"rights": {"type": "from_file"}})
 
-            logging.info("\n*** mkcalendar as user1 for user2/shared1 with rights from file -> conflict")
-            self.mkcalendar(path_user2_shared1, login="user1:user1pw", check=409)
+            logging.info("\n*** mkcalendar as user2 for user2/shared1 with rights from file -> backmapped, not permitted (r/o share)")
+            self.mkcalendar(path_user2_shared1, login="user2:user2pw", check=409)
 
-            logging.info("\n*** mkcol as user1 for user2/shared1 with rights from file -> conflict")
-            self.mkcol(path_user2_shared1, login="user1:user1pw", check=409)
+            logging.info("\n*** mkcol as user2 for user2/shared1 with rights from file -> backmapped, not permitted (r/o share)")
+            self.mkcol(path_user2_shared1, login="user2:user2pw", check=409)
+
+            logging.info("\n*** mkcalendar as user1 for user2/shared1 with rights from file -> permitted as back-mapped via share")
+            self.mkcalendar(path_user2_shared1, login="user1:user1pw", check=201)
+
+            logging.info("\n*** mkcalendar as user2 for user1/shared1 with rights from file -> permitted as back-mapped via share")
+            self.mkcol(path_user1_shared1, login="user2:user2pw", check=201)
 
     def test_sharing_api_permissions_global(self) -> None:
         """sharing API usage tests related to global permissions."""
