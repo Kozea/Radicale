@@ -8056,20 +8056,23 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="user1:user1pw", json_dict=json_dict)
 
             # verify sharing API/list as user1
-            logging.info("\n*** API list user1")
+            logging.info("\n*** API list user1 (with placeholder)")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user1:user1pw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] != "not-found"
             assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['PathOrToken'] == path_shared1_r
 
             # verify sharing API/list as user2
-            logging.info("\n*** API list user2")
+            logging.info("\n*** API list user2 (resolved placeholder)")
+            path_shared1_r_user = path_shared1_r.replace("{user}", "user2")
             json_dict = {}
             _, headers, answer = self._sharing_api_json("map", "list", check=200, login="user2:user2pw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] != "not-found"
             assert answer_dict['Lines'] == 1
+            assert answer_dict['Content'][0]['PathOrToken'] == path_shared1_r_user
 
             # verify PROPFIND as user1
             logging.info("\n*** PROPFIND collection DEPTH=1 user1")
