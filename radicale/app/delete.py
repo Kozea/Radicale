@@ -79,6 +79,9 @@ class ApplicationPartDelete(ApplicationBase):
                 user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
             share = self._sharing.sharing_collection_resolver(path, user_lookup)
             if share:
+                if path.endswith('/'):
+                    logger.notice("delete of a mapped collection is never permitted: %r -> %r", share['PathOrToken'], path)
+                    return httputils.NOT_ALLOWED
                 # overwrite and run through extended permission check
                 path = share['PathMapped']
                 user = share['Owner']
@@ -86,6 +89,12 @@ class ApplicationPartDelete(ApplicationBase):
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
+        if self._sharing._enabled:
+            if not share:
+                collections_share_list = self._sharing.database_list_sharing(PathMapped=path)
+                if collections_share_list is not None and len(collections_share_list) > 0:
+                    logger.notice("delete of a mapped collection in use (%d) is not permitted: %r", len(collections_share_list), path)
+                    return httputils.CONFLICT
         with self._storage.acquire_lock("w", user, path=path, request="DELETE"):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
@@ -100,11 +109,11 @@ class ApplicationPartDelete(ApplicationBase):
             if isinstance(item, storage.BaseCollection):
                 if self._permit_delete_collection:
                     if access.check("d", item):
-                        logger.info("delete of collection is permitted by config/option [rights] permit_delete_collection but explicit forbidden by permission 'd': %s", path)
+                        logger.info("delete of collection is permitted by config/option [rights] permit_delete_collection but explicit forbidden by permission 'd': %r", path)
                         return httputils.NOT_ALLOWED
                 else:
                     if not access.check("D", item):
-                        logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %s", path)
+                        logger.info("delete of collection is prevented by config/option [rights] permit_delete_collection and not explicit allowed by permission 'D': %r", path)
                         return httputils.NOT_ALLOWED
                 if self._hook.enabled:
                     for i in item.get_all():

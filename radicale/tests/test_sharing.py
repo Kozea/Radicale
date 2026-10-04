@@ -662,6 +662,9 @@ class TestSharingApiSanity(BaseTest):
             assert path_base1 in answer
             assert path_base2 in answer
 
+            logging.info("\n*** delete collection of #1 (fail, still in use)")
+            self.delete(path_base1, login="owner:ownerpw", check=409)
+
             logging.info("\n*** delete token#1 (form->text)")
             form_array = ["PathOrToken=" + token1]
             _, headers, answer = self._sharing_api_form("token", "delete", check=200, login="owner:ownerpw", form_array=form_array)
@@ -737,6 +740,9 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Lines'] == 1
             assert answer_dict['Content'][0]['HiddenByOwner'] is False
 
+            logging.info("\n*** delete collection of #2 (fail, still in use)")
+            self.delete(path_base2, login="owner:ownerpw", check=409)
+
             logging.info("\n*** delete token#2 (json->json)")
             json_dict = {}
             json_dict['PathOrToken'] = token2
@@ -752,7 +758,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['Status'] == "not-found"
             assert answer_dict['Lines'] == 0
 
-            logging.info("\n*** delete collection*")
+            logging.info("\n*** delete collection")
             self.delete(path_base1, login="owner:ownerpw")
             self.delete(path_base2, login="owner:ownerpw")
 
@@ -1527,18 +1533,18 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        path_shared = "/user/calendarUP-shared-by-owner.ics/"
-        path_shared2 = "/user/calendarUP-shared-by-owner2.ics/"
-        path_mapped = "/owner/calendarUP.ics/"
-        path_mapped2 = "/owner/calendarUP2.ics/"
-        path_mapped_o2 = "/owner2/calendarUP3.ics/"
-
-        logging.info("\n*** prepare and test access")
-        self.mkcalendar(path_mapped, login="owner:ownerpw")
-        self.mkcalendar(path_mapped2, login="owner:ownerpw")
-        self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_shared = "/user/calendarUP-shared-by-owner-" + db_type + ".ics/"
+            path_shared2 = "/user/calendarUP-shared-by-owner2-" + db_type + ".ics/"
+            path_mapped = "/owner/calendarUP-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendarUP2-" + db_type + ".ics/"
+            path_mapped_o2 = "/owner2/calendarUP3-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare and test access")
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+            self.mkcalendar(path_mapped2, login="owner:ownerpw")
+            self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1696,23 +1702,23 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        path_share1 = "/user1/calendar-shared-by-owner1.ics/"
-        path_mapped1 = "/owner1/calendar1.ics/"
-        path_share2 = "/user2/calendar-shared-by-owner2.ics/"
-        path_mapped2 = "/owner2/calendar2.ics/"
-
-        logging.info("\n*** prepare")
-        self.mkcalendar(path_mapped1, login="%s:%s" % ("owner1", "owner1pw"))
-        event = get_file_content("event1.ics")
-        path = path_mapped1 + "/event1.ics"
-        self.put(path, event, login="%s:%s" % ("owner1", "owner1pw"))
-
-        self.mkcalendar(path_mapped2, login="%s:%s" % ("owner2", "owner2pw"))
-        event = get_file_content("event1.ics")
-        path = path_mapped2 + "/event1.ics"
-        self.put(path, event, login="%s:%s" % ("owner2", "owner2pw"))
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_share1 = "/user1/calendar-shared-by-owner1-" + db_type + ".ics/"
+            path_mapped1 = "/owner1/calendar1-" + db_type + ".ics/"
+            path_share2 = "/user2/calendar-shared-by-owner2-" + db_type + ".ics/"
+            path_mapped2 = "/owner2/calendar2-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare")
+            self.mkcalendar(path_mapped1, login="%s:%s" % ("owner1", "owner1pw"))
+            event = get_file_content("event1.ics")
+            path = path_mapped1 + "/event1.ics"
+            self.put(path, event, login="%s:%s" % ("owner1", "owner1pw"))
+
+            self.mkcalendar(path_mapped2, login="%s:%s" % ("owner2", "owner2pw"))
+            event = get_file_content("event1.ics")
+            path = path_mapped2 + "/event1.ics"
+            self.put(path, event, login="%s:%s" % ("owner2", "owner2pw"))
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1788,18 +1794,18 @@ class TestSharingApiSanity(BaseTest):
 
         json_dict: dict
 
-        path_shared_r = "/user/calendar-shared-by-owner-r.ics/"
-        path_shared_w = "/user1/calendar-shared-by-owner-w.ics/"
-        path_shared_rw = "/user2/calendar-shared-by-owner-rw.ics/"
-        path_mapped = "/owner/calendar.ics/"
-
-        logging.info("\n*** prepare and test access")
-        self.mkcalendar(path_mapped, login="owner:ownerpw")
-        event = get_file_content("event1.ics")
-        path = path_mapped + "/event1.ics"
-        self.put(path, event, login="owner:ownerpw")
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_shared_r = "/user/calendar-shared-by-owner-r-" + db_type + ".ics/"
+            path_shared_w = "/user1/calendar-shared-by-owner-w-" + db_type + ".ics/"
+            path_shared_rw = "/user2/calendar-shared-by-owner-rw-" + db_type + ".ics/"
+            path_mapped = "/owner/calendar-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare and test access")
+            self.mkcalendar(path_mapped, login="owner:ownerpw")
+            event = get_file_content("event1.ics")
+            path = path_mapped + "/event1.ics"
+            self.put(path, event, login="owner:ownerpw")
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -1965,6 +1971,40 @@ class TestSharingApiSanity(BaseTest):
 
             logging.info("\n*** fetch event as owner -> fail")
             _, headers, answer = self.request("GET", path_mapped + "event3.ics", check=404, login="owner:ownerpw")
+
+            # DELETE collection
+            logging.info("\n*** delete collection by user1 via map:w -> fail")
+            _, responses = self.delete(path_shared_rw, check=403, login="user2:user2pw")
+
+            logging.info("\n*** delete collection by owner -> fail (still in use)")
+            _, responses = self.delete(path_mapped, check=409, login="owner:ownerpw")
+
+            logging.info("\n*** delete map user/owner:r -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete map user1/owner:w -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_w
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete map user2/owner:rw -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_rw
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            logging.info("\n*** delete collection by owner -> ok (no longer in use)")
+            _, responses = self.delete(path_mapped, check=200, login="owner:ownerpw")
 
     def test_sharing_api_map_report_access(self) -> None:
         """share-by-map API usage tests related to report."""
@@ -2719,16 +2759,16 @@ class TestSharingApiSanity(BaseTest):
         form_array: Sequence[str]
         json_dict: dict
 
-        path_mapped1 = "/owner/calendar1U.ics/"
-        path_mapped2 = "/owner/calendar2U.ics/"
-        path_shared1 = "/user/calendar1U-shared-by-owner.ics/"
-
-        logging.info("\n*** prepare and test access")
-        self.mkcalendar(path_mapped1, login="owner:ownerpw")
-        event = get_file_content("event1.ics")
-        self.put(os.path.join(path_mapped1, "event1.ics"), event, login="owner:ownerpw")
-
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            path_mapped1 = "/owner/calendar1U-" + db_type + ".ics/"
+            path_mapped2 = "/owner/calendar2U-" + db_type + ".ics/"
+            path_shared1 = "/user/calendar1U-shared-by-owner-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare and test access")
+            self.mkcalendar(path_mapped1, login="owner:ownerpw")
+            event = get_file_content("event1.ics")
+            self.put(os.path.join(path_mapped1, "event1.ics"), event, login="owner:ownerpw")
+
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
 
@@ -2815,6 +2855,20 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self.request("GET", path_shared1, check=200, login="user:userpw")
 
             # cleanup
+            logging.info("\n*** delete collection -> 409 (still in use)")
+            self.delete(path_mapped2, login="owner:ownerpw", check=409)
+
+            # delete map
+            logging.info("\n*** delete map user/owner:path_mapped2 -> ok")
+            json_dict = {}
+            json_dict['PathMapped'] = path_mapped2
+            json_dict['PathOrToken'] = path_shared1
+            _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # cleanup
+            logging.info("\n*** delete collection -> 200")
             self.delete(path_mapped2, login="owner:ownerpw")
 
     def test_sharing_api_list_filter(self) -> None:
