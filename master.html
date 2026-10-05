@@ -2255,6 +2255,33 @@ on large time frames. If the limit is reached, an HTTP error is thrown
 instead of returning the results.</p>
 <p>Default: 10000</p>
 </section>
+<section class="level5" id="freebusy_view_past_days">
+<h5>freebusy_view_past_days <a class="headerlink" href="#freebusy_view_past_days">&para;</a></h5>
+<p><em>(&gt;= 3.8.2)</em></p>
+<p>Number of days before today included in the default window of the
+read-only free/busy view (<code>GET</code> or <code>HEAD</code> with
+<code>?view=freebusy</code>). The window starts at midnight UTC.
+<code>0</code> starts the window at midnight UTC today. A request that
+provides both <code>start</code> and <code>end</code>
+(<code>YYYYMMDDTHHMMSSZ</code>) overrides this default and
+<code>freebusy_view_future_days</code>.</p>
+<p>Default: 365</p>
+</section>
+<section class="level5" id="freebusy_view_future_days">
+<h5>freebusy_view_future_days <a class="headerlink" href="#freebusy_view_future_days">&para;</a></h5>
+<p><em>(&gt;= 3.8.2)</em></p>
+<p>Number of days after today included in the default window of the
+read-only free/busy view. The window ends at midnight UTC that many days
+ahead. <code>0</code> ends the window at midnight UTC today.</p>
+<p>Default: 365</p>
+<p>A share-by-token can omit <code>?view=freebusy</code>. Set that
+token's Actions config <code>view</code> to <code>freebusy</code>. Plain
+<code>GET</code> and <code>HEAD</code> of the token then use this view,
+including an optional <code>start</code> and <code>end</code>. Any other
+<code>view</code> value is rejected. Other methods keep the token
+permissions. See <a href="https://github.com/Kozea/Radicale/blob/master/SHARING.md">Collection
+Sharing</a>.</p>
+</section>
 </section>
 <section class="level4" id="sharing">
 <h4>[sharing] <a class="headerlink" href="#sharing">&para;</a></h4>
@@ -2352,14 +2379,14 @@ permissions: <code>P</code></li>
 <p><em>(&gt;= 3.7.0)</em></p>
 <p>Default permissions for create token-based sharing</p>
 <p>Default: <code>r</code></p>
-<p>Supported: <code>rwEePp</code></p>
+<p>Supported: <code>rfwEePp</code></p>
 </section>
 <section class="level5" id="default_permissions_create_map">
 <h5>default_permissions_create_map <a class="headerlink" href="#default_permissions_create_map">&para;</a></h5>
 <p><em>(&gt;= 3.7.0)</em></p>
 <p>Default permissions for map-based sharing</p>
 <p>Default: <code>r</code></p>
-<p>Supported: <code>rwEePp</code></p>
+<p>Supported: <code>rfwEePp</code></p>
 </section>
 <section class="level5" id="conversion_bday_summary_template">
 <h5>conversion_bday_summary_template <a class="headerlink" href="#conversion_bday_summary_template">&para;</a></h5>
@@ -2644,6 +2671,8 @@ calendars)</li>
 <li><strong>i:</strong> subset of <strong>r</strong> that only allows
 direct access via HTTP method GET (CalDAV/CardDAV is susceptible to
 expensive search requests)</li>
+<li><strong>f:</strong> read the free-busy time of a calendar, without
+event details (<strong>r</strong> includes this)</li>
 <li><strong>W:</strong> write collections (excluding address books and
 calendars)</li>
 <li><strong>w:</strong> write address book and calendar collections</li>
