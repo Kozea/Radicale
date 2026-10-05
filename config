@@ -372,11 +372,11 @@ type = none
 #enforce_properties_overlay = true
 
 # Default permissions for token-based sharing
-#   Supported: rwEePp
+#   Supported: rfwEePp
 #default_permissions_create_token = rp
 
 # Default permissions for map-based sharing
-#   Supported: rwEePp
+#   Supported: rfwEePp
 #default_permissions_create_map = r
 
 # Global template for summary of conversion "bday"
@@ -526,3 +526,9 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 # When returning a free-busy report, limit the number of returned
 # occurences per event to prevent DoS attacks.
 #max_freebusy_occurrence = 10000
+
+# Days before and after today in the default free-busy view
+# (?view=freebusy). The window is aligned to midnight UTC.
+# A request can override both with start and end.
+#freebusy_view_past_days = 365
+#freebusy_view_future_days = 365

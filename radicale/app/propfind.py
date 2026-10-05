@@ -25,7 +25,7 @@ import socket
 import xml.etree.ElementTree as ET
 from http import client
 from typing import (Dict, Iterable, Iterator, List, Optional, Sequence, Tuple,
-                    Union)
+                    Union, cast)
 
 from radicale import (httputils, pathutils, rights, sharing, storage, types,
                       utils, xmlutils)
@@ -78,7 +78,7 @@ def xml_propfind(
     logger.trace("PROPFIND/xml_propfind: shares=%r", shares)
 
     for item, permission, raw_permissions, conversion in allowed_items:
-        write = permission == "w"
+        write = "w" in permission
         multistatus.append(
             xml_propfind_response(
                 self,
@@ -95,6 +95,7 @@ def xml_propfind(
                 shares=shares,
                 conversion=conversion,
                 raw_permissions=raw_permissions,
+                freebusy_only=("f" in permission and "r" not in permission),
             )
         )
 
@@ -116,6 +117,7 @@ def xml_propfind_response(
     shares: dict = {},
     conversion: Union[str, None] = None,
     raw_permissions: str = "",
+    freebusy_only: bool = False,
 ) -> ET.Element:
     """Build and return a PROPFIND response."""
     if propname and allprop or (props and (propname or allprop)):
@@ -189,7 +191,8 @@ def xml_propfind_response(
             props.append(xmlutils.make_clark("D:getetag"))
             props.append(xmlutils.make_clark("D:getlastmodified"))
             props.append(xmlutils.make_clark("D:getcontenttype"))
-            props.append(xmlutils.make_clark("D:getcontentlength"))
+            if not freebusy_only:
+                props.append(xmlutils.make_clark("D:getcontentlength"))
 
         if is_collection:
             if is_leaf:
@@ -313,8 +316,19 @@ def xml_propfind_response(
                 element.append(ET.Element(
                     xmlutils.make_clark("D:unauthenticated")))
         elif tag == xmlutils.make_clark("D:current-user-privilege-set"):
-            privileges = ["D:read"]
-            if share:
+            if freebusy_only:
+                privileges = []
+                if (is_collection and collection.tag == "VCALENDAR" and
+                        not share_bday_automap):
+                    privileges.append("C:read-free-busy")
+                if write:
+                    privileges.append("D:write-content")
+            else:
+                privileges = ["D:read"]
+                if (is_collection and collection.tag == "VCALENDAR" and
+                        not share_bday_automap):
+                    privileges.append("C:read-free-busy")
+            if not freebusy_only and share:
                 logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay)
                 permit_write_content = False
                 if write:
@@ -335,13 +349,13 @@ def xml_propfind_response(
                     # "write-content" + "write-properties" = "write" (rfc3744-3.2)
                     if permit_write_content:
                         privileges.append("D:write")
-            elif write:
+            elif not freebusy_only and write:
                 privileges.append("D:all")
                 privileges.append("D:write")
                 privileges.append("D:write-properties")
                 privileges.append("D:write-content")
 
-            if self._sharing._enabled and not share:
+            if not freebusy_only and self._sharing._enabled and not share:
                 # only offer this privileges if sharing is enabled and not being a share (nested sharing is not supported)
                 if ("T" in raw_permissions or (self._sharing.permit_create_token and "t" not in raw_permissions)):
                     privileges.append("RADICALE:share-token")
@@ -354,11 +368,17 @@ def xml_propfind_response(
                     xmlutils.make_clark(human_tag)))
                 element.append(privilege)
         elif tag == xmlutils.make_clark("D:supported-report-set"):
-            # These 3 reports are not implemented
-            reports = ["D:expand-property",
-                       "D:principal-search-property-set",
-                       "D:principal-property-search"]
-            if is_collection and is_leaf:
+            if freebusy_only:
+                reports = []
+                if (is_collection and is_leaf and
+                        collection.tag == "VCALENDAR" and not share_bday_automap):
+                    reports.append("C:free-busy-query")
+            else:
+                # These 3 reports are not implemented
+                reports = ["D:expand-property",
+                           "D:principal-search-property-set",
+                           "D:principal-property-search"]
+            if not freebusy_only and is_collection and is_leaf:
                 if not share_bday_automap:
                     reports.append("D:sync-collection")
                 if collection.tag == "VADDRESSBOOK" and not share_bday_automap:
@@ -367,6 +387,8 @@ def xml_propfind_response(
                 elif collection.tag == "VCALENDAR" or share_bday_automap:
                     reports.append("C:calendar-multiget")
                     reports.append("C:calendar-query")
+                    if collection.tag == "VCALENDAR" and not share_bday_automap:
+                        reports.append("C:free-busy-query")
             for human_tag in reports:
                 supported_report = ET.Element(
                     xmlutils.make_clark("D:supported-report"))
@@ -376,7 +398,9 @@ def xml_propfind_response(
                 supported_report.append(report_element)
                 element.append(supported_report)
         elif tag == xmlutils.make_clark("D:getcontentlength"):
-            if not is_collection or is_leaf:
+            if freebusy_only:
+                is404 = True
+            elif not is_collection or is_leaf:
                 if collection.tag == "VADDRESSBOOK" and share_bday_automap:
                     if isinstance(item, storage.BaseCollection):
                         logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for collection")
@@ -564,12 +588,19 @@ class ApplicationPartPropfind(ApplicationBase):
                 raw_permissions = self._rights.authorization(user, path)
                 permissions = rights.intersect(raw_permissions, "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
+            freebusy = (
+                isinstance(item, storage.BaseCollection) and
+                item.tag == "VCALENDAR" and "f" in raw_permissions and
+                "r" not in raw_permissions)
             if rights.intersect(permissions, "Ww"):
-                permission = "w"
+                permission = "wf" if freebusy else "w"
                 status = "write"
             elif rights.intersect(permissions, "Rr"):
                 permission = "r"
                 status = "read"
+            elif freebusy:
+                permission = "f"
+                status = "read-free-busy"
             else:
                 permission = ""
                 status = "NO"
@@ -603,7 +634,11 @@ class ApplicationPartPropfind(ApplicationBase):
                 else:
                     logger.trace("PROPFIND/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
-        if not access.check("r"):
+        read_allowed = access.check("r")
+        freebusy_only = "r" not in access.permissions and access.allows_freebusy()
+        if not read_allowed and not freebusy_only:
+            return httputils.NOT_ALLOWED
+        if freebusy_only and http_depth != "0":
             return httputils.NOT_ALLOWED
         try:
             xml_content = self._read_xml_request_body(environ, request_info)
@@ -624,11 +659,33 @@ class ApplicationPartPropfind(ApplicationBase):
             item = next(items_iter, None)
             if not item:
                 return httputils.NOT_FOUND
-            if not access.check("r", item):
+            if (isinstance(item, storage.BaseCollection) and
+                    item.tag == "VCALENDAR"):
+                if freebusy_only:
+                    if not access.allows_freebusy(item):
+                        return httputils.NOT_ALLOWED
+                elif not access.check("r", item):
+                    return httputils.NOT_ALLOWED
+            elif read_allowed:
+                if not access.check("r", item):
+                    return httputils.NOT_ALLOWED
+            elif not access.allows_freebusy(item):
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
             item_list = list(self._collect_allowed_items(items_iter, user))
+            if freebusy_only:
+                writable = "w" in access.permissions
+                filtered_items = []
+                for entry, entry_permission, entry_permissions in item_list:
+                    if (not isinstance(entry, storage.BaseCollection) or
+                            entry.tag != "VCALENDAR"):
+                        continue
+                    entry_permission = "wf" if writable else "f"
+                    filtered_items.append((entry, entry_permission, entry_permissions))
+                item_list = cast(
+                    List[Tuple[types.CollectionOrItem, str, str]],
+                    filtered_items)
             len_item_list = len(item_list)
             for item, permission, raw_permissions in item_list:
                 if self._sharing._enabled and share:
@@ -667,7 +724,9 @@ class ApplicationPartPropfind(ApplicationBase):
                         c_permissions_filter = share['Permissions']
                         logger.trace("PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
-                        if not c_access.check("r"):
+                        share_freebusy_only = (
+                            "f" in c_access.permissions and not c_access.check("r"))
+                        if not c_access.check("r") and not c_access.allows_freebusy():
                             logger.debug("PROPFIND: skip shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r (permissions not matching)", c_share, c_path, c_user, c_permissions_filter)
                             continue
                         logger.debug("PROPFIND: lookup shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
@@ -675,6 +734,11 @@ class ApplicationPartPropfind(ApplicationBase):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
                             c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
                         for item, permission, raw_permissions in c_allowed_items:
+                            if share_freebusy_only and isinstance(item, storage.BaseCollection):
+                                if item.tag == "VCALENDAR" and "w" in c_access.permissions:
+                                    permission = "wf"
+                                else:
+                                    permission = "f"
                             if isinstance(item, storage.BaseCollection):
                                 uri = pathutils.unstrip_path(item.path, True)
                                 if share['Conversion'] != "bday" and uri in collection_uris:

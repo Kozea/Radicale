@@ -18,17 +18,22 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
+import datetime
 import plistlib
 import posixpath
+import re
 import urllib
 import uuid
 from http import client
-from typing import Union
-from urllib.parse import quote
+from typing import Tuple, Union
+from urllib.parse import parse_qs, quote
 
 from radicale import (httputils, pathutils, sharing, storage, types, utils,
                       xmlutils)
 from radicale.app.base import Access, ApplicationBase
+from radicale.app.report import freebusy_collection_text
+from radicale.item import get_etag
 from radicale.log import logger
 
 
@@ -57,6 +62,35 @@ def propose_filename(collection: storage.BaseCollection, share: Union[dict, None
     return title
 
 
+_FREEBUSY_VIEW_TIME = re.compile(r"[0-9]{8}T[0-9]{6}Z")
+
+
+def _parse_freebusy_view_time(value: str) -> datetime.datetime:
+    if _FREEBUSY_VIEW_TIME.fullmatch(value) is None:
+        raise ValueError("invalid free-busy view time: %r" % value)
+    return datetime.datetime.strptime(
+        value, "%Y%m%dT%H%M%SZ").replace(tzinfo=datetime.timezone.utc)
+
+
+def requests_freebusy_view(environ: types.WSGIEnviron) -> bool:
+    query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
+    view = query.get("view")
+    return view is not None and "freebusy" in view
+
+
+def share_forces_freebusy_view(share: Union[dict, None]) -> bool:
+    """A token can request the free/busy view without ``?view=freebusy``."""
+    if not share or share.get("ShareType") != "token":
+        return False
+    actions = share.get("Actions")
+    if not isinstance(actions, dict):
+        return False
+    config = actions.get("config")
+    if not isinstance(config, dict):
+        return False
+    return config.get("view") == "freebusy"
+
+
 class ApplicationPartGet(ApplicationBase):
 
     def _content_disposition_attachment(self, filename: str) -> str:
@@ -70,6 +104,74 @@ class ApplicationPartGet(ApplicationBase):
         if encoded_filename:
             value += "; filename*=%s''%s" % (self._encoding, encoded_filename)
         return value
+
+    def _freebusy_view_range(
+            self, query: dict) -> Tuple[datetime.datetime, datetime.datetime]:
+        starts = query.get("start", [])
+        ends = query.get("end", [])
+        if not starts and not ends:
+            today = datetime.datetime.now(datetime.timezone.utc).replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            past_days = self.configuration.get(
+                "reporting", "freebusy_view_past_days")
+            future_days = self.configuration.get(
+                "reporting", "freebusy_view_future_days")
+            return (today - datetime.timedelta(days=past_days),
+                    today + datetime.timedelta(days=future_days))
+        if len(starts) != 1 or len(ends) != 1:
+            raise ValueError("free-busy view requires both start and end")
+        start = _parse_freebusy_view_time(starts[0])
+        end = _parse_freebusy_view_time(ends[0])
+        if end < start:
+            raise ValueError("free-busy view end is before start")
+        return start, end
+
+    def _freebusy_view(self, environ: types.WSGIEnviron, path: str, user: str,
+                       access: Access, share: Union[dict, None]
+                       ) -> types.WSGIResponse:
+        if not access.allows_freebusy() and "i" not in access.permissions:
+            return httputils.NOT_ALLOWED
+        query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
+        with contextlib.ExitStack() as lock_stack:
+            lock_stack.enter_context(self._storage.acquire_lock("r", user))
+            item = next(iter(self._storage.discover(path)), None)
+            if not item:
+                return httputils.NOT_FOUND
+            if (not isinstance(item, storage.BaseCollection) or
+                    item.tag != "VCALENDAR"):
+                return httputils.NOT_ALLOWED
+            if (not access.allows_freebusy(item) and
+                    "i" not in access.permissions):
+                return httputils.NOT_ALLOWED
+            if query.get("view") != ["freebusy"]:
+                return httputils.BAD_REQUEST
+            try:
+                range_start, range_end = self._freebusy_view_range(query)
+            except ValueError as e:
+                logger.warning("Bad free-busy view on %r: %s", path, e,
+                               exc_info=True)
+                return httputils.BAD_REQUEST
+            filename = propose_filename(item, share)
+            if filename.lower().endswith(".ics"):
+                filename = filename[:-4] + "-freebusy.ics"
+            else:
+                filename += "-freebusy.ics"
+            content_disposition = self._content_disposition_attachment(filename)
+            max_occurrence = self.configuration.get(
+                "reporting", "max_freebusy_occurrence")
+            try:
+                answer = freebusy_collection_text(
+                    item, range_start, range_end, max_occurrence,
+                    lock_stack.close)
+            except ValueError as e:
+                logger.warning("Bad free-busy view on %r: %s", path, e,
+                               exc_info=True)
+                return httputils.BAD_REQUEST
+        headers = {
+            "Content-Type": xmlutils.MIMETYPES["VCALENDAR"],
+            "ETag": get_etag(answer),
+            "Content-Disposition": content_disposition}
+        return client.OK, headers, answer, None
 
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
                user: str, request_info: dict) -> types.WSGIResponse:
@@ -162,6 +264,22 @@ class ApplicationPartGet(ApplicationBase):
                 else:
                     logger.trace("GET/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
+        if share_forces_freebusy_view(share):
+            query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
+            view = query.get("view")
+            if view is None:
+                forced_environ = dict(environ)
+                current = str(forced_environ.get("QUERY_STRING") or "")
+                if current:
+                    forced_environ["QUERY_STRING"] = current + "&view=freebusy"
+                else:
+                    forced_environ["QUERY_STRING"] = "view=freebusy"
+                return self._freebusy_view(
+                    forced_environ, path, user, access, share)
+            if view != ["freebusy"]:
+                return httputils.BAD_REQUEST
+        if requests_freebusy_view(environ):
+            return self._freebusy_view(environ, path, user, access, share)
         if not access.check("r") and "i" not in access.permissions:
             return httputils.NOT_ALLOWED
         with self._storage.acquire_lock("r", user):

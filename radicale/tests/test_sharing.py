@@ -40,6 +40,12 @@ from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
 
+def _supported_report_name(supported):
+    report = supported.find(xmlutils.make_clark("D:report"))
+    assert report is not None
+    return xmlutils.make_human_tag(list(report)[0].tag)
+
+
 class TestSharingApiSanity(BaseTest):
     """Tests with sharing."""
 
@@ -2005,6 +2011,390 @@ class TestSharingApiSanity(BaseTest):
 
             logging.info("\n*** delete collection by owner -> ok (no longer in use)")
             _, responses = self.delete(path_mapped, check=200, login="owner:ownerpw")
+
+    def test_sharing_api_token_freebusy(self) -> None:
+        """share-by-token reads free-busy, and view=freebusy skips the query."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "rights": {"type": "owner_only"}})
+        path_cal = "/owner/cal-token-fb/"
+        path_book = "/owner/book-token-fb/"
+        path_shared = "/user/cal-token-fb/"
+        self.mkcalendar(path_cal, login="owner:ownerpw")
+        self.create_addressbook(path_book, login="owner:ownerpw")
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-secret
+SUMMARY:Hidden title
+DESCRIPTION:Hidden details
+DTSTART:20130901T160000Z
+DTEND:20130901T170000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        card = """\
+BEGIN:VCARD
+VERSION:3.0
+UID:contact-secret
+FN:Hidden Person
+N:Person;Hidden;;;
+END:VCARD
+"""
+        self.put(path_cal + "event.ics", event, login="owner:ownerpw")
+        self.put(path_book + "contact.vcf", card, login="owner:ownerpw")
+        inside = datetime.datetime.now(datetime.timezone.utc).replace(
+            hour=12, minute=0, second=0, microsecond=0)
+        inside_end = inside + datetime.timedelta(hours=1)
+        inside_start_text = inside.strftime("%Y%m%dT%H%M%SZ")
+        inside_end_text = inside_end.strftime("%Y%m%dT%H%M%SZ")
+        inside_event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:inside-secret
+SUMMARY:Inside secret
+DTSTART:%s
+DTEND:%s
+END:VEVENT
+END:VCALENDAR
+""" % (inside_start_text, inside_end_text)
+        self.put(path_cal + "inside.ics", inside_event, login="owner:ownerpw")
+        busy = "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z"
+        inside_busy = "FREEBUSY;FBTYPE=BUSY:%s/%s" % (
+            inside_start_text, inside_end_text)
+        window = "start=20130901T000000Z&end=20130902T000000Z"
+        event_secrets = ("Hidden title", "Hidden details", "hidden-secret",
+                         "Inside secret", "inside-secret",
+                         "SUMMARY", "UID", "BEGIN:VEVENT")
+        freebusy_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T000000Z" end="20130902T000000Z"/>
+</C:free-busy-query>"""
+        calendar_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop>
+        <D:getetag />
+        <C:calendar-data />
+    </D:prop>
+    <C:filter>
+        <C:comp-filter name="VCALENDAR">
+            <C:comp-filter name="VEVENT" />
+        </C:comp-filter>
+    </C:filter>
+</C:calendar-query>"""
+
+        def assert_freebusy(answer: str, headers: Union[dict, None] = None,
+                            period: str = busy) -> None:
+            if headers is not None:
+                assert headers["Content-Type"].startswith("text/calendar")
+                assert "-freebusy.ics" in headers["Content-Disposition"]
+            assert answer.count("BEGIN:VFREEBUSY") == 1
+            assert period in answer
+            for secret in event_secrets:
+                assert secret not in answer
+
+        def make_token(permissions: str, actions: Union[dict, None] = None,
+                       path: str = path_cal) -> str:
+            json_dict: dict = {
+                "PathMapped": path,
+                "Permissions": permissions,
+                "Enabled": True,
+            }
+            if actions is not None:
+                json_dict["Actions"] = actions
+            _, _headers, answer = self._sharing_api_json(
+                "token", "create", check=200, login="owner:ownerpw",
+                json_dict=json_dict)
+            parsed = json.loads(answer)
+            assert parsed["Status"] == "success"
+            return parsed["PathOrToken"]
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            _, _headers, answer = self._sharing_api_json(
+                "all", "info", check=200, login="owner:ownerpw", json_dict={})
+            assert json.loads(answer)["SupportedActions"]["config"]["view"] == "str"
+
+            _, _headers, answer = self._sharing_api_json(
+                "token", "create", check=400, login="owner:ownerpw", json_dict={
+                    "PathMapped": path_cal,
+                    "Permissions": "f",
+                    "Enabled": True,
+                    "Actions": {"config": {"view": "calendar"}}})
+            assert "hidden-secret" not in answer
+
+            token_f = make_token("f")
+            _status, _headers, answer = self.request("GET", token_f, check=403)
+            for secret in event_secrets:
+                assert secret not in answer
+            _status, headers, answer = self.request(
+                "GET", token_f, check=200,
+                QUERY_STRING="view=freebusy&" + window)
+            assert_freebusy(answer, headers)
+            _status, headers, answer = self.request(
+                "HEAD", token_f, check=200,
+                QUERY_STRING="view=freebusy&" + window)
+            assert answer == ""
+            assert headers["Content-Type"].startswith("text/calendar")
+            assert headers["ETag"].startswith('"') and headers["ETag"].endswith('"')
+            _status, _headers, answer = self.request(
+                "GET", token_f + "event.ics", check=403,
+                QUERY_STRING="view=freebusy&" + window)
+            for secret in event_secrets:
+                assert secret not in answer
+            _status, headers, answer = self.request(
+                "REPORT", token_f, freebusy_query, check=200)
+            assert headers["Content-Type"].startswith("text/calendar")
+            assert busy in answer
+            for secret in event_secrets:
+                assert secret not in answer
+            _status, _headers, answer = self.request(
+                "REPORT", token_f, calendar_query, check=403)
+            for secret in event_secrets:
+                assert secret not in answer
+            self.put(token_f + "new.ics", event, check=403)
+            self.get(path_cal + "new.ics", check=404, login="owner:ownerpw")
+
+            token_read = make_token("rp")
+            _status, _headers, answer = self.request("GET", token_read, check=200)
+            assert "Hidden title" in answer
+            assert "hidden-secret" in answer
+
+            token_view = make_token("rp", {"config": {"view": "freebusy"}})
+            _status, headers, answer = self.request("GET", token_view, check=200)
+            assert_freebusy(answer, headers, inside_busy)
+            assert busy not in answer
+            _status, headers, answer = self.request("HEAD", token_view, check=200)
+            assert answer == ""
+            assert headers["Content-Type"].startswith("text/calendar")
+            assert "Last-Modified" not in headers
+            _status, headers, answer = self.request(
+                "GET", token_view, check=200, QUERY_STRING=window)
+            assert_freebusy(answer, headers)
+            _status, headers, answer = self.request(
+                "GET", token_view, check=200,
+                QUERY_STRING="view=freebusy&" + window)
+            assert_freebusy(answer, headers)
+            _status, _headers, answer = self.request(
+                "GET", token_view, check=400, QUERY_STRING="view=other")
+            for secret in event_secrets:
+                assert secret not in answer
+            _status, _headers, answer = self.request(
+                "GET", token_view + "event.ics", check=403)
+            for secret in event_secrets:
+                assert secret not in answer
+            self.request(
+                "PUT", token_view + "new.ics", event, check=405,
+                QUERY_STRING="view=freebusy")
+            self.put(token_view + "new.ics", event, check=403)
+            self.get(path_cal + "new.ics", check=404, login="owner:ownerpw")
+            _status, _headers, answer = self.request(
+                "REPORT", token_view, calendar_query, check=207)
+            assert "Hidden title" in answer
+            _status, answer = self.get(path_cal, login="owner:ownerpw")
+            assert "Hidden title" in answer
+
+            _, _headers, answer = self._sharing_api_json(
+                "token", "update", check=200, login="owner:ownerpw", json_dict={
+                    "PathOrToken": token_view,
+                    "Actions": {"config": {"view": sharing.SHARING_ACTIONS_DELETE_VALUE}}})
+            assert json.loads(answer)["Status"] == "success"
+            _status, _headers, answer = self.request("GET", token_view, check=200)
+            assert "Hidden title" in answer
+
+            token_f_view = make_token("f", {"config": {"view": "freebusy"}})
+            _status, headers, answer = self.request("GET", token_f_view, check=200)
+            assert_freebusy(answer, headers, inside_busy)
+            assert busy not in answer
+
+            token_book = make_token(
+                "r", {"config": {"view": "freebusy"}}, path_book)
+            _status, _headers, answer = self.request("GET", token_book, check=403)
+            assert "Hidden Person" not in answer
+            assert "contact-secret" not in answer
+            assert "BEGIN:VCARD" not in answer
+
+            _, _headers, answer = self._sharing_api_json(
+                "map", "create", check=200, login="owner:ownerpw", json_dict={
+                    "User": "user",
+                    "PathMapped": path_cal,
+                    "PathOrToken": path_shared,
+                    "Permissions": "rp",
+                    "Enabled": True,
+                    "Hidden": False,
+                    "Actions": {"config": {"view": "freebusy"}}})
+            assert json.loads(answer)["Status"] == "success"
+            self._sharing_api_json(
+                "map", "enable", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+            self._sharing_api_json(
+                "map", "unhide", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+            _status, _headers, answer = self.request(
+                "GET", path_shared, check=200, login="user:userpw")
+            assert "Hidden title" in answer
+            assert "hidden-secret" in answer
+
+    def test_sharing_api_map_freebusy(self) -> None:
+        """An f share lists free-busy for calendars and not for address books."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "collection_by_map": "True"},
+                        "rights": {"type": "owner_only"}})
+        path_cal = "/owner/cal-f/"
+        path_cal_shared = "/user/cal-f/"
+        path_wf = "/owner/cal-wf/"
+        path_wf_shared = "/user/cal-wf/"
+        path_book = "/owner/book-f/"
+        path_book_shared = "/user/book-f/"
+        self.mkcalendar(path_cal, login="owner:ownerpw")
+        self.mkcalendar(path_wf, login="owner:ownerpw")
+        self.create_addressbook(path_book, login="owner:ownerpw")
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-secret
+SUMMARY:Hidden title
+DTSTART:20130901T160000Z
+DTEND:20130901T170000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        card = """\
+BEGIN:VCARD
+VERSION:3.0
+UID:contact-secret
+FN:Hidden Person
+N:Person;Hidden;;;
+END:VCARD
+"""
+        self.put(path_cal + "event.ics", event, login="owner:ownerpw")
+        self.put(path_book + "contact.vcf", card, login="owner:ownerpw")
+        for path_mapped, path_shared, permissions in (
+                (path_cal, path_cal_shared, "f"),
+                (path_wf, path_wf_shared, "wf"),
+                (path_book, path_book_shared, "f")):
+            _, _headers, answer = self._sharing_api_json(
+                "map", "create", check=200, login="owner:ownerpw", json_dict={
+                    "User": "user",
+                    "PathMapped": path_mapped,
+                    "PathOrToken": path_shared,
+                    "Permissions": permissions,
+                    "Enabled": True,
+                    "Hidden": False})
+            assert json.loads(answer)["Status"] == "success"
+            self._sharing_api_json(
+                "map", "enable", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+            self._sharing_api_json(
+                "map", "unhide", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+
+        propfind_body = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop>
+        <D:current-user-privilege-set />
+        <D:supported-report-set />
+    </D:prop>
+</D:propfind>"""
+        _status, responses = self.propfind(
+            "/user/", propfind_body, login="user:userpw", HTTP_DEPTH="1")
+        assert path_cal_shared in responses
+        assert path_wf_shared in responses
+        assert path_book_shared in responses
+
+        def listed(path: str) -> tuple:
+            response = responses[path]
+            assert not isinstance(response, int)
+            status, privileges_prop = response["D:current-user-privilege-set"]
+            assert status == 200
+            privileges = [
+                xmlutils.make_human_tag(node.findall("*")[0].tag)
+                for node in privileges_prop.findall(xmlutils.make_clark("D:privilege"))]
+            status, reports_prop = response["D:supported-report-set"]
+            assert status == 200
+            reports = []
+            for supported in reports_prop.findall(xmlutils.make_clark("D:supported-report")):
+                reports.append(_supported_report_name(supported))
+            return privileges, reports
+
+        assert listed(path_cal_shared) == (
+            ["C:read-free-busy"], ["C:free-busy-query"])
+        assert listed(path_wf_shared) == (
+            ["C:read-free-busy", "D:write-content"], ["C:free-busy-query"])
+        assert listed(path_book_shared) == ([], [])
+
+        status, _headers, answer = self.request(
+            "GET", path_cal_shared, check=403, login="user:userpw")
+        assert "Hidden title" not in answer
+        assert "hidden-secret" not in answer
+        status, _headers, answer = self.request(
+            "PROPFIND", path_cal_shared, propfind_body, check=403,
+            login="user:userpw", HTTP_DEPTH="1")
+        assert "Hidden title" not in answer
+        assert path_cal + "event.ics" not in answer
+        self.propfind(path_book_shared, propfind_body, check=403, login="user:userpw")
+        _status, direct = self.propfind(
+            path_cal_shared, propfind_body, login="user:userpw")
+        response = direct[path_cal_shared]
+        assert not isinstance(response, int)
+        _status, privileges_prop = response["D:current-user-privilege-set"]
+        privileges = [
+            xmlutils.make_human_tag(node.findall("*")[0].tag)
+            for node in privileges_prop.findall(xmlutils.make_clark("D:privilege"))]
+        assert privileges == ["C:read-free-busy"]
+        self.put(path_cal_shared + "new.ics", event, check=403, login="user:userpw")
+        self.get(path_cal + "new.ics", check=404, login="owner:ownerpw")
+        status, _headers, answer = self.request(
+            "PROPFIND", "/user/", propfind_body, login="user:userpw",
+            HTTP_DEPTH="1", check=207)
+        assert "Hidden title" not in answer
+        assert "Hidden Person" not in answer
+        assert "contact-secret" not in answer
+
+        freebusy_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:free-busy-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <C:time-range start="20130901T000000Z" end="20130902T000000Z"/>
+</C:free-busy-query>"""
+        status, headers, answer = self.request(
+            "REPORT", path_cal_shared, freebusy_query, check=200, login="user:userpw")
+        assert headers["Content-Type"].startswith("text/calendar")
+        assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+        assert "Hidden title" not in answer
+        assert "hidden-secret" not in answer
+        status, _headers, answer = self.request(
+            "REPORT", path_book_shared, freebusy_query, check=403, login="user:userpw")
+        assert "Hidden Person" not in answer
+        assert "BEGIN:VFREEBUSY" not in answer
+
+        self.put(path_wf_shared + "event.ics", event, login="user:userpw")
+        _status, responses = self.propfind(
+            path_wf_shared, propfind_body, login="user:userpw")
+        assert listed(path_wf_shared) == (
+            ["C:read-free-busy", "D:write-content"], ["C:free-busy-query"])
 
     def test_sharing_api_map_report_access(self) -> None:
         """share-by-map API usage tests related to report."""

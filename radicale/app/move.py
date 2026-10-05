@@ -72,6 +72,10 @@ class ApplicationPartMove(ApplicationBase):
         access = Access(self._rights, user, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
+        if (("f" in access.permissions or "f" in access.parent_permissions) and
+                "r" not in access.permissions and
+                "r" not in access.parent_permissions):
+            return httputils.NOT_ALLOWED
         to_path = pathutils.sanitize_path(to_url.path)
         if not app_base._check_path_format(self._storage, to_path, self._validate_path_value):
             logger.warning("request contains invalid path: %r (not compliant to %r)", to_path, self._validate_path_value)

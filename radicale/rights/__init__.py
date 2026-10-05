@@ -25,6 +25,8 @@ Permissions:
   - r: read address book and calendar collections
   - i: subset of **r** that only allows direct access via HTTP method GET
        (CalDAV/CardDAV is susceptible to expensive search requests)
+  - f: read the free-busy time of a calendar, without event details
+       (**r** includes this)
   - W: write collections (excluding address books and calendars)
   - w: write address book and calendar collections
   - D: allow deleting a collection in case permit_delete_collection=False (>= 3.3.0)
@@ -55,7 +57,7 @@ from radicale import config, utils
 INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")
 
-INTERNAL_PERMISSIONS: str = "RriWwDdOoTtMmPpEe"
+INTERNAL_PERMISSIONS: str = "RrifWwDdOoTtMmPpEe"
 
 
 def load(configuration: "config.Configuration") -> "BaseRights":

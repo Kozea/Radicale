@@ -257,6 +257,12 @@ class ApplicationBase:
         return status, headers, content, None
 
 
+def _with_implied_freebusy(permissions: str) -> str:
+    if "r" in permissions and "f" not in permissions:
+        return permissions + "f"
+    return permissions
+
+
 class Access:
     """Helper class to check access rights of an item"""
 
@@ -277,8 +283,8 @@ class Access:
         self.permissions = self._rights.authorization(self.user, self.path)
         if permissions_filter is not None:
             self._permissions_filter = permissions_filter
-            permissions_filtered = intersect(self.permissions, permissions_filter)
-            self.permissions = permissions_filtered
+            self.permissions = intersect(
+                _with_implied_freebusy(self.permissions), permissions_filter)
         self._parent_permissions = None
 
     @property
@@ -289,8 +295,9 @@ class Access:
             self._parent_permissions = self._rights.authorization(
                 self.user, self.parent_path)
         if self._permissions_filter is not None:
-            parent_permissions_filtered = intersect(self._parent_permissions, self._permissions_filter)
-            self._parent_permissions = parent_permissions_filtered
+            self._parent_permissions = intersect(
+                _with_implied_freebusy(self._parent_permissions),
+                self._permissions_filter)
         return self._parent_permissions
 
     def check(self, permission: str,
@@ -312,3 +319,11 @@ class Access:
         return bool(rights.intersect(self.permissions, permissions) or (
             self.path != self.parent_path and
             rights.intersect(self.parent_permissions, parent_permissions)))
+
+    def allows_freebusy(self, item: Optional[types.CollectionOrItem] = None
+                        ) -> bool:
+        if item is not None and (
+                not isinstance(item, storage.BaseCollection) or
+                item.tag != "VCALENDAR"):
+            return False
+        return "r" in self.permissions or "f" in self.permissions

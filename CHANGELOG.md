@@ -1,6 +1,12 @@
 # Changelog
 
 ## 3.8.2.dev
+* Add: sharing/token: plain GET and HEAD serve free/busy when Actions config `view` is `freebusy`
+* Add: WebUI read-only free/busy calendar URL under each calendar
+* Add: read-only free/busy view via GET ?view=freebusy
+* Fix: free-busy REPORT returns one VFREEBUSY with FREEBUSY periods and no event details (RFC 4791)
+* Add: rights permission `f` to read free-busy time without event details
+* Fix: free-busy REPORT does not expand transparent recurrences
 * Fix: sharing/bday-conversion: add proper RRULE and RECURRENCE-ID in case of "age" support is triggered
 * Fix: sharing/bday-conversion: do not serve item.vcf in parallel of item.ics
 * Fix: sharing/bday-conversion: adjust etag depending on template (item) or content (collection)

@@ -847,6 +847,14 @@ This is an automated message. Please do not reply.""",
         ("max_freebusy_occurrence", {
             "value": "10000",
             "help": "number of free-busy occurrences per event when reporting",
+            "type": positive_int}),
+        ("freebusy_view_past_days", {
+            "value": "365",
+            "help": "days before today in the default free-busy view",
+            "type": positive_int}),
+        ("freebusy_view_future_days", {
+            "value": "365",
+            "help": "days after today in the default free-busy view",
             "type": positive_int})]))
     ])
 

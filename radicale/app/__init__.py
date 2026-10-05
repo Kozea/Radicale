@@ -45,7 +45,7 @@ from radicale import config, httputils, log, pathutils, types, utils
 from radicale.app import base as app_base
 from radicale.app.base import ApplicationBase
 from radicale.app.delete import ApplicationPartDelete
-from radicale.app.get import ApplicationPartGet
+from radicale.app.get import ApplicationPartGet, requests_freebusy_view
 from radicale.app.head import ApplicationPartHead
 from radicale.app.mkcalendar import ApplicationPartMkcalendar
 from radicale.app.mkcol import ApplicationPartMkcol
@@ -672,8 +672,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     profiler_active = True
 
             try:
-                status, headers, answer, xml_request = function(
-                    environ, base_prefix, path, user, request_info)
+                if (requests_freebusy_view(environ) and
+                        request_method not in ("GET", "HEAD")):
+                    status, headers, answer, xml_request = httputils.METHOD_NOT_ALLOWED
+                else:
+                    status, headers, answer, xml_request = function(
+                        environ, base_prefix, path, user, request_info)
             except PermissionError as e:
                 logger.error("PermissionError: %s", e)
                 status, headers, answer, xml_request = httputils.INTERNAL_SERVER_ERROR
