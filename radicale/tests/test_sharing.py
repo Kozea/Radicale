@@ -20,10 +20,12 @@ Radicale tests related to sharing.
 
 """
 
+import csv
 import datetime
 import json
 import logging
 import os
+import pickle
 import re
 import sys
 import tempfile
@@ -9069,3 +9071,214 @@ permissions: RrWw""")
 
             json_dict['PathMapped'] = path_mapped_o2
             _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner2:owner2pw", json_dict=json_dict)
+
+    def test_sharing_api_caldav_carddav_workflow(self) -> None:
+        """Share a calendar by map and an address book by token, then use both."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        path_calendar = "/owner/coverage-calendar.ics/"
+        path_book = "/owner/coverage-contacts.vcf/"
+        path_shared = "/user/coverage-calendar.ics/"
+        self.mkcalendar(path_calendar, login="owner:ownerpw")
+        self.create_addressbook(path_book, login="owner:ownerpw")
+        for name in ("event1.ics", "todo1.ics", "journal1.ics"):
+            self.put(path_calendar + name, get_file_content(name), login="owner:ownerpw")
+        self.put(path_book + "contact1.vcf", get_file_content("contact1.vcf"), login="owner:ownerpw")
+
+        calendar_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop>
+        <D:getetag />
+    </D:prop>
+    <C:filter>
+        <C:comp-filter name="VCALENDAR" />
+    </C:filter>
+</C:calendar-query>"""
+        addressbook_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+    <D:prop>
+        <D:getetag />
+    </D:prop>
+    <C:filter>
+        <C:prop-filter name="FN" />
+    </C:filter>
+</C:addressbook-query>"""
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** workflow: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            _, _headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict={
+                "User": "user",
+                "PathMapped": path_calendar,
+                "PathOrToken": path_shared,
+                "Permissions": "r",
+                "Enabled": True,
+                "Hidden": False,
+            })
+            assert json.loads(answer)["Status"] == "success"
+            self._sharing_api_json("map", "enable", check=200, login="user:userpw", json_dict={
+                "PathOrToken": path_shared,
+            })
+            # HiddenByUser stays set until the recipient unhides the share.
+            self._sharing_api_json("map", "unhide", check=200, login="user:userpw", json_dict={
+                "PathOrToken": path_shared,
+            })
+
+            _, _headers, answer = self._sharing_api_json("token", "create", check=200, login="owner:ownerpw", json_dict={
+                "PathMapped": path_book,
+                "Permissions": "rwp",
+                "Enabled": True,
+                "Hidden": False,
+            })
+            token = json.loads(answer)["PathOrToken"]
+            assert token.startswith("/.token/v1/")
+
+            _, responses = self.propfind("/user/", """\
+<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:">
+    <prop>
+        <resourcetype />
+    </prop>
+</propfind>""", login="user:userpw", HTTP_DEPTH="1")
+            assert path_shared in responses
+
+            _, _headers, answer = self.request("GET", path_shared, check=200, login="user:userpw")
+            assert "UID:event1" in answer
+            assert "UID:todo" in answer
+            assert "UID:journal1" in answer
+            _, responses = self.report(path_shared, calendar_query, login="user:userpw")
+            for name in ("event1.ics", "todo1.ics", "journal1.ics"):
+                assert path_shared + name in responses
+            self.put(path_shared + "event2.ics", get_file_content("event2.ics"), check=403, login="user:userpw")
+
+            _, _headers, answer = self.request("GET", token + "contact1.vcf", check=200)
+            assert "FN:Contact" in answer
+            _, responses = self.report(token, addressbook_query)
+            assert token + "contact1.vcf" in responses
+            added_name = "contact-added-%s.vcf" % db_type
+            added = """\
+BEGIN:VCARD
+VERSION:3.0
+UID:contact-added-%s
+FN:Added %s
+N:Added;%s;;;
+END:VCARD
+""" % (db_type, db_type, db_type)
+            self.put(token + added_name, added, check=201)
+            _, _headers, answer = self.request("GET", path_book + added_name, check=200, login="owner:ownerpw")
+            assert "UID:contact-added-%s" % db_type in answer
+
+            _, _headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict={})
+            listed = json.loads(answer)
+            assert listed["Lines"] == 1
+            assert listed["Content"][0]["PathOrToken"] == path_shared
+            _, _headers, answer = self._sharing_api_json("token", "list", check=200, login="owner:ownerpw", json_dict={})
+            listed = json.loads(answer)
+            assert listed["Lines"] == 1
+            assert listed["Content"][0]["PathOrToken"] == token
+
+            if db_type == "files":
+                map_dir = os.path.join(self.colpath, "collection-db", "files", "map")
+                os.mkdir(os.path.join(map_dir, "ignored-dir"))
+                with open(os.path.join(map_dir, "bad-version"), "wb") as handle:
+                    pickle.dump(("9", {"ShareType": "map"}), handle)
+                _, _headers, answer = self._sharing_api_json("map", "list", check=200, login="owner:ownerpw", json_dict={})
+                assert json.loads(answer)["Lines"] == 1
+
+            self._sharing_api_json("map", "delete", check=200, login="owner:ownerpw", json_dict={
+                "User": "user",
+                "PathMapped": path_calendar,
+                "PathOrToken": path_shared,
+            })
+            self.request("GET", path_shared, check=404, login="user:userpw")
+            self._sharing_api_json("token", "delete", check=200, login="owner:ownerpw", json_dict={
+                "PathOrToken": token,
+            })
+            self.request("GET", token, check=403)
+
+    def _sharing_csv_path(self) -> str:
+        return os.path.join(self.colpath, "collection-db", "sharing.csv")
+
+    def _sharing_csv_rows(self) -> list:
+        with open(self._sharing_csv_path(), newline="", encoding="utf-8") as handle:
+            return list(csv.reader(handle, delimiter=";"))
+
+    def _write_sharing_csv_rows(self, rows: list) -> None:
+        with open(self._sharing_csv_path(), "w", newline="", encoding="utf-8") as handle:
+            csv.writer(handle, delimiter=";").writerows(rows)
+
+    def _expect_sharing_disabled(self) -> None:
+        self.configure({"sharing": {"type": "csv", "database_path": ""}})
+        self._sharing_api_json("all", "info", check=404, login="owner:ownerpw", json_dict={})
+
+    def test_sharing_csv_rejects_corrupt_database(self) -> None:
+        """A corrupt CSV sharing database disables sharing instead of crashing."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "database_path": "",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "rights": {"type": "owner_only"}})
+        self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict={})
+        path_calendar = "/owner/corrupt-calendar.ics/"
+        path_shared = "/user/corrupt-calendar.ics/"
+        self.mkcalendar(path_calendar, login="owner:ownerpw")
+        _, _headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict={
+            "User": "user",
+            "PathMapped": path_calendar,
+            "PathOrToken": path_shared,
+            "Permissions": "r",
+            "Enabled": True,
+            "Hidden": False,
+        })
+        assert json.loads(answer)["Status"] == "success"
+
+        original = self._sharing_csv_rows()
+        assert len(original) >= 2
+        header = original[0]
+        data = original[1]
+        assert "EnabledByOwner" in header
+        assert "TimestampCreated" in header
+        assert "Properties" in header
+
+        def disabled_copy() -> list:
+            return [list(header), list(data)]
+
+        bad_bool = disabled_copy()
+        bad_bool[1][header.index("EnabledByOwner")] = "maybe"
+        bad_int = disabled_copy()
+        bad_int[1][header.index("TimestampCreated")] = "abc"
+        bad_json = disabled_copy()
+        bad_json[1][header.index("Properties")] = "{bad"
+        duplicate = disabled_copy()
+        duplicate.append(list(data))
+        extra = disabled_copy()
+        extra[1].append("oops")
+        for rows in (bad_bool, bad_int, bad_json, duplicate, extra):
+            self._write_sharing_csv_rows(rows)
+            self._expect_sharing_disabled()
+
+        os.remove(self._sharing_csv_path())
+        os.mkdir(self._sharing_csv_path())
+        self._expect_sharing_disabled()
+
+        missing = os.path.join(self.colpath, "missing-parent", "nested", "sharing.csv")
+        self.configure({"sharing": {"type": "csv", "database_path": missing}})
+        self._sharing_api_json("all", "info", check=404, login="owner:ownerpw", json_dict={})
