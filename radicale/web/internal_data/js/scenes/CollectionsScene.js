@@ -26,7 +26,7 @@ import { Collection, CollectionType, Permission } from "../models/collection.js"
 import { extract_title } from "../utils/collection_utils.js";
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
-import { bytesToHumanReadable, get_element, get_element_by_id } from "../utils/misc.js";
+import { bytesToHumanReadable, decode_and_strip_trailing_slashes, get_element, get_element_by_id, strip_leading_slashes, strip_trailing_slashes } from "../utils/misc.js";
 import { displayPermissions } from "../utils/permissions.js";
 import { UrlTextHandler } from "../utils/url_text.js";
 import { CreateEditCollectionScene } from "./CreateEditCollectionScene.js";
@@ -43,10 +43,14 @@ import { UploadCollectionScene } from "./UploadCollectionScene.js";
  * @returns {import("../api/sharing.js").Share | undefined}
  */
 function find_matching_map_share(collectionHref, shares) {
-    let collHref = decodeURIComponent(collectionHref || "").replace(/\/+$/, "");
+    let collHref = decode_and_strip_trailing_slashes(collectionHref);
     return (shares || []).find(s => {
         if (s.ShareType !== "map") return false;
-        let shareTarget = decodeURIComponent(s.PathOrToken || "").replace(/\/+$/, "");
+        let shareMapped = decode_and_strip_trailing_slashes(s.PathMapped);
+        if (collHref === shareMapped || collHref.endsWith("/" + strip_leading_slashes(shareMapped))) {
+            return false;
+        }
+        let shareTarget = decode_and_strip_trailing_slashes(s.PathOrToken);
         return collHref === shareTarget || collHref.endsWith(shareTarget);
     });
 }
@@ -338,7 +342,7 @@ export class CollectionsScene {
         download_btn.href = href;
         download_btn.onclick = (event) => {
             event.preventDefault();
-            let fallback = (collection.displayname || collection.href).replace(/\/+$/, "") + (collection.type === CollectionType.ADDRESSBOOK ? ".vcf" : ".ics");
+            let fallback = strip_trailing_slashes(collection.displayname || collection.href) + (collection.type === CollectionType.ADDRESSBOOK ? ".vcf" : ".ics");
             this._download_file(href, fallback);
         };
         if (collection.type == CollectionType.WEBCAL) {

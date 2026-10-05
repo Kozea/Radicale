@@ -164,3 +164,39 @@ export function trim_to_max(str, max) {
     }
     return str;
 }
+
+/**
+ * Strip trailing slashes from a string.
+ * @param {string} str
+ * @return {string}
+ */
+export function strip_trailing_slashes(str) {
+    return (str || "").replace(/\/+$/, "");
+}
+
+/**
+ * Strip leading slashes from a string.
+ * @param {string} str
+ * @return {string}
+ */
+export function strip_leading_slashes(str) {
+    return (str || "").replace(/^\/+/, "");
+}
+
+/**
+ * Strip leading and trailing slashes from a string.
+ * @param {string} str
+ * @return {string}
+ */
+export function strip_slashes(str) {
+    return (str || "").replace(/^\/+|\/+$/g, "");
+}
+
+/**
+ * Decode a URI component and strip trailing slashes.
+ * @param {string} str
+ * @return {string}
+ */
+export function decode_and_strip_trailing_slashes(str) {
+    return strip_trailing_slashes(decodeURIComponent(str || ""));
+}

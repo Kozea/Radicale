@@ -25,7 +25,7 @@ import { extract_title, update_title_and_description } from "../utils/collection
 import { collectionsCache } from "../utils/collections_cache.js";
 import { ErrorHandler } from "../utils/error.js";
 import { FormValidator, validate_href, validate_integer, validate_non_empty, validate_not_empty_or_equals } from "../utils/form_validator.js";
-import { get_element, get_element_by_id, onCleanHREFinput, random_uuid } from "../utils/misc.js";
+import { get_element, get_element_by_id, onCleanHREFinput, random_uuid, strip_slashes } from "../utils/misc.js";
 import { Scene, is_current_scene, pop_scene } from "./scene_manager.js";
 
 /**
@@ -340,7 +340,7 @@ export class CreateEditShareScene {
                 new_actions.config = new_config;
             }
 
-            let cleanHref = this._sharehref_input.value.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+            let cleanHref = strip_slashes(this._sharehref_input.value.trim());
             let userPrefix = isGroupOrRealm ? "{user}" : userVal;
             let pathOrToken = (this._edit && this._share)
                 ? this._share.PathOrToken
