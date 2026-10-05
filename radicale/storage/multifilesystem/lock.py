@@ -24,7 +24,7 @@ import shlex
 import signal
 import subprocess
 import sys
-from typing import Iterator
+from typing import Any, Iterator
 
 from radicale import config, pathutils, types
 from radicale.log import logger
@@ -69,13 +69,17 @@ class StoragePartLock(StorageBase):
                 debug = logger.isEnabledFor(logging.DEBUG)
                 # Use new process group for child to prevent terminals
                 # from sending SIGINT etc.
-                preexec_fn = None
-                creationflags = 0
+
+                popen_kwargs: dict[str, Any] = {}
                 if sys.platform == "win32":
-                    creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
-                else:
+                    popen_kwargs["creationflags"] = (
+                        subprocess.CREATE_NEW_PROCESS_GROUP)
+                elif sys.version_info < (3, 11):
                     # Process group is also used to identify child processes
-                    preexec_fn = os.setpgrp
+                    popen_kwargs["preexec_fn"] = os.setpgrp
+                else:
+                    popen_kwargs["process_group"] = 0
+
                 # optional argument
                 path = kwargs.get('path', "")
                 request = kwargs.get('request', "NONE")
@@ -99,11 +103,12 @@ class StoragePartLock(StorageBase):
                 logger.debug("Executing storage hook: '%s'", command)
                 try:
                     p = subprocess.Popen(
-                        command, stdin=subprocess.DEVNULL,
+                        command,
+                        stdin=subprocess.DEVNULL,
                         stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
                         stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
-                        shell=True, universal_newlines=True, preexec_fn=preexec_fn,
-                        cwd=self._filesystem_folder, creationflags=creationflags)
+                        shell=True, universal_newlines=True, cwd=self._filesystem_folder,
+                        **popen_kwargs)
                 except Exception as e:
                     logger.error(
                         "Execution of storage hook not successful on 'Popen': %s",
