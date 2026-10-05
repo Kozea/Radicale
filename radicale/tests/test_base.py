@@ -2410,10 +2410,10 @@ END:VCALENDAR
         assert (datetime.datetime(2013, 9, 8, 20, 0, tzinfo=utc), window_end, "BUSY") in periods
         for start, end, _fbtype in periods:
             assert window_start <= start and end <= window_end
-        types = {}
+        fbtypes: dict[str, int] = {}
         for _start, _end, fbtype_val in periods:
-            types[fbtype_val] = types.get(fbtype_val, 0) + 1
-        assert types == {'BUSY': 4, 'FREE': 1}
+            fbtypes[fbtype_val] = fbtypes.get(fbtype_val, 0) + 1
+        assert fbtypes == {'BUSY': 4, 'FREE': 1}
 
         status, headers, answer = self.request(
             "REPORT", posixpath.join(calendar_path, "event1.ics"),

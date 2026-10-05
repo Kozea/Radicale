@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.8.2.dev
+* Add: sharing/token: plain GET and HEAD serve free/busy when Actions config `view` is `freebusy`
 * Add: WebUI read-only free/busy calendar URL under each calendar
 * Add: read-only free/busy view via GET ?view=freebusy
 * Fix: free-busy REPORT returns one VFREEBUSY with FREEBUSY periods and no event details (RFC 4791)

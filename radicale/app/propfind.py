@@ -25,7 +25,7 @@ import socket
 import xml.etree.ElementTree as ET
 from http import client
 from typing import (Dict, Iterable, Iterator, List, Optional, Sequence, Tuple,
-                    Union)
+                    Union, cast)
 
 from radicale import (httputils, pathutils, rights, sharing, storage, types,
                       utils, xmlutils)
@@ -683,7 +683,9 @@ class ApplicationPartPropfind(ApplicationBase):
                         continue
                     entry_permission = "wf" if writable else "f"
                     filtered_items.append((entry, entry_permission, entry_permissions))
-                item_list = filtered_items
+                item_list = cast(
+                    List[Tuple[types.CollectionOrItem, str, str]],
+                    filtered_items)
             len_item_list = len(item_list)
             for item, permission, raw_permissions in item_list:
                 if self._sharing._enabled and share:

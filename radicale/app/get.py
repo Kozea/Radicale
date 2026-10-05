@@ -75,7 +75,20 @@ def _parse_freebusy_view_time(value: str) -> datetime.datetime:
 def requests_freebusy_view(environ: types.WSGIEnviron) -> bool:
     query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
     view = query.get("view")
-    return bool(view) and "freebusy" in view
+    return view is not None and "freebusy" in view
+
+
+def share_forces_freebusy_view(share: Union[dict, None]) -> bool:
+    """A token can request the free/busy view without ``?view=freebusy``."""
+    if not share or share.get("ShareType") != "token":
+        return False
+    actions = share.get("Actions")
+    if not isinstance(actions, dict):
+        return False
+    config = actions.get("config")
+    if not isinstance(config, dict):
+        return False
+    return config.get("view") == "freebusy"
 
 
 class ApplicationPartGet(ApplicationBase):
@@ -251,6 +264,20 @@ class ApplicationPartGet(ApplicationBase):
                 else:
                     logger.trace("GET/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
+        if share_forces_freebusy_view(share):
+            query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
+            view = query.get("view")
+            if view is None:
+                forced_environ = dict(environ)
+                current = str(forced_environ.get("QUERY_STRING") or "")
+                if current:
+                    forced_environ["QUERY_STRING"] = current + "&view=freebusy"
+                else:
+                    forced_environ["QUERY_STRING"] = "view=freebusy"
+                return self._freebusy_view(
+                    forced_environ, path, user, access, share)
+            if view != ["freebusy"]:
+                return httputils.BAD_REQUEST
         if requests_freebusy_view(environ):
             return self._freebusy_view(environ, path, user, access, share)
         if not access.check("r") and "i" not in access.permissions:

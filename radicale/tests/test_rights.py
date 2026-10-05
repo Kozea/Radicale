@@ -26,6 +26,12 @@ from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
 
+def _supported_report_name(supported):
+    report = supported.find(xmlutils.make_clark("D:report"))
+    assert report is not None
+    return xmlutils.make_human_tag(list(report)[0].tag)
+
+
 class TestBaseRightsRequests(BaseTest):
     """Tests basic requests with rights."""
 
@@ -258,8 +264,7 @@ END:VCALENDAR
         assert status == 200
         reports = []
         for supported in reports_prop.findall(xmlutils.make_clark("D:supported-report")):
-            report = supported.find(xmlutils.make_clark("D:report"))
-            reports.append(xmlutils.make_human_tag(list(report)[0].tag))
+            reports.append(_supported_report_name(supported))
         assert reports == ["C:free-busy-query"]
         status, _headers, answer = self.request(
             "PROPFIND", calendar_path, propfind_body, check=403,
@@ -281,8 +286,7 @@ END:VCALENDAR
         _status, reports_prop = response["D:supported-report-set"]
         reports = []
         for supported in reports_prop.findall(xmlutils.make_clark("D:supported-report")):
-            report = supported.find(xmlutils.make_clark("D:report"))
-            reports.append(xmlutils.make_human_tag(list(report)[0].tag))
+            reports.append(_supported_report_name(supported))
         assert "C:free-busy-query" in reports
         assert "C:calendar-query" in reports
 
@@ -488,8 +492,7 @@ END:VCALENDAR
         assert status == 200
         reports = []
         for supported in reports_prop.findall(xmlutils.make_clark("D:supported-report")):
-            report = supported.find(xmlutils.make_clark("D:report"))
-            reports.append(xmlutils.make_human_tag(list(report)[0].tag))
+            reports.append(_supported_report_name(supported))
         assert reports == ["C:free-busy-query"]
         status, _headers, answer = self.request(
             "MOVE", calendar_path + "event.ics", check=403, login="other:bepo",
@@ -590,8 +593,7 @@ END:VCALENDAR
             assert status == 200
             reports = []
             for supported in reports_prop.findall(xmlutils.make_clark("D:supported-report")):
-                report = supported.find(xmlutils.make_clark("D:report"))
-                reports.append(xmlutils.make_human_tag(list(report)[0].tag))
+                reports.append(_supported_report_name(supported))
             status, _prop = response["D:getcontentlength"]
             return privileges, reports, status
 

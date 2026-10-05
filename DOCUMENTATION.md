@@ -2292,6 +2292,12 @@ days ahead. `0` ends the window at midnight UTC today.
 
 Default: 365
 
+A share-by-token can omit `?view=freebusy`. Set that token's Actions
+config `view` to `freebusy`. Plain `GET` and `HEAD` of the token then
+use this view, including an optional `start` and `end`. Any other
+`view` value is rejected. Other methods keep the token permissions.
+See [Collection Sharing](https://github.com/Kozea/Radicale/blob/master/SHARING.md).
+
 #### [sharing]
 
 _(>= 3.7.0)_
