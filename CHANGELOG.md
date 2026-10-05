@@ -3,6 +3,7 @@
 ## 3.8.2.dev
 * Add: tests: sharing API plus CalDAV/CardDAV workflow and corrupt CSV handling (covers #2259)
 * Add: tests: mocked LDAP, IMAP, OAuth2 and PAM authentication servers (covers #2259)
+* Improve: storage hook: avoid using preexc_fn, use process_group
 * Add: sharing/token: plain GET and HEAD serve free/busy when Actions config `view` is `freebusy`
 * Add: WebUI read-only free/busy calendar URL under each calendar
 * Add: read-only free/busy view via GET ?view=freebusy
