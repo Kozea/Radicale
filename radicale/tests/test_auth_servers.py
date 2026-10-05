@@ -357,10 +357,12 @@ class TestAuthServers(BaseTest):
         secret = os.path.join(self.colpath, "empty.secret")
         with open(secret, "w", encoding="utf-8") as handle:
             handle.write("\n")
+        # A non-empty configured secret must not hide a file that rstrips to empty.
         with pytest.raises(RuntimeError, match="ldap_secret"):
             self.configure({"auth": {"type": "ldap", "ldap_security": "none",
                                      "ldap_ssl_verify_mode": "REQUIRED",
                                      "ldap_reader_dn": "cn=reader",
+                                     "ldap_secret": "not-from-file",
                                      "ldap_secret_file": secret}})
 
     def test_ldap_missing_module(self) -> None:
