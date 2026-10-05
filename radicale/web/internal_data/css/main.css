@@ -635,6 +635,15 @@ td .url-input-wrapper input {
     margin-bottom: 15px;
 }
 
+#collectionsscene article .url-caption {
+    display: block;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: normal;
+    text-align: left;
+    padding-bottom: 2px;
+}
+
 .copy-btn {
     flex: none;
     margin-left: -30px;

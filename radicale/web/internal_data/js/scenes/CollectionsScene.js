@@ -252,6 +252,9 @@ export class CollectionsScene {
         /** @type {HTMLElement} */ let share_btn = get_element(node, "[data-name=share]");
         /** @type {HTMLAnchorElement} */ let download_btn = /** @type {HTMLAnchorElement} */ (get_element(node, "[data-name=download]"));
         /** @type {HTMLButtonElement} */ let copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-url]"));
+        /** @type {HTMLElement} */ let freebusy_wrapper = get_element(node, "[data-name=freebusy-url-wrapper]");
+        /** @type {HTMLInputElement} */ let freebusy_url_form = /** @type {HTMLInputElement} */ (get_element(node, "[data-name=freebusy-url]"));
+        /** @type {HTMLButtonElement} */ let freebusy_copy_btn = /** @type {HTMLButtonElement} */ (get_element(node, "[data-name=copy-freebusy-url]"));
         /** @type {HTMLElement} */ let permissions_container = get_element(node, "[data-name=permissions]");
         /** @type {HTMLElement} */ let share_option = get_element(node, "[data-name=shareoption]");
         if (collection.color) {
@@ -335,6 +338,14 @@ export class CollectionsScene {
         }
         let href = window.location.origin + collection.href;
         new UrlTextHandler(url_form, copy_btn).setHref(href);
+        let bday_transform = Boolean(share &&
+            (share.Conversion || "").toLowerCase() === "bday");
+        if (CollectionType.is_subset(CollectionType.CALENDAR, collection.type) &&
+                !bday_transform) {
+            freebusy_wrapper.classList.remove("hidden");
+            new UrlTextHandler(freebusy_url_form, freebusy_copy_btn).setHref(
+                href + "?view=freebusy");
+        }
         download_btn.href = href;
         download_btn.onclick = (event) => {
             event.preventDefault();

@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.8.2.dev
+* Add: WebUI free/busy URL under each calendar
 * Add: read-only free/busy view via GET ?view=freebusy
 * Fix: free-busy REPORT returns one VFREEBUSY with FREEBUSY periods and no event details (RFC 4791)
 * Add: rights permission `f` to read free-busy time without event details
