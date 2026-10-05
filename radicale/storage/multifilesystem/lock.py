@@ -107,7 +107,7 @@ class StoragePartLock(StorageBase):
                         stdin=subprocess.DEVNULL,
                         stdout=subprocess.PIPE if debug else subprocess.DEVNULL,
                         stderr=subprocess.PIPE if debug else subprocess.DEVNULL,
-                        shell=True, universal_newlines=True, cwd=self._filesystem_folder,
+                        shell=True, text=True, cwd=self._filesystem_folder,
                         **popen_kwargs)
                 except Exception as e:
                     logger.error(
