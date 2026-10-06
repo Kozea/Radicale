@@ -288,7 +288,7 @@ jobs:
       - name: Install tox
         run: pip install tox
       - name: Lint
-        run: tox -c pyproject.toml -e flake8,mypy,isort
+        run: tox -c pyproject.toml -e flake8,isort,mypy
 
   htmlvalidator:
     name: HTML Validator
