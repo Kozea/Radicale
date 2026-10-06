@@ -222,10 +222,11 @@ commands_pre = [["playwright", "install", "chromium"]]
 commands = [["pytest", "integ_tests"]]
 
 [tool.tox.env.caldav_compat_test]
+description = "Server: run caldav compatibility tests"
 extras = ["caldav_test"]
 deps = [
     "caldav",
-    "caldav_server_tester",
+    "caldav_server_tester==1.2.0",  # synchronize version with .github/workflows/test.yml#caldav-compat-test
     "pytest"
 ]
 commands = [["pytest", "caldav_compat_tests"]]

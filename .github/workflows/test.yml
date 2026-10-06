@@ -328,6 +328,7 @@ jobs:
       # Pinned to a known-good release; bump deliberately (see
       # caldav_compat_tests/README.md) and update EXPECTED_DEVIATIONS
       # in the same PR if the new version changes observed behaviour.
+      # synchronize version with pyproject.toml#tool.tox.env.caldav_compat_test
       CALDAV_SERVER_TESTER_VERSION: '1.2.0'
     steps:
       - uses: actions/checkout@v5
