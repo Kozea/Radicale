@@ -29,12 +29,25 @@ from typing import Any, Optional, Union
 from unittest.mock import patch
 from urllib.parse import quote
 
-import ldap3
 import pytest
 
 from radicale import xmlutils
 from radicale.auth import ldap as ldap_auth
 from radicale.tests import BaseTest
+
+skip_ldap = False
+try:
+    import ldap3
+except ModuleNotFoundError:
+    skip_ldap = True
+    pass
+
+skip_pam = False
+try:
+    import pam
+except ModuleNotFoundError:
+    skip_pam = True
+    pass
 
 
 def _principal(test: BaseTest, login: str, check: int = 207) -> str:
@@ -339,6 +352,7 @@ class TestAuthServers(BaseTest):
     def _patch_ldap3(self):
         return patch.multiple(ldap3, Server=_FakeServer, Connection=_FakeConnection, Tls=_FakeTls)
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap_rejects_bad_config(self) -> None:
         ldap_auth.Auth._ldap_attributes = []
         # configure() keeps earlier values, so each attempt resets the others.
@@ -377,6 +391,7 @@ class TestAuthServers(BaseTest):
         finally:
             sys.modules.update(removed)
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_login_groups_user_attribute_and_escape(self) -> None:
         state = _Ldap3State()
         state.add_user("Owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {
@@ -400,6 +415,7 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
         assert "(cn=a\\28b\\29)" in state.filters
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_scalar_attributes_and_group_search(self) -> None:
         state = _Ldap3State()
         user_dn = "uid=owner,ou=people,dc=example,dc=com"
@@ -426,6 +442,7 @@ class TestAuthServers(BaseTest):
         assert any("(member=" in item for item in state.filters)
         assert getattr(self.application._auth, "_ldap_group_base") == "ou=groups,dc=example,dc=com"
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_group_search_failure_keeps_attribute_groups(self) -> None:
         state = _Ldap3State()
         state.group_members_attr = "member"
@@ -440,6 +457,7 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "owner:secret") == "/owner/"
         assert self.application._auth._groups == {"family"}
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_tls_modes_secret_file_and_quirks(self) -> None:
         secret = os.path.join(self.colpath, "ldap.secret")
         with open(secret, "w", encoding="utf-8") as handle:
@@ -496,6 +514,7 @@ class TestAuthServers(BaseTest):
         with self._patch_ldap3():
             assert _principal(self, "owner:secret") == "/owner/"
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_login_failures(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         state = _Ldap3State()
@@ -741,9 +760,8 @@ class TestAuthServers(BaseTest):
         assert "client_secret" not in calls[-1][1]
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+    @pytest.mark.skipif(skip_pam is True, reason="No PAM module found")
     def test_pam(self) -> None:
-        import pam
-
         class Pw:
             def __init__(self, uid: int, gid: int) -> None:
                 self.pw_uid = uid
