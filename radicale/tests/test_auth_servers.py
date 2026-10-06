@@ -740,6 +740,7 @@ class TestAuthServers(BaseTest):
         assert headers["Content-Type"] == "application/x-www-form-urlencoded"
         assert "client_secret" not in calls[-1][1]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
     def test_pam(self) -> None:
         import pam
 
