@@ -60,6 +60,7 @@ min_version = "4.0"
 envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "caldav_compat_test", "html5validator"]
 
 [tool.tox.env.py]
+description = "Server: run 'pytest' (incl. coverage report)"
 extras = ["test"]
 deps = [
     "pytest",
@@ -68,6 +69,7 @@ deps = [
 commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
 
 [tool.tox.env.py_loglevel_info]
+description = "Server: run 'pytest' with log level 'INFO'"
 extras = ["test"]
 deps = [
     "pytest"
@@ -75,6 +77,7 @@ deps = [
 commands = [["pytest", "-r", "s", "--log-level", "INFO", "."]]
 
 [tool.tox.env.py_radicale_loglevel_info]
+description = "Server: run 'pytest' with radicale  on log level 'INFO'"
 extras = ["test"]
 setenv = { PYTEST_RADICALE_LOGLEVEL = "info" }
 deps = [
@@ -83,6 +86,7 @@ deps = [
 commands = [["pytest", "-r", "s", "--log-level", "INFO", "."]]
 
 [tool.tox.env.py_radicale_loglevel_trace]
+description = "Server: run 'pytest' with radicale  on log level 'TRACE'"
 extras = ["test"]
 setenv = { PYTEST_RADICALE_LOGLEVEL = "trace" }
 deps = [
@@ -91,6 +95,7 @@ deps = [
 commands = [["pytest", "-r", "s", "--log-level", "5", "."]]
 
 [tool.tox.env.py_filesystem_vfat]
+description = "Server: run 'pytest' with collection storage filesystem 'vfat' (on Linux)"
 allowlist_externals = [ "sudo", "dd", "mkfs.vfat", "mkdir", "rm", "rmdir", "chmod" ]
 extras = ["test"]
 deps = [
@@ -118,6 +123,7 @@ commands_post = [
 ]
 
 [tool.tox.env.py_filesystem_vfat_utf8]
+description = "Server: run 'pytest' with collection storage filesystem 'vfat+utf8' (on Linux)"
 allowlist_externals = [ "sudo", "dd", "mkfs.vfat", "mkdir", "rm", "rmdir", "chmod" ]
 extras = ["test"]
 deps = [
@@ -145,6 +151,7 @@ commands_post = [
 ]
 
 [tool.tox.env.py_filesystem_hfsplus]
+description = "Server: run 'pytest' with collection storage filesystem 'hfsplus' (on Linux)"
 # Fedora
 allowlist_externals = [ "sudo", "dd", "mkfs.hfsplus", "mkdir", "rm", "rmdir", "chmod" ]
 extras = ["test"]
@@ -173,6 +180,7 @@ commands_post = [
 ]
 
 [tool.tox.env.py_filesystem_ntfs]
+description = "Server: run 'pytest' with collection storage filesystem 'ntfs' (on Linux)"
 allowlist_externals = [ "sudo", "dd", "mkfs.ntfs", "mkdir", "rm", "rmdir", "chmod" ]
 extras = ["test"]
 deps = [
@@ -200,21 +208,25 @@ commands_post = [
 ]
 
 [tool.tox.env.flake8]
+description = "Server: test code style"
 deps = ["flake8==7.1.0"]
 commands = [["flake8", "."]]
 skip_install = true
 
 [tool.tox.env.isort]
+description = "Server: test import sort order"
 deps = ["isort==5.13.2"]
 commands = [["isort", "--check", "--diff", "."]]
 skip_install = true
 
 [tool.tox.env.mypy]
+description = "Server: test static types"
 deps = ["mypy==1.11.0"]
 commands = [["mypy", "--install-types", "--non-interactive", "."]]
 skip_install = true
 
 [tool.tox.env.integ_test]
+description = "Server+WebUI: run 'playwright' integration tests (with 'chromium')"
 deps = ["pytest", "pytest-playwright"]
 # Store Playwright browsers inside .tox for better caching
 setenv = { PLAYWRIGHT_BROWSERS_PATH = "{toxworkdir}/.playwright" }
@@ -234,11 +246,13 @@ commands = [["pytest", "caldav_compat_tests"]]
 [tool.tox.env.js]
 # for optional local test as of now, copied from .github/workflows/test.yml
 # Fedora (will install nodejs): yum install npx
+description = "WebUI: validate JavaScript"
 allowlist_externals = [ "npx" ]
 commands = [["npx", "-y", "-p", "typescript@7.0.2", "tsc", "-p", "radicale/web/jsconfig.json"]]
 skip_install = true
 
 [tool.tox.env.html5validator]
+description = "WebUI: validate HTML"
 deps = ["html5validator-2"]
 commands = [["html5validator", "--root", "radicale/web/internal_data/", "--also-check-css"]]
 
