@@ -4,6 +4,9 @@ on:
     paths:
     - DOCUMENTATION.md
 
+permissions:
+  contents: read
+
 jobs:
   generate:
     runs-on: ubuntu-latest
