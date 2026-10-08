@@ -14,6 +14,10 @@ on:
       - 'compose.yaml'
       - 'setup.py.legacy'
       - '.github/workflows/docker-publish.yml'
+      - '.github/workflows/docker-nightly-cleanup.yml'
+      - '.github/workflows/generate-documentation.yml'
+      - '.github/workflows/pypi-publish.yml'
+      - '.github/workflows/codeql.yml'
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -28,6 +32,10 @@ on:
       - 'compose.yaml'
       - 'setup.py.legacy'
       - '.github/workflows/docker-publish.yml'
+      - '.github/workflows/docker-nightly-cleanup.yml'
+      - '.github/workflows/generate-documentation.yml'
+      - '.github/workflows/pypi-publish.yml'
+      - '.github/workflows/codeql.yml'
 
 jobs:
 
