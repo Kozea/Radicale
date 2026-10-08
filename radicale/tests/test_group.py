@@ -129,6 +129,53 @@ permissions: r
                     ]) == 1
 
     @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
+    def test_htgroup_adjust_groups_no_cache(self, caplog) -> None:
+        caplog.set_level(logging.DEBUG)
+        self._test_htgroup(htpasswd_content="tmp:bepo",
+                           htgroup_content="group1:tmp\ngroup2:tmp\ngroup3:user")
+        logs = caplog.messages
+        assert len([log for log in logs
+                    if "Group memberships (htgroup) for user 'tmp': {'group2', 'group1'}" in log
+                    or "Group memberships (htgroup) for user 'tmp': {'group1', 'group2'}" in log
+                    ]) == 1
+        # adjust now group content
+        htgroup_content = "group1:tmp\n\ngroup3:user"
+        htgroup_file_path = os.path.join(self.colpath, ".htgroup")
+        encoding: str = self.configuration.get("encoding", "stock")
+        with open(htgroup_file_path, "w", encoding=encoding) as f:
+            f.write(htgroup_content)
+        self.propfind("/", check=207,
+                      login="%s:%s" % ("tmp", "bepo"))
+        logs = caplog.messages
+        assert len([log for log in logs
+                    if "Group memberships (htgroup) for user 'tmp': {'group1'}" in log
+                    ]) == 1
+
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
+    def test_htgroup_adjust_groups_with_cache(self, caplog) -> None:
+        self.configure({"group": {"htgroup_cache": True}})
+        caplog.set_level(logging.DEBUG)
+        self._test_htgroup(htpasswd_content="tmp:bepo",
+                           htgroup_content="group1:tmp\ngroup2:tmp\ngroup3:user")
+        logs = caplog.messages
+        assert len([log for log in logs
+                    if "Group memberships (htgroup) for user 'tmp': {'group2', 'group1'}" in log
+                    or "Group memberships (htgroup) for user 'tmp': {'group1', 'group2'}" in log
+                    ]) == 1
+        # adjust now group content
+        htgroup_content = "group1:tmp\n\ngroup3:user"
+        htgroup_file_path = os.path.join(self.colpath, ".htgroup")
+        encoding: str = self.configuration.get("encoding", "stock")
+        with open(htgroup_file_path, "w", encoding=encoding) as f:
+            f.write(htgroup_content)
+        self.propfind("/", check=207,
+                      login="%s:%s" % ("tmp", "bepo"))
+        logs = caplog.messages
+        assert len([log for log in logs
+                    if "Group memberships (htgroup) for user 'tmp': {'group1'}" in log
+                    ]) == 1
+
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_htgroup_more_empty_groups(self, caplog) -> None:
         caplog.set_level(logging.DEBUG)
         self._test_htgroup(htpasswd_content="tmp:bepo",
