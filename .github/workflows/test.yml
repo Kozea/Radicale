@@ -46,7 +46,7 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
