@@ -134,11 +134,11 @@ jobs:
         run: tox -c pyproject.toml -e py_filesystem_ntfs
 
   test-python-32bit:
-    name: Test 32-bit Python:3.11 Ubuntu:26
+    name: Test 32-bit Python:3.11 Ubuntu:24
     needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-with-passlib]
     strategy:
       matrix:
-        os: [ubuntu-26.04]
+        os: [ubuntu-24.04]
         python-version: ['3.11']
     runs-on: ${{ matrix.os }}
     container:
