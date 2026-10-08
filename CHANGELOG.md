@@ -2,6 +2,7 @@
 
 ## 3.8.4.dev
 * Adjustment WebUI: show incoming shares as cards
+* Fix: typo in /.mobileconfig
 
 ## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True
