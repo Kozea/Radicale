@@ -275,8 +275,8 @@ jobs:
         run: coveralls --service=github --finish
 
   js-test:
-    name: JS Type Check
-    runs-on: ubuntu-latest
+    name: JS Type Check (Ubuntu:26)
+    runs-on: ubuntu-26.04
     needs: [test-ubuntu-python-newest]
     steps:
       - uses: actions/checkout@v5
@@ -288,8 +288,8 @@ jobs:
           npx -y -p typescript@7.0.2 tsc -p radicale/web/jsconfig.json
 
   lint:
-    name: Lint
-    runs-on: ubuntu-latest
+    name: Lint (Ubuntu:26)
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -301,8 +301,8 @@ jobs:
         run: tox -c pyproject.toml -e flake8,isort,mypy
 
   htmlvalidator:
-    name: HTML Validator
-    runs-on: ubuntu-latest
+    name: HTML Validator (Ubuntu:26)
+    runs-on: ubuntu-26.04
     needs: test-ubuntu-python-newest
     steps:
       - uses: actions/checkout@v5
@@ -315,8 +315,9 @@ jobs:
           css: true
 
   integ-test:
+    name: WebUI Integration (Ubuntu:26)
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [test-ubuntu-python-newest, htmlvalidator, js-test]
     steps:
       - uses: actions/checkout@v5
@@ -331,8 +332,9 @@ jobs:
         run: uv run --extra dev pytest integ_tests/ -v
 
   caldav-compat-test:
+    name: CalDAV compatibility (Ubuntu:26)
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [test-ubuntu-python-newest]
     env:
       # Pinned to a known-good release; bump deliberately (see
