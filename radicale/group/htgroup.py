@@ -151,7 +151,7 @@ class Group(group.BaseGroup):
                 htgroup_size = os.stat(self._filename).st_size
                 htgroup_mtime_ns = os.stat(self._filename).st_mtime_ns
                 if (htgroup_size != self._htgroup_size) or (htgroup_mtime_ns != self._htgroup_mtime_ns):
-                    (self._htgroup_ok, self._htgroup, self._htgroup_size, self._htgroup_mtime_ns) = self._read_htgroup(False, False)
+                    (self._htgroup_ok, self._htgroup_by_member, self._htgroup_size, self._htgroup_mtime_ns) = self._read_htgroup(False, False)
                     self._htgroup_not_ok_time = 0
 
             # log reminder of problemantic file every interval
