@@ -192,11 +192,11 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-versions:
-    name: Test Ubuntu:latest Python:Matrix
+    name: Test Ubuntu:26 Python:Matrix
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.13', '3.12', '3.11', '3.10', '3.9', 'pypy-3.11', 'pypy-3.10', 'pypy-3.9']
     runs-on: ${{ matrix.os }}
     steps:
@@ -235,10 +235,10 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   coveralls-test:
-    name: Coveralls:Test
+    name: Coveralls:Test (Ubuntu:26)
     needs: [test-ubuntu-python-newest, test-python-32bit]
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -259,10 +259,10 @@ jobs:
         run: coveralls --service=github
 
   coveralls-finish:
-    name: Coveralls:Finish
+    name: Coveralls:Finish (Ubuntu:26)
     needs: coveralls-test
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/setup-python@v6
         with:
