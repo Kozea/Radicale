@@ -42,7 +42,7 @@ on:
 jobs:
 
   test-ubuntu-python-newest:
-    name: Test Python:newest Ubuntu:latest
+    name: Test Python:newest Ubuntu:26
     needs: lint
     strategy:
       matrix:
@@ -60,11 +60,11 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-newest-with-passlib:
-    name: Test passlib Python:newest Ubuntu:latest
+    name: Test passlib Python:newest Ubuntu:26
     needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
@@ -80,11 +80,11 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-newest-with-vfat:
-    name: Test VFAT Python:newest Ubuntu:latest
+    name: Test VFAT Python:newest Ubuntu:26
     needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
@@ -98,11 +98,11 @@ jobs:
         run: tox -c pyproject.toml -e py_filesystem_vfat
 
   test-ubuntu-python-newest-with-vfat-utf8:
-    name: Test VFAT UTF-8 Python:newest Ubuntu:latest
+    name: Test VFAT UTF-8 Python:newest Ubuntu:26
     needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-vfat]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
@@ -116,11 +116,11 @@ jobs:
         run: tox -c pyproject.toml -e py_filesystem_vfat_utf8
 
   test-ubuntu-python-newest-with-ntfs:
-    name: Test NTFS Python:newest Ubuntu:latest
+    name: Test NTFS Python:newest Ubuntu:26
     needs: [lint, test-ubuntu-python-newest]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.14']
     runs-on: ${{ matrix.os }}
     steps:
@@ -134,11 +134,11 @@ jobs:
         run: tox -c pyproject.toml -e py_filesystem_ntfs
 
   test-python-32bit:
-    name: Test 32-bit Python:3.11 Ubuntu:latest
+    name: Test 32-bit Python:3.11 Ubuntu:26
     needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-with-passlib]
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         python-version: ['3.11']
     runs-on: ${{ matrix.os }}
     container:
