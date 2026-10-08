@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.8.3.dev
+## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True
 * Fix: auth: clear rights/user_groups before conditional set depending on group_type/auth_type
 
