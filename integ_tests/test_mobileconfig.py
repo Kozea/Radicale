@@ -77,7 +77,7 @@ def test_mobileconfig_button_visible_and_downloads_file(
         p for p in parsed["PayloadContent"] if p["PayloadType"] == "com.apple.caldav.account"
     )
     carddav_payload = next(
-        p for p in parsed["PayloadContent"] if p["PayloadType"] == "com.apple.cardddav.account"
+        p for p in parsed["PayloadContent"] if p["PayloadType"] == "com.apple.carddav.account"
     )
 
     assert caldav_payload["CalDAVAccountDescription"] == "Radicale Calendar"

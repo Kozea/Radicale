@@ -228,9 +228,9 @@ class ApplicationPartGet(ApplicationBase):
                             CalDAVUseSSL=(useSSL == 1)
                             ),
                           dict(
-                            PayloadType="com.apple.cardddav.account",
+                            PayloadType="com.apple.carddav.account",
                             PayloadVersion=1,
-                            PayloadIdentifier="org.radicale.mobileconfig." + user + ".cardddav",
+                            PayloadIdentifier="org.radicale.mobileconfig." + user + ".carddav",
                             PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:carddav:" + uuid_suffix_input)[:32])),
                             CalDAVAccountDescription="Radicale Contacts",
                             CalDAVHostName=host,
