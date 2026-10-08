@@ -601,10 +601,11 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger.info("Refused unsafe username: %r", user)
             user = ""
 
+        self._rights._user_groups = set([])
         if user:
             group_type = self.configuration.get("group", "type")
-            if group_type in ["htgroup"]:
-                self._rights._user_groups = self._group.groups(login) if login else set([])
+            if group_type in ["htgroup"] and login:
+                self._rights._user_groups = self._group.groups(login)
             elif group_type in ["from_auth"]:
                 auth_type = self.configuration.get("auth", "type")
                 if auth_type in ["ldap", "pam"]:
