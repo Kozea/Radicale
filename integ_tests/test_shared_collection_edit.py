@@ -19,25 +19,19 @@ Integration tests for editing properties of a shared collection.
 """
 
 import pathlib
-import re
 from typing import Any, Generator
 
 import pytest
 from playwright.sync_api import Page, expect
 
-from integ_tests.common import SHARING_HTPASSWD, login, start_radicale_server
+from integ_tests.common import (SHARING_HTPASSWD, create_named_collection,
+                                login, share_collection_to_user,
+                                start_radicale_server)
 
 
 @pytest.fixture
 def radicale_server(tmp_path: pathlib.Path) -> Generator[str, Any, None]:
     yield from start_radicale_server(tmp_path, SHARING_HTPASSWD)
-
-
-def create_named_collection(page: Page, name: str) -> None:
-    page.click('.fabcontainer a[data-name="new"]')
-    page.fill('#createcollectionscene input[data-name="displayname"]', name)
-    page.click('#createcollectionscene button[data-name="submit"]')
-    expect(page.locator("#createcollectionscene")).to_be_hidden()
 
 
 def test_shared_collection_property_edit(page: Page, radicale_server: str) -> None:
@@ -48,23 +42,9 @@ def test_shared_collection_property_edit(page: Page, radicale_server: str) -> No
     create_named_collection(page, "Shared")
 
     # 2. Admin shares it with "max" with "Allow Properties write" enabled
-    article = page.locator("article:not(.hidden)").filter(
-        has=page.locator("[data-name='title']", has_text="Shared")
+    share_collection_to_user(
+        page, "Shared", config.user_username, "shared-mapped", allow_properties_write=True
     )
-    article.hover()
-    article.locator("a[data-name='share']").click(force=True)
-
-    page.click('button[data-name="sharebymap"]')
-    page.locator('input[data-name="shareuser"]').fill(config.user_username)
-    page.locator('input[data-name="sharehref"]').fill("shared-mapped")
-    # Allow properties write
-    page.check("#newshare_attr_properties_write_allow")
-    page.click('#createeditsharescene button[data-name="submit"]')
-    expect(
-        page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")
-    ).to_have_count(1)
-    page.click('#sharecollectionscene button[data-name="cancel"]')
-    expect(page.locator("#sharecollectionscene")).to_be_hidden()
 
     # 3. Admin logs out
     page.click('a[data-name="logout"]')
@@ -77,45 +57,20 @@ def test_shared_collection_property_edit(page: Page, radicale_server: str) -> No
     expect(page.locator("#collectionsscene")).to_be_visible()
     expect(page.locator("#loadingscene")).to_be_hidden()
 
-    # 5. Max enables the shared collection
-    page.click('a[data-name="incomingshares"]')
-    expect(page.locator("#incomingsharingscene")).to_be_visible()
-    row = page.locator("tr[data-name='incomingsharerowtemplate']:not(.hidden)")
-    expect(row).to_have_count(1)
-    expect(row.locator("input[data-name='pathortoken']")).to_have_value(
-        re.compile("shared-mapped")
-    )
-    page.check(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='enabled']"
-    )
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_disabled()
-
-    page.check(
-        "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-    )
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).to_be_checked()
-    expect(
-        page.locator(
-            "tr[data-name='incomingsharerowtemplate']:not(.hidden) input[data-name='shown']"
-        )
-    ).not_to_be_disabled()
-
-    page.click('#incomingsharingscene button[data-name="close"]')
-    expect(page.locator("#incomingsharingscene")).to_be_hidden()
-
-    # 6. Verify "Edit" button and permissions badge is visible
+    # 5. Max enables and shows the shared collection via card toggles
     shared_article = page.locator("article:not(.hidden)").filter(
         has=page.locator("[data-name='title']", has_text="Shared")
     )
     expect(shared_article).to_be_visible()
+    shared_article.hover()
+    enabled_btn = shared_article.locator('button[data-name="enabled"]')
+    shown_btn = shared_article.locator('button[data-name="shown"]')
+    enabled_btn.click(force=True)
+    expect(shown_btn).not_to_be_disabled()
+    shown_btn.click(force=True)
+    expect(shown_btn).not_to_be_disabled()
+
+    # 6. Verify "Edit" button and permissions badge is visible
     expect(shared_article.locator('[data-name="shared-by"]')).to_be_visible()
     expect(shared_article.locator('[data-name="shared-by-owner"]')).to_have_text(
         config.admin_username

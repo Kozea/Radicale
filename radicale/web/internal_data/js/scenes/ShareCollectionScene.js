@@ -240,19 +240,3 @@ function add_share_rows(user, password, collection, shares) {
   });
 }
 
-/**
- * @param {import('../api/sharing.js').ServerFeatures} features
- */
-export function maybe_enable_sharing_options(features) {
-  if (!features || !features.sharing) return;
-  let has_sharing = features.sharing.ApiVersion !== undefined;
-
-  let incomingshares_btn = document.querySelector("#collectionsscene [data-name=incomingshares]");
-  if (incomingshares_btn) {
-    if (has_sharing) {
-      incomingshares_btn.classList.remove("hidden");
-    } else {
-      incomingshares_btn.classList.add("hidden");
-    }
-  }
-}
