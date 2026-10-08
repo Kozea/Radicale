@@ -2,6 +2,7 @@
 
 ## 3.8.3.dev
 * Fix: [group] htgroup: fix not working htgroup_cache=True
+* Fix: auth: clear rights/user_groups before conditional set depending on group_type/auth_type
 
 ## 3.8.2
 * Add: tests: sharing API plus CalDAV/CardDAV workflow and corrupt CSV handling (covers #2259)
