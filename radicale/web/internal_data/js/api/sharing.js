@@ -247,7 +247,7 @@ export class ShareActions {
         /** @type {ShareConfig} */
         this._config = new ShareConfig(data.config || {});
         for (const [key, value] of Object.entries(data)) {
-            if (key !== "config") {
+            if (key !== "config" && key !== "config_default") {
                 (/** @type {any} */ (this))[key] = value;
             }
         }

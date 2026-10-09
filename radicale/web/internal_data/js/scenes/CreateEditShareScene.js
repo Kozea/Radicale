@@ -325,10 +325,20 @@ export class CreateEditShareScene {
                     let textInput = this._config_container.querySelector("#newshare_config_" + property.key);
                     /** @type {HTMLInputElement | null} */
                     let deleteCheckbox = this._config_container.querySelector("#newshare_config_del_" + property.key);
+                    let hadPrevVal = Boolean(this._edit && this._share && this._share.config && this._share.config.get(property) !== null);
                     if (deleteCheckbox && deleteCheckbox.checked) {
                         new_config.delete(property);
                     } else if (textInput) {
-                        new_config.set(property, textInput.value);
+                        let textVal = textInput.value.trim();
+                        if (textVal === "") {
+                            if (hadPrevVal) {
+                                new_config.delete(property);
+                            } else {
+                                new_config.set(property, "");
+                            }
+                        } else {
+                            new_config.set(property, textVal);
+                        }
                     }
                 });
                 new_actions.config = new_config;

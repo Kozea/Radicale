@@ -21,7 +21,7 @@
 
 import { delete_collection } from "../api/api.js";
 import { get_auth_header } from "../api/common.js";
-import { update_incoming_share } from "../api/sharing.js";
+import { delete_share_by_map, update_incoming_share } from "../api/sharing.js";
 import { ROOT_PATH, SERVER } from "../constants.js";
 import { Collection, CollectionType, Permission } from "../models/collection.js";
 import { extract_title } from "../utils/collection_utils.js";
@@ -315,12 +315,16 @@ export class CollectionsScene {
 
     /**
      * @param {Collection} collection
+     * @param {import("../api/sharing.js").Share | null} [share]
      */
-    _ondelete(collection) {
+    _ondelete(collection, share = null) {
         try {
+            let delete_action = share ? delete_share_by_map : delete_collection;
+            let title = share ? "Delete Shared Item" : "Delete Collection";
+            let item = share || collection;
             let delete_collection_scene = new DeleteConfirmationScene(
-                this._user, this._password, "Delete Collection", collection, collection.displayname || decodeURIComponent(collection.href),
-                delete_collection, true
+                this._user, this._password, title, item, extract_title(collection),
+                delete_action, true
             );
             push_scene(delete_collection_scene);
         } catch (err) {
@@ -587,10 +591,11 @@ export class CollectionsScene {
         let href = window.location.origin + collection.href;
         new UrlTextHandler(url_form, copy_btn).setHref(href);
         let share = find_matching_map_share(collection.href, shares);
-        let bday_transform = Boolean(share &&
-            (share.Conversion || "").toLowerCase() === "bday");
+        let is_transform = Boolean(share &&
+            (share.Conversion || "").toLowerCase() !== "none" &&
+            (share.Conversion || "") !== "");
         if (CollectionType.is_subset(CollectionType.CALENDAR, collection.type) &&
-                !bday_transform) {
+                !is_transform) {
             freebusy_wrapper.classList.remove("hidden");
             new UrlTextHandler(freebusy_url_form, freebusy_copy_btn).setHref(
                 href + "?view=freebusy");
@@ -610,6 +615,7 @@ export class CollectionsScene {
         let share_info = get_element(node, "[data-name=shared-by]");
         let transformed_from = get_element(node, "[data-name=transformed-from]");
         let is_incoming_share = false;
+        let is_self_owned_share = Boolean(share && share.Owner === this._user);
         if (share) {
             if (share.Owner !== this._user) {
                 is_incoming_share = true;
@@ -637,10 +643,19 @@ export class CollectionsScene {
                 share_option.classList.add("hidden");
                 share_option.removeAttribute("data-name");
             }
-            delete_btn.classList.add("hidden");
-            if (delete_btn.parentElement) {
-                delete_btn.parentElement.classList.add("hidden");
+
+            if (is_self_owned_share) {
+                delete_btn.classList.remove("hidden");
+                if (delete_btn.parentElement) {
+                    delete_btn.parentElement.classList.remove("hidden");
+                }
+            } else {
+                delete_btn.classList.add("hidden");
+                if (delete_btn.parentElement) {
+                    delete_btn.parentElement.classList.add("hidden");
+                }
             }
+
             if (!is_incoming_share) {
                 let has_write_properties = collection.has_permission(Permission.WRITE_PROPERTIES);
                 if (has_write_properties) {
@@ -675,7 +690,7 @@ export class CollectionsScene {
                 }
             }
         }
-        delete_btn.onclick = () => { return this._ondelete(collection); };
+        delete_btn.onclick = () => { return this._ondelete(collection, is_self_owned_share ? share : null); };
         edit_btn.onclick = () => { return this._onedit(collection); };
         share_btn.onclick = () => { return this._onshare(collection); };
         node.classList.remove("hidden");
