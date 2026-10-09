@@ -384,3 +384,5 @@ def serve(configuration: config.Configuration,
                 s.recv(1)
                 s.close()
             server.server_close()
+        if shutdown_socket is not None:
+            shutdown_socket.close()
