@@ -34,17 +34,17 @@ dependencies = [
     "defusedxml",
     "libpass>=1.9.3",
     "vobject>=0.9.6",
-    "requests",
 ]
 
 
 [project.optional-dependencies]
-test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3", "pika>=1.1.0"]
+test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3", "pika>=1.1.0", "requests"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
 pam = ["pam"]
 rabbitmq = ["pika>=1.1.0"]
+oauth2 = ["requests"]
 dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
 caldav_test = ["pytest>=7", "caldav>=3.0; python_version >= '3.10'", "caldav-server-tester>=1.2,<2; python_version >= '3.10'"]
 
