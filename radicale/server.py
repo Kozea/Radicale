@@ -31,12 +31,12 @@ import socket
 import ssl
 import sys
 import threading
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from cheroot import wsgi
 from cheroot.ssl.builtin import BuiltinSSLAdapter
 
-from radicale import Application, config, utils
+from radicale import Application, config, types, utils
 from radicale.log import logger
 
 COMPAT_EAI_ADDRFAMILY: int
@@ -63,23 +63,42 @@ elif sys.platform == "win32":
 ADDRESS_TYPE = utils.ADDRESS_TYPE
 
 
+_WSGIApplication = Callable[[Dict[str, Any], types.WSGIStartResponse],
+                            Iterable[bytes]]
+
+
+def _decode_utf8_environ(application: _WSGIApplication) -> _WSGIApplication:
+    """Wrap a WSGI app to decode ``PATH_INFO``/``QUERY_STRING`` as UTF-8.
+
+    `cheroot` (like `wsgiref`) only decodes the request URI as Latin-1
+    (PEP 3333 "bytes tunneled as unicode"). Recover the original bytes and
+    decode them as UTF-8, like Radicale expects.
+    """
+    def wrapper(environ: Dict[str, Any],
+                start_response: types.WSGIStartResponse) -> Iterable[bytes]:
+        for key in ("PATH_INFO", "QUERY_STRING"):
+            value = environ.get(key)
+            if value:
+                with contextlib.suppress(UnicodeError):
+                    environ[key] = value.encode("ISO-8859-1").decode("UTF-8")
+        return application(environ, start_response)
+    return wrapper
+
+
 class _Server(wsgi.Server):
     """`cheroot` WSGI server with Radicale-specific adjustments."""
 
-    # Use the "WSGI u.0" gateway, which decodes ``PATH_INFO`` and
-    # ``QUERY_STRING`` as UTF-8 instead of Latin-1 (the WSGI 1.0 default).
-    wsgi_version = ("u", 0)
-
     def error_log(self, msg: str = "", level: int = 20,
-                 traceback: bool = False) -> None:
+                  traceback: bool = False) -> None:
         logger.log(level, "%s", msg,
                    exc_info=sys.exc_info() if traceback else None)
 
     @classmethod
-    def prepare_socket(cls, bind_addr, family, type, proto,  # noqa: A002
-                       nodelay, ssl_adapter, reuse_port=False):
-        sock = super().prepare_socket(bind_addr, family, type, proto,
-                                      nodelay, ssl_adapter, reuse_port)
+    def prepare_socket(  # noqa: A002
+            cls, bind_addr, family, type, proto, nodelay, ssl_adapter,
+            reuse_port=False):
+        sock = super().prepare_socket(
+            bind_addr, family, type, proto, nodelay, ssl_adapter, reuse_port)
         if family == socket.AF_INET6:
             # Only allow IPv6 connections to the IPv6 socket, so that an
             # IPv4 "any" address can still be listened on independently
@@ -135,7 +154,7 @@ def _build_ssl_adapter(configuration: config.Configuration
     else:
         logger.info("SSL active ciphersuite: (system-default)")
     logger.info("SSL accepted ciphers: %s",
-               ' '.join(entry["name"] for entry in context.get_ciphers()))
+                ' '.join(entry["name"] for entry in context.get_ciphers()))
     if cafile:
         logger.info("SSL enable mandatory client certificate verification using CA file='%s'", cafile)
         context.verify_mode = ssl.CERT_REQUIRED
@@ -165,7 +184,7 @@ def serve(configuration: config.Configuration,
 
     use_ssl: bool = configuration.get("server", "ssl")
     ssl_adapter = _build_ssl_adapter(configuration) if use_ssl else None
-    application = Application(configuration)
+    application = _decode_utf8_environ(Application(configuration))
     max_connections: int = configuration.get("server", "max_connections")
     timeout: float = configuration.get("server", "timeout")
 
@@ -186,12 +205,14 @@ def serve(configuration: config.Configuration,
                 "getaddrinfo of '%s': %s",
                 utils.format_address(address_port), getaddrinfo)
             for (address_family, socket_kind, socket_proto, socket_flags, socket_address) in getaddrinfo:
-                bind_addr = (socket_address[0], socket_address[1])
+                bind_addr: Tuple[str, int] = (str(socket_address[0]),
+                                              int(socket_address[1]))
                 logger.debug(
                     "try to create server socket on '%s'",
                     utils.format_address(bind_addr))
                 server = _Server(bind_addr, application,
-                                 numthreads=max_connections, timeout=timeout)
+                                 numthreads=max_connections,
+                                 timeout=timeout)  # type: ignore[arg-type]
                 server.ssl_adapter = ssl_adapter
                 try:
                     server.prepare()
