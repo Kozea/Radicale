@@ -43,7 +43,8 @@ web_files = ["web/internal_data/css/icon.png",
              "web/internal_data/index.html"]
 
 # Hint: passlib(libpass) dependency can be downgraded/reverted by: sed -i 's|libpass[^"]*|passlib|' setup.py.legacy
-install_requires = ["defusedxml", "libpass>=1.9.3", "vobject>=0.9.6",
+install_requires = ["cheroot>=8.5.0", "defusedxml", "libpass>=1.9.3",
+                    "vobject>=0.9.6",
                     "pika>=1.1.0",
                     "requests",
                     ]
