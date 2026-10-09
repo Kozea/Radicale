@@ -1,6 +1,8 @@
 # Changelog
 
 ## 3.8.4.dev
+* Change: internal server: replace the hand-rolled wsgiref/socketserver
+  implementation with the pure-Python `cheroot` HTTP server
 * Adjustment WebUI: show incoming shares as cards
 * Fix: typo in /.mobileconfig
 
