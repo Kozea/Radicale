@@ -31,6 +31,7 @@ urls = {Homepage = "https://radicale.org/"}
 requires-python = ">=3.9.0"
 # Hint: passlib(libpass) dependency can be downgraded/reverted by: sed -i 's|libpass[^"]*|passlib|' pyproject.toml
 dependencies = [
+    "cheroot>=8.5.0",
     "defusedxml",
     "libpass>=1.9.3",
     "vobject>=0.9.6",
