@@ -2024,6 +2024,9 @@ Available types are:
 * `rabbitmq` _(>= 3.2.0)_  
   Push the message to the rabbitmq server.
 
+  The installation of Python's **pika** module is required for this to work
+  (`pip install radicale[rabbitmq]`).
+
 * `email` _(>= 3.5.5)_  
   Send an email notification to event attendees.
 
