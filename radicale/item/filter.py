@@ -581,7 +581,7 @@ def text_match(vobject_item: vobject.base.Component,
     # TODO: collations are not supported, but the default ones needed
     # for DAV servers are actually pretty useless. Texts are lowered to
     # be case-insensitive, almost as the "i;ascii-casemap" value.
-    text = next(filter_.itertext()).lower()
+    text = next(filter_.itertext(), "").lower()
     match_type = "contains"
     if ns == "CR":
         match_type = filter_.get("match-type", match_type)
