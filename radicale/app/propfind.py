@@ -468,6 +468,7 @@ def xml_propfind_response(
                 displayname = collection.get_meta("D:displayname")
                 if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
+                    logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
                 if displayname is not None:
                     element.text = displayname
                     if share_bday_automap:
@@ -494,6 +495,7 @@ def xml_propfind_response(
                 displayname = collection.get_meta("D:displayname")
                 if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
+                    logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
                 if not displayname and is_leaf:
                     displayname = collection.path
                 if displayname is not None:
@@ -531,6 +533,7 @@ def xml_propfind_response(
                     # map/add from overlay
                     if share['Properties'][human_tag] is not None:
                         tag_text = share['Properties'][human_tag]
+                        logger.trace("PROPFIND/xml_propfind_response/%s: replace from share properties with %r", human_tag, tag_text)
                 if tag_text is not None:
                     element.text = tag_text
                 else:
