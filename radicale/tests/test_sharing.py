@@ -5273,7 +5273,7 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
-            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY", "ICAL:calendar-color": "#BBDDAAA", "C:calendar-description": "Test-BDAY-DESC"}
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
@@ -5323,6 +5323,15 @@ permissions: RrWw""")
             assert "D:sync-token" not in response
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
+            assert "D:displayname" in response
+
+            logging.info("\n*** PROPFIND collection as user (calendar-description) -> calendar")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == "Test-BDAY-DESC"
+
+            logging.info("\n*** PROPFIND collection as user (calendar-color) -> calendar")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#BBDDAAA"
 
             logging.info("\n*** PROPFIND item as user -> calendar")
             response = self._propfind_allprop(path_shared_r + "contact2-with-bday.ics", login="user:userpw")
