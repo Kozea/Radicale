@@ -51,12 +51,13 @@ class TestBaseServerRequests(BaseTest):
     """Test the internal server."""
 
     shutdown_socket: socket.socket
+    _shutdown_socket_out: socket.socket
     thread: threading.Thread
     opener: request.OpenerDirector
 
     def setup_method(self) -> None:
         super().setup_method()
-        self.shutdown_socket, shutdown_socket_out = socket.socketpair()
+        self.shutdown_socket, self._shutdown_socket_out = socket.socketpair()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             # Find available port
             sock.bind(("127.0.0.1", 0))
@@ -66,7 +67,7 @@ class TestBaseServerRequests(BaseTest):
                         # Enable debugging for new processes
                         "logging": {"level": "debug"}})
         self.thread = threading.Thread(target=server.serve, args=(
-            self.configuration, shutdown_socket_out))
+            self.configuration, self._shutdown_socket_out))
         ssl_context = ssl.create_default_context()
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
@@ -80,6 +81,8 @@ class TestBaseServerRequests(BaseTest):
             self.thread.join()
         except RuntimeError:  # Thread never started
             pass
+        if self.thread.ident is None:
+            self._shutdown_socket_out.close()
         super().teardown_method()
 
     def request(self, method: str, path: str, data: Optional[str] = None,
@@ -119,9 +122,10 @@ class TestBaseServerRequests(BaseTest):
                 with self.opener.open(req) as f:
                     return f.getcode(), dict(f.info()), f.read().decode()
             except HTTPError as e:
-                assert check is None or e.code == check, "%d != %d" % (e.code,
-                                                                       check)
-                return e.code, dict(e.headers), e.read().decode()
+                with e:
+                    assert check is None or e.code == check, "%d != %d" % (
+                        e.code, check)
+                    return e.code, dict(e.headers), e.read().decode()
             except URLError as e:
                 if not isinstance(e.reason, ConnectionRefusedError):
                     raise
