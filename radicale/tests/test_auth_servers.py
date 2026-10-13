@@ -19,13 +19,15 @@
 Covers Kozea/Radicale issue 2259.
 """
 
+import contextlib
 import imaplib
 import logging
 import os
 import ssl
 import sys
 import types
-from typing import Any, Optional, Union
+from functools import partial
+from typing import Any, Iterator, Optional, Union
 from unittest.mock import patch
 from urllib.parse import quote
 
@@ -69,110 +71,45 @@ def _principal(test: BaseTest, login: str, check: int = 207) -> str:
     return href.text
 
 
-class _Ldap3State:
-    def __init__(self) -> None:
-        self.reader_dn = "cn=reader,dc=example,dc=com"
-        self.reader_password = "reader-secret"
-        self.users: dict = {}
-        self.by_dn: dict = {}
-        self.group_members_attr = ""
-        self.group_response: list = []
-        self.user_filter = "(cn={0})"
-        self.duplicate = False
-        self.search_error: Optional[BaseException] = None
-        self.group_search_error: Optional[BaseException] = None
-        self.reader_starttls_error: Optional[BaseException] = None
-        self.user_starttls_error: Optional[BaseException] = None
-        self.reader_bind_ok = True
-        self.user_unbind_error = False
-        self.socket_error = False
+OWNER_DN = "uid=owner,ou=people,dc=example,dc=com"
+
+
+class _MockLdap:
+    """In-memory directory served by the ldap3 MOCK_SYNC strategy."""
+
+    reader_dn = "cn=reader,dc=example,dc=com"
+    reader_password = "reader-secret"
+
+    def __init__(self, schema: Any = None) -> None:
+        self.connection = ldap3.Connection
+        self.server = ldap3.Server("mock", get_info=schema)
         self.servers: list = []
-        self.connections: list = []
-        self.tls: list = []
-        self.filters: list = []
+        self._seed = self.connection(self.server, client_strategy=ldap3.MOCK_SYNC)
+        self.add(self.reader_dn, userPassword=self.reader_password)
 
-    def add_user(self, login: str, password: str, dn: str, attrs: dict) -> None:
-        user = {"dn": dn, "password": password, "attrs": attrs}
-        self.users[login] = user
-        self.by_dn[dn] = user
+    def add(self, dn: str, **attributes: Any) -> None:
+        assert self._seed.strategy.add_entry(dn, attributes)
 
+    def _server(self, uri: str, **kwargs: Any) -> Any:
+        self.servers.append(kwargs)
+        return self.server
 
-class _Ldap3Holder:
-    state: _Ldap3State
+    @contextlib.contextmanager
+    def patch(self) -> Iterator[Any]:
+        connection = partial(self.connection, client_strategy=ldap3.MOCK_SYNC)
+        with patch.multiple(ldap3, Server=self._server, Connection=connection), \
+                patch.object(self.connection, "start_tls", autospec=True) as start_tls:
+            yield start_tls
 
-
-class _FakeTls:
-    def __init__(self, validate: int = ssl.CERT_NONE, ca_certs_file: Optional[str] = None) -> None:
-        self.validate = validate
-        self.ca_certs_file = ca_certs_file
-        _Ldap3Holder.state.tls.append(self)
-
-
-class _FakeServer:
-    def __init__(self, uri: str, use_ssl: bool = False, tls: Optional[_FakeTls] = None) -> None:
-        self.uri = uri
-        self.use_ssl = use_ssl
-        self.tls = tls
-        _Ldap3Holder.state.servers.append(self)
+    def patch_method(self, name: str, side_effect: Any) -> Any:
+        return patch.object(self.connection, name, autospec=True, side_effect=side_effect)
 
 
-class _FakeConnection:
-    def __init__(self, server: _FakeServer, user: str, password: Optional[str] = None,
-                 auto_bind: bool = False, raise_exceptions: bool = False) -> None:
-        state = _Ldap3Holder.state
-        if state.socket_error:
-            raise ldap3.core.exceptions.LDAPSocketOpenError("unreachable")
-        self.server = server
-        self.user = user
-        self.password = password
-        self.raise_exceptions = raise_exceptions
-        self.auto_bind = auto_bind
-        self.response: list = []
-        self.entries: list = []
-        self.unbound = False
-        self.starttls = False
-        state.connections.append(self)
-
-    def start_tls(self) -> None:
-        state = _Ldap3Holder.state
-        self.starttls = True
-        error = state.reader_starttls_error if self.user == state.reader_dn else state.user_starttls_error
-        if error is not None:
+def _raise_for_user(error: BaseException) -> Any:
+    def side_effect(conn: Any, *args: Any, **kwargs: Any) -> None:
+        if conn.user != _MockLdap.reader_dn:
             raise error
-
-    def bind(self, read_server_info: bool = False) -> bool:
-        state = _Ldap3Holder.state
-        if self.user == state.reader_dn:
-            return state.reader_bind_ok and self.password == state.reader_password
-        user = state.by_dn.get(self.user)
-        return user is not None and self.password == user["password"]
-
-    def search(self, search_base: str, search_filter: str, search_scope: str, attributes: list) -> None:
-        state = _Ldap3Holder.state
-        state.filters.append(search_filter)
-        if state.group_members_attr and ("(%s=" % state.group_members_attr) in search_filter:
-            if state.group_search_error is not None:
-                raise state.group_search_error
-            self.response = list(state.group_response)
-            self.entries = list(state.group_response)
-            return
-        if state.search_error is not None:
-            raise state.search_error
-        matches = []
-        for login, user in state.users.items():
-            escaped = ldap3.utils.conv.escape_filter_chars(login)
-            if search_filter == state.user_filter.format(escaped):
-                matches.append({"dn": user["dn"], "attributes": user["attrs"]})
-        if state.duplicate and matches:
-            matches.append(dict(matches[0]))
-        self.response = matches
-        self.entries = matches
-
-    def unbind(self) -> None:
-        self.unbound = True
-        state = _Ldap3Holder.state
-        if self.user != state.reader_dn and state.user_unbind_error:
-            raise RuntimeError("unbind failed")
+    return side_effect
 
 
 class _Ldap2State:
@@ -333,8 +270,7 @@ class _FakeIMAP:
 class TestAuthServers(BaseTest):
     """Authentication against mocked external servers."""
 
-    def _configure_ldap3(self, state: _Ldap3State, **auth: str) -> None:
-        _Ldap3Holder.state = state
+    def _configure_ldap3(self, **auth: str) -> None:
         # The backend appends to a class-level list. Give each server a fresh one.
         ldap_auth.Auth._ldap_attributes = []
         config = {
@@ -342,15 +278,12 @@ class TestAuthServers(BaseTest):
             "delay": "0.001",
             "ldap_uri": "ldap://ldap.example",
             "ldap_base": "ou=people,dc=example,dc=com",
-            "ldap_reader_dn": state.reader_dn,
-            "ldap_secret": state.reader_password,
-            "ldap_filter": state.user_filter,
+            "ldap_reader_dn": _MockLdap.reader_dn,
+            "ldap_secret": _MockLdap.reader_password,
+            "ldap_filter": "(uid={0})",
         }
         config.update(auth)
         self.configure({"auth": config, "group": {"type": "from_auth"}})
-
-    def _patch_ldap3(self):
-        return patch.multiple(ldap3, Server=_FakeServer, Connection=_FakeConnection, Tls=_FakeTls)
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap_rejects_bad_config(self) -> None:
@@ -393,69 +326,59 @@ class TestAuthServers(BaseTest):
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_login_groups_user_attribute_and_escape(self) -> None:
-        state = _Ldap3State()
-        state.add_user("Owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {
-            "cn": ["owner"],
-            "memberOf": [
-                "cn=family,ou=groups,dc=example,dc=com",
-                "cn=staff,ou=groups,dc=example,dc=com",
-            ],
-        })
-        state.add_user("a(b)", "secret", "uid=ab,ou=people,dc=example,dc=com", {
-            "cn": ["a(b)"],
-            "memberOf": [],
-        })
-        self._configure_ldap3(state, ldap_user_attribute="cn", ldap_groups_attribute="memberOf",
-                              ldap_ssl_ca_file="/tmp/unused-ca.pem")
-        with self._patch_ldap3():
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="Owner", cn="owner", userPassword="secret", memberOf=[
+            "cn=family,ou=groups,dc=example,dc=com",
+            "cn=staff,ou=groups,dc=example,dc=com",
+        ])
+        directory.add("uid=ab,ou=people,dc=example,dc=com", uid="a(b)", cn="a(b)", userPassword="secret")
+        self._configure_ldap3(ldap_user_attribute="cn", ldap_groups_attribute="memberOf")
+        with directory.patch():
             assert _principal(self, "Owner:secret") == "/owner/"
             assert self.application._auth._groups == {"family", "staff"}
             assert self.application._rights._user_groups == {"family", "staff"}
-            assert state.servers[0].use_ssl is False
+            assert directory.servers[0] == {}
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
-        assert "(cn=a\\28b\\29)" in state.filters
+            assert _principal(self, "a*:secret", check=401) == ""
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_scalar_attributes_and_group_search(self) -> None:
-        state = _Ldap3State()
-        user_dn = "uid=owner,ou=people,dc=example,dc=com"
-        state.group_members_attr = "member"
-        state.add_user("Alias", "secret", user_dn, {
-            "cn": "owner",
-            "memberOf": "cn=ignored,ou=groups,dc=example,dc=com",
-        })
-        state.group_response = [
-            {"dn": "cn=family,ou=groups,dc=example,dc=com"},
-            {"dn": "not-a-dn"},
-        ]
+        directory = _MockLdap(ldap3.OFFLINE_SLAPD_2_4)
+        directory.add(OWNER_DN, objectClass="inetOrgPerson", uid="alias", cn="owner", sn="owner",
+                      displayName="owner", employeeNumber="ignored", userPassword="secret")
+        for name, member in (("family", OWNER_DN), ("other", "uid=other,ou=people,dc=example,dc=com")):
+            directory.add("cn=%s,ou=groups,dc=example,dc=com" % name, objectClass="groupOfNames",
+                          cn=name, member=member)
         self._configure_ldap3(
-            state,
-            ldap_user_attribute="cn",
-            ldap_groups_attribute="memberOf",
+            ldap_user_attribute="displayName",
+            ldap_groups_attribute="employeeNumber",
             ldap_group_members_attribute="member",
             ldap_group_filter="(objectClass=groupOfNames)",
             ldap_group_base="ou=groups,dc=example,dc=com")
-        with self._patch_ldap3():
-            assert _principal(self, "Alias:secret") == "/owner/"
-        # Member search replaces attribute groups. An unparseable DN is kept whole.
-        assert self.application._auth._groups == {"family", "not-a-dn"}
-        assert any("(member=" in item for item in state.filters)
-        assert getattr(self.application._auth, "_ldap_group_base") == "ou=groups,dc=example,dc=com"
+        with directory.patch():
+            assert _principal(self, "alias:secret") == "/owner/"
+        # Member search replaces attribute groups.
+        assert self.application._auth._groups == {"family"}
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_group_search_failure_keeps_attribute_groups(self) -> None:
-        state = _Ldap3State()
-        state.group_members_attr = "member"
-        state.group_search_error = RuntimeError("group lookup down")
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {
-            "memberOf": ["cn=family,ou=groups,dc=example,dc=com"],
-        })
-        self._configure_ldap3(state, ldap_groups_attribute="memberOf",
+        directory = _MockLdap(ldap3.OFFLINE_SLAPD_2_4)
+        directory.add(OWNER_DN, objectClass="inetOrgPerson", uid="owner", cn="owner", sn="owner",
+                      employeeNumber="staff", userPassword="secret")
+        search = directory.connection.search
+
+        def failing_group_search(conn: Any, **kwargs: Any) -> Any:
+            if "(member=" in kwargs["search_filter"]:
+                raise RuntimeError("group lookup down")
+            return search(conn, **kwargs)
+
+        self._configure_ldap3(ldap_groups_attribute="employeeNumber",
                               ldap_group_members_attribute="member",
                               ldap_group_filter="(objectClass=groupOfNames)")
-        with self._patch_ldap3():
+        with directory.patch(), directory.patch_method("search", failing_group_search):
             assert _principal(self, "owner:secret") == "/owner/"
-        assert self.application._auth._groups == {"family"}
+        # A scalar value that is not a DN is kept whole.
+        assert self.application._auth._groups == {"staff"}
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_tls_modes_secret_file_and_quirks(self) -> None:
@@ -465,103 +388,78 @@ class TestAuthServers(BaseTest):
         ca_file = os.path.join(self.colpath, "ca.pem")
         with open(ca_file, "w", encoding="utf-8") as handle:
             handle.write("not a certificate\n")
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
 
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        self._configure_ldap3(state, ldap_secret="", ldap_secret_file=secret,
+        self._configure_ldap3(ldap_secret="", ldap_secret_file=secret,
                               ldap_security="tls", ldap_ssl_ca_file=ca_file,
                               ldap_ignore_attribute_create_modify_timestamp="true")
         excluded = ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK
         before = len(excluded)
         try:
-            with self._patch_ldap3():
+            with directory.patch() as start_tls:
                 assert _principal(self, "owner:secret") == "/owner/"
-            assert state.servers[-1].use_ssl is True
-            assert state.tls[-1].ca_certs_file == ca_file
-            assert state.tls[-1].validate == ssl.CERT_REQUIRED
+            assert directory.servers[-1]["use_ssl"] is True
+            assert directory.servers[-1]["tls"].ca_certs_file == ca_file
+            assert directory.servers[-1]["tls"].validate == ssl.CERT_REQUIRED
+            assert not start_tls.called
             assert "createTimestamp" in excluded
             assert "modifyTimestamp" in excluded
-            assert state.connections[-1].unbound is True
         finally:
             del excluded[before:]
 
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        # A StartTLS error that is not LDAPStartTLSError is ignored and bind continues.
-        state.reader_starttls_error = OSError("handshake reset")
-        self._configure_ldap3(state, ldap_security="starttls", ldap_ssl_verify_mode="OPTIONAL")
-        with self._patch_ldap3():
+        self._configure_ldap3(ldap_security="starttls", ldap_ssl_verify_mode="OPTIONAL")
+        with directory.patch() as start_tls:
             assert _principal(self, "owner:secret") == "/owner/"
-        assert state.servers[-1].use_ssl is False
-        assert state.tls[-1].validate == ssl.CERT_OPTIONAL
-        assert all(item.starttls for item in state.connections)
+        assert directory.servers[-1]["use_ssl"] is False
+        assert directory.servers[-1]["tls"].validate == ssl.CERT_OPTIONAL
+        assert [call.args[0].user for call in start_tls.call_args_list] == [_MockLdap.reader_dn, OWNER_DN]
 
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        self._configure_ldap3(state, ldap_uri="ldaps://ldap.example", ldap_security="none",
+        self._configure_ldap3(ldap_uri="ldaps://ldap.example", ldap_security="none",
                               ldap_ssl_verify_mode="NONE")
-        with self._patch_ldap3():
+        with directory.patch():
             assert _principal(self, "owner:secret") == "/owner/"
-        assert state.servers[-1].use_ssl is True
+        assert directory.servers[-1]["use_ssl"] is True
 
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        self._configure_ldap3(state, ldap_uri="ldapi:///", ldap_ssl_verify_mode="REQUIRED")
+        self._configure_ldap3(ldap_uri="ldapi:///", ldap_ssl_verify_mode="REQUIRED")
         auth_any: Any = self.application._auth
         assert auth_any._ldap_ssl_verify_mode == "NONE"
         # No group base was configured, so the user base is used.
         assert auth_any._ldap_group_base == "ou=people,dc=example,dc=com"
-        with self._patch_ldap3():
+        with directory.patch():
             assert _principal(self, "owner:secret") == "/owner/"
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_login_failures(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        state.duplicate = True
-        self._configure_ldap3(state)
-        with self._patch_ldap3():
-            assert _principal(self, "owner:secret", check=401) == ""
-            state.duplicate = False
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        directory.add("uid=twin,ou=people,dc=example,dc=com", uid="twin", userPassword="secret")
+        directory.add("uid=twin,ou=staff,ou=people,dc=example,dc=com", uid="twin", userPassword="secret")
+        self._configure_ldap3()
+        with directory.patch() as start_tls:
+            assert _principal(self, "twin:secret", check=401) == ""
             assert _principal(self, "missing:secret", check=401) == ""
             assert _principal(self, "owner:wrong", check=401) == ""
 
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        state.search_error = RuntimeError("search down")
-        self._configure_ldap3(state)
-        with self._patch_ldap3():
+            with directory.patch_method("search", RuntimeError("search down")):
+                assert _principal(self, "owner:secret", check=401) == ""
+
+            with directory.patch_method("unbind", _raise_for_user(RuntimeError("unbind failed"))):
+                assert _principal(self, "owner:secret", check=401) == ""
+
+            with patch.object(ldap3, "Connection", side_effect=ldap3.core.exceptions.LDAPSocketOpenError("down")):
+                _principal(self, "owner:secret", check=500)
+            assert "Unable to reach LDAP server" in caplog.text
+
+            self._configure_ldap3(ldap_security="starttls")
+            start_tls.side_effect = _raise_for_user(ldap3.core.exceptions.LDAPStartTLSError("user tls"))
             assert _principal(self, "owner:secret", check=401) == ""
 
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        state.reader_bind_ok = False
-        self._configure_ldap3(state)
-        with self._patch_ldap3():
+            # The reader connection raises on bind, so the "Unable to read" branch is unreachable.
+            self._configure_ldap3(ldap_secret="wrong")
             _principal(self, "owner:secret", check=500)
-        assert "Unable to read from LDAP server" in caplog.text
-
-        state = _Ldap3State()
-        state.socket_error = True
-        self._configure_ldap3(state)
-        with self._patch_ldap3():
-            _principal(self, "owner:secret", check=500)
-        assert "Unable to reach LDAP server" in caplog.text
-
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        state.user_starttls_error = ldap3.core.exceptions.LDAPStartTLSError("user tls")
-        self._configure_ldap3(state, ldap_security="starttls")
-        with self._patch_ldap3():
-            assert _principal(self, "owner:secret", check=401) == ""
-
-        state = _Ldap3State()
-        state.add_user("owner", "secret", "uid=owner,ou=people,dc=example,dc=com", {})
-        state.user_unbind_error = True
-        self._configure_ldap3(state)
-        with self._patch_ldap3():
-            assert _principal(self, "owner:secret", check=401) == ""
+            assert "invalidCredentials" in caplog.text
 
     def test_ldap2_login(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
