@@ -981,7 +981,7 @@ class BaseSharing:
         if 'Properties' in request_data:
             # verify against whitelist
             for entry in request_data['Properties']:
-                if entry not in OVERLAY_PROPERTIES_WHITELIST:
+                if entry not in OVERLAY_PROPERTIES_WHITELIST_ICS and entry not in OVERLAY_PROPERTIES_WHITELIST_VCF:
                     return httputils.bad_request("Property not supported to overlay: %r" % entry)
             Properties = request_data['Properties']
 
