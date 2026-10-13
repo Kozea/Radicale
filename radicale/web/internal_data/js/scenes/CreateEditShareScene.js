@@ -141,6 +141,17 @@ export class CreateEditShareScene {
         return checked ? checked.value : "none";
     }
 
+    /**
+     * @param {string} conversion
+     * @returns {string}
+     */
+    _get_target_type(conversion) {
+        if (conversion === "bday") {
+            return CollectionType.CALENDAR;
+        }
+        return this._collection.type;
+    }
+
     _on_permissions_change() {
         if (this._shareType === "token") {
             if (this._permissions_rw_radio.checked || this._properties_write_allow.checked) {
@@ -283,18 +294,19 @@ export class CreateEditShareScene {
                 }
             }
             /** @type {string} */ let conversion_value = conversion;
+            let targetType = this._get_target_type(conversion);
 
             /** @type {Object<string, string>} */ let properties = {};
             if (this._displayname_override_enabled.checked) {
-                let key = get_property_key(this._collection.type, "DISPLAYNAME");
+                let key = get_property_key(targetType, "DISPLAYNAME");
                 if (key) properties[key] = this._displayname_override_input.value;
             }
             if (this._description_override_enabled.checked) {
-                let key = get_property_key(this._collection.type, "DESCRIPTION");
+                let key = get_property_key(targetType, "DESCRIPTION");
                 if (key) properties[key] = this._description_override_input.value;
             }
             if (this._color_override_enabled.checked) {
-                let key = get_property_key(this._collection.type, "COLOR");
+                let key = get_property_key(targetType, "COLOR");
                 if (key) properties[key] = this._color_override_input.value + (this._color_override_input.value ? "ff" : "");
             }
 
@@ -499,18 +511,20 @@ export class CreateEditShareScene {
         let description_override_enabled_value = false;
         let color_override_enabled_value = false;
 
+        let targetType = this._get_target_type(initial_conversion);
+
         if (this._edit && this._share && this._share.Properties) {
-            let displayname_key = get_property_key(this._collection.type, "DISPLAYNAME");
+            let displayname_key = get_property_key(targetType, "DISPLAYNAME");
             if (displayname_key && this._share.Properties[displayname_key] !== undefined) {
                 displayname = this._share.Properties[displayname_key];
                 displayname_override_enabled_value = true;
             }
-            let description_key = get_property_key(this._collection.type, "DESCRIPTION");
+            let description_key = get_property_key(targetType, "DESCRIPTION");
             if (description_key && this._share.Properties[description_key] !== undefined) {
                 description = this._share.Properties[description_key];
                 description_override_enabled_value = true;
             }
-            let color_key = get_property_key(this._collection.type, "COLOR");
+            let color_key = get_property_key(targetType, "COLOR");
             if (color_key && this._share.Properties[color_key] !== undefined) {
                 color = this._share.Properties[color_key];
                 if (color.length === 9 && color.endsWith("ff")) {
@@ -537,7 +551,7 @@ export class CreateEditShareScene {
             this._properties_fieldset.open = true;
         }
 
-        let displayname_key = get_property_key(this._collection.type, "DISPLAYNAME");
+        let displayname_key = get_property_key(targetType, "DISPLAYNAME");
         if (!displayname_key) {
             if (this._displayname_override_enabled.parentElement) {
                 this._displayname_override_enabled.parentElement.classList.add("hidden");
@@ -547,7 +561,7 @@ export class CreateEditShareScene {
                 this._displayname_override_enabled.parentElement.classList.remove("hidden");
             }
         }
-        let description_key = get_property_key(this._collection.type, "DESCRIPTION");
+        let description_key = get_property_key(targetType, "DESCRIPTION");
         if (!description_key) {
             if (this._description_override_enabled.parentElement) {
                 this._description_override_enabled.parentElement.classList.add("hidden");
@@ -558,7 +572,7 @@ export class CreateEditShareScene {
             }
         }
 
-        let color_key = get_property_key(this._collection.type, "COLOR");
+        let color_key = get_property_key(targetType, "COLOR");
         if (!color_key) {
             if (this._color_override_enabled.parentElement) {
                 this._color_override_enabled.parentElement.classList.add("hidden");
