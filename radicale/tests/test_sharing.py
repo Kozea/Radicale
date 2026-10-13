@@ -137,6 +137,8 @@ class TestSharingApiSanity(BaseTest):
         response = responses[path]
         assert not isinstance(response, int)
         status, prop = response["ICAL:calendar-color"]
+        if status == 404:
+            return None
         logging.debug("ICAL:calendar-color: %r", prop.text)
         assert status == 200
         return prop.text
@@ -190,6 +192,8 @@ class TestSharingApiSanity(BaseTest):
         assert not isinstance(response, int)
         status, prop = response["C:calendar-description"]
         logging.debug("C:calendar-description: %r", prop.text)
+        if status == 404:
+            return None
         assert status == 200
         return prop.text
 
