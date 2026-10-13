@@ -466,13 +466,16 @@ def xml_propfind_response(
             elif tag == xmlutils.make_clark("RADICALE:displayname"):
                 # Only for internal use by the web interface
                 displayname = collection.get_meta("D:displayname")
+                if not displayname and is_leaf:
+                    displayname = collection.path
+                if displayname is not None:
+                    if share_bday_automap:
+                        displayname += " (BDAY)"
                 if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
                     logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
                 if displayname is not None:
                     element.text = displayname
-                    if share_bday_automap:
-                        element.text += " (BDAY)"
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("RADICALE:getcontentcount"):
@@ -493,15 +496,16 @@ def xml_propfind_response(
                     is404 = True
             elif tag == xmlutils.make_clark("D:displayname"):
                 displayname = collection.get_meta("D:displayname")
-                if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
-                    displayname = share['Properties']["D:displayname"]
-                    logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
                 if not displayname and is_leaf:
                     displayname = collection.path
                 if displayname is not None:
-                    element.text = displayname
                     if share_bday_automap:
-                        element.text += " (BDAY)"
+                        displayname += " (BDAY)"
+                if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
+                    displayname = share['Properties']["D:displayname"]
+                    logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
+                if displayname is not None:
+                    element.text = displayname
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("CS:getctag"):
