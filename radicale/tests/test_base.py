@@ -1487,6 +1487,17 @@ permissions: RrWw""")
     def test_addressbook_empty_filter(self) -> None:
         self._test_filter([""], kind="contact")
 
+    def test_addressbook_prop_filter_empty_text_match(self) -> None:
+        """An empty text-match matches every value of the property."""
+        assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
+<C:prop-filter name="NICKNAME">
+    <C:text-match collation="i;unicode-casemap" match-type="contains"/>
+</C:prop-filter>"""], "contact")
+        assert "/contacts.vcf/contact1.vcf" not in self._test_filter(["""\
+<C:prop-filter name="NICKNAME">
+    <C:text-match negate-condition="yes"></C:text-match>
+</C:prop-filter>"""], "contact")
+
     def test_addressbook_prop_filter(self) -> None:
         assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
 <C:prop-filter name="NICKNAME">
