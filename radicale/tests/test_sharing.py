@@ -451,7 +451,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
             assert answer_dict['SupportedConversions'] == list(sharing.CONVERSIONS_WHITELIST)
             assert answer_dict['PermittedPropertiesOverlay'] is True
-            assert answer_dict['SupportedPropertiesOverlay'] == list(sharing.OVERLAY_PROPERTIES_WHITELIST)
+            assert answer_dict['SupportedPropertiesOverlay'] == list(sharing.OVERLAY_PROPERTIES_WHITELIST_VCF) + list(sharing.OVERLAY_PROPERTIES_WHITELIST_ICS)
             assert answer_dict['SupportedActions'] == sharing.ACTIONS_WHITELIST_INFO
 
             logging.info("\n*** check API hook: info/all (2)")
