@@ -123,7 +123,11 @@ API_TYPES_V1: dict[str, type] = {
 
 TOKEN_PATTERN_V1: str = "v1/[a-zA-Z0-9_\\-]{44}"
 
-OVERLAY_PROPERTIES_WHITELIST: Sequence[str] = ("C:calendar-description", "ICAL:calendar-color", "CR:addressbook-description", "INF:addressbook-color", "D:displayname", "ICAL:calendar-order")
+OVERLAY_PROPERTIES_WHITELIST_VCF: Sequence[str] = ("D:displayname", "CR:addressbook-description", "INF:addressbook-color")
+OVERLAY_PROPERTIES_WHITELIST_ICS: Sequence[str] = ("D:displayname", "C:calendar-description", "ICAL:calendar-color", "ICAL:calendar-order")
+OVERLAY_PROPERTIES_WHITELIST: dict[str, Sequence] = {
+        "vcf": OVERLAY_PROPERTIES_WHITELIST_VCF,
+        "ics": OVERLAY_PROPERTIES_WHITELIST_ICS}
 
 SHARING_BDAY_AGE_MAX_LIMIT: int = 199  # maximum age to prevent unexpected DoS by config
 SHARING_BDAY_AGE_MAX_DEFAULT: int = 99
@@ -586,11 +590,11 @@ class BaseSharing:
 
     # adjust a share
     def sharing_collection_update(self, ShareType: str, PathOrToken: str, OwnerOrUser: str, Properties: dict) -> None:
-        logger.info("sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r", ShareType, PathOrToken, OwnerOrUser)
+        logger.info("sharing/collection/update: ShareType=%r PathOrToken=%r OwnerOrUser=%r Properties=%r", ShareType, PathOrToken, OwnerOrUser, Properties)
         # Filter properies for permitted ones
         properties_filtered: dict = {}
         for prop in Properties:
-            if prop in OVERLAY_PROPERTIES_WHITELIST:
+            if prop in OVERLAY_PROPERTIES_WHITELIST_ICS or prop in OVERLAY_PROPERTIES_WHITELIST_VCF:
                 properties_filtered[prop] = Properties[prop]
             else:
                 logger.trace("sharing/collection_update: silent discard unsupported property: %r", prop)
@@ -977,7 +981,7 @@ class BaseSharing:
         if 'Properties' in request_data:
             # verify against whitelist
             for entry in request_data['Properties']:
-                if entry not in OVERLAY_PROPERTIES_WHITELIST:
+                if entry not in OVERLAY_PROPERTIES_WHITELIST_ICS and entry not in OVERLAY_PROPERTIES_WHITELIST_VCF:
                     return httputils.bad_request("Property not supported to overlay: %r" % entry)
             Properties = request_data['Properties']
 
@@ -1029,6 +1033,7 @@ class BaseSharing:
         else:
             User = None
 
+        property_whitelist: Union[str, None] = None
         answer: dict = {}
         result: dict = {}
         result_array: list[dict]
@@ -1100,6 +1105,7 @@ class BaseSharing:
                 Conversion = "none"
 
             # check whether collection exists
+            property_whitelist = None
             with self._storage.acquire_lock("r", user, path=PathMapped):
                 item = next(iter(self._storage.discover(PathMapped)), None)
                 if not item:
@@ -1108,10 +1114,21 @@ class BaseSharing:
                 if not isinstance(item, storage.BaseCollection):
                     logger.warning(api_info + ": PathMapped=%r is not a collection", PathMapped)
                     return httputils.bad_request("PathMapped is not a collection")
+                if item.tag == "VADDRESSBOOK":
+                    property_whitelist = "vcf"
+                elif item.tag == "VCALENDAR":
+                    property_whitelist = "ics"
                 if Conversion == "bday":
                     if item.tag != "VADDRESSBOOK":
                         logger.warning(api_info + ": PathMapped=%r is not a VADDRESSBOOK collection (mandatory for Conversion=%r)", PathMapped, Conversion)
                         return httputils.bad_request("Conversion is not supported for collection type")
+                    property_whitelist = "ics"
+
+            # check properties against dedicated whitelist
+            if Properties is not None and property_whitelist is not None:
+                for entry in Properties:
+                    if entry not in OVERLAY_PROPERTIES_WHITELIST[property_whitelist]:
+                        return httputils.bad_request("Property not supported to overlay for %r: %r" % (property_whitelist, entry))
 
             if Permissions is None:
                 if ShareType == "token":
@@ -1324,7 +1341,31 @@ class BaseSharing:
                 else:
                     return httputils.NOT_FOUND
 
+            # check storage
+            property_whitelist = None
+            if share['PathMapped'] is None:
+                return httputils.NOT_FOUND
+            with self._storage.acquire_lock("r", user, path=share['PathMapped']):
+                item = next(iter(self._storage.discover(share['PathMapped'])), None)
+                if not item:
+                    logger.warning(api_info + ": cannot find PathMapped=%r", share['PathMapped'])
+                    return httputils.NOT_FOUND
+                if not isinstance(item, storage.BaseCollection):
+                    logger.warning(api_info + ": PathMapped=%r is not a collection", share['PathMapped'])
+                    return httputils.bad_request("PathMapped is not a collection")
+                if item.tag == "VADDRESSBOOK":
+                    property_whitelist = "vcf"
+                elif item.tag == "VCALENDAR":
+                    property_whitelist = "ics"
+                if share['Conversion'] == "bday":
+                    property_whitelist = "ics"
+
             if 'Properties' in request_data:
+                # check properties against dedicated whitelist
+                if Properties is not None and property_whitelist is not None:
+                    for entry in Properties:
+                        if entry not in OVERLAY_PROPERTIES_WHITELIST[property_whitelist]:
+                            return httputils.bad_request("Property not supported to overlay for %r: %r" % (property_whitelist, entry))
                 if Properties is None:
                     # clear properties
                     Properties = {}
@@ -1537,7 +1578,7 @@ class BaseSharing:
             if ShareType in SHARE_TYPES:
                 answer['SupportedConversions'] = CONVERSIONS_WHITELIST
                 answer['PermittedPropertiesOverlay'] = self.permit_properties_overlay
-                answer['SupportedPropertiesOverlay'] = OVERLAY_PROPERTIES_WHITELIST
+                answer['SupportedPropertiesOverlay'] = list(OVERLAY_PROPERTIES_WHITELIST_VCF) + list(OVERLAY_PROPERTIES_WHITELIST_ICS)
                 answer['SupportedActions'] = ACTIONS_WHITELIST_INFO
 
         # action: TOGGLE

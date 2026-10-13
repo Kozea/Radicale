@@ -137,6 +137,8 @@ class TestSharingApiSanity(BaseTest):
         response = responses[path]
         assert not isinstance(response, int)
         status, prop = response["ICAL:calendar-color"]
+        if status == 404:
+            return None
         logging.debug("ICAL:calendar-color: %r", prop.text)
         assert status == 200
         return prop.text
@@ -190,6 +192,8 @@ class TestSharingApiSanity(BaseTest):
         assert not isinstance(response, int)
         status, prop = response["C:calendar-description"]
         logging.debug("C:calendar-description: %r", prop.text)
+        if status == 404:
+            return None
         assert status == 200
         return prop.text
 
@@ -447,7 +451,7 @@ class TestSharingApiSanity(BaseTest):
             assert answer_dict['PermittedCreateCollectionByToken'] is True, f'PermittedCreateCollectionByToken {db_type}'
             assert answer_dict['SupportedConversions'] == list(sharing.CONVERSIONS_WHITELIST)
             assert answer_dict['PermittedPropertiesOverlay'] is True
-            assert answer_dict['SupportedPropertiesOverlay'] == list(sharing.OVERLAY_PROPERTIES_WHITELIST)
+            assert answer_dict['SupportedPropertiesOverlay'] == list(sharing.OVERLAY_PROPERTIES_WHITELIST_VCF) + list(sharing.OVERLAY_PROPERTIES_WHITELIST_ICS)
             assert answer_dict['SupportedActions'] == sharing.ACTIONS_WHITELIST_INFO
 
             logging.info("\n*** check API hook: info/all (2)")
@@ -4275,7 +4279,13 @@ permissions: RrWw""")
             assert status == 200 and prop.text == "#AAAAAA"
 
             # update map by user
-            logging.info("\n*** update map by user (json)")
+            logging.info("\n*** update map by user (json) ICS with VCF properties -> 400")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"CR:addressbook-description": "ICAL-USER", "INF:addressbook-color": "#BBBBBB"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="user:userpw", json_dict=json_dict)
+
+            logging.info("\n*** update map by user (json) -> ok")
             json_dict = {}
             json_dict['PathOrToken'] = path_shared_r
             json_dict['Properties'] = {"C:calendar-description": "ICAL-USER", "ICAL:calendar-color": "#BBBBBB"}
@@ -5216,6 +5226,9 @@ permissions: RrWw""")
             path_shared_r = "/user/calendar-bday-abook-shared-by-owner-r-" + db_type + ".ics/"
             self.create_addressbook(path_mapped, login="owner:ownerpw")
 
+            # set color
+            self._proppatch_calendar_color(path_mapped, login="owner:ownerpw", color="#AACCFF")
+
             contact = get_file_content("contact1.vcf")
             path = path_mapped + "/contact1.vcf"
             self.put(path, contact, login="owner:ownerpw")
@@ -5259,7 +5272,6 @@ permissions: RrWw""")
             json_dict['Permissions'] = "rw"
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
-            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
             _, headers, answer = self._sharing_api_json("map", "create", check=400, login="owner:ownerpw", json_dict=json_dict)
 
             # create map
@@ -5273,7 +5285,6 @@ permissions: RrWw""")
             json_dict['Enabled'] = True
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
-            json_dict['Properties'] = {"D:displayname": "Test-BDAY"}
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict=json_dict)
             answer_dict = json.loads(answer)
             assert answer_dict['Status'] == "success"
@@ -5323,6 +5334,65 @@ permissions: RrWw""")
             assert "D:sync-token" not in response
             assert "C:supported-calendar-component-set" in response
             assert "D:current-user-privilege-set" in response
+            assert "D:displayname" in response
+            status, prop = response["D:displayname"]
+            assert status == 200
+            assert prop.text is not None
+            assert "(BDAY)" in prop.text
+
+            logging.info("\n*** PROPFIND collection as user (color) -> same as abook")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#AACCFF"
+
+            logging.info("\n*** PROPFIND collection as user (calendar-description) -> not set")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description is None
+
+            logging.info("\n*** update map(bday) user/owner:r with not supported elements -> 403")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"CR:addressbook-description": "owner-test-abook1-bday"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+            json_dict['Properties'] = {"INF:addressbook-color": "#001122"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=400, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** update map(bday) user/owner:r -> ok")
+            json_dict = {}
+            json_dict['User'] = "user"
+            json_dict['PathMapped'] = path_mapped
+            json_dict['PathOrToken'] = path_shared_r
+            json_dict['Properties'] = {"D:displayname": "Test-BDAY", "ICAL:calendar-color": "#BBDDAAA", "C:calendar-description": "Test-BDAY-DESC"}
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+            answer_dict = json.loads(answer)
+            assert answer_dict['Status'] == "success"
+
+            # check PROPFIND collection as user
+            logging.info("\n*** PROPFIND collection as user -> check display name without BDAY")
+            response = self._propfind_allprop(path_shared_r, login="user:userpw")
+            logging.debug("response: %r", response)
+            assert "D:displayname" in response
+            status, prop = response["D:displayname"]
+            assert status == 200
+            assert prop.text is not None
+            assert "(BDAY)" not in prop.text
+            assert prop.text == "Test-BDAY"
+
+            logging.info("\n*** PROPFIND collection as user (calendar-description)")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == "Test-BDAY-DESC"
+
+            logging.info("\n*** PROPFIND collection as user (calendar-color)")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#BBDDAAA"
+
+            logging.info("\n*** PROPPATCH collection as user (calendar-color)")
+            self._proppatch_calendar_color(path_shared_r, login="user:userpw", color="#BBCCFF")
+
+            logging.info("\n*** PROPFIND collection as user (calendar-color)-> by-user-changed color")
+            color = self._propfind_calendar_color(path_shared_r, login="user:userpw")
+            assert color == "#BBCCFF"
 
             logging.info("\n*** PROPFIND item as user -> calendar")
             response = self._propfind_allprop(path_shared_r + "contact2-with-bday.ics", login="user:userpw")
