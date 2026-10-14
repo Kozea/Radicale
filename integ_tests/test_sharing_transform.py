@@ -223,3 +223,140 @@ def test_transform_share_edit_config(
     # Default template is "[{n:f} {n:g}|{fn}|{nickname}] ({year}) (BDAY)"
     assert "Alice Wonderland's Special Birthday" not in resp4.text
     assert "Alice Wonderland (1990) (BDAY)" in resp4.text
+
+
+def test_transform_share_overlay_properties(
+    context: BrowserContext, page: Page, radicale_server: str
+) -> None:
+    """
+    Issue #2272:
+    1. Creating a bday transform share with overlay properties (displayname, description, color)
+       uses CALENDAR properties and succeeds without 400 error.
+    2. Overridden displayname does not append default '(BDAY)' suffix.
+    3. Re-opening Edit Share loads existing overlay properties.
+    4. Editing overlay properties via Edit Share updates the share.
+    5. Editing the collection card for a transformed share has the collection type
+       selector disabled / locked to the current type, and PROPPATCH updates properties.
+    """
+    config = SHARING_HTPASSWD
+    _setup_addressbook_with_contact(page, radicale_server, config)
+
+    # 1. Open Share modal on Contacts
+    page.hover("article:not(.hidden)")
+    page.click('article:not(.hidden) a[data-name="share"]', force=True)
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+
+    # 2. Share by map with bday conversion and overlay properties
+    page.click('button[data-name="sharebymap"]')
+    page.click('label[for="newshare_conv_bday"]')
+    page.locator('input[data-name="shareuser"]').fill(config.admin_username)
+    page.locator('input[data-name="sharehref"]').fill("bday-cal")
+
+    # Set overlay properties
+    page.locator('details[data-name="properties_override"] summary').click()
+    page.check('input[data-name="displayname_override_enabled"]')
+    page.locator('input[data-name="displayname_override"]').fill("Alice Custom Birthdays")
+    page.check('input[data-name="description_override_enabled"]')
+    page.locator('input[data-name="description_override"]').fill("Alice Birthday Reminders")
+    page.check('input[data-name="color_override_enabled"]')
+    page.locator('input[data-name="color_override"]').fill("#336699")
+
+    page.click('#createeditsharescene button[data-name="submit"]')
+    expect(page.locator("#createeditsharescene")).to_be_hidden()
+    expect(page.locator("tr[data-name='sharemaprowtemplate']:not(.hidden)")).to_have_count(1)
+
+    # Close share scene
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
+
+    # 3. Verify card on collection list
+    articles = page.locator("article:not(.hidden)")
+    expect(articles).to_have_count(2)
+    bday_article = articles.filter(
+        has=page.locator("[data-name='transformed-from']:not(.hidden)")
+    )
+    expect(bday_article).to_be_visible()
+
+    # Custom displayname must NOT include "(BDAY)"
+    title_el = bday_article.locator("[data-name='title']")
+    expect(title_el).to_have_text("Alice Custom Birthdays")
+    desc_el = bday_article.locator("[data-name='description']")
+    expect(desc_el).to_have_text("Alice Birthday Reminders")
+
+    # Verify color on the collection card in the UI (#336699 -> rgb(51, 102, 153))
+    color_bar = bday_article.locator("[data-name='color']")
+    expect(color_bar).to_have_css("background-color", "rgb(51, 102, 153)")
+
+    # Verify via PROPFIND request
+    req = requests.Session()
+    req.trust_env = False
+    bday_cal_url = f"{radicale_server}/{config.admin_username}/bday-cal/"
+    propfind_xml = """<?xml version="1.0" encoding="utf-8" ?>
+<D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:ICAL="http://apple.com/ns/ical/">
+  <D:prop>
+    <D:displayname/>
+    <C:calendar-description/>
+    <ICAL:calendar-color/>
+  </D:prop>
+</D:propfind>"""
+    resp = req.request("PROPFIND", bday_cal_url, auth=(config.admin_username, "admi$pass#word"), data=propfind_xml, headers={"Depth": "0"})
+    assert resp.status_code == 207
+    assert "Alice Custom Birthdays" in resp.text
+    assert "(BDAY)" not in resp.text
+    assert "Alice Birthday Reminders" in resp.text
+    assert "#336699ff" in resp.text
+
+    # 4. Re-open Edit Share and verify overlay properties are loaded
+    contacts_article = articles.filter(
+        has_not=page.locator("[data-name='transformed-from']:not(.hidden)")
+    )
+    contacts_article.hover()
+    contacts_article.locator('a[data-name="share"]').click(force=True)
+    expect(page.locator("#sharecollectionscene")).to_be_visible()
+
+    page.click("tr[data-name='sharemaprowtemplate']:not(.hidden) button[data-name='edit']", strict=True)
+    expect(page.locator("#createeditsharescene h1")).to_have_text("Edit Share")
+
+    expect(page.locator('input[data-name="displayname_override_enabled"]')).to_be_checked()
+    expect(page.locator('input[data-name="displayname_override"]')).to_have_value("Alice Custom Birthdays")
+    expect(page.locator('input[data-name="description_override_enabled"]')).to_be_checked()
+    expect(page.locator('input[data-name="description_override"]')).to_have_value("Alice Birthday Reminders")
+    expect(page.locator('input[data-name="color_override_enabled"]')).to_be_checked()
+    expect(page.locator('input[data-name="color_override"]')).to_have_value("#336699")
+
+    # Update displayname via Edit Share
+    page.locator('input[data-name="displayname_override"]').fill("Updated Alice Birthdays")
+    page.click('#createeditsharescene button[data-name="submit"]')
+    expect(page.locator("#createeditsharescene")).to_be_hidden()
+
+    page.click('#sharecollectionscene button[data-name="cancel"]')
+    expect(page.locator("#sharecollectionscene")).to_be_hidden()
+
+    expect(bday_article.locator("[data-name='title']")).to_have_text("Updated Alice Birthdays")
+
+    # 5. Test editing from the card: type selector must be disabled / locked to Calendar
+    bday_article.hover()
+    bday_article.locator('a[data-name="edit"]').click(force=True)
+    expect(page.locator("#editcollectionscene")).to_be_visible()
+
+    type_select = page.locator('#editcollectionscene select[data-name="type"]')
+    expect(type_select).to_be_disabled()
+    expect(type_select.locator("option")).to_have_count(1)
+
+    # Verify color input in edit modal matches existing color
+    expect(page.locator('#editcollectionscene input[data-name="color"]')).to_have_value("#336699")
+
+    # Edit displayname and color from card
+    page.locator('#editcollectionscene input[data-name="displayname"]').fill("Renamed From Card")
+    page.locator('#editcollectionscene input[data-name="color"]').fill("#224466")
+    page.click('#editcollectionscene button[data-name="submit"]')
+    expect(page.locator("#editcollectionscene")).to_be_hidden()
+
+    expect(bday_article.locator("[data-name='title']")).to_have_text("Renamed From Card")
+    # Verify updated color on card in UI (#224466 -> rgb(34, 68, 102))
+    expect(color_bar).to_have_css("background-color", "rgb(34, 68, 102)")
+
+    resp2 = req.request("PROPFIND", bday_cal_url, auth=(config.admin_username, "admi$pass#word"), data=propfind_xml, headers={"Depth": "0"})
+    assert resp2.status_code == 207
+    assert "Renamed From Card" in resp2.text
+    assert "#224466ff" in resp2.text

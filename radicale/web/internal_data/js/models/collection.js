@@ -128,8 +128,9 @@ export class Collection {
      * @param {string} source
      * @param {Array<string>} permissions
      * @param {string} version
+     * @param {boolean} [is_transform=false]
      */
-    constructor(href, type, displayname, description, color, contentcount, size, source, permissions, version = "") {
+    constructor(href, type, displayname, description, color, contentcount, size, source, permissions, version = "", is_transform = false) {
         this.href = href;
         this.type = type;
         this.displayname = displayname;
@@ -140,6 +141,7 @@ export class Collection {
         this.size = size;
         this.permissions = permissions;
         this.version = version;
+        this.is_transform = is_transform;
     }
 
     has_permission(/** @type {string} */ permission) {

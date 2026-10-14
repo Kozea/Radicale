@@ -72,7 +72,9 @@ def test_edit_button_hidden_when_no_proppatch_permission(
     path_mapped = urlparse(collection_url).path
 
     # 2. Create map share with Conversion=bday (permissions default to 'r', overlay disabled)
-    resp = requests.post(
+    req = requests.Session()
+    req.trust_env = False
+    resp = req.post(
         f"{radicale_server_no_overlay}/.sharing/v1/map/create",
         auth=(config.admin_username, "admi$pass#word"),
         data={
@@ -84,12 +86,12 @@ def test_edit_button_hidden_when_no_proppatch_permission(
     )
     assert resp.status_code == 200, f"API create failed: {resp.status_code} {resp.text}"
 
-    requests.post(
+    req.post(
         f"{radicale_server_no_overlay}/.sharing/v1/map/enable",
         auth=(config.admin_username, "admi$pass#word"),
         data={"PathOrToken": f"/{config.admin_username}/bday/"},
     )
-    requests.post(
+    req.post(
         f"{radicale_server_no_overlay}/.sharing/v1/map/unhide",
         auth=(config.admin_username, "admi$pass#word"),
         data={"PathOrToken": f"/{config.admin_username}/bday/"},

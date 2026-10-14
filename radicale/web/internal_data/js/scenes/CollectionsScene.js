@@ -106,6 +106,8 @@ function create_synthetic_collection_from_share(share, currentUser) {
         permissions.push(Permission.WRITE_PROPERTIES);
     }
 
+    let is_transform = Boolean(share.Conversion && share.Conversion.toLowerCase() !== "none");
+
     return new Collection(
         href,
         type,
@@ -116,7 +118,8 @@ function create_synthetic_collection_from_share(share, currentUser) {
         0,
         "",
         permissions,
-        ""
+        "",
+        is_transform
     );
 }
 
@@ -594,6 +597,7 @@ export class CollectionsScene {
         let is_transform = Boolean(share &&
             (share.Conversion || "").toLowerCase() !== "none" &&
             (share.Conversion || "") !== "");
+        collection.is_transform = is_transform;
         if (CollectionType.is_subset(CollectionType.CALENDAR, collection.type) &&
                 !is_transform) {
             freebusy_wrapper.classList.remove("hidden");

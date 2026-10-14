@@ -367,7 +367,7 @@ function create_edit_collection(user, password, collection, create, callback) {
         '<set>' +
         '<prop>' +
         (create ? '<resourcetype><collection />' + resourcetype + '</resourcetype>' : '') +
-        (components ? '<C:supported-calendar-component-set>' + components + '</C:supported-calendar-component-set>' : '') +
+        (components && !collection.is_transform ? '<C:supported-calendar-component-set>' + components + '</C:supported-calendar-component-set>' : '') +
         (displayname ? '<displayname>' + displayname + '</displayname>' : '') +
         (calendar_color ? '<I:calendar-color>' + calendar_color + '</I:calendar-color>' : '') +
         (addressbook_color ? '<INF:addressbook-color>' + addressbook_color + '</INF:addressbook-color>' : '') +
@@ -378,7 +378,7 @@ function create_edit_collection(user, password, collection, create, callback) {
         '</set>' +
         (!create ? ('<remove>' +
             '<prop>' +
-            (!components ? '<C:supported-calendar-component-set />' : '') +
+            (!components && !collection.is_transform ? '<C:supported-calendar-component-set />' : '') +
             (!displayname ? '<displayname />' : '') +
             (!calendar_color ? '<I:calendar-color />' : '') +
             (!addressbook_color ? '<INF:addressbook-color />' : '') +

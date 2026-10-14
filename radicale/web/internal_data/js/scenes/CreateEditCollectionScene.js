@@ -46,6 +46,7 @@ export class CreateEditCollectionScene {
         this._password = password;
         this._collection = collection;
         this._edit = collection.type !== CollectionType.PRINCIPAL;
+        this._is_transform = Boolean(collection.is_transform);
 
         this._html_scene = get_element_by_id(this._edit ? "editcollectionscene" : "createcollectionscene");
         this._title_form = this._edit ? get_element(this._html_scene, "[data-name=title]") : null;
@@ -88,11 +89,14 @@ export class CreateEditCollectionScene {
             return;
         }
         /** @type {HTMLOptionsCollection} */ let options = this._type_form.options;
-        let valid_type_options = CollectionType.valid_options_for_type(this._type);
+        let valid_type_options = this._is_transform ? [this._type] : CollectionType.valid_options_for_type(this._type);
         for (let i = options.length - 1; i >= 0; i--) {
             if (valid_type_options.indexOf(options[i].value) < 0) {
                 options.remove(i);
             }
+        }
+        if (this._is_transform) {
+            this._type_form.disabled = true;
         }
     }
 
@@ -138,7 +142,7 @@ export class CreateEditCollectionScene {
             }
             let loading_scene = new LoadingScene();
             push_scene(loading_scene);
-            let collection = new Collection(this._href, this._type, this._displayname, this._description, sane_color, 0, 0, this._source, []);
+            let collection = new Collection(this._href, this._type, this._displayname, this._description, sane_color, 0, 0, this._source, [], "", this._is_transform);
             let callback = (/** @type {?string} */ error1) => {
                 if (!is_current_scene(loading_scene)) {
                     return;
