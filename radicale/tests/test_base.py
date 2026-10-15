@@ -3140,6 +3140,10 @@ END:VCALENDAR
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
         assert pl["PayloadContent"][0]["CalDAVPort"] == 80
         assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/"
+        assert pl["PayloadContent"][1]["CardDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][1]["CardDAVUseSSL"] is False
+        assert pl["PayloadContent"][1]["CardDAVPort"] == 80
+        assert pl["PayloadContent"][1]["CardDAVPrincipalURL"] == "/"
 
     def test_apple_mobileconfig_authorized_SSL(self) -> None:
         self.configure({"auth": {"type": "none"}})
@@ -3155,6 +3159,9 @@ END:VCALENDAR
         assert pl["PayloadContent"][0]["CalDAVUsername"] == "appleuser"
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is True
         assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/"
+        assert pl["PayloadContent"][1]["CardDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][1]["CardDAVUseSSL"] is True
+        assert pl["PayloadContent"][1]["CardDAVPrincipalURL"] == "/"
 
     def test_apple_mobileconfig_authorized_scriptname(self) -> None:
         self.configure({"auth": {"type": "none"}})
@@ -3171,6 +3178,10 @@ END:VCALENDAR
         assert pl["PayloadContent"][0]["CalDAVUseSSL"] is False
         assert pl["PayloadContent"][0]["CalDAVPort"] == 80
         assert pl["PayloadContent"][0]["CalDAVPrincipalURL"] == "/radicale/"
+        assert pl["PayloadContent"][1]["CardDAVUsername"] == "appleuser"
+        assert pl["PayloadContent"][1]["CardDAVUseSSL"] is False
+        assert pl["PayloadContent"][1]["CardDAVPort"] == 80
+        assert pl["PayloadContent"][1]["CardDAVPrincipalURL"] == "/radicale/"
 
     def test_well_known(self) -> None:
         for path in ["/.well-known/caldav", "/.well-known/carddav"]:

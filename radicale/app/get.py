@@ -232,12 +232,12 @@ class ApplicationPartGet(ApplicationBase):
                             PayloadVersion=1,
                             PayloadIdentifier="org.radicale.mobileconfig." + user + ".carddav",
                             PayloadUUID=str(uuid.UUID(utils.sha256_str("radicale:carddav:" + uuid_suffix_input)[:32])),
-                            CalDAVAccountDescription="Radicale Contacts",
-                            CalDAVHostName=host,
-                            CalDAVPort=int(port),
-                            CalDAVUsername=user,
-                            CalDAVPrincipalURL=uri,
-                            CalDAVUseSSL=(useSSL == 1)
+                            CardDAVAccountDescription="Radicale Contacts",
+                            CardDAVHostName=host,
+                            CardDAVPort=int(port),
+                            CardDAVUsername=user,
+                            CardDAVPrincipalURL=uri,
+                            CardDAVUseSSL=(useSSL == 1)
                             )
                         ]
                       )

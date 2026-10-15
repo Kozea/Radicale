@@ -82,5 +82,5 @@ def test_mobileconfig_button_visible_and_downloads_file(
 
     assert caldav_payload["CalDAVAccountDescription"] == "Radicale Calendar"
     assert caldav_payload["CalDAVUsername"] == config.admin_username
-    assert carddav_payload["CalDAVAccountDescription"] == "Radicale Contacts"
-    assert carddav_payload["CalDAVUsername"] == config.admin_username
+    assert carddav_payload["CardDAVAccountDescription"] == "Radicale Contacts"
+    assert carddav_payload["CardDAVUsername"] == config.admin_username
