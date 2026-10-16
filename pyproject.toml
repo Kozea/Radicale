@@ -248,6 +248,8 @@ commands = [["pytest", "integ_tests"]]
 description = "Server: run caldav compatibility tests"
 # versions are pinned in project.optional-dependencies.caldav_test
 extras = ["caldav_test"]
+deps = "{[project.optional-dependencies]caldav_test}"
+allowlist_externals = [ "pytest" ]
 commands = [["pytest", "caldav_compat_tests"]]
 
 [tool.tox.env.js]
