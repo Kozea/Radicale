@@ -52,10 +52,10 @@ dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator
 # place to bump them, see caldav_compat_tests/README.md.
 caldav_test = [
     "pytest>=7",
-    "caldav==3.4.0; python_version >= '3.10'",
-    "caldav-server-tester==1.2.0; python_version >= '3.10'",
+    "caldav==3.5.0; python_version >= '3.10'",
+    "caldav-server-tester==1.4.0; python_version >= '3.10'",
     "icalendar==7.3.0; python_version >= '3.10'",
-    "icalendar-searcher==1.1.0; python_version >= '3.10'",
+    "icalendar-searcher==1.2.0; python_version >= '3.10'",
     "recurring-ical-events==3.8.2; python_version >= '3.10'",
 ]
 
