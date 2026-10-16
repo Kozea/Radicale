@@ -7,6 +7,7 @@
 * Improvement: sharing/api: reject unsupported overlay properties depending on collection type and conversion
 * Improvement: sharing/bday: remove default "(BDAY)" suffix from overlayed "displayname"
 * Fix: WebUI/Sharing: property overrides on transformed shares
+* Fix: PUT request: accept If-Match: * for an existing item
 
 ## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True
