@@ -41,28 +41,57 @@ from caldav_server_tester import ServerQuirkChecker
 
 from caldav_compat_tests.common import start_radicale_server
 
-# Features where Radicale's observed support level differs from the
-# caldav-server-tester default (RFC-compliant) expectation, using an
-# out-of-the-box htpasswd-authenticated, filesystem-backed configuration.
+# Features the compact caldav-server-tester report lists for Radicale (i.e.
+# where the observed result differs from, or adds detail to, the default
+# expectation), using an out-of-the-box htpasswd-authenticated,
+# filesystem-backed configuration. Only the support level (or, for
+# observations such as "has-calendar", the observed value) is compared, see
+# _support_levels().
 #
 # Radicale does not implement CalDAV Scheduling (RFC 6638) or principal
-# search, hence the "scheduling.*" and "principal-search" entries below.
-# The rest are narrower gaps; see each feature's description (printed by
-# ServerQuirkChecker.report()) for details.
+# search, hence the "scheduling" and "principal-search" entries below; the
+# checks below an unsupported "scheduling" are not reported. The rest are
+# narrower gaps or extra details; see each feature's description (printed
+# by ServerQuirkChecker.report()) for details.
 EXPECTED_DEVIATIONS = {
-    "get-current-user-principal.has-calendar": {"support": "unsupported"},
+    "auth.www-authenticate": {"support": "full"},
+    "auth.www-authenticate.usable-scheme": {"support": "full"},
+    "calendar-color": {"support": "full"},
+    "calendar-color.hex": {"support": "full"},
+    "calendar-order": {"support": "full"},
+    "create-calendar.with-supported-component-types": {"support": "full"},
+    # a fresh account has no calendar
+    "get-current-user-principal.has-calendar": {"value": False},
     "principal-search": {"support": "unsupported"},
+    # PUT with "If-Match: *" on an existing item is refused with 412
+    "save-load.mutable.if-match-wildcard": {"support": "unsupported"},
     "scheduling": {"support": "unsupported"},
-    "scheduling.auto-schedule": {"support": "unsupported"},
-    "scheduling.calendar-user-address-set": {"support": "unsupported"},
-    "scheduling.freebusy-query": {"support": "unsupported"},
-    "scheduling.mailbox": {"support": "unsupported"},
-    "scheduling.mailbox.inbox-delivery": {"support": "unsupported"},
-    "scheduling.schedule-tag": {"support": "unsupported"},
-    "scheduling.schedule-tag.stable-partstat": {"support": "unsupported"},
     "search.recurrences.expanded.todo": {"support": "unsupported"},
     "search.text.case-sensitive": {"support": "unsupported"},
+    "search.text.comp-type-optional": {"support": "unsupported"},
+    "search.time-range.comp-type-optional": {"support": "full"},
+    "synchronous-write": {"support": "full"},
+    "url.encode-at.encoded": {"support": "full"},
+    "url.encode-at.identity": {"support": "unsupported"},
+    "url.encode-at.literal.collection": {"support": "full"},
+    "url.encode-at.literal.object": {"support": "full"},
+    "url.encode-at.literal.principal": {"support": "unknown"},
+    # not applicable to a server listening on localhost
+    "well-known": {"support": "unknown"},
 }
+
+
+def _support_levels(features: dict) -> dict:
+    """Reduce a feature report to the support level / observed value.
+
+    Drops free-text notes and measurements (e.g. "behaviour",
+    "description", "save-load-delay"), so that the baseline doesn't depend
+    on their wording or on timing.
+    """
+    return {
+        name: {k: v for k, v in info.items() if k in ("support", "value")}
+        for name, info in features.items()
+    }
 
 
 @pytest.fixture
@@ -77,8 +106,8 @@ def test_compatibility(radicale_server: str) -> None:
         checker = ServerQuirkChecker(client)
         checker.check_all()
         try:
-            observed_deviations = checker.features_checked.dotted_feature_set_list(
-                compact=True
+            observed_deviations = _support_levels(
+                checker.features_checked.dotted_feature_set_list(compact=True)
             )
             assert observed_deviations == EXPECTED_DEVIATIONS, (
                 "Observed CalDAV compatibility deviates from the known baseline "
