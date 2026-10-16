@@ -63,8 +63,6 @@ EXPECTED_DEVIATIONS = {
     # a fresh account has no calendar
     "get-current-user-principal.has-calendar": {"value": False},
     "principal-search": {"support": "unsupported"},
-    # PUT with "If-Match: *" on an existing item is refused with 412
-    "save-load.mutable.if-match-wildcard": {"support": "unsupported"},
     "scheduling": {"support": "unsupported"},
     "search.recurrences.expanded.todo": {"support": "unsupported"},
     "search.text.case-sensitive": {"support": "unsupported"},
