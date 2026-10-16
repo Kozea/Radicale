@@ -46,7 +46,18 @@ argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
 pam = ["pam"]
 dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
-caldav_test = ["pytest>=7", "caldav>=3.0; python_version >= '3.10'", "caldav-server-tester>=1.2,<2; python_version >= '3.10'"]
+# Exact pins: the observed feature report depends on the client libraries
+# (feature model, search matching, recurrence expansion), not only on
+# caldav-server-tester, so they are all frozen together. This is the single
+# place to bump them, see caldav_compat_tests/README.md.
+caldav_test = [
+    "pytest>=7",
+    "caldav==3.4.0; python_version >= '3.10'",
+    "caldav-server-tester==1.2.0; python_version >= '3.10'",
+    "icalendar==7.3.0; python_version >= '3.10'",
+    "icalendar-searcher==1.1.0; python_version >= '3.10'",
+    "recurring-ical-events==3.8.2; python_version >= '3.10'",
+]
 
 [project.scripts]
 radicale = "radicale.__main__:run"
@@ -235,12 +246,8 @@ commands = [["pytest", "integ_tests"]]
 
 [tool.tox.env.caldav_compat_test]
 description = "Server: run caldav compatibility tests"
+# versions are pinned in project.optional-dependencies.caldav_test
 extras = ["caldav_test"]
-deps = [
-    "caldav",
-    "caldav_server_tester==1.2.0",  # synchronize version with .github/workflows/test.yml#caldav-compat-test
-    "pytest"
-]
 commands = [["pytest", "caldav_compat_tests"]]
 
 [tool.tox.env.js]

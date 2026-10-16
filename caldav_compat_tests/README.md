@@ -35,14 +35,20 @@ pip install -e ".[caldav_test]"
 pytest caldav_compat_tests
 ```
 
-## Pinned `caldav-server-tester` version
+## Pinned client library versions
 
-CI pins `caldav-server-tester` to a known-good version
-(`CALDAV_SERVER_TESTER_VERSION` in the `caldav-compat-test` job of
-`.github/workflows/test.yml`) so that a new release of that library can't
-turn this job red on unrelated PRs. Bump it deliberately in its own PR,
-updating `EXPECTED_DEVIATIONS` in the same PR if the new version changes
-observed behaviour.
+The observed feature report depends not only on `caldav-server-tester`, but
+also on the `caldav` client library (which defines the feature model and
+how results are reported) and on the libraries it uses to evaluate search
+and recurrence results (`icalendar`, `icalendar-searcher`,
+`recurring-ical-events`). A new release of any of them can change the
+report without any change to Radicale.
+
+They are therefore all pinned to exact, known-good versions in the
+`caldav_test` extra in `pyproject.toml`. That is the only place they are
+pinned: CI, tox, uv and pip all install them via that extra. Bump them
+deliberately in their own PR, updating `EXPECTED_DEVIATIONS` in the same
+PR if the new versions change observed behaviour.
 
 ## Updating the baseline
 
