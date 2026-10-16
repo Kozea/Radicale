@@ -277,8 +277,9 @@ class ApplicationPartPut(ApplicationBase):
                 # Etag asked but no item found: item has been removed
                 logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item not existing)", path, etag)
                 return httputils.PRECONDITION_FAILED
-            if item and etag and item.etag != etag:
+            if item and etag and etag not in ("*", item.etag):
                 # Etag asked but item not matching: item has changed
+                # ("*" matches any existing item, RFC 9110 section 13.1.1)
                 logger.warning("Precondition failed on PUT request for %r (HTTP_IF_MATCH: %s, item has different etag: %s)", path, etag, item.etag)
                 return httputils.PRECONDITION_FAILED
             if item and etag:

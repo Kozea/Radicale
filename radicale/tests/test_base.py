@@ -640,6 +640,34 @@ permissions: RrWw""")
         path = "/calendar.ics/event1.ics"
         self.put(path, event, check=412, http_if_match="0000")
 
+    def test_update_event_with_etag_wildcard(self) -> None:
+        """Update an event with serving wildcard etag (OK)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=204, http_if_match="*")
+        _, answer = self.get(path)
+        assert "DTSTAMP:20130902T150159Z" in answer
+
+    def test_update_event_with_etag_wildcard_strict_preconditions_true(self) -> None:
+        """Update an event with serving wildcard etag having strict_preconditions enabled (OK)."""
+        self.configure({"storage": {"strict_preconditions": True}})
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        event_modified = get_file_content("event1_modified.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=201)
+        self.put(path, event_modified, check=204, http_if_match="*")
+
+    def test_add_event_with_etag_wildcard(self) -> None:
+        """Add an event with serving wildcard etag (Precondition Failed)."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event, check=412, http_if_match="*")
+
     def test_update_event_uid_event(self) -> None:
         """Update an event with a different UID."""
         self.mkcalendar("/calendar.ics/")
