@@ -306,13 +306,13 @@ To enable and manage the service run:
 
 ```bash
 # Enable the service
-$ systemctl enable radicale
+systemctl enable radicale
 # Start the service
-$ systemctl start radicale
+systemctl start radicale
 # Check the status of the service
-$ systemctl status radicale
+systemctl status radicale
 # View all log messages
-$ journalctl --unit radicale.service
+journalctl --unit radicale.service
 ```
 
 #### Linux with systemd as a user
