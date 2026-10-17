@@ -282,3 +282,50 @@ permissions: RrWw""")
             f.write("file-secret\n")
         hook = Hook(self.configuration)
         assert hook.email_config.password == "file-secret"
+
+    def test_smtp_port_config(self) -> None:
+        # check for invalid port
+        logging.notice("Try invalid port: 0")
+        try:
+            self.configure({
+                "hook": {
+                    "type": "email",
+                    "smtp_server": "localhost",
+                    "smtp_port": 0,
+                    "smtp_password": "inline-secret",
+                    "dryrun": "True",
+                }
+            })
+        except RuntimeError as e:
+            logging.notice("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for invalid port
+        logging.notice("Try invalid port: 65536")
+        try:
+            self.configure({
+                "hook": {
+                    "type": "email",
+                    "smtp_server": "localhost",
+                    "smtp_port": 65536,
+                    "smtp_password": "inline-secret",
+                    "dryrun": "True",
+                }
+            })
+        except RuntimeError as e:
+            logging.notice("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for valid port
+        logging.notice("Try valid port")
+        self.configure({
+            "hook": {
+                "type": "email",
+                "smtp_server": "localhost",
+                "smtp_port": 25,
+                "smtp_password": "inline-secret",
+                "dryrun": "True",
+            }
+        })

@@ -638,6 +638,33 @@ class TestAuthServers(BaseTest):
         config.update(auth)
         self.configure({"auth": config})
 
+    def test_imap_host_config(self) -> None:
+        box = _ImapBox()
+
+        # check for invalid port
+        logging.notice("Try invalid port: 0")
+        try:
+            self._configure_imap(box, imap_security="starttls", imap_host="imap.example:0",
+                                 imap_append_domain="example.com")
+        except RuntimeError as e:
+            logging.notice("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for invalid port
+        logging.notice("Try invalid port: 65536")
+        try:
+            self._configure_imap(box, imap_security="starttls", imap_host="imap.example:65536",
+                                 imap_append_domain="example.com")
+        except RuntimeError as e:
+            logging.notice("Exception: %s", str(e))
+        else:
+            raise
+
+        logging.notice("Try valid port: 65536")
+        self._configure_imap(box, imap_security="starttls", imap_host="imap.example:1143",
+                             imap_append_domain="example.com")
+
     def test_imap_plain_tls_and_login_mechanism(self) -> None:
         box = _ImapBox()
         self._configure_imap(box, imap_security="tls")
