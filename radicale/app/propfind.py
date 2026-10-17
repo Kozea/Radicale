@@ -344,11 +344,14 @@ def xml_propfind_response(
                             "p" in share['Permissions'] or
                             ("p" in raw_permissions and "P" not in share['Permissions']) or
                             (not self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
-                    logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
-                    privileges.append("D:write-properties")
-                    # "write-content" + "write-properties" = "write" (rfc3744-3.2)
-                    if permit_write_content:
-                        privileges.append("D:write")
+                    if "l" not in raw_permissions and "l" not in share['Permissions']:
+                        logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
+                        privileges.append("D:write-properties")
+                        # "write-content" + "write-properties" = "write" (rfc3744-3.2)
+                        if permit_write_content:
+                            privileges.append("D:write")
+                    else:
+                        logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: skip D:write-properties because of permission 'l'")
             elif not freebusy_only and write:
                 privileges.append("D:all")
                 privileges.append("D:write")
