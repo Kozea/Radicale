@@ -2580,7 +2580,7 @@ address books. Use Radicale's web interface or a client with support for it
 To create a new calendar run something like:
 
 ```bash
-$ curl -u user -X MKCOL 'http://localhost:5232/user/calendar' --data \
+curl -u user -X MKCOL 'http://localhost:5232/user/calendar' --data \
 '<?xml version="1.0" encoding="UTF-8" ?>
 <create xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:I="http://apple.com/ns/ical/">
   <set>
@@ -2605,7 +2605,7 @@ $ curl -u user -X MKCOL 'http://localhost:5232/user/calendar' --data \
 To create a new address book run something like:
 
 ```bash
-$ curl -u user -X MKCOL 'http://localhost:5232/user/addressbook' --data \
+curl -u user -X MKCOL 'http://localhost:5232/user/addressbook' --data \
 '<?xml version="1.0" encoding="UTF-8" ?>
 <create xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav">
   <set>
