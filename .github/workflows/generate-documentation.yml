@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pages: write
 
 jobs:
   generate:
