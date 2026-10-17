@@ -1,4 +1,7 @@
 name: Generate documentation
+permissions:
+  contents: read
+  pages: write
 on:
   push:
     paths:
