@@ -3310,14 +3310,23 @@ END:VCARD
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
             f.write("""\
+[user1]
+user: user1
+collection: {user}(/.*)?
+permissions: RrWw
+[user2]
+user: user2
+collection: {user}(/.*)?
+permissions: RrWwl
+[default]
+user: .+
+collection: {user}(/.*)?
+permissions: RrWw
 [default-collection]
 user: .+
 collection: .+
 permissions: RrWw
-[default]
-user: .+
-collection: {user}(/.*)?
-permissions: RrWw""")
+""")
         self.configure({"rights": {"file": rights_file_path}})
 
         json_dict: dict
@@ -3403,6 +3412,12 @@ permissions: RrWw""")
 
             logging.info("\n*** mkcalendar as user2 for user1/shared1 with rights from file -> permitted as back-mapped via share")
             self.mkcol(path_user1_shared1, login="user2:user2pw", check=201)
+
+            logging.info("\n*** proppatch as user1 for user1/shared1 with rights from file -> permitted")
+            self._proppatch_calendar_color(path_user1_shared1, login="user1:user1pw", color="#AAAAAA")
+
+            logging.info("\n*** proppatch as user2 for user2/shared1 with rights from file -> not permitted")
+            self._proppatch_calendar_color(path_user2_shared1, login="user2:user2pw", color="#AAAAAA", check=403)
 
     def test_sharing_api_permissions_global(self) -> None:
         """sharing API usage tests related to global permissions."""
@@ -7196,6 +7211,35 @@ permissions: RrWw""")
             assert "D:write-properties" in privileges_list
             assert "D:write" not in privileges_list
             assert "D:all" not in privileges_list
+
+            # update map to "rPl"
+            logging.info("\n*** update token with bday conversion ('rPl' permissions) -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "rPl"
+            _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
+
+            logging.info("\n*** PROPFIND item with token -> calendar")
+            response = self._propfind_allprop(path_shared)
+            logging.debug("response: %r", response)
+            status, props = response["D:current-user-privilege-set"]
+            privileges = props.findall(xmlutils.make_clark("D:privilege"))
+            assert len(privileges) >= 1
+            privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+            assert "D:read" in privileges_list
+            assert "D:write-content" not in privileges_list
+            assert "D:write-properties" not in privileges_list
+            assert "D:write" not in privileges_list
+            assert "D:all" not in privileges_list
+
+            # update map to "rP"
+            logging.info("\n*** update token with bday conversion ('rP' permissions) -> ok")
+            json_dict = {}
+            json_dict['User'] = "owner"
+            json_dict['PathOrToken'] = path_shared
+            json_dict['Permissions'] = "rP"
+            _, headers, answer = self._sharing_api_json("token", "update", check=200, login="owner:ownerpw", json_dict=json_dict)
 
             # execute PROPPATCH color as user
             logging.info("\n*** PROPPATCH color collection with token -> ok")
