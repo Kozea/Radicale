@@ -5,7 +5,7 @@ on:
     - DOCUMENTATION.md
 
 permissions:
-  contents: read
+  contents: write
   pages: write
 
 jobs:
