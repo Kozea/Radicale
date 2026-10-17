@@ -352,7 +352,8 @@ def xml_propfind_response(
             elif not freebusy_only and write:
                 privileges.append("D:all")
                 privileges.append("D:write")
-                privileges.append("D:write-properties")
+                if "l" not in raw_permissions:
+                    privileges.append("D:write-properties")
                 privileges.append("D:write-content")
 
             if not freebusy_only and self._sharing._enabled and not share:
