@@ -664,6 +664,29 @@ class TestBaseAuthRequests(BaseTest):
                                'auth': {"remote_ip_source": "X-Remote-Addr"},
                            })
 
+    def test_dovecot_port_config(self) -> None:
+        # check for invalid port
+        logging.info("Try invalid port: 0")
+        try:
+            self.configure({"auth": {"dovecot_port": 0}})
+        except RuntimeError as e:
+            logging.info("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for invalid port
+        logging.info("Try invalid port: 65536")
+        try:
+            self.configure({"auth": {"dovecot_port": 65536}})
+        except RuntimeError as e:
+            logging.info("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for valid port
+        logging.info("Try valid port")
+        self.configure({"auth": {"dovecot_port": 143}})
+
     def test_custom(self) -> None:
         """Custom authentication."""
         self.configure({"auth": {"type": "radicale.tests.custom.auth"}})
