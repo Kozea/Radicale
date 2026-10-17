@@ -668,7 +668,7 @@ class TestBaseAuthRequests(BaseTest):
         # check for invalid port
         logging.notice("Try invalid port: 0")
         try:
-            self.configure({ "auth": { "dovecot_port": 0 } })
+            self.configure({"auth": {"dovecot_port": 0}})
         except RuntimeError as e:
             logging.notice("Exception: %s", str(e))
         else:
@@ -677,7 +677,7 @@ class TestBaseAuthRequests(BaseTest):
         # check for invalid port
         logging.notice("Try invalid port: 65536")
         try:
-            self.configure({ "auth": { "dovecot_port": 65536 } })
+            self.configure({"auth": {"dovecot_port": 65536}})
         except RuntimeError as e:
             logging.notice("Exception: %s", str(e))
         else:
@@ -685,7 +685,7 @@ class TestBaseAuthRequests(BaseTest):
 
         # check for valid port
         logging.notice("Try valid port")
-        self.configure({ "auth": { "dovecot_port": 143 } })
+        self.configure({"auth": {"dovecot_port": 143}})
 
     def test_custom(self) -> None:
         """Custom authentication."""
