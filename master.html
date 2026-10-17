@@ -21,8 +21,9 @@
   }
   .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   /* CSS for syntax highlighting */
+  html { -webkit-text-size-adjust: 100%; }
   pre > code.sourceCode { white-space: pre; position: relative; }
-  pre > code.sourceCode > span { line-height: 1.25; }
+  pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
   pre > code.sourceCode > span:empty { height: 1.2em; }
   .sourceCode { overflow: visible; }
   code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -389,7 +390,7 @@ installer, check the "Add Python to PATH" box and click on "Install
 now". Wait a couple of minutes, it's done!</p>
 <p>Launch a command prompt and type:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb7-1"><a aria-hidden="true" href="#cb7-1" tabindex="-1"></a>python <span class="op">-</span>m pip install <span class="op">--</span>upgrade https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/</span>Kozea<span class="op">/</span>Radicale<span class="op">/</span>archive<span class="op">/</span>master<span class="op">.</span><span class="fu">tar</span><span class="op">.</span><span class="fu">gz</span></span>
-<span id="cb7-2"><a aria-hidden="true" href="#cb7-2" tabindex="-1"></a>python <span class="op">-</span>m radicale <span class="op">--</span>storage<span class="op">-</span>filesystem<span class="op">-</span>folder<span class="op">=~/</span>radicale<span class="op">/</span>collections <span class="op">--</span>auth<span class="op">-</span>type none</span></code></pre></div>
+<span id="cb7-2"><a aria-hidden="true" href="#cb7-2" tabindex="-1"></a>python <span class="op">-</span>m radicale <span class="op">--</span>storage-filesystem-folder<span class="op">=~/</span>radicale<span class="op">/</span>collections <span class="op">--</span>auth-type none</span></code></pre></div>
 <section class="level5" id="common">
 <h5>Common <a class="headerlink" href="#common">&para;</a></h5>
 <p>Success!!! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
@@ -543,13 +544,13 @@ local needs if required.</p>
 configuration from the file <code>/etc/radicale/config</code>.</p>
 <p>To enable and manage the service run:</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a aria-hidden="true" href="#cb19-1" tabindex="-1"></a><span class="co"># Enable the service</span></span>
-<span id="cb19-2"><a aria-hidden="true" href="#cb19-2" tabindex="-1"></a><span class="ex">$</span> systemctl enable radicale</span>
+<span id="cb19-2"><a aria-hidden="true" href="#cb19-2" tabindex="-1"></a><span class="ex">systemctl</span> enable radicale</span>
 <span id="cb19-3"><a aria-hidden="true" href="#cb19-3" tabindex="-1"></a><span class="co"># Start the service</span></span>
-<span id="cb19-4"><a aria-hidden="true" href="#cb19-4" tabindex="-1"></a><span class="ex">$</span> systemctl start radicale</span>
+<span id="cb19-4"><a aria-hidden="true" href="#cb19-4" tabindex="-1"></a><span class="ex">systemctl</span> start radicale</span>
 <span id="cb19-5"><a aria-hidden="true" href="#cb19-5" tabindex="-1"></a><span class="co"># Check the status of the service</span></span>
-<span id="cb19-6"><a aria-hidden="true" href="#cb19-6" tabindex="-1"></a><span class="ex">$</span> systemctl status radicale</span>
+<span id="cb19-6"><a aria-hidden="true" href="#cb19-6" tabindex="-1"></a><span class="ex">systemctl</span> status radicale</span>
 <span id="cb19-7"><a aria-hidden="true" href="#cb19-7" tabindex="-1"></a><span class="co"># View all log messages</span></span>
-<span id="cb19-8"><a aria-hidden="true" href="#cb19-8" tabindex="-1"></a><span class="ex">$</span> journalctl <span class="at">--unit</span> radicale.service</span></code></pre></div>
+<span id="cb19-8"><a aria-hidden="true" href="#cb19-8" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">--unit</span> radicale.service</span></code></pre></div>
 </section>
 <section class="level4" id="linux-with-systemd-as-a-user">
 <h4>Linux with systemd as a user <a class="headerlink" href="#linux-with-systemd-as-a-user">&para;</a></h4>
@@ -571,13 +572,13 @@ the <code>storage</code> section to something like
 <code>~/.var/lib/radicale/collections</code>.</p>
 <p>To enable and manage the service run:</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a aria-hidden="true" href="#cb21-1" tabindex="-1"></a><span class="co"># Enable the service</span></span>
-<span id="cb21-2"><a aria-hidden="true" href="#cb21-2" tabindex="-1"></a><span class="ex">$</span> systemctl <span class="at">--user</span> enable radicale</span>
+<span id="cb21-2"><a aria-hidden="true" href="#cb21-2" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable radicale</span>
 <span id="cb21-3"><a aria-hidden="true" href="#cb21-3" tabindex="-1"></a><span class="co"># Start the service</span></span>
-<span id="cb21-4"><a aria-hidden="true" href="#cb21-4" tabindex="-1"></a><span class="ex">$</span> systemctl <span class="at">--user</span> start radicale</span>
+<span id="cb21-4"><a aria-hidden="true" href="#cb21-4" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> start radicale</span>
 <span id="cb21-5"><a aria-hidden="true" href="#cb21-5" tabindex="-1"></a><span class="co"># Check the status of the service</span></span>
-<span id="cb21-6"><a aria-hidden="true" href="#cb21-6" tabindex="-1"></a><span class="ex">$</span> systemctl <span class="at">--user</span> status radicale</span>
+<span id="cb21-6"><a aria-hidden="true" href="#cb21-6" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> status radicale</span>
 <span id="cb21-7"><a aria-hidden="true" href="#cb21-7" tabindex="-1"></a><span class="co"># View all log messages</span></span>
-<span id="cb21-8"><a aria-hidden="true" href="#cb21-8" tabindex="-1"></a><span class="ex">$</span> journalctl <span class="at">--user</span> <span class="at">--unit</span> radicale.service</span></code></pre></div>
+<span id="cb21-8"><a aria-hidden="true" href="#cb21-8" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">--user</span> <span class="at">--unit</span> radicale.service</span></code></pre></div>
 </section>
 <section class="level4" id="windows-with-nssm---the-non-sucking-service-manager">
 <h4>Windows with "NSSM - the Non-Sucking Service Manager" <a class="headerlink" href="#windows-with-nssm---the-non-sucking-service-manager">&para;</a></h4>
@@ -2060,7 +2061,7 @@ Send an email notification to event attendees.</p></li>
 <h5>smtp_port <a class="headerlink" href="#smtp_port">&para;</a></h5>
 <p><em>(&gt;= 3.5.5)</em></p>
 <p>Port on SMTP server to connect to.</p>
-<p>Default:</p>
+<p>Default: <code>25</code></p>
 </section>
 <section class="level5" id="smtp_security">
 <h5>smtp_security <a class="headerlink" href="#smtp_security">&para;</a></h5>
@@ -2557,7 +2558,7 @@ InfCloud</a>.</p>
 calendars and address books. Use Radicale's web interface or a client
 with support for it (e.g. <strong>DAVx⁵</strong>).</p>
 <p>To create a new calendar run something like:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb53-1"><a aria-hidden="true" href="#cb53-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/calendar'</span> <span class="at">--data</span> <span class="dt">\</span></span>
+<div class="sourceCode" id="cb53"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb53-1"><a aria-hidden="true" href="#cb53-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/calendar'</span> <span class="at">--data</span> <span class="dt">\</span></span>
 <span id="cb53-2"><a aria-hidden="true" href="#cb53-2" tabindex="-1"></a><span class="st">'&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</span></span>
 <span id="cb53-3"><a aria-hidden="true" href="#cb53-3" tabindex="-1"></a><span class="st">&lt;create xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:I="http://apple.com/ns/ical/"&gt;</span></span>
 <span id="cb53-4"><a aria-hidden="true" href="#cb53-4" tabindex="-1"></a><span class="st">  &lt;set&gt;</span></span>
@@ -2578,7 +2579,7 @@ with support for it (e.g. <strong>DAVx⁵</strong>).</p>
 <span id="cb53-19"><a aria-hidden="true" href="#cb53-19" tabindex="-1"></a><span class="st">  &lt;/set&gt;</span></span>
 <span id="cb53-20"><a aria-hidden="true" href="#cb53-20" tabindex="-1"></a><span class="st">&lt;/create&gt;'</span></span></code></pre></div>
 <p>To create a new address book run something like:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb54-1"><a aria-hidden="true" href="#cb54-1" tabindex="-1"></a><span class="ex">$</span> curl <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/addressbook'</span> <span class="at">--data</span> <span class="dt">\</span></span>
+<div class="sourceCode" id="cb54"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb54-1"><a aria-hidden="true" href="#cb54-1" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-u</span> user <span class="at">-X</span> MKCOL <span class="st">'http://localhost:5232/user/addressbook'</span> <span class="at">--data</span> <span class="dt">\</span></span>
 <span id="cb54-2"><a aria-hidden="true" href="#cb54-2" tabindex="-1"></a><span class="st">'&lt;?xml version="1.0" encoding="UTF-8" ?&gt;</span></span>
 <span id="cb54-3"><a aria-hidden="true" href="#cb54-3" tabindex="-1"></a><span class="st">&lt;create xmlns="DAV:" xmlns:CR="urn:ietf:params:xml:ns:carddav"&gt;</span></span>
 <span id="cb54-4"><a aria-hidden="true" href="#cb54-4" tabindex="-1"></a><span class="st">  &lt;set&gt;</span></span>
@@ -2697,6 +2698,16 @@ in case <code>permit_create_map= False</code> <em>(&gt;=
 3.7.0)</em></li>
 <li><strong>m:</strong> deny create of map-based sharing of collection
 in case <code>permit_create_map=True</code> <em>(&gt;= 3.7.0)</em></li>
+<li><strong>P:</strong> permit properties overlay in case
+permit_properties_overlay=False <em>(&gt;= 3.7.0)</em></li>
+<li><strong>p:</strong> deny properties overlay in case
+permit_properties_overlay=True <em>(&gt;= 3.7.0)</em></li>
+<li><strong>E:</strong> enable enforce properties overlay in case
+enforce_properties_overlay=False <em>(&gt;= 3.7.0)</em></li>
+<li><strong>e:</strong> disable enforce of properties overlay in case
+enforce_properties_overlay=True <em>(&gt;= 3.7.0)</em></li>
+<li><strong>l:</strong> lock properties (disable write-properties)
+<em>(&gt;= 3.8.4)</em></li>
 </ul>
 </section>
 <section class="level3" id="storage-2">
@@ -2808,34 +2819,34 @@ is organized.</p>
 calendar or an address book through network:</p>
 <div class="tableContainer"><table>
 <thead>
-<tr class="header">
+<tr>
 <th>Part</th>
 <th>Layer</th>
 <th>Protocol or Format</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Server</td>
 <td>Calendar/Contact Storage</td>
 <td>iCal/vCard</td>
 </tr>
-<tr class="even">
+<tr>
 <td>''</td>
 <td>Calendar/Contact Server</td>
 <td>CalDAV/CardDAV Server</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Transfer</td>
 <td>Network</td>
 <td>CalDAV/CardDAV (HTTP + TLS)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Client</td>
 <td>Calendar/Contact Client</td>
 <td>CalDAV/CardDAV Client</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>''</td>
 <td>GUI</td>
 <td>Terminal, GTK, Web interface, etc.</td>

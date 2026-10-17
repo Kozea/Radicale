@@ -21,8 +21,9 @@
   }
   .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   /* CSS for syntax highlighting */
+  html { -webkit-text-size-adjust: 100%; }
   pre > code.sourceCode { white-space: pre; position: relative; }
-  pre > code.sourceCode > span { line-height: 1.25; }
+  pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
   pre > code.sourceCode > span:empty { height: 1.2em; }
   .sourceCode { overflow: visible; }
   code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -389,7 +390,7 @@ installer, check the "Add Python to PATH" box and click on "Install
 now". Wait a couple of minutes, it's done!</p>
 <p>Launch a command prompt and type:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb7-1"><a aria-hidden="true" href="#cb7-1" tabindex="-1"></a>python <span class="op">-</span>m pip install <span class="op">--</span>upgrade https<span class="op">://</span>github<span class="op">.</span><span class="fu">com</span><span class="op">/</span>Kozea<span class="op">/</span>Radicale<span class="op">/</span>archive<span class="op">/</span>master<span class="op">.</span><span class="fu">tar</span><span class="op">.</span><span class="fu">gz</span></span>
-<span id="cb7-2"><a aria-hidden="true" href="#cb7-2" tabindex="-1"></a>python <span class="op">-</span>m radicale <span class="op">--</span>storage<span class="op">-</span>filesystem<span class="op">-</span>folder<span class="op">=~/</span>radicale<span class="op">/</span>collections <span class="op">--</span>auth<span class="op">-</span>type none</span></code></pre></div>
+<span id="cb7-2"><a aria-hidden="true" href="#cb7-2" tabindex="-1"></a>python <span class="op">-</span>m radicale <span class="op">--</span>storage-filesystem-folder<span class="op">=~/</span>radicale<span class="op">/</span>collections <span class="op">--</span>auth-type none</span></code></pre></div>
 <section class="level5" id="common">
 <h5>Common <a class="headerlink" href="#common">&para;</a></h5>
 <p>Success!!! Open <a href="http://localhost:5232">http://localhost:5232</a> in your browser!
@@ -2808,34 +2809,34 @@ is organized.</p>
 calendar or an address book through network:</p>
 <div class="tableContainer"><table>
 <thead>
-<tr class="header">
+<tr>
 <th>Part</th>
 <th>Layer</th>
 <th>Protocol or Format</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>Server</td>
 <td>Calendar/Contact Storage</td>
 <td>iCal/vCard</td>
 </tr>
-<tr class="even">
+<tr>
 <td>''</td>
 <td>Calendar/Contact Server</td>
 <td>CalDAV/CardDAV Server</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Transfer</td>
 <td>Network</td>
 <td>CalDAV/CardDAV (HTTP + TLS)</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Client</td>
 <td>Calendar/Contact Client</td>
 <td>CalDAV/CardDAV Client</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>''</td>
 <td>GUI</td>
 <td>Terminal, GTK, Web interface, etc.</td>

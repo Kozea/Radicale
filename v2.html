@@ -21,8 +21,9 @@
   }
   .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   /* CSS for syntax highlighting */
+  html { -webkit-text-size-adjust: 100%; }
   pre > code.sourceCode { white-space: pre; position: relative; }
-  pre > code.sourceCode > span { line-height: 1.25; }
+  pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
   pre > code.sourceCode > span:empty { height: 1.2em; }
   .sourceCode { overflow: visible; }
   code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -618,8 +619,8 @@ of Python 3. Then run the installer. On the first window of the
 installer, check the "Add Python to PATH" box and click on "Install
 now". Wait a couple of minutes, it's done!</p>
 <p>Launch a command prompt and type:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a aria-hidden="true" href="#cb3-1" tabindex="-1"></a>C<span class="op">:</span>\Users\User<span class="op">&gt;</span> python <span class="op">-</span>m pip install <span class="op">--</span>upgrade radicale<span class="op">==</span>2<span class="op">.</span><span class="fu">1</span><span class="op">.*</span></span>
-<span id="cb3-2"><a aria-hidden="true" href="#cb3-2" tabindex="-1"></a>C<span class="op">:</span>\Users\User<span class="op">&gt;</span> python <span class="op">-</span>m radicale <span class="op">--</span>config <span class="st">""</span> <span class="op">--</span>storage<span class="op">-</span>filesystem<span class="op">-</span>folder<span class="op">=~/</span>radicale<span class="op">/</span>collections</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb3-1"><a aria-hidden="true" href="#cb3-1" tabindex="-1"></a>C<span class="op">:</span>\Users\User<span class="op">&gt;</span> python <span class="op">-</span>m pip install <span class="op">--</span>upgrade radicale<span class="op">==</span><span class="dv">2.1</span><span class="op">.*</span></span>
+<span id="cb3-2"><a aria-hidden="true" href="#cb3-2" tabindex="-1"></a>C<span class="op">:</span>\Users\User<span class="op">&gt;</span> python <span class="op">-</span>m radicale <span class="op">--</span>config <span class="st">""</span> <span class="op">--</span>storage-filesystem-folder<span class="op">=~/</span>radicale<span class="op">/</span>collections</span></code></pre></div>
 <p>If you are using PowerShell replace <code>--config ""</code> with
 <code>--config '""'</code>.</p>
 <p>Victory! Open <a href="http://localhost:5232/">http://localhost:5232/</a> in your
