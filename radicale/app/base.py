@@ -302,7 +302,7 @@ class Access:
 
     def check(self, permission: str,
               item: Optional[types.CollectionOrItem] = None) -> bool:
-        if permission not in "rwdDoO":
+        if permission not in rights.INTERNAL_PERMISSIONS_ITEM:
             raise ValueError("Invalid permission argument: %r" % permission)
         if not item:
             permissions = permission + permission.upper()

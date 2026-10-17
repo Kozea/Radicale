@@ -58,6 +58,7 @@ INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")
 
 INTERNAL_PERMISSIONS: str = "RrifWwDdOoTtMmPpEe"
+INTERNAL_PERMISSIONS_ITEM: str = "rwdDoD"  # used in radicale/app/base.py
 
 
 def load(configuration: "config.Configuration") -> "BaseRights":
