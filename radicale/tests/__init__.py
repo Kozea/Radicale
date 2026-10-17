@@ -39,6 +39,7 @@ import vobject
 
 import radicale
 from radicale import app, config, types, utils, xmlutils
+from radicale.tests.helpers import get_file_content
 
 RESPONSES = Dict[str, Union[int, Dict[str, Tuple[int, ET.Element]], vobject.base.Component]]
 
@@ -275,3 +276,123 @@ class BaseTest:
         </prop>
     </set>
 </create>""", check=check, **kwargs)
+
+    def _propfind_allprop(self, path: str, login: str = "", check=207, x_forwarded_for: Union[str, None] = None) -> dict:
+        propfind_allprop = get_file_content("allprop.xml")
+        _, responses = self.propfind(path=path, data=propfind_allprop, login=login, check=check, x_forwarded_for=x_forwarded_for)
+        logging.info("response: %r", responses)
+        if check != 207:
+            return {}
+        response = responses[path.replace('@', '%40')]
+        assert not isinstance(response, int)
+        return response
+
+    def _propfind_privileges(self, path: str, login) -> list[str]:
+        response = self._propfind_allprop(path, login)
+        status, prop = response["D:current-user-privilege-set"]
+        logging.debug("prop: %r", prop)
+        privileges = prop.findall(xmlutils.make_clark("D:privilege"))
+        assert len(privileges) >= 1
+        privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+        return privileges_list
+
+    def _propfind_calendar_color(self, path, login) -> Union[str, None]:
+        propfind_calendar_color = get_file_content("propfind_calendar_color.xml")
+        _, responses = self.propfind(path=path, data=propfind_calendar_color, login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int)
+        status, prop = response["ICAL:calendar-color"]
+        if status == 404:
+            return None
+        logging.debug("ICAL:calendar-color: %r", prop.text)
+        assert status == 200
+        return prop.text
+
+    def _proppatch_calendar_color(self, path, login, color, check=207) -> None:
+        _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">""" + color + """</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", login=login, check=check)
+        if check != 207:
+            return
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        return
+
+    def _proppatch_calendar_color_remove(self, path, login) -> None:
+        _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:remove>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/" />
+</D:prop>
+</D:remove>
+</D:propertyupdate>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["ICAL:calendar-color"]
+        assert status == 200 and not prop.text
+        return
+
+    def _propfind_calendar_description(self, path, login):
+        _, responses = self.propfind(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav" />
+  </D:prop>
+</D:propfind>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int)
+        status, prop = response["C:calendar-description"]
+        logging.debug("C:calendar-description: %r", prop.text)
+        if status == 404:
+            return None
+        assert status == 200
+        return prop.text
+
+    def _proppatch_calendar_description(self, path, login, description) -> None:
+        _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">""" + description + """</C:calendar-description>
+</D:prop>
+</D:set>
+</D:propertyupdate>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        return
+
+    def _proppatch_calendar_description_remove(self, path, login) -> None:
+        _, responses = self.proppatch(path=path, data="""\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:remove>
+<D:prop>
+  <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav" />
+</D:prop>
+</D:remove>
+</D:propertyupdate>""", login=login)
+        logging.info("response: %r", responses)
+        response = responses[path]
+        assert not isinstance(response, int) and len(response) == 1
+        status, prop = response["C:calendar-description"]
+        assert status == 200 and not prop.text
+        return
