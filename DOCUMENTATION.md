@@ -2718,6 +2718,11 @@ The following `permissions` are recognized:
 * **t:** deny create of token-based sharing of collection in case `permit_create_token=True` _(>= 3.7.0)_
 * **M:** permit create of map-based sharing of collection in case `permit_create_map= False` _(>= 3.7.0)_
 * **m:** deny create of map-based sharing of collection in case `permit_create_map=True` _(>= 3.7.0)_
+* **P:** permit properties overlay in case permit_properties_overlay=False _(>= 3.7.0)_
+* **p:** deny properties overlay in case permit_properties_overlay=True _(>= 3.7.0)_
+* **E:** enable enforce properties overlay in case enforce_properties_overlay=False _(>= 3.7.0)_
+* **e:** disable enforce of properties overlay in case enforce_properties_overlay=True _(>= 3.7.0)_
+* **l:** lock properties (disable write-properties) _(>= 3.8.4)_
 
 ### Storage
 

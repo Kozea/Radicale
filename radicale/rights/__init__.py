@@ -39,9 +39,9 @@ Permissions:
   - m: deny create of map-based sharing of collection in case permit_create_map=True (>= 3.7.0)
   - P: permit properties overlay in case permit_properties_overlay=False (>= 3.7.0)
   - p: deny properties overlay in case permit_properties_overlay=True (>= 3.7.0)
-  - l: lock properties (disable write-properties) (>= 3.8.4)
   - E: enable enforce properties overlay in case enforce_properties_overlay=False (>= 3.7.0)
   - e: disable enforce of properties overlay in case enforce_properties_overlay=True (>= 3.7.0)
+  - l: lock properties (disable write-properties) (>= 3.8.4)
 
 Permissions flags (automatically set by server):
   - u: flag for group share with user placeholder (>= 3.8.0)
