@@ -340,13 +340,13 @@ To enable and manage the service run:
 
 ```bash
 # Enable the service
-$ systemctl --user enable radicale
+systemctl --user enable radicale
 # Start the service
-$ systemctl --user start radicale
+systemctl --user start radicale
 # Check the status of the service
-$ systemctl --user status radicale
+systemctl --user status radicale
 # View all log messages
-$ journalctl --user --unit radicale.service
+journalctl --user --unit radicale.service
 ```
 
 #### Windows with "NSSM - the Non-Sucking Service Manager"
