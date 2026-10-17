@@ -60,6 +60,15 @@ def positive_int(value: Any) -> int:
     return value
 
 
+def port_int(value: Any) -> int:
+    value = int(value)
+    if value < 1:
+        raise ValueError("value is below 1 (not a valid port number): %d" % value)
+    elif value > 65535:
+        raise ValueError("value is above 65535 (not a valid port number): %d" % value)
+    return value
+
+
 def positive_float(value: Any) -> float:
     value = float(value)
     if not math.isfinite(value):
@@ -148,7 +157,7 @@ def imap_address(value):
         address, port = pre_address + pre_address_port, None
     try:
         return (address.strip(string.whitespace + "[]"),
-                None if port is None else int(port))
+                None if port is None else port_int(port))
     except ValueError:
         raise ValueError("malformed IMAP address: %r" % value)
 
@@ -362,7 +371,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("dovecot_port", {
             "value": "12345",
             "help": "dovecot auth port",
-            "type": int}),
+            "type": port_int}),
         ("remote_ip_source", {
             "value": "REMOTE_ADDR",
             "help": "remote address source for passing it to auth method",
@@ -671,7 +680,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
         ("smtp_port", {
             "value": "25",
             "help": "SMTP server port",
-            "type": int}),
+            "type": port_int}),
         ("smtp_security", {
             "value": "none",
             "help": "SMTP security mode: *none*|tls|starttls",
