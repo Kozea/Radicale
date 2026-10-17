@@ -121,6 +121,12 @@ class ApplicationPartProppatch(ApplicationBase):
                     logger.trace("PROPPATCH/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, path, permissions_filter)
         raw_permissions = self._rights.authorization(user, path)
+        if "l" in raw_permissions:
+            if share:
+                logger.notice("PROPPATCH request on shared %r: write-access disabled by permission 'l' of %r", path_orig, path)
+            else:
+                logger.notice("PROPPATCH request on %r: write-access disabled by permission 'l'", path)
+            return httputils.NOT_ALLOWED
         if not access.check("w"):
             logger.trace("PROPPATCH/xml_proppatch: no native write-access: %r", path)
             if share:

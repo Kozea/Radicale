@@ -737,6 +737,76 @@ END:VCALENDAR
         event1 = get_file_content("event1.ics")
         self.put("/user/calendar/event1.ics", event1)
 
+    def test_property_adjustments_rights(self) -> None:
+        """tests property adjustment rights permissions."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[user-calendar]
+user: user
+collection: {user}/calendar(/.*)?
+permissions: RrWw""")
+
+        self.configure({"auth": {"type": "none"},
+                        "rights": {"file": rights_file_path, "type": "from_file"},
+                        "logging": {"rights_rule_doesnt_match_on_debug": True},
+                        })
+
+        logging.info("\n*** preparation")
+        os.mkdir(os.path.join(self.colpath, "collection-root", "user"))
+        path_collection = "/user/calendar/"
+        self.mkcalendar(path_collection, login="user:userpw")
+        event1 = get_file_content("event1.ics")
+        self.put(path_collection + "/event1.ics", event1, login="user:userpw")
+
+        logging.info("\n*** propfind of collection (default)")
+        response = self._propfind_allprop(path_collection, login="user:userpw")
+        logging.debug("response: %r", response)
+        status, props = response["D:current-user-privilege-set"]
+        privileges = props.findall(xmlutils.make_clark("D:privilege"))
+        assert len(privileges) >= 1
+        privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+        assert "D:read" in privileges_list
+        assert "D:write-content" in privileges_list
+        assert "D:write-properties" in privileges_list
+        assert "D:write" in privileges_list
+        assert "D:all" in privileges_list
+
+        logging.info("\n*** proppatch (set color)")
+        self._proppatch_calendar_color(path_collection, login="user:userpw", color="#AAAAAA")
+
+        logging.info("\n*** propfind (get color)")
+        color = self._propfind_calendar_color(path_collection, login="user:userpw")
+        assert color == "#AAAAAA"
+
+        logging.info("\n*** propfind of collection (properties protected)")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[user-calendar]
+user: user
+collection: {user}/calendar(/.*)?
+permissions: RrWwl""")
+        self.configure({"rights": {"file": rights_file_path, "type": "from_file"}})
+
+        response = self._propfind_allprop(path_collection, login="user:userpw")
+        logging.debug("response: %r", response)
+        status, props = response["D:current-user-privilege-set"]
+        privileges = props.findall(xmlutils.make_clark("D:privilege"))
+        assert len(privileges) >= 1
+        privileges_list = [xmlutils.make_human_tag(privilege.findall("*")[0].tag) for privilege in privileges]
+        assert "D:read" in privileges_list
+        assert "D:write-content" in privileges_list
+        assert "D:write-properties" not in privileges_list
+        assert "D:write" in privileges_list
+        assert "D:all" in privileges_list
+
+        logging.info("\n*** proppatch (set color)")
+        self._proppatch_calendar_color(path_collection, login="user:userpw", color="#BBBBBB", check=403)
+
+        logging.info("\n*** propfind (get color)")
+        color = self._propfind_calendar_color(path_collection, login="user:userpw")
+        assert color == "#AAAAAA"
+
     def test_conflicting_rights(self) -> None:
         """tests conflicting rights permissions."""
         rights_file_path = os.path.join(self.colpath, "rights")

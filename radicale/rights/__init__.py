@@ -41,6 +41,7 @@ Permissions:
   - p: deny properties overlay in case permit_properties_overlay=True (>= 3.7.0)
   - E: enable enforce properties overlay in case enforce_properties_overlay=False (>= 3.7.0)
   - e: disable enforce of properties overlay in case enforce_properties_overlay=True (>= 3.7.0)
+  - l: lock properties (disable write-properties) (>= 3.8.4)
 
 Permissions flags (automatically set by server):
   - u: flag for group share with user placeholder (>= 3.8.0)
@@ -57,7 +58,8 @@ from radicale import config, utils
 INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")
 
-INTERNAL_PERMISSIONS: str = "RrifWwDdOoTtMmPpEe"
+INTERNAL_PERMISSIONS: str = "RrifWwDdOoTtMmPpEel"
+INTERNAL_PERMISSIONS_ITEM: str = "rwdDoD"  # used in radicale/app/base.py
 
 
 def load(configuration: "config.Configuration") -> "BaseRights":
