@@ -11,7 +11,7 @@ jobs:
   generate:
     runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: gh-pages
       - name: Run generator
