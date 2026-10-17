@@ -669,9 +669,9 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "SMTP server to send emails",
             "type": str}),
         ("smtp_port", {
-            "value": "",
+            "value": "25",
             "help": "SMTP server port",
-            "type": str}),
+            "type": int}),
         ("smtp_security", {
             "value": "none",
             "help": "SMTP security mode: *none*|tls|starttls",

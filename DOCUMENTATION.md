@@ -2076,7 +2076,7 @@ _(>= 3.5.5)_
 
 Port on SMTP server to connect to.
 
-Default:
+Default: `25`
 
 ##### smtp_security
 
