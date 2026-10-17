@@ -285,7 +285,7 @@ permissions: RrWw""")
 
     def test_smtp_port_config(self) -> None:
         # check for invalid port
-        logging.notice("Try invalid port: 0")
+        logging.info("Try invalid port: 0")
         try:
             self.configure({
                 "hook": {
@@ -297,12 +297,12 @@ permissions: RrWw""")
                 }
             })
         except RuntimeError as e:
-            logging.notice("Exception: %s", str(e))
+            logging.info("Exception: %s", str(e))
         else:
             raise
 
         # check for invalid port
-        logging.notice("Try invalid port: 65536")
+        logging.info("Try invalid port: 65536")
         try:
             self.configure({
                 "hook": {
@@ -314,12 +314,12 @@ permissions: RrWw""")
                 }
             })
         except RuntimeError as e:
-            logging.notice("Exception: %s", str(e))
+            logging.info("Exception: %s", str(e))
         else:
             raise
 
         # check for valid port
-        logging.notice("Try valid port")
+        logging.info("Try valid port")
         self.configure({
             "hook": {
                 "type": "email",
