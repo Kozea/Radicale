@@ -473,7 +473,7 @@ class TestHypercornServerRequests(BaseTest):
     def h2c_get(self, path: str) -> int:
         """The status of a GET over cleartext HTTP/2 the way a proxy speaks it (prior knowledge)."""
         from h2.connection import H2Connection
-        from h2.events import ResponseReceived
+        from h2.events import ResponseReceived, StreamEnded
 
         # The server is bound from its own thread, so the port is not listening yet when this runs
         deadline = time.monotonic() + 10
@@ -493,12 +493,23 @@ class TestHypercornServerRequests(BaseTest):
                 (":method", "GET"), (":path", path), (":scheme", "http"),
                 (":authority", "%s:%d" % self.sockname)], end_stream=True)
             sock.sendall(connection.data_to_send())
+            status: Optional[int] = None
             while True:
                 data = sock.recv(65536)
                 assert data, "the server closed the connection without a response"
                 for event in connection.receive_data(data):
                     if isinstance(event, ResponseReceived):
-                        return int(dict(event.headers)[b":status"])
+                        status = int(dict(event.headers)[b":status"])
+                    elif isinstance(event, StreamEnded):
+                        # Read the response to its end and end the HTTP/2 connection the way a
+                        # client does. A socket closed with the stream still open leaves hypercorn
+                        # flushing a write into a connection that never drains, and Python 3.13+
+                        # then waits for that connection in `Server.wait_closed`, so the server
+                        # itself never returns from its shutdown.
+                        assert status is not None
+                        connection.close_connection()
+                        sock.sendall(connection.data_to_send())
+                        return status
                 sock.sendall(connection.data_to_send())
 
     def test_root_over_h2c(self) -> None:
