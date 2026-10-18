@@ -186,20 +186,22 @@ def prop_match(vobject_item: vobject.base.Component,
             return name not in vobject_item.contents
     if name not in vobject_item.contents:
         return False
+
     # Point #3 and #4 of rfc4791-9.7.2
-    for child in filter_:
+    def match(child: ET.Element) -> bool:
         if ns == "C" and child.tag == xmlutils.make_clark("C:time-range"):
-            if not time_range_match(vobject_item, child, name, None):
-                return False
-        elif child.tag == xmlutils.make_clark("%s:text-match" % ns):
-            if not text_match(vobject_item, child, name, ns):
-                return False
-        elif child.tag == xmlutils.make_clark("%s:param-filter" % ns):
-            if not param_filter_match(vobject_item, child, name, ns):
-                return False
-        else:
-            raise ValueError("Unexpected %r in prop-filter" % child.tag)
-    return True
+            return time_range_match(vobject_item, child, name, None)
+        if child.tag == xmlutils.make_clark("%s:text-match" % ns):
+            return text_match(vobject_item, child, name, ns)
+        if child.tag == xmlutils.make_clark("%s:param-filter" % ns):
+            return param_filter_match(vobject_item, child, name, ns)
+        raise ValueError("Unexpected %r in prop-filter" % child.tag)
+
+    matches = (match(child) for child in filter_)
+    if ns == "CR" and filter_.get("test", "anyof") == "anyof":
+        # rfc6352-10.5.1
+        return any(matches)
+    return all(matches)
 
 
 def time_range_match(vobject_item: vobject.base.Component,
