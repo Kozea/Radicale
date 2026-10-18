@@ -27,6 +27,7 @@ import socket
 import ssl
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from configparser import RawConfigParser
@@ -277,26 +278,27 @@ class TestHypercornConfiguration:
 
     """
 
-    def _configuration(self, storage_folder: str, **server: str) -> config.Configuration:
+    def _configuration(self, **server: str) -> config.Configuration:
         configuration = config.load()
+        # Nothing is written to the storage folder. A pytest temporary directory cannot be used
+        # instead: the VFAT and NTFS jobs fail its ownership check, because those filesystems
+        # report one fixed uid.
         configuration.update({"server": dict(server, type="hypercorn"),
-                              "storage": {"filesystem_folder": storage_folder}},
+                              "storage": {"filesystem_folder": tempfile.mkdtemp()}},
                              "test", privileged=True)
         return configuration
 
-    def test_missing_dependency(self, monkeypatch: pytest.MonkeyPatch,
-                                tmp_path: object) -> None:
+    def test_missing_dependency(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # `None` in sys.modules makes the import fail, whatever is installed on this machine
         monkeypatch.setitem(sys.modules, "hypercorn", None)
         monkeypatch.setitem(sys.modules, "hypercorn.asyncio", None)
         monkeypatch.setitem(sys.modules, "hypercorn.config", None)
         with pytest.raises(RuntimeError) as exc_info:
-            server.serve_hypercorn(self._configuration(str(tmp_path)), None)
+            server.serve_hypercorn(self._configuration(), None)
         assert "radicale[h2]" in str(exc_info.value)
         assert "hypercorn>=0.17" in str(exc_info.value)
 
-    def test_translates_the_configuration(self, monkeypatch: pytest.MonkeyPatch,
-                                          tmp_path: object) -> None:
+    def test_translates_the_configuration(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from types import ModuleType
         recorded: Dict[str, object] = {}
 
@@ -326,7 +328,7 @@ class TestHypercornConfiguration:
         monkeypatch.setitem(sys.modules, "hypercorn.config", config_module)
 
         server.serve_hypercorn(self._configuration(
-            str(tmp_path), hosts="127.0.0.1:5233,[::1]:5234", ssl="True",
+            hosts="127.0.0.1:5233,[::1]:5234", ssl="True",
             max_content_length="2000000",
             certificate=get_file_path("cert.pem"), key=get_file_path("key.pem"),
             certificate_authority=get_file_path("cert.pem"),
@@ -364,8 +366,7 @@ class TestHypercornConfiguration:
         assert server.hypercorn_bind([("localhost", 5232)]) == [
             "127.0.0.1:5232", "[::1]:5232"]
 
-    def test_no_limit_is_no_limit(self, monkeypatch: pytest.MonkeyPatch,
-                                  tmp_path: object) -> None:
+    def test_no_limit_is_no_limit(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from types import ModuleType
         recorded: Dict[str, object] = {}
 
@@ -396,11 +397,10 @@ class TestHypercornConfiguration:
         # max_content_length=0 is "no limit" in Radicale, and the wrapper has no such value: a
         # number nothing reaches is how it is said
         server.serve_hypercorn(self._configuration(
-            str(tmp_path), hosts="127.0.0.1:5233", max_content_length="0"), None)
+            hosts="127.0.0.1:5233", max_content_length="0"), None)
         assert cast(FakeConfig, recorded["config"]).wsgi_max_body_size == sys.maxsize
 
-    def test_shutdown_socket_is_the_trigger(self, monkeypatch: pytest.MonkeyPatch,
-                                            tmp_path: object) -> None:
+    def test_shutdown_socket_is_the_trigger(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from types import ModuleType
         recorded: Dict[str, object] = {}
 
@@ -430,7 +430,7 @@ class TestHypercornConfiguration:
 
         shutdown_socket, _ = socket.socketpair()
         try:
-            server.serve_hypercorn(self._configuration(str(tmp_path), hosts="127.0.0.1:5233"),
+            server.serve_hypercorn(self._configuration(hosts="127.0.0.1:5233"),
                                    shutdown_socket)
         finally:
             shutdown_socket.close()
