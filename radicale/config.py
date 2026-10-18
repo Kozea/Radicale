@@ -122,9 +122,9 @@ def list_of_ip_address(value: Any) -> List[Tuple[str, int]]:
     def ip_address(value):
         try:
             address, port = value.rsplit(":", 1)
-            return address.strip(string.whitespace + "[]"), int(port)
+            return address.strip(string.whitespace + "[]"), port_int(port)
         except ValueError:
-            raise ValueError("malformed IP address: %r" % value)
+            raise ValueError("malformed IP address (or port out-of-range): %r" % value)
 
     return [ip_address(s) for s in value.split(",")]
 
