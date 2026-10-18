@@ -652,16 +652,16 @@ class TestAuthServers(BaseTest):
             raise
 
         # check for invalid port
-        logging.info("Try invalid port: 65536")
+        logging.info("Try invalid port: 65535")
         try:
-            self._configure_imap(box, imap_security="starttls", imap_host="imap.example:65536",
+            self._configure_imap(box, imap_security="starttls", imap_host="imap.example:65535",
                                  imap_append_domain="example.com")
         except RuntimeError as e:
             logging.info("Exception: %s", str(e))
         else:
             raise
 
-        logging.info("Try valid port: 65536")
+        logging.info("Try valid port")
         self._configure_imap(box, imap_security="starttls", imap_host="imap.example:1143",
                              imap_append_domain="example.com")
 

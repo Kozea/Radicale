@@ -1,5 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2018-2022 Unrud <unrud@outlook.com>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@ Test the internal server.
 """
 
 import errno
+import logging
 import os
 import socket
 import ssl
@@ -221,6 +223,29 @@ class TestBaseServerRequests(BaseTest):
 
     def test_command_line_interface_with_bool_options(self) -> None:
         self.test_command_line_interface(with_bool_options=True)
+
+    def test_server_port_config(self) -> None:
+        # check for invalid port
+        logging.info("Try invalid port: 0")
+        try:
+            self.configure({"server": {"hosts": "localhost:0"}})
+        except RuntimeError as e:
+            logging.info("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for invalid port
+        logging.info("Try invalid port: 65535")
+        try:
+            self.configure({"server": {"hosts": "localhost:65535"}})
+        except RuntimeError as e:
+            logging.info("Exception: %s", str(e))
+        else:
+            raise
+
+        # check for valid port
+        logging.info("Try valid port")
+        self.configure({"server": {"hosts": "localhost:5232"}})
 
     def test_wsgi_server(self) -> None:
         config_path = os.path.join(self.colpath, "config")
