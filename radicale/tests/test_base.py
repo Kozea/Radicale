@@ -2255,6 +2255,42 @@ permissions: RrWw""")
 </C:comp-filter>"""], "todo", items=(10,))
         assert "/calendar.ics/todo10.ics" not in answer
 
+    def test_time_range_filter_todos_created_completed(self) -> None:
+        """Report request with time-range filter on todos which only have
+           CREATED and COMPLETED (rfc4791-9.9: such a todo overlaps every
+           time range that intersects the interval between both)."""
+        # todo5:  CREATED 20130903T160000Z, COMPLETED 20130920T160000Z
+        # todo11: COMPLETED 20130903T160000Z, CREATED 20130920T160000Z
+        for start, end, expected in (
+                # between CREATED and COMPLETED
+                ("20130910T000000Z", "20130911T000000Z", True),
+                # contains only the earlier or only the later date
+                ("20130903T150000Z", "20130903T170000Z", True),
+                ("20130920T150000Z", "20130920T170000Z", True),
+                # ends at the earlier date or starts at the later date
+                ("20130903T150000Z", "20130903T160000Z", True),
+                ("20130920T160000Z", "20130920T170000Z", True),
+                # entirely before or after both dates
+                ("20130817T150000Z", "20130817T170000Z", False),
+                ("20130903T140000Z", "20130903T150000Z", False),
+                ("20130920T170000Z", "20130921T000000Z", False),
+                ("20131007T150000Z", "20131007T170000Z", False)):
+            # without and with a non-simple filter (no prefilter shortcut)
+            for prop_filter in ("", """\
+        <C:prop-filter name="DTSTART">
+            <C:is-not-defined/>
+        </C:prop-filter>"""):
+                answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VTODO">
+        <C:time-range start="%s" end="%s"/>
+%s
+    </C:comp-filter>
+</C:comp-filter>""" % (start, end, prop_filter)], "todo", items=(5, 11))
+                for i in (5, 11):
+                    assert (("/calendar.ics/todo%d.ics" % i in answer) is
+                            expected), (i, start, end, bool(prop_filter))
+
     def test_time_range_filter_events_valarm(self) -> None:
         """Report request with time-range filter on events having absolute VALARM."""
         answer = self._test_filter(["""\
