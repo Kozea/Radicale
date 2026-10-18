@@ -64,8 +64,8 @@ def port_int(value: Any) -> int:
     value = int(value)
     if value < 1:
         raise ValueError("value is below 1 (not a valid port number): %d" % value)
-    elif value > 65535:
-        raise ValueError("value is above 65535 (not a valid port number): %d" % value)
+    elif value > 65534:
+        raise ValueError("value is above 65534 (not a valid port number): %d" % value)
     return value
 
 

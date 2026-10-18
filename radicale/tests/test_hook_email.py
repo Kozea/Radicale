@@ -302,13 +302,13 @@ permissions: RrWw""")
             raise
 
         # check for invalid port
-        logging.info("Try invalid port: 65536")
+        logging.info("Try invalid port: 65535")
         try:
             self.configure({
                 "hook": {
                     "type": "email",
                     "smtp_server": "localhost",
-                    "smtp_port": 65536,
+                    "smtp_port": 65535,
                     "smtp_password": "inline-secret",
                     "dryrun": "True",
                 }

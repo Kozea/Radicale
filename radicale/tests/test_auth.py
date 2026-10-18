@@ -675,9 +675,9 @@ class TestBaseAuthRequests(BaseTest):
             raise
 
         # check for invalid port
-        logging.info("Try invalid port: 65536")
+        logging.info("Try invalid port: 65535")
         try:
-            self.configure({"auth": {"dovecot_port": 65536}})
+            self.configure({"auth": {"dovecot_port": 65535}})
         except RuntimeError as e:
             logging.info("Exception: %s", str(e))
         else:
