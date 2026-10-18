@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.8.4.dev
+* Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)
 * Adjustment WebUI: show incoming shares as cards
 * Fix: typo in /.mobileconfig
 * Fix: empty text-match filter no longer fails the REPORT

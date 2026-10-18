@@ -31,7 +31,7 @@ import threading
 import time
 from configparser import RawConfigParser
 from http.client import HTTPMessage
-from typing import IO, Callable, Dict, Optional, Tuple, cast
+from typing import IO, Callable, Dict, List, Optional, Tuple, cast
 from urllib import request
 from urllib.error import HTTPError, URLError
 
@@ -266,3 +266,259 @@ class TestBaseServerRequests(BaseTest):
         finally:
             p.terminate()
             p.wait()
+
+
+class TestHypercornConfiguration:
+    """`[server] type = hypercorn`, which is an optional dependency.
+
+    The real thing is an integration test of its own (``TestHypercornServerRequests``, skipped when
+    the dependency is not installed); here the mapping from Radicale's configuration to hypercorn's
+    is pinned without it, and so is the error that names the extra when it is missing.
+
+    """
+
+    def _configuration(self, storage_folder: str, **server: str) -> config.Configuration:
+        configuration = config.load()
+        configuration.update({"server": dict(server, type="hypercorn"),
+                              "storage": {"filesystem_folder": storage_folder}},
+                             "test", privileged=True)
+        return configuration
+
+    def test_missing_dependency(self, monkeypatch: pytest.MonkeyPatch,
+                                tmp_path: object) -> None:
+        # `None` in sys.modules makes the import fail, whatever is installed on this machine
+        monkeypatch.setitem(sys.modules, "hypercorn", None)
+        monkeypatch.setitem(sys.modules, "hypercorn.asyncio", None)
+        monkeypatch.setitem(sys.modules, "hypercorn.config", None)
+        with pytest.raises(RuntimeError) as exc_info:
+            server.serve_hypercorn(self._configuration(str(tmp_path)), None)
+        assert "radicale[h2]" in str(exc_info.value)
+        assert "hypercorn>=0.17" in str(exc_info.value)
+
+    def test_translates_the_configuration(self, monkeypatch: pytest.MonkeyPatch,
+                                          tmp_path: object) -> None:
+        from types import ModuleType
+        recorded: Dict[str, object] = {}
+
+        class FakeConfig:
+            bind: List[str] = []
+            alpn_protocols: List[str] = []
+            wsgi_max_body_size: int = 0
+            certfile: Optional[str] = None
+            keyfile: Optional[str] = None
+            ca_certs: Optional[str] = None
+            verify_mode: Optional[int] = None
+            ciphers: str = "ECDHE+AESGCM"
+
+        async def fake_serve(app: Callable, config_: object, *,
+                             shutdown_trigger: object = None,
+                             mode: Optional[str] = None) -> None:
+            recorded.update(app=app, config=config_, mode=mode,
+                            shutdown_trigger=shutdown_trigger)
+
+        hypercorn_module = ModuleType("hypercorn")
+        asyncio_module = ModuleType("hypercorn.asyncio")
+        asyncio_module.serve = fake_serve  # type:ignore[attr-defined]
+        config_module = ModuleType("hypercorn.config")
+        config_module.Config = FakeConfig  # type:ignore[attr-defined]
+        monkeypatch.setitem(sys.modules, "hypercorn", hypercorn_module)
+        monkeypatch.setitem(sys.modules, "hypercorn.asyncio", asyncio_module)
+        monkeypatch.setitem(sys.modules, "hypercorn.config", config_module)
+
+        server.serve_hypercorn(self._configuration(
+            str(tmp_path), hosts="127.0.0.1:5233,[::1]:5234", ssl="True",
+            max_content_length="2000000",
+            certificate=get_file_path("cert.pem"), key=get_file_path("key.pem"),
+            certificate_authority=get_file_path("cert.pem"),
+            ciphersuite="ECDHE+AESGCM"), None)
+
+        hypercorn_config = cast(FakeConfig, recorded["config"])
+        # IPv6 addresses are bracketed, or hypercorn reads the last colon as the port separator
+        assert hypercorn_config.bind == ["127.0.0.1:5233", "[::1]:5234"]
+        # the reason to run hypercorn at all: HTTP/2 over cleartext (H2C) and HTTP/1.1 on one socket
+        assert hypercorn_config.alpn_protocols == ["h2", "http/1.1"]
+        # hypercorn's own WSGI body limit is 16 Mbyte, so the application's has to be handed over
+        assert hypercorn_config.wsgi_max_body_size == 2000000
+        assert hypercorn_config.certfile == get_file_path("cert.pem")
+        assert hypercorn_config.keyfile == get_file_path("key.pem")
+        assert hypercorn_config.ca_certs == get_file_path("cert.pem")
+        assert hypercorn_config.verify_mode == ssl.CERT_REQUIRED
+        assert hypercorn_config.ciphers == "ECDHE+AESGCM"
+        # the WSGI application is handed over as one, and there is no shutdown socket to wait on
+        assert recorded["app"] is not None
+        assert recorded["mode"] == "wsgi"
+        assert callable(recorded["shutdown_trigger"])
+
+    def test_hostname_binds_every_address_it_has(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # A host name has more than one address, and the built-in server binds all of them; a
+        # hypercorn that resolved `localhost` to IPv4 only would drop the IPv6 half of the service
+        def getaddrinfo(*args: object, **kwargs: object) -> List[Tuple]:
+            return [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "",
+                     ("127.0.0.1", 5232)),
+                    (socket.AF_INET6, socket.SOCK_STREAM, socket.IPPROTO_TCP, "",
+                     ("::1", 5232, 0, 0)),
+                    (socket.AF_INET6, socket.SOCK_STREAM, socket.IPPROTO_TCP, "",
+                     ("::1", 5232, 0, 0))]
+
+        monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)
+        assert server.hypercorn_bind([("localhost", 5232)]) == [
+            "127.0.0.1:5232", "[::1]:5232"]
+
+    def test_no_limit_is_no_limit(self, monkeypatch: pytest.MonkeyPatch,
+                                  tmp_path: object) -> None:
+        from types import ModuleType
+        recorded: Dict[str, object] = {}
+
+        class FakeConfig:
+            bind: List[str] = []
+            alpn_protocols: List[str] = []
+            wsgi_max_body_size: int = 0
+            certfile: Optional[str] = None
+            keyfile: Optional[str] = None
+            ca_certs: Optional[str] = None
+            verify_mode: Optional[int] = None
+            ciphers: str = "ECDHE+AESGCM"
+
+        async def fake_serve(app: Callable, config_: object, *,
+                             shutdown_trigger: object = None,
+                             mode: Optional[str] = None) -> None:
+            recorded["config"] = config_
+
+        hypercorn_module = ModuleType("hypercorn")
+        asyncio_module = ModuleType("hypercorn.asyncio")
+        asyncio_module.serve = fake_serve  # type:ignore[attr-defined]
+        config_module = ModuleType("hypercorn.config")
+        config_module.Config = FakeConfig  # type:ignore[attr-defined]
+        monkeypatch.setitem(sys.modules, "hypercorn", hypercorn_module)
+        monkeypatch.setitem(sys.modules, "hypercorn.asyncio", asyncio_module)
+        monkeypatch.setitem(sys.modules, "hypercorn.config", config_module)
+
+        # max_content_length=0 is "no limit" in Radicale, and the wrapper has no such value: a
+        # number nothing reaches is how it is said
+        server.serve_hypercorn(self._configuration(
+            str(tmp_path), hosts="127.0.0.1:5233", max_content_length="0"), None)
+        assert cast(FakeConfig, recorded["config"]).wsgi_max_body_size == sys.maxsize
+
+    def test_shutdown_socket_is_the_trigger(self, monkeypatch: pytest.MonkeyPatch,
+                                            tmp_path: object) -> None:
+        from types import ModuleType
+        recorded: Dict[str, object] = {}
+
+        class FakeConfig:
+            bind: List[str] = []
+            alpn_protocols: List[str] = []
+            wsgi_max_body_size: int = 0
+            certfile: Optional[str] = None
+            keyfile: Optional[str] = None
+            ca_certs: Optional[str] = None
+            verify_mode: Optional[int] = None
+            ciphers: str = "ECDHE+AESGCM"
+
+        async def fake_serve(app: Callable, config_: object, *,
+                             shutdown_trigger: object = None,
+                             mode: Optional[str] = None) -> None:
+            recorded["shutdown_trigger"] = shutdown_trigger
+
+        hypercorn_module = ModuleType("hypercorn")
+        asyncio_module = ModuleType("hypercorn.asyncio")
+        asyncio_module.serve = fake_serve  # type:ignore[attr-defined]
+        config_module = ModuleType("hypercorn.config")
+        config_module.Config = FakeConfig  # type:ignore[attr-defined]
+        monkeypatch.setitem(sys.modules, "hypercorn", hypercorn_module)
+        monkeypatch.setitem(sys.modules, "hypercorn.asyncio", asyncio_module)
+        monkeypatch.setitem(sys.modules, "hypercorn.config", config_module)
+
+        shutdown_socket, _ = socket.socketpair()
+        try:
+            server.serve_hypercorn(self._configuration(str(tmp_path), hosts="127.0.0.1:5233"),
+                                   shutdown_socket)
+        finally:
+            shutdown_socket.close()
+        assert callable(recorded["shutdown_trigger"])
+
+
+class TestHypercornServerRequests(BaseTest):
+    """The same server over the wire, with hypercorn installed.
+
+    H2C is what this server type exists for, and it is what the built-in one cannot do: its WSGI
+    server parses the request line with HTTP/1.1 only, so a cleartext HTTP/2 request is answered
+    ``505 Invalid HTTP version (2.0)``.
+
+    """
+
+    shutdown_socket: socket.socket
+    thread: threading.Thread
+    sockname: Tuple[str, int]
+
+    def setup_method(self) -> None:
+        pytest.importorskip("hypercorn")
+        super().setup_method()
+        self.shutdown_socket, shutdown_socket_out = socket.socketpair()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            # Find available port
+            sock.bind(("127.0.0.1", 0))
+            self.sockname = cast(Tuple[str, int], sock.getsockname())
+        self.configure({"server": {"hosts": "%s:%d" % self.sockname,
+                                   "type": "hypercorn"}})
+        self.thread = threading.Thread(target=server.serve, args=(
+            self.configuration, shutdown_socket_out))
+
+    def teardown_method(self) -> None:
+        self.shutdown_socket.close()
+        self.thread.join(30)
+        # the shutdown socket is the trigger: a server that ignored it would still be running
+        assert not self.thread.is_alive()
+        super().teardown_method()
+
+    def h2c_get(self, path: str) -> int:
+        """The status of a GET over cleartext HTTP/2 the way a proxy speaks it (prior knowledge)."""
+        from h2.connection import H2Connection
+        from h2.events import ResponseReceived
+
+        # The server is bound from its own thread, so the port is not listening yet when this runs
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                sock = socket.create_connection(self.sockname, timeout=10)
+                break
+            except ConnectionRefusedError:
+                assert time.monotonic() < deadline, "the server did not start"
+                time.sleep(0.1)
+        connection = H2Connection()
+        connection.initiate_connection()
+        with sock:
+            sock.sendall(connection.data_to_send())
+            stream_id = connection.get_next_available_stream_id()
+            connection.send_headers(stream_id, [
+                (":method", "GET"), (":path", path), (":scheme", "http"),
+                (":authority", "%s:%d" % self.sockname)], end_stream=True)
+            sock.sendall(connection.data_to_send())
+            while True:
+                data = sock.recv(65536)
+                assert data, "the server closed the connection without a response"
+                for event in connection.receive_data(data):
+                    if isinstance(event, ResponseReceived):
+                        return int(dict(event.headers)[b":status"])
+                sock.sendall(connection.data_to_send())
+
+    def test_root_over_h2c(self) -> None:
+        self.thread.start()
+        assert self.h2c_get("/") == 302
+
+    def test_http11_on_the_same_socket(self) -> None:
+        """H2C is added to HTTP/1.1, not instead of it: a proxy may speak either."""
+        self.thread.start()
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                sock = socket.create_connection(self.sockname, timeout=10)
+                break
+            except ConnectionRefusedError:
+                assert time.monotonic() < deadline, "the server did not start"
+                time.sleep(0.1)
+        with sock:
+            sock.sendall(b"GET / HTTP/1.1\r\nHost: %s:%d\r\nConnection: close\r\n\r\n"
+                         % (self.sockname[0].encode(), self.sockname[1]))
+            status = sock.recv(1024).split(b"\r\n", 1)[0]
+        # the reason phrase is optional and hypercorn leaves it out, so the code is what is compared
+        assert status.split(b" ")[1] == b"302", status
