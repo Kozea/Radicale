@@ -1939,7 +1939,7 @@ Log storage cache actions on `level = debug`
 
 Default: `False`
 
-##### profiling_per_request
+##### profiling
 
 _(>= 3.5.10)_
 
@@ -2397,7 +2397,7 @@ _(>= 3.7.0)_
 
 Default permissions for create token-based sharing
 
-Default: `r`
+Default: `r` _(< 3.7.1)_ / `rp` _(>= 3.7.1)_
 
 Supported: `rfwEePp`
 

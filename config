@@ -178,7 +178,7 @@
 #oauth2_client_secret =
 
 # PAM service
-#pam_serivce = radicale
+#pam_service = radicale
 
 # PAM group user should be member of
 #pam_group_membership =
