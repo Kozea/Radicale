@@ -580,10 +580,15 @@ def text_match(vobject_item: vobject.base.Component,
     See rfc4791-9.7.5.
 
     """
-    # TODO: collations are not supported, but the default ones needed
-    # for DAV servers are actually pretty useless. Texts are lowered to
-    # be case-insensitive, almost as the "i;ascii-casemap" value.
-    text = next(filter_.itertext(), "").lower()
+    # "i;octet" compares the texts exactly (rfc4790-9.3), it is REQUIRED
+    # for CalDAV servers (rfc4791-7.5). Other collations are not supported,
+    # but the default ones needed for DAV servers are actually pretty
+    # useless. Texts are lowered to be case-insensitive, almost as the
+    # "i;ascii-casemap" and "i;unicode-casemap" values.
+    case_sensitive = filter_.get("collation") == "i;octet"
+    text = next(filter_.itertext(), "")
+    if not case_sensitive:
+        text = text.lower()
     match_type = "contains"
     if ns == "CR":
         match_type = filter_.get("match-type", match_type)
@@ -594,7 +599,8 @@ def text_match(vobject_item: vobject.base.Component,
             # into structured objects instead of plain strings. Use their text
             # representation so text-match doesn't crash with AttributeError.
             value = str(value)
-        value = value.lower()
+        if not case_sensitive:
+            value = value.lower()
         if match_type == "equals":
             return value == text
         if match_type == "contains":

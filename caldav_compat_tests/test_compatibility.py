@@ -65,7 +65,6 @@ EXPECTED_DEVIATIONS = {
     "principal-search": {"support": "unsupported"},
     "scheduling": {"support": "unsupported"},
     "search.recurrences.expanded.todo": {"support": "unsupported"},
-    "search.text.case-sensitive": {"support": "unsupported"},
     "search.text.comp-type-optional": {"support": "unsupported"},
     "search.time-range.comp-type-optional": {"support": "full"},
     "synchronous-write": {"support": "full"},
