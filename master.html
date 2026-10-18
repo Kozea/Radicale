@@ -1955,8 +1955,8 @@ condition is fulfilled</p>
 <p>Log storage cache actions on <code>level = debug</code></p>
 <p>Default: <code>False</code></p>
 </section>
-<section class="level5" id="profiling_per_request">
-<h5>profiling_per_request <a class="headerlink" href="#profiling_per_request">&para;</a></h5>
+<section class="level5" id="profiling">
+<h5>profiling <a class="headerlink" href="#profiling">&para;</a></h5>
 <p><em>(&gt;= 3.5.10)</em></p>
 <p>Log profiling data on level=info</p>
 <p>Default: <code>none</code></p>
@@ -2379,7 +2379,8 @@ permissions: <code>P</code></li>
 <h5>default_permissions_create_token <a class="headerlink" href="#default_permissions_create_token">&para;</a></h5>
 <p><em>(&gt;= 3.7.0)</em></p>
 <p>Default permissions for create token-based sharing</p>
-<p>Default: <code>r</code></p>
+<p>Default: <code>r</code> <em>(&lt; 3.7.1)</em> / <code>rp</code>
+<em>(&gt;= 3.7.1)</em></p>
 <p>Supported: <code>rfwEePp</code></p>
 </section>
 <section class="level5" id="default_permissions_create_map">
