@@ -1616,6 +1616,25 @@ permissions: RrWw""")
     <C:text-match collation="i;unicode-casemap">test</C:text-match>
 </C:prop-filter>"""], "contact", test="allof")
 
+    def test_addressbook_prop_filter_anyof_allof(self) -> None:
+        """The ``test`` of a prop-filter defaults to ``anyof`` (rfc6352-10.5.1)."""
+        prop_filter = """\
+<C:prop-filter name="NICKNAME"%s>
+    <C:text-match collation="i;unicode-casemap">test</C:text-match>
+    <C:text-match collation="i;unicode-casemap">a</C:text-match>
+</C:prop-filter>"""
+        assert "/contacts.vcf/contact1.vcf" in self._test_filter(
+            [prop_filter % ""], "contact")
+        assert "/contacts.vcf/contact1.vcf" in self._test_filter(
+            [prop_filter % ' test="anyof"'], "contact")
+        assert "/contacts.vcf/contact1.vcf" not in self._test_filter(
+            [prop_filter % ' test="allof"'], "contact")
+        assert "/contacts.vcf/contact1.vcf" in self._test_filter(["""\
+<C:prop-filter name="NICKNAME">
+    <C:text-match collation="i;unicode-casemap">a</C:text-match>
+    <C:param-filter name="TYPE"><C:is-not-defined/></C:param-filter>
+</C:prop-filter>"""], "contact")
+
     def test_addressbook_prop_filter_structured(self) -> None:
         """text-match on a structured property (N) that vobject parses into a
         non-string value must not crash the REPORT."""
