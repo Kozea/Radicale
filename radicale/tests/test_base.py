@@ -1807,6 +1807,56 @@ permissions: RrWw""")
     </C:comp-filter>
 </C:comp-filter>"""])
 
+    def test_text_match_filter_collation(self) -> None:
+        """Report request with text-match filter using the case-sensitive
+           "i;octet" collation (rfc4791-7.5, rfc4791-9.7.5)."""
+        # event1: SUMMARY:Event, ATTENDEE;...;PARTSTAT=ACCEPTED;...
+        for collation, text, expected in (
+                (None, "event", True),
+                ("i;ascii-casemap", "EVENT", True),
+                ("i;unicode-casemap", "eVeNt", True),
+                ("i;octet", "Event", True),
+                ("i;octet", "vent", True),
+                ("i;octet", "event", False),
+                ("i;octet", "EVENT", False)):
+            attrib = ' collation="%s"' % collation if collation else ""
+            for negate in (False, True):
+                answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:prop-filter name="SUMMARY">
+            <C:text-match%s%s>%s</C:text-match>
+        </C:prop-filter>
+    </C:comp-filter>
+</C:comp-filter>""" % (attrib, ' negate-condition="yes"' if negate else "",
+                       text)])
+                assert ("/calendar.ics/event1.ics" in answer) is (
+                    expected is not negate), (collation, text, negate)
+        for text, expected in (("ACCEPTED", True), ("accepted", False)):
+            answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:prop-filter name="ATTENDEE">
+            <C:param-filter name="PARTSTAT">
+                <C:text-match collation="i;octet">%s</C:text-match>
+            </C:param-filter>
+        </C:prop-filter>
+    </C:comp-filter>
+</C:comp-filter>""" % text])
+            assert ("/calendar.ics/event1.ics" in answer) is expected, text
+        # contact1: NICKNAME:test
+        for collation, text, expected in (
+                (None, "TEST", True),
+                ("i;octet", "test", True),
+                ("i;octet", "TEST", False)):
+            attrib = ' collation="%s"' % collation if collation else ""
+            answer = self._test_filter(["""\
+<C:prop-filter name="NICKNAME">
+    <C:text-match%s match-type="equals">%s</C:text-match>
+</C:prop-filter>""" % (attrib, text)], "contact")
+            assert ("/contacts.vcf/contact1.vcf" in answer) is expected, (
+                collation, text)
+
     def test_param_filter(self) -> None:
         """Report request with param-filter on calendar."""
         assert "/calendar.ics/event1.ics" in self._test_filter(["""\
