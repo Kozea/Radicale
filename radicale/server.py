@@ -19,10 +19,14 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Built-in WSGI server.
+The servers Radicale can run.
+
+The built-in one is the default and speaks HTTP/1.1 over `wsgiref.simple_server`; `[server] type =
+hypercorn` runs an optional dependency instead, which is the one that also speaks HTTP/2 and H2C.
 
 """
 
+import asyncio
 import http
 import os
 import platform
@@ -283,6 +287,101 @@ class RequestHandler(wsgiref.simple_server.WSGIRequestHandler):
         handler.run(app)
 
 
+def hypercorn_bind(hosts: List[Tuple[str, int]]) -> List[str]:
+    """The `host:port` strings hypercorn binds.
+
+    A host name is resolved to every address it has, the way the built-in server does it (it binds
+    one socket per address), so `localhost` keeps answering on IPv6 as well as on IPv4. IPv6
+    addresses are bracketed, which is how hypercorn tells the address from the port.
+
+    """
+    binds: List[str] = []
+    for address, port in hosts:
+        try:
+            infos = socket.getaddrinfo(address, port, 0, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        except OSError as e:
+            # Let hypercorn report an address it cannot use rather than turning it into a no-op
+            logger.warning("cannot retrieve IPv4 or IPv6 address of '%s:%s': %s", address, port, e)
+            infos = []
+        for info in infos:
+            resolved, resolved_port = str(info[4][0]), int(info[4][1])
+            bind = "[%s]:%d" % (resolved, resolved_port) if ":" in resolved \
+                else "%s:%d" % (resolved, resolved_port)
+            if bind not in binds:
+                binds.append(bind)
+        if not infos:
+            binds.append("[%s]:%d" % (address, port) if ":" in address else "%s:%d" % (address, port))
+    return binds
+
+
+def serve_hypercorn(configuration: config.Configuration,
+                    shutdown_socket: Optional[socket.socket] = None) -> None:
+    """Serve radicale with hypercorn, which is the server that speaks H2C.
+
+    hypercorn is an optional dependency (the `h2` extra): it is imported here, when it is asked
+    for, and not at Radicale's own import, so that a configuration without it never needs it.
+
+    """
+    try:
+        from hypercorn.asyncio import serve as hypercorn_serve
+        from hypercorn.config import Config as HypercornConfig
+    except ImportError as e:
+        raise RuntimeError(
+            "server type 'hypercorn' needs an optional dependency: install it with "
+            "`pip install radicale[h2]` (hypercorn>=0.17)") from e
+
+    hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
+    use_ssl: bool = configuration.get("server", "ssl")
+    hypercorn_config = HypercornConfig()
+    hypercorn_config.bind = hypercorn_bind(hosts)
+    # `max_content_length` is a limit of the application, but hypercorn's WSGI wrapper rejects a
+    # body past its own limit before the application sees it, so the two have to agree; 0 is no
+    # limit here, and the wrapper has no way to express that but a number nothing reaches
+    max_content_length: int = configuration.get("server", "max_content_length")
+    hypercorn_config.wsgi_max_body_size = (
+        max_content_length if max_content_length > 0 else sys.maxsize)
+    # HTTP/2 next to HTTP/1.1 in the ALPN protocols the TLS context advertises; over cleartext,
+    # where ALPN does not exist, hypercorn recognises HTTP/2 by the client preface (H2C)
+    hypercorn_config.alpn_protocols = ["h2", "http/1.1"]
+    if use_ssl:
+        hypercorn_config.certfile = configuration.get("server", "certificate")
+        hypercorn_config.keyfile = configuration.get("server", "key")
+        certificate_authority: str = configuration.get("server", "certificate_authority")
+        if certificate_authority:
+            hypercorn_config.ca_certs = certificate_authority
+            hypercorn_config.verify_mode = ssl.CERT_REQUIRED
+        ciphersuite: str = configuration.get("server", "ciphersuite")
+        if ciphersuite:
+            hypercorn_config.ciphers = ciphersuite
+        protocol: str = configuration.get("server", "protocol")
+        if protocol:
+            logger.warning(
+                "[server] protocol=%r is not supported by hypercorn, which sets its own TLS "
+                "versions (TLSv1.2 at the minimum): it is ignored", protocol)
+    application = Application(configuration)
+    logger.info("Starting Radicale %s with hypercorn on %s%s",
+                utils.packages_version(), ", ".join(hypercorn_config.bind),
+                " with SSL" if use_ssl else "")
+
+    async def wait_for_shutdown() -> None:
+        assert shutdown_socket is not None
+        # The socket the caller closes to ask for a shutdown; a blocking recv in a thread keeps the
+        # event loop free while it waits
+        await asyncio.get_running_loop().run_in_executor(None, shutdown_socket.recv, 1)
+
+    async def run_forever() -> None:
+        # Without a shutdown socket the caller owns the lifecycle. hypercorn would otherwise install
+        # its own signal handlers, which only works in the main thread of the main interpreter
+        await asyncio.Event().wait()
+
+    try:
+        asyncio.run(hypercorn_serve(
+            application, hypercorn_config, mode="wsgi",
+            shutdown_trigger=wait_for_shutdown if shutdown_socket is not None else run_forever))
+    finally:
+        logger.info("Stopping Radicale")
+
+
 def serve(configuration: config.Configuration,
           shutdown_socket: Optional[socket.socket] = None) -> None:
     """Serve radicale from configuration.
@@ -303,6 +402,10 @@ def serve(configuration: config.Configuration,
     configuration = configuration.copy()
     configuration.update({"server": {"_internal_server": "True"}}, "server",
                          privileged=True)
+
+    if configuration.get("server", "type") == "hypercorn":
+        serve_hypercorn(configuration, shutdown_socket)
+        return
 
     use_ssl: bool = configuration.get("server", "ssl")
     server_class = ParallelHTTPSServer if use_ssl else ParallelHTTPServer

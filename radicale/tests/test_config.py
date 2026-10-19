@@ -103,6 +103,23 @@ class TestConfig:
         assert configuration1.get("server", "max_connections") == 1111
         assert configuration2.get("server", "max_connections") == 1112
 
+    def test_server_type(self) -> None:
+        configuration = config.load()
+        assert configuration.get("server", "type") == "builtin"
+        configuration.update({"server": {"type": "hypercorn"}}, "test")
+        assert configuration.get("server", "type") == "hypercorn"
+        # the value is a name, not a token to match exactly
+        configuration.update({"server": {"type": " HYPERCORN "}}, "test")
+        assert configuration.get("server", "type") == "hypercorn"
+
+    def test_invalid_server_type(self) -> None:
+        configuration = config.load()
+        with pytest.raises(Exception) as exc_info:
+            configuration.update({"server": {"type": "nginx"}}, "test")
+        e = exc_info.value
+        assert "unsupported server type: 'nginx'" in str(e)
+        assert "builtin|hypercorn" in str(e)
+
     def test_invalid_section(self) -> None:
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
@@ -167,13 +184,15 @@ class TestConfig:
         assert "option already exists in 'auth': 'type'" in str(e)
 
     def test_plugin_schema_invalid(self) -> None:
+        # `[server]` is a type-selecting section since `[server] type` exists, so a plain one is the
+        # example now: a plugin schema is only copied onto a section that selects one
         plugin_schema: types.CONFIG_SCHEMA = {
-            "server": {"new_option": {"value": "False", "type": bool}}}
+            "encoding": {"new_option": {"value": "False", "type": bool}}}
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
             configuration.copy(plugin_schema)
         e = exc_info.value
-        assert "not a plugin section: 'server" in str(e)
+        assert "not a plugin section: 'encoding" in str(e)
 
     def test_plugin_schema_option_invalid(self) -> None:
         plugin_schema: types.CONFIG_SCHEMA = {"auth": {}}

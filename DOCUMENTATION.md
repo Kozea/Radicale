@@ -798,9 +798,37 @@ The following describes all configuration sections and options.
 The configuration options in this section are only relevant in standalone
 mode; they are ignored, when Radicale runs on WSGI.
 
+##### type
+
+_(>= 3.8.4)_
+
+The server to run: `builtin` (the default) or `hypercorn`.
+
+The built-in server speaks HTTP/1.1. `hypercorn` also serves **HTTP/2 over
+cleartext (H2C)** on the same socket, which is what a reverse proxy in front of
+Radicale needs to speak HTTP/2 without terminating TLS itself; it is an optional
+dependency, installed with the `h2` extra (`pip install radicale[h2]`,
+`hypercorn>=0.17`). Asking for it when it is not installed fails with an error
+naming the extra instead of falling back to the built-in server.
+
+With `hypercorn` the TLS options are used as they are (`ssl`, `certificate`,
+`key`, `certificate_authority`, `ciphersuite`) and `max_content_length` is
+handed over to it — without that, hypercorn's own WSGI body limit of 16 Mbyte
+would answer a larger request with `400` before Radicale sees it. Two details
+change: `protocol` is **ignored** (hypercorn sets its own TLS versions, TLSv1.2
+at the minimum) and an unset `ciphersuite` means hypercorn's default cipher
+list rather than the system one. `max_connections` and `timeout` configure the
+built-in server only, and a request that is still in flight is given three
+seconds when the server stops.
+
+Default: `builtin`
+
 ##### hosts
 
-A comma separated list of addresses that the server will bind to.
+A comma separated list of addresses that the server will bind to. A host name
+is bound on every address it resolves to, as with the built-in server; with
+`hypercorn` a failure to bind one of them stops the server, while the built-in
+one logs it and serves the others.
 
 Default: `localhost:5232`
 

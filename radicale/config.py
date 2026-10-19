@@ -52,6 +52,10 @@ PROFILING: Sequence[str] = ("per_request", "per_request_method", "none")
 
 VALIDATE_TYPES: Sequence[str] = ("none", "minimal", "unicode-letter", "unicode-none", "strict")
 
+# The server implementations `[server] type` selects. `hypercorn` is the optional one: it is what
+# serves H2C, and it is only imported when it is asked for (`radicale/server.py`).
+SERVER_TYPES: Sequence[str] = ("builtin", "hypercorn")
+
 
 def positive_int(value: Any) -> int:
     value = int(value)
@@ -136,6 +140,14 @@ def str_or_callable(value: Any) -> Union[str, Callable]:
 
 
 def unspecified_type(value: Any) -> Any:
+    return value
+
+
+def server_types(value: Any) -> str:
+    value = str(value).strip().lower()
+    if value not in SERVER_TYPES:
+        raise ValueError("unsupported server type: %r (supported: %s)"
+                         % (value, "|".join(SERVER_TYPES)))
     return value
 
 
@@ -242,6 +254,12 @@ INTERNAL_OPTIONS: Sequence[str] = ("_allow_extra",)
 # Default configuration
 DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
     ("server", OrderedDict([
+        ("type", {
+            "value": "builtin",
+            "help": "server to use (" + "|".join(SERVER_TYPES) + "), hypercorn also serves H2C "
+                    "and needs the \"h2\" extra (pip install radicale[h2])",
+            "type": server_types,
+            "internal": SERVER_TYPES}),
         ("hosts", {
             "value": "localhost:5232",
             "help": "set server hostnames including ports",
