@@ -262,7 +262,7 @@ commands = [["npx", "-y", "-p", "typescript@7.0.2", "tsc", "-p", "radicale/web/j
 skip_install = true
 
 [tool.tox.env.html5validator]
-description = "WebUI: validate HTML"
+description = "WebUI: validate HTML (requires 'java', e.g. 'java-latest-openjdk-headless')"
 deps = ["html5validator-2"]
 commands = [["html5validator", "--root", "radicale/web/internal_data/", "--also-check-css"]]
 
