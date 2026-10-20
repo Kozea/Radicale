@@ -10,6 +10,7 @@
 * Fix: WebUI/Sharing: property overrides on transformed shares
 * Fix: PUT request: accept If-Match: * for an existing item
 * Add: new permission 'l' for locking properties by blocking write access to properties (PROPPATCH) and suppressing write-properties (PROPFIND)
+* Fix: REPORT expand: non-recurring events with a TZID were time-range filtered by their local time read as UTC
 
 ## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True
