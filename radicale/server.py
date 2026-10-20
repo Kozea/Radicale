@@ -327,7 +327,7 @@ def serve_hypercorn(configuration: config.Configuration,
         from hypercorn.config import Config as HypercornConfig
     except ImportError as e:
         raise RuntimeError(
-            "server type 'hypercorn' needs an optional dependency: install it with "
+            "server type 'hypercorn' needs an optional dependency: install it in OS (package name: 'python3-hypercorn') or with "
             "`pip install radicale[h2]` (hypercorn>=0.17)") from e
 
     hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
