@@ -505,6 +505,39 @@ permissions: RrWw""")
         assert "RECURRENCE-ID:20060103T170000Z" in element.text
         assert "DTSTART:20060103T170000Z" in element.text
 
+    def test_expand_non_recurring_event_with_tzid(self) -> None:
+        """Expand time-range compares a non-recurring TZID event in UTC."""
+        self.mkcalendar("/test/")
+        self.put("/test/event1.ics/", get_file_content("event1.ics"))
+
+        # event1 is 18:00-19:00 Europe/Paris (CEST), i.e. 16:00-17:00 UTC
+        start = "20130901T153000Z"
+        end = "20130901T173000Z"
+
+        request = f"""
+        <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+            <D:prop>
+                <C:calendar-data>
+                    <C:expand start="{start}" end="{end}"/>
+                </C:calendar-data>
+            </D:prop>
+            <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                    <C:comp-filter name="VEVENT">
+                        <C:time-range start="{start}" end="{end}"/>
+                    </C:comp-filter>
+                </C:comp-filter>
+            </C:filter>
+        </C:calendar-query>
+        """
+        status, responses = self.report("/test", request)
+        assert status == 207
+        response = responses["/test/event1.ics"]
+        assert type(response) is dict
+        status, element = response["C:calendar-data"]
+        assert status == 200 and element.text
+        assert "UID:event1" in element.text
+
     def test_expand_report_for_recurring_and_non_recurring_events(self) -> None:
         """Test calendar-query with time-range filter, matches one VEVENT."""
         self.mkcalendar("/test/")
