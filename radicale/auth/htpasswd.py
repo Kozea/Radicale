@@ -137,8 +137,9 @@ class Auth(auth.BaseAuth):
 
         if self._encryption == "argon2" or self._encryption == "autodetect":
             try:
-                import argon2
-                from passlib.hash import argon2  # noqa: F811
+                # argon2-cffi is passlib's backend: imported only to fail early if absent
+                import argon2 as argon2_backend  # noqa: F401
+                from passlib.hash import argon2
             except ImportError as e:
                 if (self._encryption == "autodetect") and (self._htpasswd_argon2_use == 0):
                     logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require argon2 module, but currently no entries found", self._encryption)
