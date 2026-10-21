@@ -467,6 +467,34 @@ Be reminded that Radicale's default configuration enforces limits on the
 maximum number of parallel connections, the maximum file size and the rate of
 incorrect authentication attempts. Connections are terminated after a timeout.
 
+#### HTTP/2 to the backend
+
+The examples above forward to Radicale over HTTP/1.x. The built-in server
+answers HTTP/1.0 and closes after each request; with `type = hypercorn` (see
+[Configuration/Server](#server)) the hop keeps connections alive instead, and it
+can speak **HTTP/2 over cleartext (H2C)** on the same socket: the connection
+starts with the HTTP/2 client preface, so a proxy configured to use HTTP/2 for
+this upstream gets it without terminating TLS itself.
+
+The reason to prefer it is request smuggling. Smuggling needs a connection that
+carries more than one request, and two peers that disagree on where the first
+one ends: most commonly a `Content-Length` header pulling against a
+`Transfer-Encoding` header, or duplicate `Transfer-Encoding` headers that the
+two peers combine or drop differently. HTTP/2 leaves nothing to disagree
+about — every frame carries its own length, a request ends at an explicit
+end-of-stream, and a `content-length` that contradicts the data is a stream
+error (RFC 9113). The hop that changes is the last one, so no HTTP/1.1
+downgrade is introduced, and the client-side hop is unchanged: this removes
+the ambiguity on one hop, not on the path end to end.
+
+With `ssl = True` `hypercorn` serves HTTP/2 over TLS by ALPN too, so the
+encrypted hop described under [Secure connection between Radicale and the
+reverse proxy](#secure-connection-between-radicale-and-the-reverse-proxy) can
+use it; the proxy still has to be told to use HTTP/2 for that upstream.
+
+`type = builtin` stays the default, so a proxy that forwards to it keeps working
+exactly as before.
+
 #### Manage user accounts with the reverse proxy
 
 Set the configuration option `type` in the `auth` section to
@@ -800,14 +828,15 @@ mode; they are ignored, when Radicale runs on WSGI.
 
 ##### type
 
-_(>= 3.8.4)_
+_(>= 3.9.0)_
 
 The server to run: `builtin` (the default) or `hypercorn`.
 
-The built-in server speaks HTTP/1.1. `hypercorn` also serves **HTTP/2 over
-cleartext (H2C)** on the same socket, which is what a reverse proxy in front of
-Radicale needs to speak HTTP/2 without terminating TLS itself; it is an optional
-dependency, installed with the `h2` extra (`pip install radicale[h2]`,
+The built-in server answers HTTP/1.0 and closes after each request. `hypercorn`
+keeps connections alive and also serves **HTTP/2 over cleartext (H2C)** on the
+same socket, which is what a reverse proxy in front of Radicale needs to speak
+HTTP/2 without terminating TLS itself; it is an optional dependency, installed
+with the `h2` extra (`pip install radicale[h2]`,
 `hypercorn>=0.17`). Asking for it when it is not installed fails with an error
 naming the extra instead of falling back to the built-in server.
 
