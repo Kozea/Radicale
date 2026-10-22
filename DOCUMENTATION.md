@@ -836,8 +836,9 @@ The built-in server answers HTTP/1.0 and closes after each request. `hypercorn`
 keeps connections alive and also serves **HTTP/2 over cleartext (H2C)** on the
 same socket, which is what a reverse proxy in front of Radicale needs to speak
 HTTP/2 without terminating TLS itself; it is an optional dependency, installed
-with the `h2` extra (`pip install radicale[h2]`,
-`hypercorn>=0.17`). Asking for it when it is not installed fails with an error
+with the `h2` extra using `pip install radicale[h2]` or by underlying
+OS (package name: 'python3-hypercorn'), supported version: hypercorn>=0.17.
+Asking for it when it is not installed fails with an error
 naming the extra instead of falling back to the built-in server.
 
 With `hypercorn` the TLS options are used as they are (`ssl`, `certificate`,
