@@ -993,10 +993,11 @@ standalone mode; they are ignored, when Radicale runs on WSGI.</p>
 <strong>HTTP/2 over cleartext (H2C)</strong> on the same socket, which
 is what a reverse proxy in front of Radicale needs to speak HTTP/2
 without terminating TLS itself; it is an optional dependency, installed
-with the <code>h2</code> extra (<code>pip install radicale[h2]</code>,
-<code>hypercorn&gt;=0.17</code>). Asking for it when it is not installed
-fails with an error naming the extra instead of falling back to the
-built-in server.</p>
+with the <code>h2</code> extra using
+<code>pip install radicale[h2]</code> or by underlying OS (package name:
+'python3-hypercorn'), supported version: hypercorn&gt;=0.17. Asking for
+it when it is not installed fails with an error naming the extra instead
+of falling back to the built-in server.</p>
 <p>With <code>hypercorn</code> the TLS options are used as they are
 (<code>ssl</code>, <code>certificate</code>, <code>key</code>,
 <code>certificate_authority</code>, <code>ciphersuite</code>) and
