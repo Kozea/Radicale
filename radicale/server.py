@@ -21,8 +21,9 @@
 """
 The servers Radicale can run.
 
-The built-in one is the default and speaks HTTP/1.1 over `wsgiref.simple_server`; `[server] type =
-hypercorn` runs an optional dependency instead, which is the one that also speaks HTTP/2 and H2C.
+The built-in one is the default and answers HTTP/1.0 over `wsgiref.simple_server`, closing after each
+request; `[server] type = hypercorn` runs an optional dependency instead, which keeps connections alive
+and is the one that also speaks HTTP/2 and H2C.
 
 """
 
