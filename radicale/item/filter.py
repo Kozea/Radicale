@@ -219,7 +219,7 @@ def time_range_match(vobject_item: vobject.base.Component,
     def range_fn(range_start: datetime, range_end: datetime,
                  is_recurrence: bool) -> bool:
         nonlocal matched
-        if trigger:
+        if trigger is not None:
             # if trigger is given, only check range_start
             if isinstance(trigger, timedelta):
                 # trigger is a offset, apply to range_start
