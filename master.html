@@ -168,6 +168,8 @@ with "NSSM - the Non-Sucking Service Manager"</a></li>
 </ul></li>
 <li class="level3"><a href="#reverse-proxy" id="toc-reverse-proxy">Reverse Proxy</a>
 <ul>
+<li class="level4"><a href="#http2-to-the-backend" id="toc-http2-to-the-backend">HTTP/2
+to the backend</a></li>
 <li class="level4"><a href="#manage-user-accounts-with-the-reverse-proxy" id="toc-manage-user-accounts-with-the-reverse-proxy">Manage user
 accounts with the reverse proxy</a></li>
 <li class="level4"><a href="#secure-connection-between-radicale-and-the-reverse-proxy" id="toc-secure-connection-between-radicale-and-the-reverse-proxy">Secure
@@ -683,6 +685,34 @@ $HTTP["url"] =~ "^/radicale/" {
 the maximum number of parallel connections, the maximum file size and
 the rate of incorrect authentication attempts. Connections are
 terminated after a timeout.</p>
+<section class="level4" id="http2-to-the-backend">
+<h4>HTTP/2 to the backend <a class="headerlink" href="#http2-to-the-backend">&para;</a></h4>
+<p>The examples above forward to Radicale over HTTP/1.x. The built-in
+server answers HTTP/1.0 and closes after each request; with
+<code>type = hypercorn</code> (see <a href="#server">Configuration/Server</a>) the hop keeps connections alive
+instead, and it can speak <strong>HTTP/2 over cleartext (H2C)</strong>
+on the same socket: the connection starts with the HTTP/2 client
+preface, so a proxy configured to use HTTP/2 for this upstream gets it
+without terminating TLS itself.</p>
+<p>The reason to prefer it is request smuggling. Smuggling needs a
+connection that carries more than one request, and two peers that
+disagree on where the first one ends: most commonly a
+<code>Content-Length</code> header pulling against a
+<code>Transfer-Encoding</code> header, or duplicate
+<code>Transfer-Encoding</code> headers that the two peers combine or
+drop differently. HTTP/2 leaves nothing to disagree about &mdash; every frame
+carries its own length, a request ends at an explicit end-of-stream, and
+a <code>content-length</code> that contradicts the data is a stream
+error (RFC 9113). The hop that changes is the last one, so no HTTP/1.1
+downgrade is introduced, and the client-side hop is unchanged: this
+removes the ambiguity on one hop, not on the path end to end.</p>
+<p>With <code>ssl = True</code> <code>hypercorn</code> serves HTTP/2
+over TLS by ALPN too, so the encrypted hop described under <a href="#secure-connection-between-radicale-and-the-reverse-proxy">Secure
+connection between Radicale and the reverse proxy</a> can use it; the
+proxy still has to be told to use HTTP/2 for that upstream.</p>
+<p><code>type = builtin</code> stays the default, so a proxy that
+forwards to it keeps working exactly as before.</p>
+</section>
 <section class="level4" id="manage-user-accounts-with-the-reverse-proxy">
 <h4>Manage user accounts with the reverse proxy <a class="headerlink" href="#manage-user-accounts-with-the-reverse-proxy">&para;</a></h4>
 <p>Set the configuration option <code>type</code> in the
@@ -955,12 +985,13 @@ the following examples:</p>
 standalone mode; they are ignored, when Radicale runs on WSGI.</p>
 <section class="level5" id="type">
 <h5>type <a class="headerlink" href="#type">&para;</a></h5>
-<p><em>(&gt;= 3.8.4)</em></p>
+<p><em>(&gt;= 3.9.0)</em></p>
 <p>The server to run: <code>builtin</code> (the default) or
 <code>hypercorn</code>.</p>
-<p>The built-in server speaks HTTP/1.1. <code>hypercorn</code> also
-serves <strong>HTTP/2 over cleartext (H2C)</strong> on the same socket,
-which is what a reverse proxy in front of Radicale needs to speak HTTP/2
+<p>The built-in server answers HTTP/1.0 and closes after each request.
+<code>hypercorn</code> keeps connections alive and also serves
+<strong>HTTP/2 over cleartext (H2C)</strong> on the same socket, which
+is what a reverse proxy in front of Radicale needs to speak HTTP/2
 without terminating TLS itself; it is an optional dependency, installed
 with the <code>h2</code> extra (<code>pip install radicale[h2]</code>,
 <code>hypercorn&gt;=0.17</code>). Asking for it when it is not installed
