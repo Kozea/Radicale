@@ -685,8 +685,13 @@ def _expand(
                 dtend = datetime.datetime.fromordinal(dtend.toordinal()).replace(tzinfo=None)
             elif not all_day_event and isinstance(dtstart, datetime.datetime) \
                     and isinstance(dtend, datetime.datetime):
-                dtstart = dtstart.replace(tzinfo=datetime.timezone.utc)
-                dtend = dtend.replace(tzinfo=datetime.timezone.utc)
+                # Convert zone-aware values; naive values are already UTC
+                if dtstart.tzinfo is not None:
+                    dtstart = dtstart.astimezone(datetime.timezone.utc)
+                    dtend = dtend.astimezone(datetime.timezone.utc)
+                else:
+                    dtstart = dtstart.replace(tzinfo=datetime.timezone.utc)
+                    dtend = dtend.replace(tzinfo=datetime.timezone.utc)
             else:
                 logger.warning("Unexpected DTSTART/DTEND type: dtstart=%s, dtend=%s", type(dtstart), type(dtend))
                 continue
