@@ -35,6 +35,7 @@ class ApplicationPartMove(ApplicationBase):
     def do_MOVE(self, environ: types.WSGIEnviron, base_prefix: str,
                 path: str, user: str, request_info: dict) -> types.WSGIResponse:
         """Manage MOVE request."""
+        actor = user
         raw_dest = environ.get("HTTP_DESTINATION", "")
 
         # Decode URL-encoded characters (e.g. %40 -> @) before parsing
@@ -101,7 +102,7 @@ class ApplicationPartMove(ApplicationBase):
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 
-        with self._storage.acquire_lock("w", user, path=path, request="MOVE", to_path=to_path):
+        with self._storage.acquire_lock("w", user, path=path, request="MOVE", to_path=to_path, actor=actor):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

@@ -216,7 +216,7 @@ class ApplicationPartProppatch(ApplicationBase):
             request_info["status"] = client.MULTI_STATUS
             return client.MULTI_STATUS, headers, self._xml_response(xml_answer, request_info), xmlutils.pretty_xml(xml_content)
 
-        with self._storage.acquire_lock("w", user, path=path, request="PROPPATCH"):
+        with self._storage.acquire_lock("w", user, path=path, request="PROPPATCH", actor=actor):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

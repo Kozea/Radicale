@@ -34,6 +34,7 @@ class ApplicationPartMkcalendar(ApplicationBase):
     def do_MKCALENDAR(self, environ: types.WSGIEnviron, base_prefix: str,
                       path: str, user: str, request_info: dict) -> types.WSGIResponse:
         """Manage MKCALENDAR request."""
+        actor = user
         if "w" not in self._rights.authorization(user, path):
             return httputils.NOT_ALLOWED
         try:
@@ -63,7 +64,7 @@ class ApplicationPartMkcalendar(ApplicationBase):
                         return httputils.CONFLICT
         # TODO: use this?
         # timezone = props.get("C:calendar-timezone")
-        with self._storage.acquire_lock("w", user, path=path, request="MKCALENDAR"):
+        with self._storage.acquire_lock("w", user, path=path, request="MKCALENDAR", actor=actor):
             item = next(iter(self._storage.discover(path)), None)
             if item:
                 return self._webdav_error_response(
