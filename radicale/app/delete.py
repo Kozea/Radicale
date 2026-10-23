@@ -95,7 +95,7 @@ class ApplicationPartDelete(ApplicationBase):
                 if collections_share_list is not None and len(collections_share_list) > 0:
                     logger.notice("delete of a mapped collection in use (%d) is not permitted: %r", len(collections_share_list), path)
                     return httputils.CONFLICT
-        with self._storage.acquire_lock("w", user, path=path, request="DELETE"):
+        with self._storage.acquire_lock("w", user, path=path, request="DELETE", actor=actor):
             item = next(iter(self._storage.discover(path)), None)
             if not item:
                 return httputils.NOT_FOUND

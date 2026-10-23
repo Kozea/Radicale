@@ -1763,11 +1763,12 @@ tutorial for an example.
 Default: (unset)
 
 Supported placeholders:
- - `%(user)s`: logged-in user
+ - `%(user)s`: logged-in (or in case of sharing: mapped) user
  - `%(cwd)s`: current working directory _(>= 3.5.1)_
  - `%(path)s`: full path of item _(>= 3.5.1)_
  - `%(to_path)s`: full path of destination item (only set on MOVE request) _(>= 3.5.5)_
  - `%(request)s`: request method _(>= 3.5.5)_
+ - `%(actor)s`: logged-in user _(>= 3.9.0)_
 
 The command will be executed with base directory defined in `filesystem_folder` (see above)
 

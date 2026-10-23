@@ -237,7 +237,7 @@ class ApplicationPartPut(ApplicationBase):
              self._max_vevent_rrule_occurrence,
              )
 
-        with self._storage.acquire_lock("w", user, path=path, request="PUT"):
+        with self._storage.acquire_lock("w", user, path=path, request="PUT", actor=actor):
             item = next(iter(self._storage.discover(path)), None)
             parent_item = next(iter(
                 self._storage.discover(access.parent_path)), None)

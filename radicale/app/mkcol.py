@@ -34,6 +34,7 @@ class ApplicationPartMkcol(ApplicationBase):
     def do_MKCOL(self, environ: types.WSGIEnviron, base_prefix: str,
                  path: str, user: str, request_info: dict) -> types.WSGIResponse:
         """Manage MKCOL request."""
+        actor = user
         permissions = self._rights.authorization(user, path)
         if not rights.intersect(permissions, "Ww"):
             return httputils.NOT_ALLOWED
@@ -68,7 +69,7 @@ class ApplicationPartMkcol(ApplicationBase):
                 for share in collections_share_list:
                     if share['PathOrToken'] == path:
                         return httputils.CONFLICT
-        with self._storage.acquire_lock("w", user, path=path, request="MKCOL"):
+        with self._storage.acquire_lock("w", user, path=path, request="MKCOL", actor=actor):
             item = next(iter(self._storage.discover(path)), None)
             if item:
                 return httputils.METHOD_NOT_ALLOWED

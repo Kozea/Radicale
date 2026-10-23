@@ -623,7 +623,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     principal_path, depth="1")), None)
             if not principal:
                 if "W" in self._rights.authorization(user, principal_path):
-                    with self._storage.acquire_lock("w", user):
+                    with self._storage.acquire_lock("w", user, actor=user):
                         try:
                             new_coll, _, _ = self._storage.create_collection(principal_path)
                             if new_coll:

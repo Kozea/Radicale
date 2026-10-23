@@ -2,7 +2,8 @@
 # Copyright © 2008 Nicolas Kandel
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
-# Copyright © 2017-2019 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2026-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +25,9 @@ This module offers helpers to use in tests.
 
 """
 
+import logging
 import os
+import re
 
 from radicale import config, types
 
@@ -47,3 +50,25 @@ def configuration_to_dict(configuration: config.Configuration) -> types.CONFIG:
                       if not option.startswith("_")}
             for section in configuration.sections()
             if not section.startswith("_")}
+
+
+def compare_dict(d: dict[str, str], d_ref: dict[str, str]) -> bool:
+    """Compare dictionary against reference."""
+    for key in d_ref:
+        logging.debug("* check d[%s]=%r <-> d_ref[%s]=%r", key, d[key], key, d_ref[key])
+        assert key in d
+        assert d[key] == d_ref[key]
+    return True
+
+
+def find_hook_json_in_list(lines: list[str]) -> str:
+    """Find hook-json in list."""
+    for line in lines:
+        if line.find("\"hook-json ") != -1:
+            r = re.search('.*\"hook-json ({.*})".*', line)
+            if r:
+                s = r.group(1).replace("'", "\"")
+            else:
+                break
+    assert s is not None
+    return s

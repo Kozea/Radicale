@@ -84,6 +84,7 @@ class StoragePartLock(StorageBase):
                 path = kwargs.get('path', "")
                 request = kwargs.get('request', "NONE")
                 to_path = kwargs.get('to_path', "")
+                actor = kwargs.get('actor', user)
                 if to_path != "":
                     to_path = shlex.quote(self._get_collection_root_folder() + to_path)
                 try:
@@ -92,6 +93,7 @@ class StoragePartLock(StorageBase):
                         "to_path": to_path,
                         "cwd": shlex.quote(self._filesystem_folder),
                         "request": shlex.quote(request),
+                        "actor": shlex.quote(actor or "Anonymous"),
                         "user": shlex.quote(user or "Anonymous")}
                 except KeyError as e:
                     logger.error(
