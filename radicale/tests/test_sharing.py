@@ -27,6 +27,7 @@ import logging
 import os
 import pickle
 import re
+import shutil
 import sys
 import tempfile
 import urllib
@@ -36,10 +37,12 @@ from typing import Dict, Sequence, Tuple, Union, cast
 import pytest
 import vobject
 
+import radicale.tests.custom.storage_simple_sync
 from radicale import pathutils, sharing, storage, xmlutils
 from radicale.item import Item
 from radicale.tests import BaseTest
-from radicale.tests.helpers import get_file_content
+from radicale.tests.helpers import (compare_dict, find_hook_json_in_list,
+                                    get_file_content)
 
 
 def _supported_report_name(supported):
@@ -9276,3 +9279,79 @@ END:VCARD
         missing = os.path.join(self.colpath, "missing-parent", "nested", "sharing.csv")
         self.configure({"sharing": {"type": "csv", "database_path": missing}})
         self._sharing_api_json("all", "info", check=404, login="owner:ownerpw", json_dict={})
+
+    @pytest.mark.skipif(not shutil.which("flock"), reason="flock command not found")
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
+    def test_sharing_csv_storage_hook(self, caplog) -> None:
+        """CSV sharing database with storage hook."""
+        caplog.set_level(logging.DEBUG)
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "database_path": "",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s', 'actor':'%(actor)s'}\""},
+                        "rights": {"type": "owner_only"}})
+        self._sharing_api_json("all", "info", check=200, login="owner:ownerpw", json_dict={})
+        path_calendar = "/owner/calendar.ics/"
+        path_shared = "/user/calendar-shared.ics/"
+        self.mkcalendar(path_calendar, login="owner:ownerpw")
+
+        # acting as owner
+        logging.info("\n*** PUT as owner")
+        event = get_file_content("event1.ics")
+        path = "/owner/calendar.ics/event1.ics"
+        self.put(path, event, login="owner:ownerpw")
+        s = find_hook_json_in_list(caplog.messages)
+        logging.debug("** json to load: %r", s)
+        d = json.loads(s)
+        d_ref = {
+                'user': 'owner',
+                'cwd': self.colpath,
+                'path': os.path.join(self.colpath, "collection-root/owner/calendar.ics/event1.ics"),
+                'request': 'PUT',
+                'to_path': '',
+                'actor': 'owner',
+        }
+        compare_dict(d, d_ref)
+
+        # acting as user
+        _, _headers, answer = self._sharing_api_json("map", "create", check=200, login="owner:ownerpw", json_dict={
+            "User": "user",
+            "PathMapped": path_calendar,
+            "PathOrToken": path_shared,
+            "Permissions": "rw",
+            "Enabled": True,
+            "Hidden": False,
+        })
+        assert json.loads(answer)["Status"] == "success"
+
+        # accept the share as user
+        _, _headers, answer = self._sharing_api_json("map", "update", check=200, login="user:userpw", json_dict={
+            "PathOrToken": path_shared,
+            "Enabled": True,
+            "Hidden": False,
+        })
+        assert json.loads(answer)["Status"] == "success"
+
+        logging.info("\n*** PUT as user")
+        event = get_file_content("event2.ics")
+        path = "/user/calendar-shared.ics/event2.ics"
+        self.put(path, event, login="user:userpw")
+        s = find_hook_json_in_list(caplog.messages)
+        logging.debug("** json to load: %r", s)
+        d = json.loads(s)
+        d_ref = {
+                'user': 'owner',
+                'cwd': self.colpath,
+                'path': os.path.join(self.colpath, "collection-root/owner/calendar.ics/event2.ics"),
+                'request': 'PUT',
+                'to_path': '',
+                'actor': 'user',
+        }
+        compare_dict(d, d_ref)
