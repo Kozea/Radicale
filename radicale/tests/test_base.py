@@ -2334,6 +2334,27 @@ permissions: RrWw""")
         assert "/calendar.ics/valarm1.ics" in answer  # -15 min offset
         assert "/calendar.ics/valarm2.ics" not in answer
 
+    def test_time_range_filter_events_valarm_zero_offset(self) -> None:
+        """Report request with time-range filter on event having VALARM TRIGGER:PT0S."""
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:comp-filter name="VALARM">
+            <C:time-range start="20151010T055000Z" end="20151010T061000Z"/>
+        </C:comp-filter>
+    </C:comp-filter>
+</C:comp-filter>"""], "valarm", items=[3])
+        assert "/calendar.ics/valarm3.ics" in answer  # alarm at event start
+        answer = self._test_filter(["""\
+<C:comp-filter name="VCALENDAR">
+    <C:comp-filter name="VEVENT">
+        <C:comp-filter name="VALARM">
+            <C:time-range start="20151010T063000Z" end="20151010T064500Z"/>
+        </C:comp-filter>
+    </C:comp-filter>
+</C:comp-filter>"""], "valarm", items=[3])
+        assert "/calendar.ics/valarm3.ics" not in answer  # event, not alarm
+
     def test_time_range_filter_todos_completed(self) -> None:
         answer = self._test_filter(["""\
 <C:comp-filter name="VCALENDAR">
