@@ -13,6 +13,7 @@
 * Add: storage-hook supports now placeholder 'actor' (useful for shared collection)
 * Fix: REPORT with calendar-data parses every item with vobject just to count VEVENTs (10× slower than needed)
 * Fix: Honor zero-offset VALARM triggers in time-range filters
+* Fix: time-range filter on VTODO with only CREATED and COMPLETED
 
 ## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True
