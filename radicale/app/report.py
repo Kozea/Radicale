@@ -476,8 +476,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                         found_props.append(element)
                     else:
                         found_props.append(element)
-                        if hasattr(item.vobject_item, "vevent_list"):
-                            n_vevents += len(item.vobject_item.vevent_list)
+                        # Count the VEVENTs in the text already served (the
+                        # cached one) instead of parsing every item with vobject
+                        n_vevents += sum(
+                            1 for line in (element.text or "").splitlines()
+                            if line.upper() == "BEGIN:VEVENT")
                 # Avoid DoS with too many events
                 if max_occurrence and n_vevents > max_occurrence:
                     raise ValueError("REPORT occurrences limit of {} hit"
