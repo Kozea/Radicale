@@ -10,6 +10,7 @@
 * Add: opt-in iTIP scheduling to email hook
 * Change: move `requests` to optional extra `oauth2` for OAuth2 authentication (`pip install radicale[oauth2]`)
 * Change: move `pika` to optional extra `rabbitmq` for the RabbitMQ hook (`pip install radicale[rabbitmq]`)
+* Add: [server] type: serve with cheroot (HTTP/1.1, keep-alive; `pip install radicale[cheroot]`)
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)

@@ -12,7 +12,7 @@
 [server]
 
 # Server to run
-# Value: builtin (HTTP/1.0) | hypercorn (HTTP/1 + HTTP/2 incl. H2C)
+# Value: builtin (HTTP/1.0) | hypercorn (HTTP/1 + HTTP/2 incl. H2C) | cheroot (HTTP/1.1)
 #type = builtin
 
 # Server IP addresses or hostnames separated by a comma the server will bind to
