@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.9.1.dev
+* Add: [server] type: serve with cheroot (HTTP/1.1, keep-alive; `pip install radicale[cheroot]`)
+
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)
 * Adjustment WebUI: show incoming shares as cards

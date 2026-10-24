@@ -29,6 +29,7 @@ and is the one that also speaks HTTP/2 and H2C.
 
 import asyncio
 import http
+import importlib
 import os
 import platform
 import select
@@ -383,6 +384,23 @@ def serve_hypercorn(configuration: config.Configuration,
         logger.info("Stopping Radicale")
 
 
+def serve_cheroot(configuration: config.Configuration,
+                  shutdown_socket: Optional[socket.socket] = None) -> None:
+    """Serve radicale with cheroot, the pure-Python HTTP server of CherryPy.
+
+    cheroot is an optional dependency (the `cheroot` extra): it is imported here, when it is asked
+    for, and not at Radicale's own import, so that a configuration without it never needs it.
+
+    """
+    try:
+        server_cheroot = importlib.import_module("radicale.server_cheroot")
+    except ImportError as e:
+        raise RuntimeError(
+            "server type 'cheroot' needs an optional dependency: install it in OS (package name: 'python3-cheroot') or with "
+            "`pip install radicale[cheroot]` (cheroot>=8.5.0)") from e
+    server_cheroot.serve(configuration, shutdown_socket)
+
+
 def serve(configuration: config.Configuration,
           shutdown_socket: Optional[socket.socket] = None) -> None:
     """Serve radicale from configuration.
@@ -406,6 +424,9 @@ def serve(configuration: config.Configuration,
 
     if configuration.get("server", "type") == "hypercorn":
         serve_hypercorn(configuration, shutdown_socket)
+        return
+    if configuration.get("server", "type") == "cheroot":
+        serve_cheroot(configuration, shutdown_socket)
         return
 
     use_ssl: bool = configuration.get("server", "ssl")

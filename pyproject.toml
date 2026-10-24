@@ -40,8 +40,9 @@ dependencies = [
 
 
 [project.optional-dependencies]
-test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3", "hypercorn>=0.17"]
+test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3", "hypercorn>=0.17", "cheroot>=8.5.0"]
 h2 = ["hypercorn>=0.17"]
+cheroot = ["cheroot>=8.5.0"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
