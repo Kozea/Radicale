@@ -5078,7 +5078,7 @@ permissions: RrWw""")
             assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
             assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
 
-            # delete all propertie by user using API
+            # delete all properties by user using API
             logging.info("\n*** delete all properties by user (json)")
             json_dict = {}
             json_dict["PathOrToken"] = path_shared_r
