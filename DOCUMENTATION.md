@@ -1091,7 +1091,8 @@ Available types are:
   in combination with SSO support in reverse proxy (e.g. Apache+mod_auth_openidc).
 
   The installation of Python's **requests** module is required for this to work
-  (`pip install radicale[oauth2]`).
+  (`pip install radicale[oauth2]`, or an OS-wide installation of the
+  distribution package, e.g. `python3-requests`).
 
 * `pam` _(>= 3.5.0)_  
   Use local PAM to authenticate users by relaying credentials from client and handle result.
@@ -2108,7 +2109,8 @@ Available types are:
   Push the message to the rabbitmq server.
 
   The installation of Python's **pika** module is required for this to work
-  (`pip install radicale[rabbitmq]`).
+  (`pip install radicale[rabbitmq]`, or an OS-wide installation of the
+  distribution package, e.g. `python3-pika`).
 
 * `email` _(>= 3.5.5)_  
   Send an email notification to event attendees.
