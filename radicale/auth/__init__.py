@@ -307,16 +307,18 @@ class BaseAuth:
                 logger.debug("Login failed cache investigation finished")
             # check for cache failed login
             digest_failed = login + ":" + self._cache_digest(login, password, str(self._cache_failed_logins_salt_ns))
-            if self._cache_failed.get(digest_failed):
+            cache_failed_entry = self._cache_failed.get(digest_failed)
+            if cache_failed_entry:
                 # login+password found in cache "failed" -> shortcut return
-                (time_ns_cache, login_cache) = self._cache_failed[digest_failed]
+                (time_ns_cache, login_cache) = cache_failed_entry
                 age_failed = int((time_ns - time_ns_cache) / 10**9)
                 logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login_cache, age_failed)
                 self._sleep_for_constant_exec_time(time_ns_begin)
                 return ("", self._type + " / cached", set([]))
-            if self._cache_successful.get(login):
+            cache_successful_entry = self._cache_successful.get(login)
+            if cache_successful_entry:
                 # login found in cache "successful"
-                (digest_cache, time_ns_cache, groups) = self._cache_successful[login]
+                (digest_cache, time_ns_cache, groups) = cache_successful_entry
                 digest = self._cache_digest(login, password, str(time_ns_cache))
                 if digest == digest_cache:
                     age_success = int((time_ns - time_ns_cache) / 10**9)
@@ -351,9 +353,10 @@ class BaseAuth:
                     self._cache_successful[login] = (digest, time_ns, groups)
                     self._lock.release()
                     logger.debug("Login successful cache for user set: '%s'", login)
-                    if self._cache_failed.get(digest_failed):
+                    self._lock.acquire()
+                    if self._cache_failed.pop(digest_failed, None):
                         logger.debug("Login failed cache for user cleared: '%s'", login)
-                        del self._cache_failed[digest_failed]
+                    self._lock.release()
                 else:
                     logger.debug("Login failed for user+password via backend: '%s'", login)
                     self._lock.acquire()
