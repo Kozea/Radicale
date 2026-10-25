@@ -1871,6 +1871,9 @@ class TestSharingApiSanity(BaseTest):
             logging.info("\n*** delete collection by user1 via map:w -> fail")
             _, responses = self.delete(path_shared_rw, check=403, login="user2:user2pw")
 
+            logging.info("\n*** delete collection without trailing / by user2 via map:w -> fail")
+            _, responses = self.delete(path_shared_rw.removesuffix('/'), check=403, login="user2:user2pw")
+
             logging.info("\n*** delete collection by owner -> fail (still in use)")
             _, responses = self.delete(path_mapped, check=409, login="owner:ownerpw")
 
