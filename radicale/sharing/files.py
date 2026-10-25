@@ -41,6 +41,8 @@ class Sharing(sharing.BaseSharing):
             sharing_database_path = os.path.join(folder_db, "files")
             logger.info("sharing database path not provided, use default: %r", sharing_database_path)
         else:
+            sharing_database_path = os.path.abspath(sharing_database_path)
+            folder_db = os.path.dirname(sharing_database_path)
             logger.info("sharing database path: %r", sharing_database_path)
 
         if not os.path.exists(folder_db):
