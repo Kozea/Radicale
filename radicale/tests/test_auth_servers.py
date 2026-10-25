@@ -33,7 +33,7 @@ from urllib.parse import quote
 
 import pytest
 
-from radicale import xmlutils
+from radicale import auth, xmlutils
 from radicale.auth import ldap as ldap_auth
 from radicale.tests import BaseTest
 
@@ -743,20 +743,38 @@ class TestAuthServers(BaseTest):
         with patch("radicale.auth.pam.pwd.getpwnam", getpwnam), \
                 patch("radicale.auth.pam.grp.getgrgid", getgrgid), \
                 patch("radicale.auth.pam.grp.getgrnam", getgrnam), \
+                patch("radicale.auth.pam.os.getgrouplist", getgrouplist), \
                 patch.object(pam, "authenticate", authenticate):
             self.configure({"auth": {"type": "pam", "delay": "0.001", "pam_service": "radicale"},
                             "group": {"type": "from_auth"}})
             auth_any: Any = self.application._auth
-            assert auth_any._login(None, "secret") == ""
-            assert auth_any._login("owner", None) == ""
+            assert auth_any._login_ext_with_groups(None, "secret", None) == auth.NO_LOGIN_NO_GROUPS
+            assert auth_any._login_ext_with_groups("owner", None, None) == auth.NO_LOGIN_NO_GROUPS
             assert _principal(self, "missing:secret", check=401) == ""
             assert _principal(self, "owner:secret") == "/owner/"
             assert ("owner", "secret", "radicale") in calls
-            assert "users" in self.application._rights._user_groups
 
+            logging.debug("** check for 'owner' having user_groups 'users'")
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            logging.debug("* user=%r user_groups=%r", user, user_groups)
+            assert user == "owner"
+            assert "users" in user_groups
+            assert "wheel" in user_groups
+
+            logging.debug("** reconfigure for PAM group_membership 'wheel'")
             self.configure({"auth": {"pam_group_membership": "wheel"}})
             assert _principal(self, "owner:secret") == "/owner/"
-            assert self.application._auth._groups == {"owner", "users"}
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            logging.debug("* user=%r user_groups=%r", user, user_groups)
+            assert "users" in user_groups
+            assert "wheel" in user_groups
+
+            logging.debug("** check for 'guest' having user_groups 'users'")
+            user, user_groups = auth_any._login_ext_with_groups("guest", "secret", None)
+            logging.debug("* user=%r user_groups=%r", user, user_groups)
+            assert "users" in user_groups
+            assert "wheel" not in user_groups
+
             assert _principal(self, "guest:secret", check=401) == ""
             assert _principal(self, "owner:wrong", check=401) == ""
 
