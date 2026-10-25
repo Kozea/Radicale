@@ -50,7 +50,7 @@ class Auth(auth.BaseAuth):
         else:
             self.family = socket.AF_INET6
 
-    def _login_ext(self, login, password, context):
+    def _login_ext(self, login, password, context) -> str:
         """Validate credentials.
 
         Check if the ``login``/``password`` pair is valid according to Dovecot.
