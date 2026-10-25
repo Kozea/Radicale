@@ -1868,8 +1868,11 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self.request("GET", path_mapped + "event3.ics", check=404, login="owner:ownerpw")
 
             # DELETE collection
-            logging.info("\n*** delete collection by user1 via map:w -> fail")
+            logging.info("\n*** delete collection by user2 via map:rw -> fail")
             _, responses = self.delete(path_shared_rw, check=403, login="user2:user2pw")
+
+            logging.info("\n*** delete collection without trailing / by user2 via map:w -> fail")
+            _, responses = self.delete(path_shared_rw.removesuffix('/'), check=403, login="user2:user2pw")
 
             logging.info("\n*** delete collection by owner -> fail (still in use)")
             _, responses = self.delete(path_mapped, check=409, login="owner:ownerpw")
@@ -5078,7 +5081,7 @@ permissions: RrWw""")
             assert 'ICAL:calendar-color' in answer_dict['Content'][0]['Properties']
             assert 'C:calendar-description' not in answer_dict['Content'][0]['Properties']
 
-            # delete all propertie by user using API
+            # delete all properties by user using API
             logging.info("\n*** delete all properties by user (json)")
             json_dict = {}
             json_dict["PathOrToken"] = path_shared_r
