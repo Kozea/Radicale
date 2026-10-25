@@ -34,19 +34,19 @@ dependencies = [
     "defusedxml",
     "libpass>=1.9.3",
     "vobject>=0.9.6",
-    "pika>=1.1.0",
-    "requests",
 ]
 
 
 [project.optional-dependencies]
-test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3", "hypercorn>=0.17"]
+test = ["pytest>=7", "waitress", "bcrypt", "argon2-cffi", "pam", "ldap3", "hypercorn>=0.17", "pika>=1.1.0", "requests"]
 h2 = ["hypercorn>=0.17"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
 pam = ["pam"]
-dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
+rabbitmq = ["pika>=1.1.0"]
+oauth2 = ["requests"]
+dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator", "requests"]
 # Exact pins: the observed feature report depends on the client libraries
 # (feature model, search matching, recurrence expansion), not only on
 # caldav-server-tester, so they are all frozen together. This is the single
@@ -239,7 +239,7 @@ skip_install = true
 
 [tool.tox.env.integ_test]
 description = "Server+WebUI: run 'playwright' integration tests (with 'chromium', may require additional system libs, check with 'ldd `find .tox/ -name chrome-headless-shell` | grep found')"
-deps = ["pytest", "pytest-playwright"]
+deps = ["pytest", "pytest-playwright", "requests"]
 # Store Playwright browsers inside .tox for better caching
 setenv = { PLAYWRIGHT_BROWSERS_PATH = "{toxworkdir}/.playwright" }
 commands_pre = [["playwright", "install", "chromium"]]

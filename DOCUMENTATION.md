@@ -1090,6 +1090,9 @@ Available types are:
   OAuth2 authentication (SSO) directly on client is not supported. Use herefore `http_x_remote_user`
   in combination with SSO support in reverse proxy (e.g. Apache+mod_auth_openidc).
 
+  The installation of Python's **requests** module is required for this to work
+  (`pip install radicale[oauth2]`).
+
 * `pam` _(>= 3.5.0)_  
   Use local PAM to authenticate users by relaying credentials from client and handle result.
 
@@ -2103,6 +2106,9 @@ Available types are:
 
 * `rabbitmq` _(>= 3.2.0)_  
   Push the message to the rabbitmq server.
+
+  The installation of Python's **pika** module is required for this to work
+  (`pip install radicale[rabbitmq]`).
 
 * `email` _(>= 3.5.5)_  
   Send an email notification to event attendees.
