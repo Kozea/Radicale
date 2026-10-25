@@ -5,7 +5,7 @@
 # Copyright © 2022-2022 Daniel Dehennin
 #
 # Since migration into upstream
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
