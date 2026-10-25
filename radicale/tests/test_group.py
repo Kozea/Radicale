@@ -284,6 +284,7 @@ permissions: r
                                   "htgroup_filename": self.htgroup_file_path},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
+                                    "rights_rule_doesnt_match_on_debug": "True",
                                     "request_content_on_debug": "True"},
                         "rights": {"type": "from_file",
                                    "file": self.rights_file_path,
