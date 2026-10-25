@@ -1,7 +1,7 @@
 # This file is part of Radicale Server - Calendar Server
 # Copyright © 2014 Giel van Schijndel
 # Copyright © 2019 (GalaxyMaster)
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -183,7 +183,7 @@ class Auth(auth.BaseAuth):
                 parts = line.split(b'\t')[:2]
                 resp, reply_id, params = (
                         parts[0], int(parts[1]),
-                        dict(part.split('=', 1) for part in parts[2:])
+                        dict(part.split(b'=', 1) for part in parts[2:])
                 )
 
                 logger.debug(
