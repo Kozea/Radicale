@@ -1868,7 +1868,7 @@ class TestSharingApiSanity(BaseTest):
             _, headers, answer = self.request("GET", path_mapped + "event3.ics", check=404, login="owner:ownerpw")
 
             # DELETE collection
-            logging.info("\n*** delete collection by user1 via map:w -> fail")
+            logging.info("\n*** delete collection by user2 via map:rw -> fail")
             _, responses = self.delete(path_shared_rw, check=403, login="user2:user2pw")
 
             logging.info("\n*** delete collection without trailing / by user2 via map:w -> fail")
