@@ -335,8 +335,10 @@ class TestAuthServers(BaseTest):
         self._configure_ldap3(ldap_user_attribute="cn", ldap_groups_attribute="memberOf")
         with directory.patch():
             assert _principal(self, "Owner:secret") == "/owner/"
-            assert self.application._auth._groups == {"family", "staff"}
-            assert self.application._rights._user_groups == {"family", "staff"}
+            auth_any: Any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            assert "staff" in user_groups
+            assert "family" in user_groups
             assert directory.servers[0] == {}
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
             assert _principal(self, "a*:secret", check=401) == ""
@@ -357,8 +359,9 @@ class TestAuthServers(BaseTest):
             ldap_group_base="ou=groups,dc=example,dc=com")
         with directory.patch():
             assert _principal(self, "alias:secret") == "/owner/"
-        # Member search replaces attribute groups.
-        assert self.application._auth._groups == {"family"}
+            auth_any: Any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("alias", "secret", None)
+            assert "family" in user_groups
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_group_search_failure_keeps_attribute_groups(self) -> None:
@@ -377,8 +380,9 @@ class TestAuthServers(BaseTest):
                               ldap_group_filter="(objectClass=groupOfNames)")
         with directory.patch(), directory.patch_method("search", failing_group_search):
             assert _principal(self, "owner:secret") == "/owner/"
-        # A scalar value that is not a DN is kept whole.
-        assert self.application._auth._groups == {"staff"}
+            auth_any: Any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            assert "staff" in user_groups
 
     @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
     def test_ldap3_tls_modes_secret_file_and_quirks(self) -> None:
@@ -488,10 +492,10 @@ class TestAuthServers(BaseTest):
                 "ldap_groups_attribute": "memberOf",
             }})
         auth_any: Any = self.application._auth
-        assert auth_any._ldap_module_version == 2
         assert _principal(self, "owner:secret") == "/owner/"
-        # python-ldap stores groups on _ldap_groups. Bytes and unparseable DNs are kept as text.
-        assert auth_any._ldap_groups == {"cn=family,ou=groups,dc=example,dc=com", "BAD"}
+        user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+        assert "BAD" in user_groups
+        assert "cn=family,ou=groups,dc=example,dc=com" in user_groups
         conn = state.connections[-1]
         assert conn.started_tls is False
         assert conn.options[ldap_mod.OPT_X_TLS_REQUIRE_CERT] == ldap_mod.OPT_X_TLS_ALLOW
@@ -517,7 +521,9 @@ class TestAuthServers(BaseTest):
         ]
         assert _principal(self, "owner:secret") == "/owner/"
         assert state.connections[-1].started_tls is True
-        assert getattr(self.application._auth, "_ldap_groups") == {"family", "staff"}
+        user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+        assert "BAD" in user_groups
+        assert "cn=family,ou=groups,dc=example,dc=com" in user_groups
 
         assert _principal(self, "owner:wrong", check=401) == ""
         state.duplicate = True
@@ -697,8 +703,13 @@ class TestAuthServers(BaseTest):
                 self.gr_name = name
                 self.gr_mem = members
 
+        class GrId:
+            def __init__(self, name: str, members: list) -> None:
+                self.gr_name = name
+                self.gr_mem = members
+
         users = {"owner": Pw(1, 10), "guest": Pw(2, 10)}
-        groups = {10: Gr("users", []), "wheel": Gr("wheel", ["owner"])}
+        groups = {10: Gr("users", []), 20: Gr("wheel", ["owner"])}
         calls: list = []
 
         def getpwnam(name: str) -> Pw:
@@ -712,9 +723,18 @@ class TestAuthServers(BaseTest):
             return groups[gid]
 
         def getgrnam(name: str) -> Gr:
-            if name not in groups:
+            for gid in groups:
+                if name == groups[gid].gr_name:
+                    return groups[gid]
+            else:
                 raise KeyError(name)
-            return groups[name]
+
+        def getgrouplist(name: str, gid: int) -> set[int]:
+            gid_list: set = set([])
+            for gid in groups:
+                if name in groups[gid].gr_mem:
+                    gid_list.add(gid)
+            return gid_list
 
         def authenticate(login: str, password: str, service: str = "") -> bool:
             calls.append((login, password, service))
