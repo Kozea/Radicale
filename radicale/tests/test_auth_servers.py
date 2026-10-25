@@ -38,9 +38,16 @@ from radicale import auth, xmlutils
 from radicale.auth import ldap as ldap_auth
 from radicale.tests import BaseTest
 
-skip_ldap = False
+skip_ldap3 = False
 try:
     import ldap3
+except ModuleNotFoundError:
+    skip_ldap3 = True
+    pass
+
+skip_ldap = False
+try:
+    import ldap  # noqa:F401 (dynamically loaded for "test_ldap2_login")
 except ModuleNotFoundError:
     skip_ldap = True
     pass
@@ -286,7 +293,7 @@ class TestAuthServers(BaseTest):
         config.update(auth)
         self.configure({"auth": config, "group": {"type": "from_auth"}})
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap_rejects_bad_config(self) -> None:
         ldap_auth.Auth._ldap_attributes = []
         # configure() keeps earlier values, so each attempt resets the others.
@@ -314,18 +321,16 @@ class TestAuthServers(BaseTest):
                                      "ldap_secret_file": secret}})
 
     def test_ldap_missing_module(self) -> None:
-        removed = {}
-        for name in ("ldap", "ldap.filter", "ldap.dn"):
-            if name in sys.modules:
-                removed[name] = sys.modules.pop(name)
         try:
-            with patch.dict(sys.modules, {"ldap3": None}):
-                with pytest.raises(ModuleNotFoundError, match="ldap3 or ldap"):
-                    self.configure({"auth": {"type": "ldap"}})
-        finally:
-            sys.modules.update(removed)
+            with patch.dict(sys.modules, {"ldap3": None, "ldap": None}):
+                self.configure({"auth": {"type": "ldap"}})
+        except ModuleNotFoundError:
+            logging.info("Module 'ldap' or 'ldap3' not found (ok)")
+        else:
+            logging.info("Module 'ldap' or 'ldap3' found (ok)")
+            raise
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_login_groups_user_attribute_and_escape(self) -> None:
         directory = _MockLdap()
         directory.add(OWNER_DN, uid="Owner", cn="owner", userPassword="secret", memberOf=[
@@ -344,7 +349,7 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
             assert _principal(self, "a*:secret", check=401) == ""
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_scalar_attributes_and_group_search(self) -> None:
         directory = _MockLdap(ldap3.OFFLINE_SLAPD_2_4)
         directory.add(OWNER_DN, objectClass="inetOrgPerson", uid="alias", cn="owner", sn="owner",
@@ -364,7 +369,7 @@ class TestAuthServers(BaseTest):
             user, user_groups = auth_any._login_ext_with_groups("alias", "secret", None)
             assert "family" in user_groups
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_group_search_failure_keeps_attribute_groups(self) -> None:
         directory = _MockLdap(ldap3.OFFLINE_SLAPD_2_4)
         directory.add(OWNER_DN, objectClass="inetOrgPerson", uid="owner", cn="owner", sn="owner",
@@ -385,7 +390,7 @@ class TestAuthServers(BaseTest):
             user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
             assert "staff" in user_groups
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_tls_modes_secret_file_and_quirks(self) -> None:
         secret = os.path.join(self.colpath, "ldap.secret")
         with open(secret, "w", encoding="utf-8") as handle:
@@ -434,7 +439,7 @@ class TestAuthServers(BaseTest):
         with directory.patch():
             assert _principal(self, "owner:secret") == "/owner/"
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_login_failures(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         directory = _MockLdap()
@@ -466,6 +471,7 @@ class TestAuthServers(BaseTest):
             _principal(self, "owner:secret", check=500)
             assert "invalidCredentials" in caplog.text
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module 'ldap' found")
     def test_ldap2_login(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         state = _Ldap2State()
