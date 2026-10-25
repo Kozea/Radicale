@@ -33,8 +33,8 @@ from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
 import vobject
 
 import radicale.item as radicale_item
-from radicale import (httputils, pathutils, rights, sharing, storage, types,
-                      utils, xmlutils)
+from radicale import (httputils, pathutils, rights, storage, types, utils,
+                      xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
@@ -182,16 +182,13 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
 class ApplicationPartPut(ApplicationBase):
 
     def do_PUT(self, environ: types.WSGIEnviron, base_prefix: str,
-               path: str, user: str, request_info: dict) -> types.WSGIResponse:
+               path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage PUT request."""
         actor = user
         permissions_filter = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            user_lookup = user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(path, user_lookup)
+            share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if path != share['PathMapped']:
                     # overwrite and run through extended permission check
@@ -200,7 +197,8 @@ class ApplicationPartPut(ApplicationBase):
                     permissions_filter = share['Permissions']
                 else:
                     logger.trace("PUT/shares: skip overlap mapping: path=%r", path)
-        access = Access(self._rights, user, path, permissions_filter)
+
+        access = Access(self._rights, user, user_groups, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         try:

@@ -29,8 +29,7 @@ from http import client
 from typing import Tuple, Union
 from urllib.parse import parse_qs, quote
 
-from radicale import (httputils, pathutils, sharing, storage, types, utils,
-                      xmlutils)
+from radicale import httputils, pathutils, storage, types, utils, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.app.report import freebusy_collection_text
 from radicale.item import get_etag
@@ -174,7 +173,7 @@ class ApplicationPartGet(ApplicationBase):
         return client.OK, headers, answer, None
 
     def do_GET(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-               user: str, request_info: dict) -> types.WSGIResponse:
+               user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage GET request."""
         # Redirect to /.web if the root path is requested
         if not pathutils.strip_path(path):
@@ -190,7 +189,7 @@ class ApplicationPartGet(ApplicationBase):
                             base_prefix + unsafe_path, location)
                 return httputils.redirect(location, client.MOVED_PERMANENTLY)
             # Dispatch /.web path to web module
-            return self._web.get(environ, base_prefix, path, user, request_info)
+            return self._web.get(environ, base_prefix, path, user, user_groups, request_info)
         # Catch /.mobileconfig (dynamically generated)
         # https://developer.apple.com/business/documentation/Configuration-Profile-Reference.pdf
         if path == "/.mobileconfig":
@@ -251,10 +250,7 @@ class ApplicationPartGet(ApplicationBase):
         share = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            user_lookup = user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(path, user_lookup)
+            share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if path != share['PathMapped']:
                     # overwrite and run through extended permission check
@@ -263,7 +259,7 @@ class ApplicationPartGet(ApplicationBase):
                     permissions_filter = share['Permissions']
                 else:
                     logger.trace("GET/shares: skip overlap mapping: path=%r", path)
-        access = Access(self._rights, user, path, permissions_filter)
+        access = Access(self._rights, user, user_groups, path, permissions_filter)
         if share_forces_freebusy_view(share):
             query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
             view = query.get("view")

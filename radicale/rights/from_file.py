@@ -96,7 +96,7 @@ class Rights(rights.BaseRights):
                 raise RuntimeError("Error in section %r of rights file %r: "
                                    "%s" % (section, self._filename, e)) from e
 
-    def authorization(self, user: str, path: str) -> str:
+    def authorization(self, user: str, user_groups: set, path: str) -> str:
         user = user or ""
         sane_path = pathutils.strip_path(path)
         # Prevent "regex injection"
@@ -110,8 +110,9 @@ class Rights(rights.BaseRights):
                 user_pattern = rules["user_pattern"]
                 collection_pattern = rules["collection_pattern"]
                 allowed_groups = rules["allowed_groups"]
+                logger.trace("user_groups=%r allowed_groups=%r", user_groups, allowed_groups)
                 try:
-                    group_match = len(self._user_groups.intersection(allowed_groups)) > 0
+                    group_match = len(user_groups.intersection(allowed_groups)) > 0
                 except Exception:
                     pass
                 # Use empty format() for harmonized handling of curly braces

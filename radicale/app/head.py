@@ -26,7 +26,7 @@ from radicale.app.get import ApplicationPartGet
 class ApplicationPartHead(ApplicationPartGet, ApplicationBase):
 
     def do_HEAD(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-                user: str, request_info: dict) -> types.WSGIResponse:
+                user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage HEAD request."""
         # Body is dropped in `Application.__call__` for HEAD requests
-        return self.do_GET(environ, base_prefix, path, user, request_info)
+        return self.do_GET(environ, base_prefix, path, user, user_groups, request_info)

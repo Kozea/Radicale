@@ -24,7 +24,7 @@ import re
 from http import client
 from urllib.parse import unquote, urlparse
 
-from radicale import httputils, pathutils, sharing, storage, types, utils
+from radicale import httputils, pathutils, storage, types, utils
 from radicale.app import base as app_base
 from radicale.app.base import Access, ApplicationBase
 from radicale.log import logger
@@ -33,7 +33,7 @@ from radicale.log import logger
 class ApplicationPartMove(ApplicationBase):
 
     def do_MOVE(self, environ: types.WSGIEnviron, base_prefix: str,
-                path: str, user: str, request_info: dict) -> types.WSGIResponse:
+                path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage MOVE request."""
         actor = user
         raw_dest = environ.get("HTTP_DESTINATION", "")
@@ -58,10 +58,7 @@ class ApplicationPartMove(ApplicationBase):
         permissions_filter = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            user_lookup = user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(path, user_lookup)
+            share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if path != share['PathMapped']:
                     # overwrite and run through extended permission check
@@ -70,7 +67,7 @@ class ApplicationPartMove(ApplicationBase):
                     permissions_filter = share['Permissions']
                 else:
                     logger.trace("MOVE/shares: skip overlap mapping: path=%r", path)
-        access = Access(self._rights, user, path, permissions_filter)
+        access = Access(self._rights, user, user_groups, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         if (("f" in access.permissions or "f" in access.parent_permissions) and
@@ -88,17 +85,13 @@ class ApplicationPartMove(ApplicationBase):
         to_path = to_path[len(base_prefix):]
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            to_user_lookup = to_user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                to_user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(to_path, to_user_lookup)
+            share = self._sharing.sharing_collection_resolver(to_path, to_user, user_groups)
             if share:
                 # overwrite and run through extended permission check
                 to_path = share['PathMapped']
                 to_user = share['Owner']
                 to_permissions_filter = share['Permissions']
-                to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
-        to_access = Access(self._rights, to_user, to_path, to_permissions_filter)
+        to_access = Access(self._rights, to_user, set([]), to_path, to_permissions_filter)
         if not to_access.check("w"):
             return httputils.NOT_ALLOWED
 

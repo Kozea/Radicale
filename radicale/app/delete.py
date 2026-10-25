@@ -23,7 +23,7 @@ from http import client
 from typing import Optional, Union
 from urllib.parse import quote
 
-from radicale import httputils, sharing, storage, types, xmlutils
+from radicale import httputils, storage, types, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
@@ -66,18 +66,14 @@ def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
 class ApplicationPartDelete(ApplicationBase):
 
     def do_DELETE(self, environ: types.WSGIEnviron, base_prefix: str,
-                  path: str, user: str, request_info: dict) -> types.WSGIResponse:
+                  path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage DELETE request."""
         actor = user
         permissions_filter = None
         share = None
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            share = self._sharing.sharing_collection_resolver(path, user)
-            user_lookup = user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(path, user_lookup)
+            share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if share['PathMapped'].endswith('/'):
                     logger.notice("delete of a mapped collection is never permitted: %r -> %r", share['PathOrToken'], share['PathMapped'])
@@ -86,7 +82,7 @@ class ApplicationPartDelete(ApplicationBase):
                 path = share['PathMapped']
                 user = share['Owner']
                 permissions_filter = share['Permissions']
-        access = Access(self._rights, user, path, permissions_filter)
+        access = Access(self._rights, user, user_groups, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED
         if self._sharing._enabled:

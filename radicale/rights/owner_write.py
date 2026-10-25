@@ -27,7 +27,7 @@ from radicale import pathutils
 
 class Rights(authenticated.Rights):
 
-    def authorization(self, user: str, path: str) -> str:
+    def authorization(self, user: str, user_groups: set, path: str) -> str:
         if self._verify_user and not user:
             return ""
         sane_path = pathutils.strip_path(path)

@@ -51,7 +51,7 @@ Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 
-from typing import Sequence, Set
+from typing import Sequence
 
 from radicale import config, utils
 
@@ -105,8 +105,6 @@ def add(a: str, b: str) -> str:
 
 class BaseRights:
 
-    _user_groups: Set[str] = set([])
-
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseRights.
 
@@ -117,10 +115,11 @@ class BaseRights:
         """
         self.configuration = configuration
 
-    def authorization(self, user: str, path: str) -> str:
+    def authorization(self, user: str, user_groups: set, path: str) -> str:
         """Get granted rights of ``user`` for the collection ``path``.
 
         If ``user`` is empty, check for anonymous rights.
+        Honor ``user_groups`` if given.
 
         ``path`` is sanitized.
 

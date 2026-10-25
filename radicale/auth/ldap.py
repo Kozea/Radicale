@@ -48,6 +48,7 @@ Authentication backend that checks credentials with a LDAP server.
 
 """
 import ssl
+from typing import Tuple
 
 from radicale import auth, config
 from radicale.log import logger
@@ -170,7 +171,7 @@ class Auth(auth.BaseAuth):
             self._ldap_attributes.append(self._ldap_user_attr)
         logger.info("ldap_attributes             : %r", self._ldap_attributes)
 
-    def _login2(self, login: str, password: str) -> str:
+    def _login2(self, login: str, password: str) -> Tuple[str, set]:
         try:
             """Bind as reader dn"""
             logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
@@ -206,7 +207,7 @@ class Auth(auth.BaseAuth):
             if len(res) != 1:
                 """User could not be found unambiguously"""
                 logger.debug(f"_login2 no unique DN found for '{login}'")
-                return ""
+                return auth.NO_LOGIN_NO_GROUPS
             user_entry = res[0]
             user_dn = user_entry[0]
             logger.debug(f"_login2 found LDAP user DN {user_dn}")
@@ -257,16 +258,16 @@ class Auth(auth.BaseAuth):
                     if isinstance(g, bytes):
                         g = g.decode('utf-8')
                     tmp.append(g)
-            self._ldap_groups = set(tmp)
-            logger.debug("_login2 LDAP groups of user: %s", ",".join(self._ldap_groups))
+            ldap_groups = set(tmp)
+            logger.debug("_login2 LDAP groups of user: %s", ",".join(ldap_groups))
 
             conn.unbind()
             logger.debug(f"_login2 {login} successfully authenticated")
-            return login
+            return login, ldap_groups
         except self.ldap.INVALID_CREDENTIALS:
-            return ""
+            return auth.NO_LOGIN_NO_GROUPS
 
-    def _login3(self, login: str, password: str) -> str:
+    def _login3(self, login: str, password: str) -> Tuple[str, set]:
         if self._ldap_ignore_attribute_create_modify_timestamp:
             self.ldap3.utils.config._ATTRIBUTES_EXCLUDED_FROM_CHECK.extend(['createTimestamp', 'modifyTimestamp'])
 
@@ -317,11 +318,11 @@ class Auth(auth.BaseAuth):
             )
         except Exception as e:
             logger.error(f"_login3 LDAP search for {login} failed: {e}")
-            return ""
+            return auth.NO_LOGIN_NO_GROUPS
         if len(conn.entries) != 1:
             """User could not be found unambiguously"""
             logger.debug(f"_login3 no unique DN found for '{login}'")
-            return ""
+            return auth.NO_LOGIN_NO_GROUPS
 
         user_entry = conn.response[0]
         user_dn = user_entry['dn']
@@ -371,7 +372,7 @@ class Auth(auth.BaseAuth):
                 raise RuntimeError(f"_login3 StartTLS Error: {e}")
             if not conn.bind(read_server_info=False):
                 logger.debug(f"_login3 user '{login}' cannot be found")
-                return ""
+                return auth.NO_LOGIN_NO_GROUPS
 
             """Get RDNs of groups' DNs"""
             tmp = []
@@ -381,8 +382,8 @@ class Auth(auth.BaseAuth):
                     tmp.append(rdns[0][1])
                 except Exception:
                     tmp.append(g)
-            self._groups = set(tmp)
-            logger.debug("_login3 LDAP groups of user: %s", ",".join(self._groups))
+            groups = set(tmp)
+            logger.debug("_login3 LDAP groups of user: %s", ",".join(groups))
 
             if self._ldap_user_attr:
                 if user_entry['attributes'][self._ldap_user_attr]:
@@ -393,13 +394,13 @@ class Auth(auth.BaseAuth):
                     logger.debug(f"_login3 user set to: '{login}'")
             conn.unbind()
             logger.debug(f"_login3 {login} successfully authenticated")
-            return login
+            return login, groups
         except Exception as e:
             logger.debug(f"_login3 error 2 {e}")
             pass
-        return ""
+        return auth.NO_LOGIN_NO_GROUPS
 
-    def _login(self, login: str, password: str) -> str:
+    def _login_ext_with_groups(self, login: str, password: str, context: auth.AuthContext) -> Tuple[str, set]:
         """Validate credentials.
         In first step we make a connection to the LDAP server with the ldap_reader_dn credential.
         In next step the DN of the user to authenticate will be searched.

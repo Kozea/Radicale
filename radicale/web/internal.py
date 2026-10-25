@@ -40,6 +40,7 @@ class Web(web.BaseWeb):
         base_prefix: str,
         path: str,
         user: str,
+        user_groups: set,
         request_info: dict,
     ) -> types.WSGIResponse:
         if path == "/.web/js/config.js":

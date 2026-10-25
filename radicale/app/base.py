@@ -267,6 +267,7 @@ class Access:
     """Helper class to check access rights of an item"""
 
     user: str
+    user_groups: set
     path: str
     parent_path: str
     permissions: str
@@ -274,13 +275,14 @@ class Access:
     _parent_permissions: Optional[str]
     _permissions_filter: Union[str, None] = None
 
-    def __init__(self, rights: rights.BaseRights, user: str, path: str, permissions_filter: Union[str, None] = None
+    def __init__(self, rights: rights.BaseRights, user: str, user_groups: set, path: str, permissions_filter: Union[str, None] = None
                  ) -> None:
         self._rights = rights
         self.user = user
+        self.user_groups = user_groups
         self.path = path
         self.parent_path = pathutils.parent_path(path)
-        self.permissions = self._rights.authorization(self.user, self.path)
+        self.permissions = self._rights.authorization(self.user, self.user_groups, self.path)
         if permissions_filter is not None:
             self._permissions_filter = permissions_filter
             self.permissions = intersect(
@@ -293,7 +295,7 @@ class Access:
             return self.permissions
         if self._parent_permissions is None:
             self._parent_permissions = self._rights.authorization(
-                self.user, self.parent_path)
+                self.user, self.user_groups, self.parent_path)
         if self._permissions_filter is not None:
             self._parent_permissions = intersect(
                 _with_implied_freebusy(self._parent_permissions),

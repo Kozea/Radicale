@@ -98,7 +98,7 @@ def xml_proppatch(base_prefix: str, path: str,
 class ApplicationPartProppatch(ApplicationBase):
 
     def do_PROPPATCH(self, environ: types.WSGIEnviron, base_prefix: str,
-                     path: str, user: str, request_info: dict) -> types.WSGIResponse:
+                     path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage PROPPATCH request."""
         actor = user
         permissions_filter = None
@@ -107,10 +107,7 @@ class ApplicationPartProppatch(ApplicationBase):
         path_orig = path
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            user_lookup = user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(path, user_lookup)
+            share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if path != share['PathMapped']:
                     # overwrite and run through extended permission check
@@ -119,8 +116,8 @@ class ApplicationPartProppatch(ApplicationBase):
                     permissions_filter = share['Permissions']
                 else:
                     logger.trace("PROPPATCH/shares: skip overlap mapping: path=%r", path)
-        access = Access(self._rights, user, path, permissions_filter)
-        raw_permissions = self._rights.authorization(user, path)
+        access = Access(self._rights, user, user_groups, path, permissions_filter)
+        raw_permissions = self._rights.authorization(user, user_groups, path)
         if "l" in raw_permissions:
             if share:
                 logger.notice("PROPPATCH request on shared %r: write-access disabled by permission 'l' of %r", path_orig, path)

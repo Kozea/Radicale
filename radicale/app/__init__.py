@@ -554,11 +554,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
+        user_groups: set = set([])
         if login and not app_base._check_user_format(self._storage, login, self._validate_user_value, self._urldecode_username):
             info = "not compliant to %r" % self._validate_user_value
             user = ""
         else:
-            (user, info) = self._auth.login(login, password, context) or ("", "") if login else ("", "")
+            (user, info, user_groups) = self._auth.login(login, password, context) or ("", "", set([])) if login else ("", "", set([]))
         request_info: dict = {
                               "method": request_method,
                               "login": login, # not 'user' in this step
@@ -601,17 +602,16 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger.info("Refused unsafe username: %r", user)
             user = ""
 
-        self._rights._user_groups = set([])
         if user:
             group_type = self.configuration.get("group", "type")
             if group_type in ["htgroup"] and login:
-                self._rights._user_groups = self._group.groups(login)
+                user_groups = self._group.groups(login)
+                logger.debug("Groups received from %r: %r", group_type, ",".join(user_groups))
             elif group_type in ["from_auth"]:
                 auth_type = self.configuration.get("auth", "type")
                 if auth_type in ["ldap", "pam"]:
                     try:
-                        logger.debug("Groups received from %r: %r", auth_type, ",".join(self._auth._groups))
-                        self._rights._user_groups = self._auth._groups
+                        logger.debug("Groups received from %r: %r", auth_type, ",".join(user_groups))
                     except AttributeError:
                         pass
 
@@ -622,7 +622,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 principal = next(iter(self._storage.discover(
                     principal_path, depth="1")), None)
             if not principal:
-                if "W" in self._rights.authorization(user, principal_path):
+                if "W" in self._rights.authorization(user, user_groups, principal_path):
                     with self._storage.acquire_lock("w", user, actor=user):
                         try:
                             new_coll, _, _ = self._storage.create_collection(principal_path)
@@ -678,7 +678,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     status, headers, answer, xml_request = httputils.METHOD_NOT_ALLOWED
                 else:
                     status, headers, answer, xml_request = function(
-                        environ, base_prefix, path, user, request_info)
+                        environ, base_prefix, path, user, user_groups, request_info)
             except PermissionError as e:
                 logger.error("PermissionError: %s", e)
                 status, headers, answer, xml_request = httputils.INTERNAL_SERVER_ERROR
