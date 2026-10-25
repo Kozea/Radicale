@@ -19,6 +19,10 @@
 * Fix: sharing: broken support for custom database_path
 * Fix: auth/login-cache: add lock around remove expired entry
 * Fix: sharing/delete collection: fix uncatched collection URI without trailing '/'
+* Fix: auth/sharing+rights: refactoring "user_groups" handling to be thread-safe
+* Fix: auth/login-cache: partially missing thread-safety
+* Extension: contrib/Apache reference config supports now also HTTP2
+* Extension: HTTP version added to request log
 
 ## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True

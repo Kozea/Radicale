@@ -40,6 +40,8 @@ if sys.platform != "win32":
 _T_co = TypeVar("_T_co", covariant=True)
 
 RADICALE_MODULES: Sequence[str] = ("radicale", "vobject", "passlib", "defusedxml",
+                                   "hypercorn",
+                                   "requests",
                                    "bcrypt",
                                    "argon2-cffi",
                                    "pika",
