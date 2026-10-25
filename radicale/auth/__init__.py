@@ -298,7 +298,9 @@ class BaseAuth:
                     if age_success > self._cache_successful_logins_expiry:
                         logger.debug("Login successful cache entry for user+password found but expired: '%s' (age: %d > %d sec)", login, age_success, self._cache_successful_logins_expiry)
                         # delete expired success from cache
-                        del self._cache_successful[login]
+                        self._lock.acquire()
+                        self._cache_successful.pop(login, None)
+                        self._lock.release()
                         digest = ""
                     else:
                         logger.debug("Login successful cache entry for user+password found: '%s' (age: %d sec)", login, age_success)

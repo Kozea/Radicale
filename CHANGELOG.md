@@ -17,6 +17,7 @@
 * Fix: addressbook-query prop-filter defaults to test="anyof"
 * Fix: REPORT expand: non-recurring events with a TZID were time-range filtered by their local time read as UTC
 * Fix: sharing: broken support for custom database_path
+* Fix: auth/login-cache: add lock around remove expired entry
 
 ## 3.8.3
 * Fix: [group] htgroup: fix not working htgroup_cache=True
