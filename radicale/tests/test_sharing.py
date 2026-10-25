@@ -9220,6 +9220,34 @@ END:VCARD
         self.configure({"sharing": {"type": "csv", "database_path": ""}})
         self._sharing_api_json("all", "info", check=404, login="owner:ownerpw", json_dict={})
 
+    def test_sharing_db_files_custom(self) -> None:
+        """A CSV sharing database with custom directory."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "files",
+                                    "database_path": os.path.join(self.colpath, "custom-base-dir/custom-dir"),
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "rights": {"type": "owner_only"}})
+
+    def test_sharing_db_csv_custom(self) -> None:
+        """A CSV sharing database with custom file."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "database_path": os.path.join(self.colpath, "custom-base-dir/custom-dir/custom.csv"),
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "rights": {"type": "owner_only"}})
+
     def test_sharing_csv_rejects_corrupt_database(self) -> None:
         """A corrupt CSV sharing database disables sharing instead of crashing."""
         self.configure({"auth": {"type": "htpasswd",
