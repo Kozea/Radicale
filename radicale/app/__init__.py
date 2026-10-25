@@ -472,9 +472,10 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             https_info = " " + environ.get("SSL_PROTOCOL", "") + " " + environ.get("SSL_CIPHER", "")
         else:
             https_info = ""
-        logger.info("%s request for %r%s received from %s%s%s",
+        http_proto = " " + environ["SERVER_PROTOCOL"]
+        logger.info("%s request for %r%s received from %s%s%s%s",
                     request_method, unsafe_path, depthinfo,
-                    remote_host, remote_useragent_txt, https_info)
+                    remote_host, remote_useragent_txt, http_proto, https_info)
         if self._request_header_on_debug:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Request header:\n%s",
