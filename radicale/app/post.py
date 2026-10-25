@@ -26,10 +26,10 @@ from radicale.app.base import ApplicationBase
 class ApplicationPartPost(ApplicationBase):
 
     def do_POST(self, environ: types.WSGIEnviron, base_prefix: str,
-                path: str, user: str, request_info: dict) -> types.WSGIResponse:
+                path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage POST request."""
         if path == "/.web" or path.startswith("/.web/"):
-            return self._web.post(environ, base_prefix, path, user, request_info)
+            return self._web.post(environ, base_prefix, path, user, user_groups, request_info)
         elif path == "/.sharing" or path.startswith("/.sharing/"):
-            return self._sharing.post(environ, base_prefix, path, user, request_info)
+            return self._sharing.post(environ, base_prefix, path, user, user_groups, request_info)
         return httputils.METHOD_NOT_ALLOWED

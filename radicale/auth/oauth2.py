@@ -5,7 +5,7 @@
 # Copyright © 2022-2022 Daniel Dehennin
 #
 # Since migration into upstream
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ class Auth(auth.BaseAuth):
             raise RuntimeError("OAuth2 token endpoint URL is required")
         logger.info("auth OAuth2 token endpoint: %s", self._endpoint)
 
-    def _login(self, login, password):
+    def _login(self, login, password) -> str:
         """Validate credentials.
         Sends login credentials to oauth token endpoint and checks that a token is returned
         """

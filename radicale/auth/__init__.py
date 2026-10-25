@@ -3,7 +3,7 @@
 # Copyright © 2008 Pascal Halter
 # Copyright © 2008-2017 Guillaume Ayoub
 # Copyright © 2017-2022 Unrud <unrud@outlook.com>
-# Copyright © 2024-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2024-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import hashlib
 import os
 import threading
 import time
-from typing import List, Sequence, Set, Tuple, Union, final
+from typing import List, Sequence, Tuple, Union, final
 from urllib.parse import unquote
 
 from radicale import config, types, utils
@@ -67,6 +67,8 @@ INSECURE_IF_NO_LOOPBACK_TYPES: Sequence[str] = (
 AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
 
 REMOTE_ADDR_SOURCE: Sequence[str] = ("REMOTE_ADDR", "X-Remote-Addr")
+
+NO_LOGIN_NO_GROUPS: Tuple[str, set] = ("", set([]))
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
@@ -106,7 +108,6 @@ class AuthContext:
 
 class BaseAuth:
 
-    _groups: Set[str] = set([])
     _urldecode_username: bool
     _lc_username: bool
     _uc_username: bool
@@ -210,10 +211,28 @@ class BaseAuth:
         ``context`` additional data for the login, e.g. IP address used
 
         Returns the username or ``""`` for invalid credentials.
+
+        No support of ``user_groups``
         """
 
         # override this method instead of _login() if you want the context
         return self._login(login, password)
+
+    def _login_ext_with_groups(self, login: str, password: str, context: AuthContext) -> Tuple[str, set]:
+        """Check credentials and map login to internal user
+
+        ``login`` the login name
+
+        ``password`` the password
+
+        Returns the username or ``""`` for invalid credentials
+
+        Returns ``user_groups`` or ``set([])`` if invalid or no groups are supplied
+
+        """
+
+        # override this method instead of _login() if user_groups is supported
+        return (self._login_ext(login, password, context), set([]))
 
     def _sleep_for_constant_exec_time(self, time_ns_begin: int):
         """Sleep some time to reach a constant execution time for failed logins
@@ -244,7 +263,13 @@ class BaseAuth:
             time.sleep(sleep)
 
     @final
-    def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, str]:
+    def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, str, set]:
+        """
+        Returns the
+         - ``login`` or ``""`` for invalid credentials
+         - authentication type
+         - ``user_groups`` (if supported by authentication type) or ``set([])`` if invalid or no groups are supplied
+        """
         time_ns_begin = time.time_ns()
         result_from_cache = False
         if self._lc_username:
@@ -282,16 +307,18 @@ class BaseAuth:
                 logger.debug("Login failed cache investigation finished")
             # check for cache failed login
             digest_failed = login + ":" + self._cache_digest(login, password, str(self._cache_failed_logins_salt_ns))
-            if self._cache_failed.get(digest_failed):
+            cache_failed_entry = self._cache_failed.get(digest_failed)
+            if cache_failed_entry:
                 # login+password found in cache "failed" -> shortcut return
-                (time_ns_cache, login_cache) = self._cache_failed[digest_failed]
+                (time_ns_cache, login_cache) = cache_failed_entry
                 age_failed = int((time_ns - time_ns_cache) / 10**9)
                 logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login_cache, age_failed)
                 self._sleep_for_constant_exec_time(time_ns_begin)
-                return ("", self._type + " / cached")
-            if self._cache_successful.get(login):
+                return ("", self._type + " / cached", set([]))
+            cache_successful_entry = self._cache_successful.get(login)
+            if cache_successful_entry:
                 # login found in cache "successful"
-                (digest_cache, time_ns_cache) = self._cache_successful[login]
+                (digest_cache, time_ns_cache, groups) = cache_successful_entry
                 digest = self._cache_digest(login, password, str(time_ns_cache))
                 if digest == digest_cache:
                     age_success = int((time_ns - time_ns_cache) / 10**9)
@@ -315,7 +342,7 @@ class BaseAuth:
             if result == "":
                 # verify login+password via configured backend
                 logger.debug("Login verification for user+password via backend: '%s'", login)
-                result = self._login_ext(login, password, context)
+                (result, groups) = self._login_ext_with_groups(login, password, context)
                 if result != "":
                     logger.debug("Login successful for user+password via backend: '%s'", login)
                     if digest == "":
@@ -323,12 +350,13 @@ class BaseAuth:
                         digest = self._cache_digest(login, password, str(time_ns))
                     # store successful login in cache
                     self._lock.acquire()
-                    self._cache_successful[login] = (digest, time_ns)
+                    self._cache_successful[login] = (digest, time_ns, groups)
                     self._lock.release()
                     logger.debug("Login successful cache for user set: '%s'", login)
-                    if self._cache_failed.get(digest_failed):
+                    self._lock.acquire()
+                    if self._cache_failed.pop(digest_failed, None):
                         logger.debug("Login failed cache for user cleared: '%s'", login)
-                        del self._cache_failed[digest_failed]
+                    self._lock.release()
                 else:
                     logger.debug("Login failed for user+password via backend: '%s'", login)
                     self._lock.acquire()
@@ -338,14 +366,14 @@ class BaseAuth:
             if result_from_cache is True:
                 if result == "":
                     self._sleep_for_constant_exec_time(time_ns_begin)
-                return (result, self._type + " / cached")
+                return (result, self._type + " / cached", groups)
             else:
                 if result == "":
                     self._sleep_for_constant_exec_time(time_ns_begin)
-                return (result, self._type)
+                return (result, self._type, groups)
         else:
             # self._cache_logins is False
-            result = self._login_ext(login, password, context)
+            (result, groups) = self._login_ext_with_groups(login, password, context)
             if result == "":
                 self._sleep_for_constant_exec_time(time_ns_begin)
-            return (result, self._type)
+            return (result, self._type, groups)

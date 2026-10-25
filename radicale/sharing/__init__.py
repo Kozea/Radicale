@@ -468,6 +468,7 @@ class BaseSharing:
                                 Enabled: Union[bool, None] = None,
                                 Hidden: Union[bool, None] = None,
                                 Conversion: Union[str, None] = None,
+                                user_groups: set = set([])
                                 ) -> list[dict]:
         """ returning dict with shared collections by filter(User/Enabled/Hidden) or None if not found"""
         sharing_collection_list = []
@@ -476,8 +477,8 @@ class BaseSharing:
             logger.trace("sharing/map: not active")
         else:
             user_lookup = User
-            if User and self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup = User + SHARING_SEPARATOR_GROUP + ",".join(self._rights._user_groups)
+            if User and user_groups is not None and len(user_groups) > 0:
+                user_lookup = User + SHARING_SEPARATOR_GROUP + ",".join(user_groups)
 
             # retrieve collections depending on filter
             sharing_collection_list += self.database_list_sharing(
@@ -494,7 +495,7 @@ class BaseSharing:
         return sharing_collection_list
 
     # resolves a path to a share
-    def sharing_collection_resolver(self, path: str, user: str) -> Union[dict, None]:
+    def sharing_collection_resolver(self, path: str, user: str, user_groups: set) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
         logger.trace("sharing/resolver: lookup path=%r user=%r", path, user)
         share = None
@@ -513,7 +514,7 @@ class BaseSharing:
 
         if self.sharing_collection_by_map:
             if share is None:
-                share = self.sharing_collection_by_map_resolver(path, user)
+                share = self.sharing_collection_by_map_resolver(path, user, user_groups)
                 if share is not None and 'error' in share:
                     return None
         else:
@@ -649,10 +650,12 @@ class BaseSharing:
             return None
 
     # resolves a map "path" to a share
-    def sharing_collection_by_map_resolver(self, path: str, user: str) -> Union[dict, None]:
+    def sharing_collection_by_map_resolver(self, path: str, user: str, user_groups: set) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_map:
-            logger.trace("sharing/map/resolver: check path: %r", path)
+            if user_groups is not None and len(user_groups) > 0:
+                user += SHARING_SEPARATOR_GROUP + ','.join(user_groups)
+            logger.trace("sharing/map/resolver: check path=%r user=%r", path, user)
             # check collection path
             result = self.database_get_sharing(
                 ShareType="map",
@@ -711,7 +714,7 @@ class BaseSharing:
             return None
 
     # *** POST API ***
-    def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str, request_info: dict) -> types.WSGIResponse:
+    def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         # Late import to avoid circular dependency in config
         from radicale.app import base as app_base
         from radicale.app.base import Access
@@ -769,9 +772,6 @@ class BaseSharing:
         if user == "":
             # anonymous users are not allowed
             return httputils.NOT_ALLOWED
-
-        if user:
-            self._rights._user_groups = self._group.groups(user)
 
         # supported API version check
         if not path.startswith("/.sharing/v1/"):
@@ -1049,8 +1049,8 @@ class BaseSharing:
         user_lookup = user
         user_with_group_or_realm: bool = False
         if user:
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup = user + SHARING_SEPARATOR_GROUP + ",".join(self._rights._user_groups)
+            if user_groups is not None and len(user_groups) > 0:
+                user_lookup = user + SHARING_SEPARATOR_GROUP + ",".join(user_groups)
                 user_with_group_or_realm = True
             if SHARING_SEPARATOR_REALM in user_lookup:
                 user_with_group_or_realm = True
@@ -1096,7 +1096,7 @@ class BaseSharing:
                 return httputils.bad_request("Missing PathMapped")
 
             # check access Permissions
-            access = Access(self._rights, user, PathMapped, None)
+            access = Access(self._rights, user, user_groups, PathMapped, None)
             if not access.check("r"):
                 logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
                 return httputils.NOT_ALLOWED
@@ -1246,7 +1246,7 @@ class BaseSharing:
                         # placeholder exists
                         logger.warning(api_info + ": PathOrToken=%r starts with placeholder for 'user' without group User=%r", PathOrToken, User)
                         return httputils.NOT_ALLOWED
-                    access = Access(self._rights, User, PathOrToken)
+                    access = Access(self._rights, User, user_groups, PathOrToken)
                     if not access.check("r"):
                         logger.warning(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
                         return httputils.NOT_ALLOWED
@@ -1435,7 +1435,7 @@ class BaseSharing:
             if user == share['Owner']:
                 if PathMapped is not None:
                     # check access Permissions
-                    access = Access(self._rights, user, str(PathMapped), None)
+                    access = Access(self._rights, user, user_groups, str(PathMapped), None)
                     if not access.check("r") and "i" not in access.permissions:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
                         return httputils.NOT_ALLOWED

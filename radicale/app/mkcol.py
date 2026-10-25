@@ -32,10 +32,10 @@ from radicale.log import logger
 class ApplicationPartMkcol(ApplicationBase):
 
     def do_MKCOL(self, environ: types.WSGIEnviron, base_prefix: str,
-                 path: str, user: str, request_info: dict) -> types.WSGIResponse:
+                 path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage MKCOL request."""
         actor = user
-        permissions = self._rights.authorization(user, path)
+        permissions = self._rights.authorization(user, user_groups, path)
         if not rights.intersect(permissions, "Ww"):
             return httputils.NOT_ALLOWED
         try:
@@ -64,7 +64,7 @@ class ApplicationPartMkcol(ApplicationBase):
             return httputils.NOT_ALLOWED
         if self._sharing._enabled:
             # check for shared collections (all)
-            collections_share_list = self._sharing.sharing_collection_list(User=user)
+            collections_share_list = self._sharing.sharing_collection_list(User=user, user_groups=user_groups)
             if collections_share_list:
                 for share in collections_share_list:
                     if share['PathOrToken'] == path:

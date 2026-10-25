@@ -1,5 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2026-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@ from radicale import pathutils, rights
 
 class Rights(rights.BaseRights):
 
-    def authorization(self, user: str, path: str) -> str:
+    def authorization(self, user: str, user_groups: set, path: str) -> str:
         sane_path = pathutils.strip_path(path)
         if sane_path not in ("tmp", "other"):
             return ""

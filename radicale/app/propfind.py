@@ -579,13 +579,13 @@ def xml_propfind_response(
 class ApplicationPartPropfind(ApplicationBase):
 
     def _collect_allowed_items(
-            self, items: Iterable[types.CollectionOrItem], user: str
+            self, items: Iterable[types.CollectionOrItem], user: str, user_groups: set,
             ) -> Iterator[Tuple[types.CollectionOrItem, str, str]]:
         """Get items from request that user is allowed to access."""
         for item in items:
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
-                raw_permissions = self._rights.authorization(user, path)
+                raw_permissions = self._rights.authorization(user, user_groups, path)
                 logger.trace("PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r raw_permissions=%r", path, user, raw_permissions)
                 if item.tag:
                     permissions = rights.intersect(raw_permissions, "rw")
@@ -596,7 +596,7 @@ class ApplicationPartPropfind(ApplicationBase):
             else:
                 assert item.collection is not None
                 path = pathutils.unstrip_path(item.collection.path, True)
-                raw_permissions = self._rights.authorization(user, path)
+                raw_permissions = self._rights.authorization(user, user_groups, path)
                 permissions = rights.intersect(raw_permissions, "rw")
                 target = "item %r from %r" % (item.href, item.collection.path)
             freebusy = (
@@ -622,7 +622,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 yield item, permission, raw_permissions
 
     def do_PROPFIND(self, environ: types.WSGIEnviron, base_prefix: str,
-                    path: str, user: str, request_info: dict) -> types.WSGIResponse:
+                    path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """Manage PROPFIND request."""
         http_depth = environ.get("HTTP_DEPTH", "0")
         permissions_filter = None
@@ -630,10 +630,7 @@ class ApplicationPartPropfind(ApplicationBase):
         allowed_items: list = []
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
-            user_lookup = user
-            if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
-            share = self._sharing.sharing_collection_resolver(path, user_lookup)
+            share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if path != share['PathMapped']:
                     # overwrite and run through extended permission check
@@ -644,7 +641,7 @@ class ApplicationPartPropfind(ApplicationBase):
                     logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
                 else:
                     logger.trace("PROPFIND/shares: skip overlap mapping: path=%r", path)
-        access = Access(self._rights, user, path, permissions_filter)
+        access = Access(self._rights, user, user_groups, path, permissions_filter)
         read_allowed = access.check("r")
         freebusy_only = "r" not in access.permissions and access.allows_freebusy()
         if not read_allowed and not freebusy_only:
@@ -665,7 +662,7 @@ class ApplicationPartPropfind(ApplicationBase):
             logger.trace("PROPFIND: discover path=%r depth=%s", path, http_depth)
             items_iter = iter(self._storage.discover(
                 path, http_depth,
-                None, self._rights._user_groups))
+                None, user_groups))
             # take root item for rights checking
             item = next(items_iter, None)
             if not item:
@@ -684,7 +681,7 @@ class ApplicationPartPropfind(ApplicationBase):
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
-            item_list = list(self._collect_allowed_items(items_iter, user))
+            item_list = list(self._collect_allowed_items(items_iter, user, user_groups))
             if freebusy_only:
                 writable = "w" in access.permissions
                 filtered_items = []
@@ -721,8 +718,9 @@ class ApplicationPartPropfind(ApplicationBase):
         if self._sharing._enabled:
             if http_depth == "1":
                 # check for shared collections related to user, Enabled and not Hidden
-                if self._rights._user_groups is not None and len(self._rights._user_groups) > 0:
-                    user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(self._rights._user_groups)
+                user_lookup = user
+                if user_groups is not None and len(user_groups) > 0:
+                    user_lookup += sharing.SHARING_SEPARATOR_GROUP + ','.join(user_groups)
                 logger.debug("PROPFIND: lookup shared collections for user=%r", user_lookup)
                 collections_share_list = self._sharing.sharing_collection_list(User=user_lookup, Enabled=True, Hidden=False)
                 if collections_share_list:
@@ -734,7 +732,7 @@ class ApplicationPartPropfind(ApplicationBase):
                         c_user = share['Owner']
                         c_permissions_filter = share['Permissions']
                         logger.trace("PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
-                        c_access = Access(self._rights, c_user, c_path, c_permissions_filter)
+                        c_access = Access(self._rights, c_user, set([]), c_path, c_permissions_filter)
                         share_freebusy_only = (
                             "f" in c_access.permissions and not c_access.check("r"))
                         if not c_access.check("r") and not c_access.allows_freebusy():
@@ -743,7 +741,7 @@ class ApplicationPartPropfind(ApplicationBase):
                         logger.debug("PROPFIND: lookup shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         with self._storage.acquire_lock("r", c_user):
                             c_items_iter = iter(self._storage.discover(c_path, "0"))
-                            c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user))
+                            c_allowed_items = list(self._collect_allowed_items(c_items_iter, c_user, set([])))
                         for item, permission, raw_permissions in c_allowed_items:
                             if share_freebusy_only and isinstance(item, storage.BaseCollection):
                                 if item.tag == "VCALENDAR" and "w" in c_access.permissions:

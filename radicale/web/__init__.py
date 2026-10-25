@@ -50,7 +50,7 @@ class BaseWeb:
         self.configuration = configuration
 
     def get(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-            user: str, request_info: dict) -> types.WSGIResponse:
+            user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """GET request.
 
         ``base_prefix`` is sanitized and never ends with "/".
@@ -65,7 +65,7 @@ class BaseWeb:
         return httputils.METHOD_NOT_ALLOWED
 
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-             user: str, request_info: dict) -> types.WSGIResponse:
+             user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         """POST request.
 
         ``base_prefix`` is sanitized and never ends with "/".

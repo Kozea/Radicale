@@ -28,10 +28,10 @@ from radicale import httputils, types, web
 class Web(web.BaseWeb):
 
     def get(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-            user: str, request_info: dict) -> types.WSGIResponse:
+            user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         return client.OK, {"Content-Type": "text/plain"}, "custom", None
 
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str,
-             user: str, request_info: dict) -> types.WSGIResponse:
+             user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         content = httputils.read_request_body(self.configuration, environ, request_info)
         return client.OK, {"Content-Type": "text/plain"}, "echo:" + content, None

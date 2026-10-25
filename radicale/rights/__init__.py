@@ -1,6 +1,7 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2012-2017 Guillaume Ayoub
-# Copyright © 2017-2018 Unrud <unrud@outlook.com>
+# Copyright © 2017-2021 Unrud <unrud@outlook.com>
+# Copyright © 2026-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +52,7 @@ Take a look at the class ``BaseRights`` if you want to implement your own.
 
 """
 
-from typing import Sequence, Set
+from typing import Sequence
 
 from radicale import config, utils
 
@@ -105,8 +106,6 @@ def add(a: str, b: str) -> str:
 
 class BaseRights:
 
-    _user_groups: Set[str] = set([])
-
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseRights.
 
@@ -117,10 +116,11 @@ class BaseRights:
         """
         self.configuration = configuration
 
-    def authorization(self, user: str, path: str) -> str:
+    def authorization(self, user: str, user_groups: set, path: str) -> str:
         """Get granted rights of ``user`` for the collection ``path``.
 
         If ``user`` is empty, check for anonymous rights.
+        Honor ``user_groups`` if given.
 
         ``path`` is sanitized.
 

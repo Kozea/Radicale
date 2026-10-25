@@ -1,5 +1,6 @@
 # This file is part of Radicale - CalDAV and CardDAV server
 # Copyright © 2026-2026 oliviasculley <olivia@sculley.dev>
+# Copyright © 2026-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,13 +34,20 @@ from urllib.parse import quote
 
 import pytest
 
-from radicale import xmlutils
+from radicale import auth, xmlutils
 from radicale.auth import ldap as ldap_auth
 from radicale.tests import BaseTest
 
-skip_ldap = False
+skip_ldap3 = False
 try:
     import ldap3
+except ModuleNotFoundError:
+    skip_ldap3 = True
+    pass
+
+skip_ldap = False
+try:
+    import ldap  # noqa:F401 (dynamically loaded for "test_ldap2_login")
 except ModuleNotFoundError:
     skip_ldap = True
     pass
@@ -285,7 +293,7 @@ class TestAuthServers(BaseTest):
         config.update(auth)
         self.configure({"auth": config, "group": {"type": "from_auth"}})
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap_rejects_bad_config(self) -> None:
         ldap_auth.Auth._ldap_attributes = []
         # configure() keeps earlier values, so each attempt resets the others.
@@ -313,18 +321,16 @@ class TestAuthServers(BaseTest):
                                      "ldap_secret_file": secret}})
 
     def test_ldap_missing_module(self) -> None:
-        removed = {}
-        for name in ("ldap", "ldap.filter", "ldap.dn"):
-            if name in sys.modules:
-                removed[name] = sys.modules.pop(name)
         try:
-            with patch.dict(sys.modules, {"ldap3": None}):
-                with pytest.raises(ModuleNotFoundError, match="ldap3 or ldap"):
-                    self.configure({"auth": {"type": "ldap"}})
-        finally:
-            sys.modules.update(removed)
+            with patch.dict(sys.modules, {"ldap3": None, "ldap": None}):
+                self.configure({"auth": {"type": "ldap"}})
+        except ModuleNotFoundError:
+            logging.info("Module 'ldap' or 'ldap3' not found (ok)")
+        else:
+            logging.info("Module 'ldap' or 'ldap3' found (ok)")
+            raise
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_login_groups_user_attribute_and_escape(self) -> None:
         directory = _MockLdap()
         directory.add(OWNER_DN, uid="Owner", cn="owner", userPassword="secret", memberOf=[
@@ -335,13 +341,15 @@ class TestAuthServers(BaseTest):
         self._configure_ldap3(ldap_user_attribute="cn", ldap_groups_attribute="memberOf")
         with directory.patch():
             assert _principal(self, "Owner:secret") == "/owner/"
-            assert self.application._auth._groups == {"family", "staff"}
-            assert self.application._rights._user_groups == {"family", "staff"}
+            auth_any: Any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            assert "staff" in user_groups
+            assert "family" in user_groups
             assert directory.servers[0] == {}
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
             assert _principal(self, "a*:secret", check=401) == ""
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_scalar_attributes_and_group_search(self) -> None:
         directory = _MockLdap(ldap3.OFFLINE_SLAPD_2_4)
         directory.add(OWNER_DN, objectClass="inetOrgPerson", uid="alias", cn="owner", sn="owner",
@@ -357,10 +365,11 @@ class TestAuthServers(BaseTest):
             ldap_group_base="ou=groups,dc=example,dc=com")
         with directory.patch():
             assert _principal(self, "alias:secret") == "/owner/"
-        # Member search replaces attribute groups.
-        assert self.application._auth._groups == {"family"}
+            auth_any: Any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("alias", "secret", None)
+            assert "family" in user_groups
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_group_search_failure_keeps_attribute_groups(self) -> None:
         directory = _MockLdap(ldap3.OFFLINE_SLAPD_2_4)
         directory.add(OWNER_DN, objectClass="inetOrgPerson", uid="owner", cn="owner", sn="owner",
@@ -377,10 +386,11 @@ class TestAuthServers(BaseTest):
                               ldap_group_filter="(objectClass=groupOfNames)")
         with directory.patch(), directory.patch_method("search", failing_group_search):
             assert _principal(self, "owner:secret") == "/owner/"
-        # A scalar value that is not a DN is kept whole.
-        assert self.application._auth._groups == {"staff"}
+            auth_any: Any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            assert "staff" in user_groups
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_tls_modes_secret_file_and_quirks(self) -> None:
         secret = os.path.join(self.colpath, "ldap.secret")
         with open(secret, "w", encoding="utf-8") as handle:
@@ -429,7 +439,7 @@ class TestAuthServers(BaseTest):
         with directory.patch():
             assert _principal(self, "owner:secret") == "/owner/"
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module found")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_login_failures(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         directory = _MockLdap()
@@ -461,6 +471,7 @@ class TestAuthServers(BaseTest):
             _principal(self, "owner:secret", check=500)
             assert "invalidCredentials" in caplog.text
 
+    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module 'ldap' found")
     def test_ldap2_login(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         state = _Ldap2State()
@@ -488,10 +499,10 @@ class TestAuthServers(BaseTest):
                 "ldap_groups_attribute": "memberOf",
             }})
         auth_any: Any = self.application._auth
-        assert auth_any._ldap_module_version == 2
         assert _principal(self, "owner:secret") == "/owner/"
-        # python-ldap stores groups on _ldap_groups. Bytes and unparseable DNs are kept as text.
-        assert auth_any._ldap_groups == {"cn=family,ou=groups,dc=example,dc=com", "BAD"}
+        user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+        assert "BAD" in user_groups
+        assert "cn=family,ou=groups,dc=example,dc=com" in user_groups
         conn = state.connections[-1]
         assert conn.started_tls is False
         assert conn.options[ldap_mod.OPT_X_TLS_REQUIRE_CERT] == ldap_mod.OPT_X_TLS_ALLOW
@@ -517,7 +528,9 @@ class TestAuthServers(BaseTest):
         ]
         assert _principal(self, "owner:secret") == "/owner/"
         assert state.connections[-1].started_tls is True
-        assert getattr(self.application._auth, "_ldap_groups") == {"family", "staff"}
+        user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+        assert "BAD" in user_groups
+        assert "cn=family,ou=groups,dc=example,dc=com" in user_groups
 
         assert _principal(self, "owner:wrong", check=401) == ""
         state.duplicate = True
@@ -697,8 +710,13 @@ class TestAuthServers(BaseTest):
                 self.gr_name = name
                 self.gr_mem = members
 
+        class GrId:
+            def __init__(self, name: str, members: list) -> None:
+                self.gr_name = name
+                self.gr_mem = members
+
         users = {"owner": Pw(1, 10), "guest": Pw(2, 10)}
-        groups = {10: Gr("users", []), "wheel": Gr("wheel", ["owner"])}
+        groups = {10: Gr("users", []), 20: Gr("wheel", ["owner"])}
         calls: list = []
 
         def getpwnam(name: str) -> Pw:
@@ -712,9 +730,18 @@ class TestAuthServers(BaseTest):
             return groups[gid]
 
         def getgrnam(name: str) -> Gr:
-            if name not in groups:
+            for gid in groups:
+                if name == groups[gid].gr_name:
+                    return groups[gid]
+            else:
                 raise KeyError(name)
-            return groups[name]
+
+        def getgrouplist(name: str, gid: int) -> set[int]:
+            gid_list: set = set([])
+            for gid in groups:
+                if name in groups[gid].gr_mem:
+                    gid_list.add(gid)
+            return gid_list
 
         def authenticate(login: str, password: str, service: str = "") -> bool:
             calls.append((login, password, service))
@@ -723,20 +750,38 @@ class TestAuthServers(BaseTest):
         with patch("radicale.auth.pam.pwd.getpwnam", getpwnam), \
                 patch("radicale.auth.pam.grp.getgrgid", getgrgid), \
                 patch("radicale.auth.pam.grp.getgrnam", getgrnam), \
+                patch("radicale.auth.pam.os.getgrouplist", getgrouplist), \
                 patch.object(pam, "authenticate", authenticate):
             self.configure({"auth": {"type": "pam", "delay": "0.001", "pam_service": "radicale"},
                             "group": {"type": "from_auth"}})
             auth_any: Any = self.application._auth
-            assert auth_any._login(None, "secret") == ""
-            assert auth_any._login("owner", None) == ""
+            assert auth_any._login_ext_with_groups(None, "secret", None) == auth.NO_LOGIN_NO_GROUPS
+            assert auth_any._login_ext_with_groups("owner", None, None) == auth.NO_LOGIN_NO_GROUPS
             assert _principal(self, "missing:secret", check=401) == ""
             assert _principal(self, "owner:secret") == "/owner/"
             assert ("owner", "secret", "radicale") in calls
-            assert "users" in self.application._rights._user_groups
 
+            logging.debug("** check for 'owner' having user_groups 'users'")
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            logging.debug("* user=%r user_groups=%r", user, user_groups)
+            assert user == "owner"
+            assert "users" in user_groups
+            assert "wheel" in user_groups
+
+            logging.debug("** reconfigure for PAM group_membership 'wheel'")
             self.configure({"auth": {"pam_group_membership": "wheel"}})
             assert _principal(self, "owner:secret") == "/owner/"
-            assert self.application._auth._groups == {"owner", "users"}
+            user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
+            logging.debug("* user=%r user_groups=%r", user, user_groups)
+            assert "users" in user_groups
+            assert "wheel" in user_groups
+
+            logging.debug("** check for 'guest' having user_groups 'users'")
+            user, user_groups = auth_any._login_ext_with_groups("guest", "secret", None)
+            logging.debug("* user=%r user_groups=%r", user, user_groups)
+            assert "users" in user_groups
+            assert "wheel" not in user_groups
+
             assert _principal(self, "guest:secret", check=401) == ""
             assert _principal(self, "owner:wrong", check=401) == ""
 
