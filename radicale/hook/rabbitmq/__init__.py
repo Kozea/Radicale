@@ -15,8 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-import pika
-from pika.exceptions import ChannelWrongStateError, StreamLostError
+try:
+    import pika
+    from pika.exceptions import ChannelWrongStateError, StreamLostError
+except ImportError as e:
+    raise ImportError(
+        "the 'pika' module is required for [hook] type=rabbitmq: "
+        "install it with 'pip install radicale[rabbitmq]' or from your "
+        "distribution packages (e.g. python3-pika)") from e
 
 from radicale import hook
 from radicale.hook import HookNotificationItem
