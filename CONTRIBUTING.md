@@ -1,7 +1,5 @@
 # About contributing to Radicale
 
-You can contribute to Radicale in several ways.
-
 Radicale is open source. Anyone can contribute.
 
 ## Issues
@@ -59,8 +57,15 @@ Pull requests will only be merged if they pass the whole test suite without any 
 > [!NOTE]
 > New contributors have to wait until their pull request is approved before test suite is executed.
 
-
 ## Support
 
 We are a small team working.
 In case you need suppport, contact [Maintainers/Contributors](https://github.com/Kozea/Radicale/wiki/04-%E2%80%90-Maintainers-Contributors).
+
+## Tasks
+
+If you want to support improving the code in general, ongoing pending/open tasks are:
+- code review regarding
+  - style optimization
+  - performance optimization
+- extension of test cases to increase coverage
