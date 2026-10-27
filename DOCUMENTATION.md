@@ -860,7 +860,9 @@ not installed fails with an error naming the extra. With `cheroot` all the TLS
 options are honoured (`protocol` and `ciphersuite` included), `max_connections`
 is the size of its thread pool and `timeout` its socket timeout; a host name
 is bound on every address it resolves to, and a failure to bind one of them is
-logged while the others are served, as with the built-in server.
+logged while the others are served, as with the built-in server. On PyPy,
+TLS requests can fail intermittently with `cheroot` until PyPy has the fix of
+[pypy/pypy#5634](https://github.com/pypy/pypy/issues/5634).
 
 Default: `builtin`
 
