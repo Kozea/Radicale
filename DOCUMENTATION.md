@@ -2574,6 +2574,7 @@ Radicale has been tested with:
   [CalDavZAP](https://www.inf-it.com/open-source/clients/caldavzap/),
   [CardDavMATE](https://www.inf-it.com/open-source/clients/carddavmate/) and
   [Open Calendar](https://github.com/algoo/open-calendar/)
+* [Natel](https://natel.app/) (web, contacts only)
 * [pimsync](https://pimsync.whynothugo.nl/) ([pimsync/Radicale](https://github.com/Kozea/Radicale/wiki/Client-pimsync))
 
 Many clients do not support the creation of new calendars and address books.
