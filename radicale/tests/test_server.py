@@ -23,6 +23,7 @@ Test the internal server.
 import errno
 import logging
 import os
+import platform
 import socket
 import ssl
 import subprocess
@@ -283,6 +284,13 @@ class TestCherootServerRequests(TestBaseServerRequests):
     def setup_method(self) -> None:
         pytest.importorskip("cheroot")
         super().setup_method()
+
+    @pytest.mark.skipif(
+        platform.python_implementation() == "PyPy",
+        reason="cheroot resizes a buffer that ssl.recv_into still has a memoryview on, which fails "
+               "intermittently on PyPy until it has the fix of https://github.com/pypy/pypy/issues/5634")
+    def test_ssl(self) -> None:
+        super().test_ssl()
 
     def test_missing_dependency(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setitem(sys.modules, "cheroot", None)
