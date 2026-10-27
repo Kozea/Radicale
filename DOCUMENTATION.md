@@ -830,7 +830,7 @@ mode; they are ignored, when Radicale runs on WSGI.
 
 _(>= 3.9.0)_
 
-The server to run: `builtin` (the default) or `hypercorn`.
+The server to run: `builtin` (the default), `hypercorn` or `cheroot`.
 
 The built-in server answers HTTP/1.0 and closes after each request. `hypercorn`
 keeps connections alive and also serves **HTTP/2 over cleartext (H2C)** on the
@@ -850,6 +850,19 @@ at the minimum) and an unset `ciphersuite` means hypercorn's default cipher
 list rather than the system one. `max_connections` and `timeout` configure the
 built-in server only, and a request that is still in flight is given three
 seconds when the server stops.
+
+`cheroot` is the pure-Python HTTP/1.1 server of CherryPy, with keep-alive, a
+thread pool and native TLS through the standard `ssl` module. It is an optional
+dependency, installed with the `cheroot` extra using
+`pip install radicale[cheroot]` or by underlying OS (package name:
+'python3-cheroot'), supported version: cheroot>=8.5.0. Asking for it when it is
+not installed fails with an error naming the extra. With `cheroot` all the TLS
+options are honoured (`protocol` and `ciphersuite` included), `max_connections`
+is the size of its thread pool and `timeout` its socket timeout; a host name
+is bound on every address it resolves to, and a failure to bind one of them is
+logged while the others are served, as with the built-in server. On PyPy,
+TLS requests can fail intermittently with `cheroot` until PyPy has the fix of
+[pypy/pypy#5634](https://github.com/pypy/pypy/issues/5634).
 
 Default: `builtin`
 

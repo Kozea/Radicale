@@ -23,6 +23,7 @@ Test the internal server.
 import errno
 import logging
 import os
+import platform
 import socket
 import ssl
 import subprocess
@@ -57,6 +58,7 @@ class TestBaseServerRequests(BaseTest):
     _shutdown_socket_out: socket.socket
     thread: threading.Thread
     opener: request.OpenerDirector
+    server_type = "builtin"
 
     def setup_method(self) -> None:
         super().setup_method()
@@ -66,7 +68,8 @@ class TestBaseServerRequests(BaseTest):
             sock.bind(("127.0.0.1", 0))
             self.sockfamily = socket.AF_INET
             self.sockname = sock.getsockname()
-        self.configure({"server": {"hosts": "%s:%d" % self.sockname},
+        self.configure({"server": {"hosts": "%s:%d" % self.sockname,
+                                   "type": self.server_type},
                         # Enable debugging for new processes
                         "logging": {"level": "debug"}})
         self.thread = threading.Thread(target=server.serve, args=(
@@ -271,6 +274,36 @@ class TestBaseServerRequests(BaseTest):
         finally:
             p.terminate()
             p.wait()
+
+
+class TestCherootServerRequests(TestBaseServerRequests):
+    """The same tests as the built-in server, with `[server] type = cheroot`."""
+
+    server_type = "cheroot"
+
+    def setup_method(self) -> None:
+        pytest.importorskip("cheroot")
+        super().setup_method()
+
+    @pytest.mark.skipif(
+        platform.python_implementation() == "PyPy",
+        reason="cheroot resizes a buffer that ssl.recv_into still has a memoryview on, which fails "
+               "intermittently on PyPy until it has the fix of https://github.com/pypy/pypy/issues/5634")
+    def test_ssl(self) -> None:
+        super().test_ssl()
+
+    def test_missing_dependency(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setitem(sys.modules, "cheroot", None)
+        monkeypatch.setitem(sys.modules, "radicale.server_cheroot", None)
+        with pytest.raises(RuntimeError) as exc_info:
+            server.serve_cheroot(self.configuration, None)
+        assert "radicale[cheroot]" in str(exc_info.value)
+
+    def test_utf8_path(self) -> None:
+        """`PATH_INFO` is UTF-8, not the Latin-1 of WSGI 1.0."""
+        self.thread.start()
+        status, _, _ = self.request("GET", "/%C3%A9t%C3%A9/", check=None)
+        assert status in (302, 401, 404)
 
 
 class TestHypercornConfiguration:
