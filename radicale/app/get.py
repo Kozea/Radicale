@@ -99,14 +99,14 @@ def share_forces_freebusy_view(share: Union[dict, None]) -> bool:
 def share_freebusy_format(share: Union[dict, None]) -> str:
     """Token Actions config ``format`` for the free/busy view.
 
-    Used when the request omits ``format``. ``vfreebusy`` is the default.
+    Used when the request omits ``format``. ``vevent`` is the default.
     Map shares ignore this setting; the query selects their format.
 
     """
     value = _share_actions_config(share).get("format")
     if isinstance(value, str) and value in sharing.FREEBUSY_VIEW_FORMATS:
         return value
-    return "vfreebusy"
+    return "vevent"
 
 
 class ApplicationPartGet(ApplicationBase):

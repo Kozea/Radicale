@@ -1,7 +1,7 @@
 # Changelog
 
 ## 3.9.1.dev
-* Add: free/busy view `format=vevent` (query, token Actions config, and the WebUI free/busy link) returns one VEVENT per busy period
+* Add: free/busy view returns one VEVENT per busy period (`?view=freebusy`, a token with Actions `view=freebusy`, and the WebUI link). `format=vfreebusy` still returns one VFREEBUSY
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)

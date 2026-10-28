@@ -1963,8 +1963,6 @@ END:VCALENDAR
 """ % (inside_start_text, inside_end_text)
         self.put(path_cal + "inside.ics", inside_event, login="owner:ownerpw")
         busy = "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z"
-        inside_busy = "FREEBUSY;FBTYPE=BUSY:%s/%s" % (
-            inside_start_text, inside_end_text)
         window = "start=20130901T000000Z&end=20130902T000000Z"
         event_secrets = ("Hidden title", "Hidden details", "hidden-secret",
                          "Inside secret", "inside-secret",
@@ -1996,6 +1994,25 @@ END:VCALENDAR
             assert answer.count("BEGIN:VFREEBUSY") == 1
             assert period in answer
             for secret in event_secrets:
+                assert secret not in answer
+
+        def assert_busy_event(answer: str, headers: Union[dict, None],
+                              start: str, end: str) -> None:
+            if headers is not None:
+                assert headers["Content-Type"].startswith("text/calendar")
+                assert "-busy.ics" in headers["Content-Disposition"]
+            vcalendar = vobject.readOne(answer)
+            components = vcalendar.contents["vevent"]
+            assert len(components) == 1
+            component = components[0]
+            assert component.summary.value == "Busy"
+            assert component.uid.value == busy_event_uid(
+                "owner/cal-token-fb", start, end, "BUSY")
+            assert component.dtstart.value.strftime("%Y%m%dT%H%M%SZ") == start
+            assert component.dtend.value.strftime("%Y%m%dT%H%M%SZ") == end
+            for secret in ("Hidden title", "Hidden details", "hidden-secret",
+                           "Inside secret", "inside-secret",
+                           "FREEBUSY", "VFREEBUSY"):
                 assert secret not in answer
 
         def make_token(permissions: str, actions: Union[dict, None] = None,
@@ -2037,6 +2054,11 @@ END:VCALENDAR
             _status, headers, answer = self.request(
                 "GET", token_f, check=200,
                 QUERY_STRING="view=freebusy&" + window)
+            assert_busy_event(answer, headers,
+                              "20130901T160000Z", "20130901T170000Z")
+            _status, headers, answer = self.request(
+                "GET", token_f, check=200,
+                QUERY_STRING="view=freebusy&format=vfreebusy&" + window)
             assert_freebusy(answer, headers)
             _status, headers, answer = self.request(
                 "HEAD", token_f, check=200,
@@ -2069,18 +2091,21 @@ END:VCALENDAR
 
             token_view = make_token("rp", {"config": {"view": "freebusy"}})
             _status, headers, answer = self.request("GET", token_view, check=200)
-            assert_freebusy(answer, headers, inside_busy)
+            assert_busy_event(answer, headers,
+                              inside_start_text, inside_end_text)
             assert busy not in answer
+            assert "20130901T160000Z" not in answer
             _status, headers, answer = self.request("HEAD", token_view, check=200)
             assert answer == ""
             assert headers["Content-Type"].startswith("text/calendar")
             assert "Last-Modified" not in headers
             _status, headers, answer = self.request(
                 "GET", token_view, check=200, QUERY_STRING=window)
-            assert_freebusy(answer, headers)
+            assert_busy_event(answer, headers,
+                              "20130901T160000Z", "20130901T170000Z")
             _status, headers, answer = self.request(
                 "GET", token_view, check=200,
-                QUERY_STRING="view=freebusy&" + window)
+                QUERY_STRING="view=freebusy&format=vfreebusy&" + window)
             assert_freebusy(answer, headers)
             _status, _headers, answer = self.request(
                 "GET", token_view, check=400, QUERY_STRING="view=other")
@@ -2111,7 +2136,8 @@ END:VCALENDAR
 
             token_f_view = make_token("f", {"config": {"view": "freebusy"}})
             _status, headers, answer = self.request("GET", token_f_view, check=200)
-            assert_freebusy(answer, headers, inside_busy)
+            assert_busy_event(answer, headers,
+                              inside_start_text, inside_end_text)
             assert busy not in answer
 
             token_book = make_token(
@@ -2293,14 +2319,10 @@ END:VCALENDAR
                 QUERY_STRING="view=freebusy&format=vevent&" + window)
             assert head_answer == ""
             assert head_headers["ETag"] == headers["ETag"]
-            _status, _headers, answer = self.request(
+            _status, _headers, plain = self.request(
                 "GET", token_f, check=200,
                 QUERY_STRING="view=freebusy&" + window)
-            assert answer.count("BEGIN:VFREEBUSY") == 1
-            assert "BEGIN:VEVENT" not in answer
-            assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
-            for secret in ("Hidden title", "hidden-secret", "BEGIN:VEVENT"):
-                assert secret not in answer
+            assert plain == answer
             _status, _headers, answer = self.request(
                 "GET", token_f + "event.ics", check=403,
                 QUERY_STRING="view=freebusy&format=vevent&" + window)
@@ -2359,11 +2381,8 @@ END:VCALENDAR
                         "format": sharing.SHARING_ACTIONS_DELETE_VALUE}}})
             assert json.loads(answer)["Status"] == "success"
             _status, headers, answer = self.request("GET", token_view, check=200)
-            assert headers["Content-Type"].startswith("text/calendar")
-            assert answer.count("BEGIN:VFREEBUSY") == 1
-            assert "BEGIN:VEVENT" not in answer
-            for secret in ("Inside secret", "inside-secret"):
-                assert secret not in answer
+            assert_busy(answer, headers, inside_uid,
+                        inside_start_text, inside_end_text)
 
             token_format = make_token("rp", {"config": {"format": "vevent"}})
             _status, _headers, answer = self.request("GET", token_format, check=200)

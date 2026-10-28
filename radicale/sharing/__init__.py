@@ -51,7 +51,7 @@ DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Conver
 #                     bday: check VADDRESSBOOK VCARD(vcf) entries for BDAY and convert to VCALENDAR reoccuring VEVENT(ics)
 # Actions:          Actions structure in JSON
 #                     config.view = "freebusy" serves free/busy on token GET/HEAD
-#                     config.format = "vfreebusy" (default) or "vevent"
+#                     config.format = "vevent" (default) or "vfreebusy"
 #                       (one VEVENT per busy period when the request omits format)
 #                     (future reserved for e.g. "filter", "filter_pre", "filter_post" or anything else, implemented on request)
 

@@ -687,7 +687,8 @@ END:VEVENT
 END:VCALENDAR
 """
         self.put(calendar_path + "event.ics", event, login="tmp:bepo")
-        query = "view=freebusy&start=20130901T000000Z&end=20130902T000000Z"
+        query = ("view=freebusy&format=vfreebusy"
+                 "&start=20130901T000000Z&end=20130902T000000Z")
         _, _, answer = self.request(
             "GET", calendar_path, check=403, login="other:bepo")
         assert "Hidden title" not in answer
@@ -860,18 +861,13 @@ permissions: i""")
         assert head_headers["ETag"] == headers["ETag"]
         assert head_headers["Content-Type"].startswith("text/calendar")
 
-        _, _, vfreebusy = self.request(
+        _, plain_headers, plain = self.request(
             "GET", calendar_path, check=200, login="other:bepo",
             QUERY_STRING="view=freebusy&" + window)
-        assert vfreebusy.count("BEGIN:VFREEBUSY") == 1
-        assert "BEGIN:VEVENT" not in vfreebusy
-        assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T180000Z" in vfreebusy
-        assert "FREEBUSY;FBTYPE=BUSY-TENTATIVE:20130901T190000Z/20130901T200000Z" in vfreebusy
-        assert "FREEBUSY;FBTYPE=FREE:20130901T120000Z/20130901T130000Z" in vfreebusy
-        assert "20130901T140000Z/20130901T150000Z" not in vfreebusy
-        for secret in ("Hidden title", "hidden-secret", "Transparent title",
-                       "Cancelled title", "BEGIN:VEVENT"):
-            assert secret not in vfreebusy
+        assert plain == answer
+        assert "-busy.ics" in plain_headers["Content-Disposition"]
+        for secret in secrets:
+            assert secret not in plain
 
         _, _, answer = self.request(
             "GET", calendar_path, check=200, login="other:bepo",

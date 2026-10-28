@@ -602,7 +602,7 @@ export class CollectionsScene {
                 !is_transform) {
             freebusy_wrapper.classList.remove("hidden");
             new UrlTextHandler(freebusy_url_form, freebusy_copy_btn).setHref(
-                href + "?view=freebusy&format=vevent");
+                href + "?view=freebusy");
         }
         download_btn.href = href;
         download_btn.onclick = (event) => {

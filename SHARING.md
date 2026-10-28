@@ -233,38 +233,34 @@ Note: requests to not enabled or not even defined tokens will result in _401 Not
 
 #### Free/busy view
 
-`GET` and `HEAD` with `?view=freebusy` return the read-only free/busy
-calendar when the token permissions include `r` or `f`.
+`GET` and `HEAD` with `?view=freebusy` return one `VEVENT` per merged
+busy period when the token permissions include `r` or `f`. Clients that
+ignore `VFREEBUSY` (Google Calendar "From URL", Outlook) can subscribe
+to that URL.
 
-`format` selects the body:
+Each event has `SUMMARY` `Busy`, or `Tentative` when the period is
+`BUSY-TENTATIVE`, `DTSTART` and `DTEND` in UTC, `TRANSP:OPAQUE`, and
+`CLASS:PUBLIC`. `FREE` periods and transparent events are omitted. The
+`UID` is a UUID from the SHA-256 of the stored collection path, the
+period, and the busy type. Source summaries, descriptions, locations,
+attendees, and UIDs are omitted. The download name ends in `-busy.ics`.
 
-* `vfreebusy` (default): one `VFREEBUSY` component
-* `vevent`: one `VEVENT` per merged busy period, for clients that only
-  subscribe to events (Google Calendar "From URL", Outlook). Each
-  event has `SUMMARY` `Busy`, or `Tentative` when the period is
-  `BUSY-TENTATIVE`, `DTSTART` and `DTEND` in UTC, `TRANSP:OPAQUE`, and
-  `CLASS:PUBLIC`. `FREE` periods and transparent events are omitted.
-  The `UID` is a UUID from the SHA-256 of the stored collection path,
-  the period, and the busy type. Source summaries, descriptions,
-  locations, attendees,
-  and UIDs are omitted. The download name ends in `-busy.ics`.
-
-`?view=freebusy&format=vevent` requests that document. `start` and
-`end` (`YYYYMMDDTHHMMSSZ`) still select the window.
+`format=vfreebusy` returns one `VFREEBUSY`. `start` and `end`
+(`YYYYMMDDTHHMMSSZ`) still select the window.
 
 A token can skip the `view` query. Set Actions config `view` to
-`freebusy`. Set `format` to `vevent` to choose the VEVENT document
-when the request omits `format`:
+`freebusy`. Plain `GET` and `HEAD` then return the busy events. Set
+`format` to `vfreebusy` when that token should return `VFREEBUSY`
+unless the query says otherwise:
 
 ```json
-"Actions": { "config": { "view": "freebusy", "format": "vevent" } }
+"Actions": { "config": { "view": "freebusy" } }
 ```
 
-Plain `GET` and `HEAD` then return that free/busy calendar. A `format`
-on the query overrides the token. Another `view` or `format` value is
-rejected. Other methods keep the token permissions. Removing a setting
-uses the value `#DEL#`. Map shares ignore `view` and `format`; use the
-query string on a map.
+A `format` on the query overrides the token. Another `view` or
+`format` value is rejected. Other methods keep the token permissions.
+Removing a setting uses the value `#DEL#`. Map shares ignore `view`
+and `format`; use the query string on a map.
 
 ## Sharing Configuration Management API version 1
 

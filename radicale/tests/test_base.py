@@ -2773,7 +2773,7 @@ END:VCALENDAR
         assert "freebusy" not in vcalendar.vfreebusy.contents
 
     def test_get_freebusy_view(self) -> None:
-        """GET/HEAD ?view=freebusy returns one VFREEBUSY and no event details."""
+        """GET/HEAD ?view=freebusy&format=vfreebusy returns one VFREEBUSY."""
         self.configure({"auth": {"type": "none"}})
         calendar_path = "/calendar.ics/"
         self.mkcalendar(calendar_path)
@@ -2805,7 +2805,8 @@ END:VCALENDAR
         assert "Last-Modified" in headers
         collection_etag = headers["ETag"]
 
-        query = "view=freebusy&start=20130901T140000Z&end=20130901T180000Z"
+        query = ("view=freebusy&format=vfreebusy"
+                 "&start=20130901T140000Z&end=20130901T180000Z")
         _, headers, answer = self.request(
             "GET", calendar_path, check=200, QUERY_STRING=query)
         assert headers["Content-Type"].startswith("text/calendar")
@@ -2869,7 +2870,8 @@ END:VCALENDAR
             self.request("GET", calendar_path, check=400, QUERY_STRING=bad_query)
         _, _, answer = self.request(
             "GET", calendar_path, check=200,
-            QUERY_STRING="view=freebusy&start=20130901T160000Z&end=20130901T160000Z")
+            QUERY_STRING=("view=freebusy&format=vfreebusy"
+                          "&start=20130901T160000Z&end=20130901T160000Z"))
         vcalendar = vobject.readOne(answer)
         assert _utc(vcalendar.vfreebusy.dtstart.value) == _utc(
             vcalendar.vfreebusy.dtend.value)
@@ -2915,7 +2917,8 @@ END:VCALENDAR
         self.configure({"reporting": {"freebusy_view_past_days": 1,
                                       "freebusy_view_future_days": 1}})
         _, _, answer = self.request(
-            "GET", calendar_path, check=200, QUERY_STRING="view=freebusy")
+            "GET", calendar_path, check=200,
+            QUERY_STRING="view=freebusy&format=vfreebusy")
         for secret in ("Inside secret", "Outside secret", "Hidden title",
                        "inside-secret", "outside-secret", "SUMMARY", "UID"):
             assert secret not in answer
@@ -2930,7 +2933,8 @@ END:VCALENDAR
         self.configure({"reporting": {"freebusy_view_past_days": 0,
                                       "freebusy_view_future_days": 0}})
         _, _, answer = self.request(
-            "GET", calendar_path, check=200, QUERY_STRING="view=freebusy")
+            "GET", calendar_path, check=200,
+            QUERY_STRING="view=freebusy&format=vfreebusy")
         vcalendar = vobject.readOne(answer)
         assert _utc(vcalendar.vfreebusy.dtstart.value) == today
         assert _utc(vcalendar.vfreebusy.dtend.value) == today
@@ -3017,11 +3021,11 @@ END:VCALENDAR
         assert head_answer == ""
         assert head_headers["ETag"] == headers["ETag"]
 
-        _, _, plain = self.request(
+        _, plain_headers, plain = self.request(
             "GET", calendar_path, check=200, QUERY_STRING=(
                 "view=freebusy&start=20130901T140000Z&end=20130901T200000Z"))
-        assert plain.count("BEGIN:VFREEBUSY") == 1
-        assert "BEGIN:VEVENT" not in plain
+        assert plain == answer
+        assert "-busy.ics" in plain_headers["Content-Disposition"]
         _, _, named = self.request(
             "GET", calendar_path, check=200, QUERY_STRING=(
                 "view=freebusy&format=vfreebusy"
