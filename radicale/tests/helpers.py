@@ -25,9 +25,11 @@ This module offers helpers to use in tests.
 
 """
 
+import hashlib
 import logging
 import os
 import re
+import uuid
 
 from radicale import config, types
 
@@ -41,6 +43,13 @@ def get_file_path(file_name: str) -> str:
 def get_file_content(file_name: str) -> str:
     with open(get_file_path(file_name), encoding="utf-8") as f:
         return f.read()
+
+
+def busy_event_uid(collection_path: str, start: str, end: str, fbtype: str) -> str:
+    """UID of one busy VEVENT: SHA-256 of path, UTC period, and FBTYPE."""
+    key = "%s\n%s\n%s\n%s" % (collection_path, start, end, fbtype)
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return str(uuid.UUID(digest[:32]))
 
 
 def configuration_to_dict(configuration: config.Configuration) -> types.CONFIG:

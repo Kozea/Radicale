@@ -29,7 +29,8 @@ from http import client
 from typing import Tuple, Union
 from urllib.parse import parse_qs, quote
 
-from radicale import httputils, pathutils, storage, types, utils, xmlutils
+from radicale import (httputils, pathutils, sharing, storage, types, utils,
+                      xmlutils)
 from radicale.app.base import Access, ApplicationBase
 from radicale.app.report import freebusy_collection_text
 from radicale.item import get_etag
@@ -77,17 +78,35 @@ def requests_freebusy_view(environ: types.WSGIEnviron) -> bool:
     return view is not None and "freebusy" in view
 
 
-def share_forces_freebusy_view(share: Union[dict, None]) -> bool:
-    """A token can request the free/busy view without ``?view=freebusy``."""
+def _share_actions_config(share: Union[dict, None]) -> dict:
+    """Actions config of a share-by-token, or an empty dict."""
     if not share or share.get("ShareType") != "token":
-        return False
+        return {}
     actions = share.get("Actions")
     if not isinstance(actions, dict):
-        return False
+        return {}
     config = actions.get("config")
     if not isinstance(config, dict):
-        return False
-    return config.get("view") == "freebusy"
+        return {}
+    return config
+
+
+def share_forces_freebusy_view(share: Union[dict, None]) -> bool:
+    """A token can request the free/busy view without ``?view=freebusy``."""
+    return _share_actions_config(share).get("view") == "freebusy"
+
+
+def share_freebusy_format(share: Union[dict, None]) -> str:
+    """Token Actions config ``format`` for the free/busy view.
+
+    Used when the request omits ``format``. ``vfreebusy`` is the default.
+    Map shares ignore this setting; the query selects their format.
+
+    """
+    value = _share_actions_config(share).get("format")
+    if isinstance(value, str) and value in sharing.FREEBUSY_VIEW_FORMATS:
+        return value
+    return "vfreebusy"
 
 
 class ApplicationPartGet(ApplicationBase):
@@ -144,6 +163,16 @@ class ApplicationPartGet(ApplicationBase):
                 return httputils.NOT_ALLOWED
             if query.get("view") != ["freebusy"]:
                 return httputils.BAD_REQUEST
+            formats = query.get("format", [])
+            if not formats:
+                output = share_freebusy_format(share)
+            elif (len(formats) == 1 and
+                    formats[0] in sharing.FREEBUSY_VIEW_FORMATS):
+                output = formats[0]
+            else:
+                logger.warning("Bad free-busy view format on %r: %r",
+                               path, formats)
+                return httputils.BAD_REQUEST
             try:
                 range_start, range_end = self._freebusy_view_range(query)
             except ValueError as e:
@@ -151,17 +180,18 @@ class ApplicationPartGet(ApplicationBase):
                                exc_info=True)
                 return httputils.BAD_REQUEST
             filename = propose_filename(item, share)
+            suffix = "-busy.ics" if output == "vevent" else "-freebusy.ics"
             if filename.lower().endswith(".ics"):
-                filename = filename[:-4] + "-freebusy.ics"
+                filename = filename[:-4] + suffix
             else:
-                filename += "-freebusy.ics"
+                filename += suffix
             content_disposition = self._content_disposition_attachment(filename)
             max_occurrence = self.configuration.get(
                 "reporting", "max_freebusy_occurrence")
             try:
                 answer = freebusy_collection_text(
                     item, range_start, range_end, max_occurrence,
-                    lock_stack.close)
+                    lock_stack.close, output=output)
             except ValueError as e:
                 logger.warning("Bad free-busy view on %r: %s", path, e,
                                exc_info=True)

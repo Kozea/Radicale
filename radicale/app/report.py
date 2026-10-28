@@ -27,6 +27,7 @@ import copy
 import datetime
 import posixpath
 import socket
+import uuid
 import xml.etree.ElementTree as ET
 from http import client
 from typing import (Callable, Iterable, Iterator, List, Optional, Sequence,
@@ -38,7 +39,7 @@ import vobject.base
 from vobject.base import ContentLine
 
 import radicale.item as radicale_item
-from radicale import httputils, pathutils, storage, types, xmlutils
+from radicale import httputils, pathutils, storage, types, utils, xmlutils
 from radicale.app.base import Access, ApplicationBase
 from radicale.item import filter as radicale_filter
 from radicale.log import logger
@@ -89,6 +90,55 @@ def render_freebusy(periods: List[FreeBusyPeriod],
         fb = vfb.add('freebusy')
         fb.value = [(_to_utc(start), _to_utc(end))]
         fb.params['FBTYPE'] = [fbtype]
+    return cal.serialize()
+
+
+def _busy_event_uid(collection_path: str, start: datetime.datetime,
+                    end: datetime.datetime, fbtype: str) -> str:
+    """UUID from the stored collection path, UTC period, and FBTYPE.
+
+    FBTYPE keeps a busy period and a tentative period that share the
+    same start and end from colliding.
+
+    """
+    key = "%s\n%s\n%s\n%s" % (
+        collection_path,
+        _to_utc(start).strftime(DT_FORMAT_TIMESTAMP),
+        _to_utc(end).strftime(DT_FORMAT_TIMESTAMP),
+        fbtype)
+    return str(uuid.UUID(utils.sha256_str(key)[:32]))
+
+
+def render_busy_events(periods: List[FreeBusyPeriod],
+                       collection_path: str) -> str:
+    """VCALENDAR with one VEVENT per merged busy period.
+
+    ``FREE`` periods are omitted. Transparent events never reach
+    ``periods``. Each UID and DTSTAMP depend only on the emitted period
+    so a subscriber does not see a change when a source event is
+    retitled or the document is fetched again. vobject fills a missing
+    DTSTAMP with the current time.
+
+    """
+    cal = vobject.iCalendar()
+    for start, end, fbtype in _merge_freebusy_periods(periods):
+        if fbtype == "FREE":
+            continue
+        start = _to_utc(start).replace(microsecond=0)
+        end = _to_utc(end).replace(microsecond=0)
+        vevent = cal.add('vevent')
+        vevent.add('uid').value = _busy_event_uid(
+            collection_path, start, end, fbtype)
+        vevent.add('dtstamp').value = start
+        vevent.add('dtstart').value = start
+        vevent.add('dtend').value = end
+        if fbtype == "BUSY-TENTATIVE":
+            summary = "Tentative"
+        else:
+            summary = "Busy"
+        vevent.add('summary').value = summary
+        vevent.add('transp').value = "OPAQUE"
+        vevent.add('class').value = "PUBLIC"
     return cal.serialize()
 
 
@@ -176,7 +226,8 @@ def freebusy_collection_text(collection: storage.BaseCollection,
                              range_end: datetime.datetime,
                              max_occurrence: int,
                              unlock_storage_fn: Callable[[], None],
-                             time_range_element: Optional[ET.Element] = None
+                             time_range_element: Optional[ET.Element] = None,
+                             output: str = "vfreebusy"
                              ) -> str:
     range_start = _to_utc(range_start)
     range_end = _to_utc(range_end)
@@ -225,7 +276,11 @@ def freebusy_collection_text(collection: storage.BaseCollection,
 
         periods.extend(freebusy_periods(
             item, range_start, range_end, max_occurrence))
-    return render_freebusy(periods, range_start, range_end)
+    if output == "vevent":
+        return render_busy_events(periods, collection.path)
+    if output == "vfreebusy":
+        return render_freebusy(periods, range_start, range_end)
+    raise ValueError("unsupported free-busy format: %r" % output)
 
 
 def free_busy_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],

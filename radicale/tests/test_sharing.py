@@ -41,8 +41,8 @@ import radicale.tests.custom.storage_simple_sync
 from radicale import pathutils, sharing, storage, xmlutils
 from radicale.item import Item
 from radicale.tests import BaseTest
-from radicale.tests.helpers import (compare_dict, find_hook_json_in_list,
-                                    get_file_content)
+from radicale.tests.helpers import (busy_event_uid, compare_dict,
+                                    find_hook_json_in_list, get_file_content)
 
 
 def _supported_report_name(supported):
@@ -2141,6 +2141,266 @@ END:VCALENDAR
                 "GET", path_shared, check=200, login="user:userpw")
             assert "Hidden title" in answer
             assert "hidden-secret" in answer
+
+    def test_sharing_api_token_freebusy_vevent(self) -> None:
+        """Token format=vevent is busy VEVENTs and leaks nothing with only f."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "permit_create_token": True,
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"},
+                        "rights": {"type": "owner_only"}})
+        path_cal = "/owner/cal-token-fb-vevent/"
+        path_shared = "/user/cal-token-fb-vevent/"
+        collection_path = "owner/cal-token-fb-vevent"
+        self.mkcalendar(path_cal, login="owner:ownerpw")
+        event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:hidden-secret
+SUMMARY:Hidden title
+DESCRIPTION:Hidden details
+LOCATION:Hidden place
+ORGANIZER:mailto:hidden@example.com
+ATTENDEE:mailto:hidden@example.com
+CLASS:PRIVATE
+DTSTART:20130901T160000Z
+DTEND:20130901T170000Z
+END:VEVENT
+END:VCALENDAR
+"""
+        self.put(path_cal + "event.ics", event, login="owner:ownerpw")
+        inside = datetime.datetime.now(datetime.timezone.utc).replace(
+            hour=12, minute=0, second=0, microsecond=0)
+        inside_end = inside + datetime.timedelta(hours=1)
+        inside_start_text = inside.strftime("%Y%m%dT%H%M%SZ")
+        inside_end_text = inside_end.strftime("%Y%m%dT%H%M%SZ")
+        inside_event = """\
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Radicale//EN
+BEGIN:VEVENT
+UID:inside-secret
+SUMMARY:Inside secret
+DESCRIPTION:Inside details
+DTSTART:%s
+DTEND:%s
+END:VEVENT
+END:VCALENDAR
+""" % (inside_start_text, inside_end_text)
+        self.put(path_cal + "inside.ics", inside_event, login="owner:ownerpw")
+        window = "start=20130901T000000Z&end=20130902T000000Z"
+        historic_uid = busy_event_uid(
+            collection_path, "20130901T160000Z", "20130901T170000Z", "BUSY")
+        inside_uid = busy_event_uid(
+            collection_path, inside_start_text, inside_end_text, "BUSY")
+        secrets = (
+            "Hidden title", "Hidden details", "Hidden place",
+            "hidden@example.com", "hidden-secret",
+            "Inside secret", "Inside details", "inside-secret",
+            "DESCRIPTION", "LOCATION", "ORGANIZER", "ATTENDEE",
+            "PRIVATE", "FREEBUSY", "VFREEBUSY")
+
+        def assert_busy(answer: str, headers: Union[dict, None],
+                        uid: str, start: str, end: str) -> None:
+            if headers is not None:
+                assert headers["Content-Type"].startswith("text/calendar")
+                assert "-busy.ics" in headers["Content-Disposition"]
+                assert "-freebusy.ics" not in headers["Content-Disposition"]
+            vcalendar = vobject.readOne(answer)
+            assert "vfreebusy" not in vcalendar.contents
+            components = vcalendar.contents["vevent"]
+            assert len(components) == 1
+            component = components[0]
+            assert component.summary.value == "Busy"
+            assert component.uid.value == uid
+            assert component.transp.value == "OPAQUE"
+            assert component.getChildValue("class") == "PUBLIC"
+            assert component.dtstart.value.strftime("%Y%m%dT%H%M%SZ") == start
+            assert component.dtend.value.strftime("%Y%m%dT%H%M%SZ") == end
+            for secret in secrets:
+                assert secret not in answer
+
+        def make_token(permissions: str, actions: Union[dict, None] = None) -> str:
+            json_dict: dict = {
+                "PathMapped": path_cal,
+                "Permissions": permissions,
+                "Enabled": True,
+            }
+            if actions is not None:
+                json_dict["Actions"] = actions
+            _, _headers, answer = self._sharing_api_json(
+                "token", "create", check=200, login="owner:ownerpw",
+                json_dict=json_dict)
+            parsed = json.loads(answer)
+            assert parsed["Status"] == "success"
+            return parsed["PathOrToken"]
+
+        calendar_query = """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop>
+        <D:getetag />
+        <C:calendar-data />
+    </D:prop>
+    <C:filter>
+        <C:comp-filter name="VCALENDAR">
+            <C:comp-filter name="VEVENT" />
+        </C:comp-filter>
+    </C:filter>
+</C:calendar-query>"""
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test vevent free-busy: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            _, _headers, answer = self._sharing_api_json(
+                "all", "info", check=200, login="owner:ownerpw", json_dict={})
+            assert json.loads(answer)["SupportedActions"]["config"]["format"] == "str"
+
+            _, _headers, answer = self._sharing_api_json(
+                "token", "create", check=400, login="owner:ownerpw", json_dict={
+                    "PathMapped": path_cal,
+                    "Permissions": "f",
+                    "Enabled": True,
+                    "Actions": {"config": {"format": "calendar"}}})
+            for secret in secrets:
+                assert secret not in answer
+
+            token_f = make_token("f")
+            _status, _headers, answer = self.request("GET", token_f, check=403)
+            for secret in secrets:
+                assert secret not in answer
+            _status, headers, answer = self.request(
+                "GET", token_f, check=200,
+                QUERY_STRING="view=freebusy&format=vevent&" + window)
+            assert_busy(answer, headers, historic_uid,
+                        "20130901T160000Z", "20130901T170000Z")
+            assert inside_uid not in answer
+            _status, headers_again, answer_again = self.request(
+                "GET", token_f, check=200,
+                QUERY_STRING="view=freebusy&format=vevent&" + window)
+            assert answer_again == answer
+            assert headers_again["ETag"] == headers["ETag"]
+            _status, head_headers, head_answer = self.request(
+                "HEAD", token_f, check=200,
+                QUERY_STRING="view=freebusy&format=vevent&" + window)
+            assert head_answer == ""
+            assert head_headers["ETag"] == headers["ETag"]
+            _status, _headers, answer = self.request(
+                "GET", token_f, check=200,
+                QUERY_STRING="view=freebusy&" + window)
+            assert answer.count("BEGIN:VFREEBUSY") == 1
+            assert "BEGIN:VEVENT" not in answer
+            assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+            for secret in ("Hidden title", "hidden-secret", "BEGIN:VEVENT"):
+                assert secret not in answer
+            _status, _headers, answer = self.request(
+                "GET", token_f + "event.ics", check=403,
+                QUERY_STRING="view=freebusy&format=vevent&" + window)
+            for secret in ("Hidden title", "hidden-secret"):
+                assert secret not in answer
+            _status, _headers, answer = self.request(
+                "REPORT", token_f, calendar_query, check=403)
+            for secret in ("Hidden title", "hidden-secret"):
+                assert secret not in answer
+            self.put(token_f + "new.ics", event, check=403)
+            self.get(path_cal + "new.ics", check=404, login="owner:ownerpw")
+
+            token_view = make_token(
+                "f", {"config": {"view": "freebusy", "format": "vevent"}})
+            _status, headers, answer = self.request("GET", token_view, check=200)
+            assert_busy(answer, headers, inside_uid,
+                        inside_start_text, inside_end_text)
+            assert historic_uid not in answer
+            assert "20130901T160000Z" not in answer
+            _status, headers, answer = self.request(
+                "GET", token_view, check=200, QUERY_STRING=window)
+            assert_busy(answer, headers, historic_uid,
+                        "20130901T160000Z", "20130901T170000Z")
+            _status, headers, answer = self.request(
+                "GET", token_view, check=200,
+                QUERY_STRING="view=freebusy&" + window)
+            assert_busy(answer, headers, historic_uid,
+                        "20130901T160000Z", "20130901T170000Z")
+            _status, headers, answer = self.request(
+                "GET", token_view, check=200,
+                QUERY_STRING="format=vfreebusy&" + window)
+            assert headers["Content-Type"].startswith("text/calendar")
+            assert "-freebusy.ics" in headers["Content-Disposition"]
+            assert answer.count("BEGIN:VFREEBUSY") == 1
+            assert "BEGIN:VEVENT" not in answer
+            assert "FREEBUSY;FBTYPE=BUSY:20130901T160000Z/20130901T170000Z" in answer
+            for secret in ("Hidden title", "hidden-secret"):
+                assert secret not in answer
+            _status, _headers, answer = self.request(
+                "GET", token_view, check=400, QUERY_STRING="view=other")
+            for secret in secrets:
+                assert secret not in answer
+            _status, _headers, answer = self.request(
+                "GET", token_view, check=400, QUERY_STRING="format=calendar")
+            for secret in secrets:
+                assert secret not in answer
+            self.request(
+                "PUT", token_view + "new.ics", event, check=405,
+                QUERY_STRING="view=freebusy&format=vevent")
+            self.get(path_cal + "new.ics", check=404, login="owner:ownerpw")
+
+            _, _headers, answer = self._sharing_api_json(
+                "token", "update", check=200, login="owner:ownerpw", json_dict={
+                    "PathOrToken": token_view,
+                    "Actions": {"config": {
+                        "format": sharing.SHARING_ACTIONS_DELETE_VALUE}}})
+            assert json.loads(answer)["Status"] == "success"
+            _status, headers, answer = self.request("GET", token_view, check=200)
+            assert headers["Content-Type"].startswith("text/calendar")
+            assert answer.count("BEGIN:VFREEBUSY") == 1
+            assert "BEGIN:VEVENT" not in answer
+            for secret in ("Inside secret", "inside-secret"):
+                assert secret not in answer
+
+            token_format = make_token("rp", {"config": {"format": "vevent"}})
+            _status, _headers, answer = self.request("GET", token_format, check=200)
+            assert "Hidden title" in answer
+            assert "hidden-secret" in answer
+            _status, headers, answer = self.request(
+                "GET", token_format, check=200,
+                QUERY_STRING="view=freebusy&" + window)
+            assert_busy(answer, headers, historic_uid,
+                        "20130901T160000Z", "20130901T170000Z")
+
+            _, _headers, answer = self._sharing_api_json(
+                "map", "create", check=200, login="owner:ownerpw", json_dict={
+                    "User": "user",
+                    "PathMapped": path_cal,
+                    "PathOrToken": path_shared,
+                    "Permissions": "f",
+                    "Enabled": True,
+                    "Hidden": False,
+                    "Actions": {"config": {
+                        "view": "freebusy", "format": "vevent"}}})
+            assert json.loads(answer)["Status"] == "success"
+            self._sharing_api_json(
+                "map", "enable", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+            self._sharing_api_json(
+                "map", "unhide", check=200, login="user:userpw",
+                json_dict={"PathOrToken": path_shared})
+            _status, _headers, answer = self.request(
+                "GET", path_shared, check=403, login="user:userpw")
+            for secret in ("Hidden title", "hidden-secret", "Inside secret"):
+                assert secret not in answer
+            _status, headers, answer = self.request(
+                "GET", path_shared, check=200, login="user:userpw",
+                QUERY_STRING="view=freebusy&format=vevent&" + window)
+            assert_busy(answer, headers, historic_uid,
+                        "20130901T160000Z", "20130901T170000Z")
 
     def test_sharing_api_map_freebusy(self) -> None:
         """An f share lists free-busy for calendars and not for address books."""

@@ -2378,6 +2378,32 @@ use this view, including an optional `start` and `end`. Any other
 `view` value is rejected. Other methods keep the token permissions.
 See [Collection Sharing](https://github.com/Kozea/Radicale/blob/master/SHARING.md).
 
+`format` selects the free/busy document. `vfreebusy` (the default)
+returns one `VFREEBUSY`. `vevent` returns one `VEVENT` per merged busy
+period so clients that ignore `VFREEBUSY` (Google Calendar "From URL",
+Outlook) can show busy time. Each event has `SUMMARY` `Busy`, or
+`Tentative` when the period is `BUSY-TENTATIVE`, `DTSTART` and `DTEND`
+in UTC, `TRANSP:OPAQUE`, and `CLASS:PUBLIC`. `FREE` periods and
+transparent events are omitted. The `UID` is a UUID from the SHA-256
+of the stored collection path, the UTC start and end, and the busy
+type, so it stays the same while that period stays the same. Source summaries,
+descriptions, locations, attendees, and UIDs are omitted. `format`
+uses the same `start`, `end`, `freebusy_view_past_days`,
+`freebusy_view_future_days`, and `max_freebusy_occurrence` values as
+`vfreebusy`. Permission `f` is enough. The download name ends in
+`-busy.ics`.
+
+Example: `?view=freebusy&format=vevent`
+
+The Web UI free/busy link under each calendar uses this format, so the
+URL copied into Google Calendar or Outlook subscribes to busy events.
+`format=vfreebusy` still returns one `VFREEBUSY`.
+
+A share-by-token can set Actions config `format` to `vevent`. When the
+request omits `format`, that value is used. A `format` on the query
+overrides the token. Any other `format` value is rejected. Map shares
+ignore the stored `format`; the query selects theirs.
+
 #### [sharing]
 
 _(>= 3.7.0)_
@@ -2788,7 +2814,8 @@ The following `permissions` are recognized:
 * **i:** subset of **r** that only allows direct access via HTTP method GET
   (CalDAV/CardDAV is susceptible to expensive search requests)
 * **f:** read the free-busy time of a calendar, without event details
-  (**r** includes this)
+  (**r** includes this). This covers `GET` and `HEAD` with
+  `?view=freebusy`, including `format=vevent`
 * **W:** write collections (excluding address books and calendars)
 * **w:** write address book and calendar collections
 * **D:** allow deleting a collection in case `permit_delete_collection=False` _(>= 3.3.0)_
