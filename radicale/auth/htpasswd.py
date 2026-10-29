@@ -116,7 +116,7 @@ class Auth(auth.BaseAuth):
                 import bcrypt
             except ImportError as e:
                 if (self._encryption == "autodetect") and (self._htpasswd_bcrypt_use == 0):
-                    logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require bycrypt module, but currently no entries found", self._encryption)
+                    logger.warning("auth htpasswd encryption is 'radicale.auth.htpasswd_encryption.%s' which can require bcrypt module, but currently no entries found", self._encryption)
                 else:
                     raise RuntimeError(
                         "The htpasswd encryption method 'bcrypt' or 'autodetect' requires "
