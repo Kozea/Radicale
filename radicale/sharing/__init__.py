@@ -51,6 +51,8 @@ DB_FIELDS_V1: Sequence[str] = ('ShareType', 'PathOrToken', 'PathMapped', 'Conver
 #                     bday: check VADDRESSBOOK VCARD(vcf) entries for BDAY and convert to VCALENDAR reoccuring VEVENT(ics)
 # Actions:          Actions structure in JSON
 #                     config.view = "freebusy" serves free/busy on token GET/HEAD
+#                     config.format = "vevent" (default) or "vfreebusy"
+#                       (one VEVENT per busy period when the request omits format)
 #                     (future reserved for e.g. "filter", "filter_pre", "filter_post" or anything else, implemented on request)
 
 DB_TYPES_V1: dict[str, type] = {
@@ -169,9 +171,18 @@ def check_template_not_empty(data: Any) -> str:
     return data
 
 
+FREEBUSY_VIEW_FORMATS: Sequence[str] = ("vfreebusy", "vevent")
+
+
 def check_freebusy_view(data: Any) -> str:
     if not isinstance(data, str) or data != "freebusy":
         raise ValueError("unsupported view: %r" % data)
+    return data
+
+
+def check_freebusy_format(data: Any) -> str:
+    if not isinstance(data, str) or data not in FREEBUSY_VIEW_FORMATS:
+        raise ValueError("unsupported free-busy format: %r" % data)
     return data
 
 
@@ -209,6 +220,7 @@ ACTIONS_WHITELIST: dict = {
             'conversion_bday_categories': str,
             'conversion_bday_age_max': check_bday_max_age,
             'view': check_freebusy_view,
+            'format': check_freebusy_format,
             },
         }
 
@@ -221,6 +233,7 @@ ACTIONS_WHITELIST_INFO: dict = {
             'conversion_bday_categories': "str",
             'conversion_bday_age_max': "int",
             'view': "str",
+            'format': "str",
             },
         }
 

@@ -18,18 +18,27 @@
 Radicale tests with simple requests and rights.
 """
 
+import datetime
 import logging
 import os
 
+import vobject
+
 from radicale import xmlutils
 from radicale.tests import BaseTest
-from radicale.tests.helpers import get_file_content
+from radicale.tests.helpers import busy_event_uid, get_file_content
 
 
 def _supported_report_name(supported):
     report = supported.find(xmlutils.make_clark("D:report"))
     assert report is not None
     return xmlutils.make_human_tag(list(report)[0].tag)
+
+
+def _utc(value: datetime.datetime) -> datetime.datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=datetime.timezone.utc)
+    return value.astimezone(datetime.timezone.utc)
 
 
 class TestBaseRightsRequests(BaseTest):
@@ -678,7 +687,8 @@ END:VEVENT
 END:VCALENDAR
 """
         self.put(calendar_path + "event.ics", event, login="tmp:bepo")
-        query = "view=freebusy&start=20130901T000000Z&end=20130902T000000Z"
+        query = ("view=freebusy&format=vfreebusy"
+                 "&start=20130901T000000Z&end=20130902T000000Z")
         _, _, answer = self.request(
             "GET", calendar_path, check=403, login="other:bepo")
         assert "Hidden title" not in answer
@@ -704,6 +714,192 @@ END:VCALENDAR
         for secret in ("SUMMARY", "DESCRIPTION", "UID", "Hidden title",
                        "Hidden details", "hidden-secret", "BEGIN:VEVENT"):
             assert secret not in answer
+
+    def test_from_file_freebusy_vevent(self) -> None:
+        """Permission f reads busy VEVENTs and none of the source event."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[write-all]
+user: tmp
+collection: .*
+permissions: RrWw
+[freebusy]
+user: other
+collection: public/[^/]*
+permissions: f
+[limited]
+user: limited
+collection: public/[^/]*
+permissions: i""")
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\nother:bepo\nlimited:bepo\n")
+        self.configure({
+            "rights": {"type": "from_file", "file": rights_file_path},
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": "plain"}})
+        self.mkcol("/public/", login="tmp:bepo")
+        calendar_path = "/public/calendar/"
+        self.mkcalendar(calendar_path, login="tmp:bepo")
+
+        def vevent(uid: str, summary: str, start: str, end: str,
+                   extra: str = "") -> str:
+            lines = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//Radicale//EN",
+                "BEGIN:VEVENT",
+                "UID:%s" % uid,
+                "SUMMARY:%s" % summary,
+                "DESCRIPTION:Hidden details",
+                "LOCATION:Hidden place",
+                "ORGANIZER:mailto:hidden@example.com",
+                "ATTENDEE:mailto:hidden@example.com",
+                "CLASS:PRIVATE",
+                "DTSTART:%s" % start,
+                "DTEND:%s" % end,
+            ]
+            if extra:
+                lines.append(extra)
+            lines.extend(["END:VEVENT", "END:VCALENDAR", ""])
+            return "\n".join(lines)
+
+        self.put(calendar_path + "event.ics", vevent(
+            "hidden-secret", "Hidden title",
+            "20130901T160000Z", "20130901T170000Z"), login="tmp:bepo")
+        self.put(calendar_path + "other.ics", vevent(
+            "other-secret", "Other title",
+            "20130901T170000Z", "20130901T180000Z"), login="tmp:bepo")
+        self.put(calendar_path + "tentative.ics", vevent(
+            "tentative-secret", "Tentative title",
+            "20130901T190000Z", "20130901T200000Z",
+            "STATUS:TENTATIVE"), login="tmp:bepo")
+        self.put(calendar_path + "cancelled.ics", vevent(
+            "cancelled-secret", "Cancelled title",
+            "20130901T120000Z", "20130901T130000Z",
+            "STATUS:CANCELLED"), login="tmp:bepo")
+        self.put(calendar_path + "transparent.ics", vevent(
+            "transparent-secret", "Transparent title",
+            "20130901T140000Z", "20130901T150000Z",
+            "TRANSP:TRANSPARENT"), login="tmp:bepo")
+        self.put(calendar_path + "outside.ics", vevent(
+            "outside-secret", "Outside title",
+            "20130903T160000Z", "20130903T170000Z"), login="tmp:bepo")
+
+        secrets = (
+            "Hidden title", "Other title", "Tentative title",
+            "Cancelled title", "Transparent title", "Outside title",
+            "Hidden details", "Hidden place", "hidden@example.com",
+            "hidden-secret", "other-secret", "tentative-secret",
+            "cancelled-secret", "transparent-secret", "outside-secret",
+            "DESCRIPTION", "LOCATION", "ORGANIZER", "ATTENDEE",
+            "PRIVATE", "STATUS", "TENTATIVE", "FREEBUSY", "VFREEBUSY")
+        window = "start=20130901T000000Z&end=20130902T000000Z"
+        query = "view=freebusy&format=vevent&" + window
+        utc = datetime.timezone.utc
+        expected = [
+            (datetime.datetime(2013, 9, 1, 16, 0, tzinfo=utc),
+             datetime.datetime(2013, 9, 1, 18, 0, tzinfo=utc),
+             "BUSY", "Busy"),
+            (datetime.datetime(2013, 9, 1, 19, 0, tzinfo=utc),
+             datetime.datetime(2013, 9, 1, 20, 0, tzinfo=utc),
+             "BUSY-TENTATIVE", "Tentative"),
+        ]
+
+        def parsed_events(answer: str) -> list:
+            vcalendar = vobject.readOne(answer)
+            assert "vfreebusy" not in vcalendar.contents
+            found = []
+            for component in vcalendar.contents.get("vevent", []):
+                assert set(component.contents) == {
+                    "uid", "dtstamp", "dtstart", "dtend", "summary",
+                    "transp", "class"}
+                assert component.transp.value == "OPAQUE"
+                assert component.getChildValue("class") == "PUBLIC"
+                assert _utc(component.dtstamp.value) == _utc(
+                    component.dtstart.value)
+                found.append((
+                    _utc(component.dtstart.value),
+                    _utc(component.dtend.value),
+                    component.summary.value,
+                    component.uid.value))
+            return found
+
+        _, _, answer = self.request(
+            "GET", calendar_path, check=403, login="other:bepo")
+        for secret in secrets:
+            assert secret not in answer
+        _, headers, answer = self.request(
+            "GET", calendar_path, check=200, login="other:bepo",
+            QUERY_STRING=query)
+        assert headers["Content-Type"].startswith("text/calendar")
+        assert "-busy.ics" in headers["Content-Disposition"]
+        assert "-freebusy.ics" not in headers["Content-Disposition"]
+        for secret in secrets:
+            assert secret not in answer
+        events = parsed_events(answer)
+        assert [(start, end, summary) for start, end, summary, _uid in events] == [
+            (start, end, summary) for start, end, _fbtype, summary in expected]
+        for start, end, fbtype, _summary in expected:
+            uid = busy_event_uid(
+                "public/calendar",
+                start.strftime("%Y%m%dT%H%M%SZ"),
+                end.strftime("%Y%m%dT%H%M%SZ"),
+                fbtype)
+            assert uid in answer
+        _, headers_again, answer_again = self.request(
+            "GET", calendar_path, check=200, login="other:bepo",
+            QUERY_STRING=query)
+        assert answer_again == answer
+        assert headers_again["ETag"] == headers["ETag"]
+        _, head_headers, head_answer = self.request(
+            "HEAD", calendar_path, check=200, login="other:bepo",
+            QUERY_STRING=query)
+        assert head_answer == ""
+        assert head_headers["ETag"] == headers["ETag"]
+        assert head_headers["Content-Type"].startswith("text/calendar")
+
+        _, plain_headers, plain = self.request(
+            "GET", calendar_path, check=200, login="other:bepo",
+            QUERY_STRING="view=freebusy&" + window)
+        assert plain == answer
+        assert "-busy.ics" in plain_headers["Content-Disposition"]
+        for secret in secrets:
+            assert secret not in plain
+
+        _, _, answer = self.request(
+            "GET", calendar_path, check=200, login="other:bepo",
+            QUERY_STRING="view=freebusy&format=vfreebusy&" + window)
+        assert answer.count("BEGIN:VFREEBUSY") == 1
+        assert "BEGIN:VEVENT" not in answer
+        _, _, answer = self.request(
+            "GET", calendar_path, check=400, login="other:bepo",
+            QUERY_STRING=query + "&format=calendar")
+        for secret in ("Hidden title", "hidden-secret", "BEGIN:VEVENT"):
+            assert secret not in answer
+        _, _, answer = self.request(
+            "GET", calendar_path + "event.ics", check=403, login="other:bepo",
+            QUERY_STRING=query)
+        for secret in ("Hidden title", "hidden-secret"):
+            assert secret not in answer
+        self.request(
+            "PUT", calendar_path + "new.ics", "BEGIN:VCALENDAR\nEND:VCALENDAR",
+            check=405, login="other:bepo", QUERY_STRING=query)
+        self.request(
+            "GET", calendar_path + "new.ics", check=404, login="tmp:bepo")
+
+        _, _, full = self.request(
+            "GET", calendar_path, check=200, login="limited:bepo")
+        assert "Hidden title" in full
+        assert "hidden-secret" in full
+        _, _, limited = self.request(
+            "GET", calendar_path, check=200, login="limited:bepo",
+            QUERY_STRING=query)
+        assert limited == answer_again
+        for secret in secrets:
+            assert secret not in limited
 
     def test_custom(self) -> None:
         """Custom rights management."""
