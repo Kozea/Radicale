@@ -2363,6 +2363,35 @@ including an optional <code>start</code> and <code>end</code>. Any other
 <code>view</code> value is rejected. Other methods keep the token
 permissions. See <a href="https://github.com/Kozea/Radicale/blob/master/SHARING.md">Collection
 Sharing</a>.</p>
+<p><code>?view=freebusy</code> returns one <code>VEVENT</code> per
+merged busy period so clients that ignore <code>VFREEBUSY</code> (Google
+Calendar "From URL", Outlook) can show busy time. Each event has
+<code>SUMMARY</code> <code>Busy</code>, or <code>Tentative</code> when
+the period is <code>BUSY-TENTATIVE</code>, <code>DTSTART</code> and
+<code>DTEND</code> in UTC, <code>TRANSP:OPAQUE</code>, and
+<code>CLASS:PUBLIC</code>. <code>FREE</code> periods and transparent
+events are omitted. The <code>UID</code> is a UUID from the SHA-256 of
+the stored collection path, the UTC start and end, and the busy type, so
+it stays the same while that period stays the same. Source summaries,
+descriptions, locations, attendees, and UIDs are omitted.
+<code>start</code>, <code>end</code>,
+<code>freebusy_view_past_days</code>,
+<code>freebusy_view_future_days</code>, and
+<code>max_freebusy_occurrence</code> apply. Permission <code>f</code> is
+enough. The download name ends in <code>-busy.ics</code>.</p>
+<p><code>format=vfreebusy</code> returns one <code>VFREEBUSY</code>.
+<code>format=vevent</code> is the same document as omitting
+<code>format</code>. Any other <code>format</code> value is
+rejected.</p>
+<p>Example: <code>?view=freebusy</code></p>
+<p>The Web UI free/busy link under each calendar is this URL.
+<code>format=vfreebusy</code> still returns one
+<code>VFREEBUSY</code>.</p>
+<p>A share-by-token can set Actions config <code>format</code> to
+<code>vfreebusy</code>. When the request omits <code>format</code>, the
+response is busy events. A <code>format</code> on the query overrides
+the token. Map shares ignore the stored <code>format</code>; an omitted
+<code>format</code> is busy events.</p>
 </section>
 </section>
 <section class="level4" id="sharing">
@@ -2756,7 +2785,10 @@ calendars)</li>
 direct access via HTTP method GET (CalDAV/CardDAV is susceptible to
 expensive search requests)</li>
 <li><strong>f:</strong> read the free-busy time of a calendar, without
-event details (<strong>r</strong> includes this)</li>
+event details (<strong>r</strong> includes this). <code>GET</code> and
+<code>HEAD</code> with <code>?view=freebusy</code> return one
+<code>VEVENT</code> per busy period. <code>format=vfreebusy</code>
+returns one <code>VFREEBUSY</code></li>
 <li><strong>W:</strong> write collections (excluding address books and
 calendars)</li>
 <li><strong>w:</strong> write address book and calendar collections</li>
