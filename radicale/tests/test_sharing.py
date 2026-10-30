@@ -4131,6 +4131,167 @@ permissions: RrWw""")
             _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner1:owner1pw", json_dict=json_dict)
             self.configure({"sharing": {"permit_create_map": "False"}})
 
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
+    def test_sharing_api_permissions_map_only_self(self) -> None:
+        """sharing API usage tests related to permit_create_map_only_self."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[default-collection]
+user: .+
+collection: {user}
+permissions: RrWw
+[owner1-M]
+user: owner1
+collection: {user}/abook-M-[^/]+(/.*)?
+permissions: RrWwM
+[owner1-m]
+user: owner1
+collection: {user}/abook-m-[^/]+(/.*)?
+permissions: RrWwm
+[owner1-read-user1]
+user: owner1
+collection: user1/shared-[^/]+
+permissions: r
+[default]
+user: .+
+collection: {user}(/.*)?
+permissions: RrWw""")
+
+        self.configure({"rights": {"file": rights_file_path}})
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "False",
+                                    "permit_create_map_only_self": "True",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file"}})
+
+        json_dict: dict
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type,
+                                        "permit_create_map_only_self": "True"}})
+
+            path_abook = "/owner1/abook-" + db_type + "/"
+            path_abook2 = "/owner1/abook2-" + db_type + "/"
+            path_abook_M = "/owner1/abook-M-" + db_type + "/"
+            path_abook_m = "/owner1/abook-m-" + db_type + "/"
+            path_self = "/owner1/bday-" + db_type + ".ics/"
+            path_self2 = "/owner1/bday2-" + db_type + ".ics/"
+            path_self_m = "/owner1/bday-m-" + db_type + ".ics/"
+            path_user1 = "/user1/bday-owner1-" + db_type + ".ics/"
+            path_user1_M = "/user1/bday-owner1-M-" + db_type + ".ics/"
+
+            logging.info("\n*** prepare")
+            for path in [path_abook, path_abook2, path_abook_M, path_abook_m]:
+                self.create_addressbook(path, login="owner1:owner1pw")
+            self.put(path_abook + "contact2-with-bday.vcf", get_file_content("contact2-with-bday.vcf"), login="owner1:owner1pw")
+
+            logging.info("\n*** check API hook: info/map")
+            _, headers, answer = self._sharing_api_json("map", "info", check=200, login="owner1:owner1pw", json_dict={})
+            answer_dict = json.loads(answer)
+            assert answer_dict['PermittedCreateCollectionByMap'] is False
+            assert answer_dict['PermittedCreateCollectionByMapOnlySelf'] is True
+
+            logging.info("\n*** check PROPFIND privileges: RADICALE:share-map-self (only_self=True)")
+            privileges = self._propfind_privileges(path_abook, login="owner1:owner1pw")
+            assert "RADICALE:share-map-self" in privileges
+            assert "RADICALE:share-map" not in privileges
+            privileges_M = self._propfind_privileges(path_abook_M, login="owner1:owner1pw")
+            assert "RADICALE:share-map" in privileges_M
+            assert "RADICALE:share-map-self" not in privileges_M
+            privileges_m = self._propfind_privileges(path_abook_m, login="owner1:owner1pw")
+            assert "RADICALE:share-map" not in privileges_m
+            assert "RADICALE:share-map-self" not in privileges_m
+
+            logging.info("\n*** create map(bday) user1/owner1, only self -> 403")
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_abook
+            json_dict['PathOrToken'] = path_user1
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map(bday) owner1/owner1, only self -> 200")
+            json_dict = {}
+            json_dict['User'] = "owner1"
+            json_dict['PathMapped'] = path_abook
+            json_dict['PathOrToken'] = path_self
+            json_dict['Conversion'] = "bday"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** GET bday collection as owner1 -> ok")
+            _, answer = self.get(path_self, login="owner1:owner1pw")
+            assert "BEGIN:VCALENDAR" in answer
+            assert "BDAY" in answer
+
+            logging.info("\n*** update map(bday) owner1 -> user1, only self -> 403")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_self
+            json_dict['User'] = "user1"
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** GET bday collection as user1 -> not visible")
+            self.request("GET", path_self, check=403, login="user1:user1pw")
+
+            logging.info("\n*** update map(bday) PathMapped to collection denied by m, only self -> 403")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_self
+            json_dict['PathMapped'] = path_abook_m
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map(bday) group/owner1, only self -> 403")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_abook
+            json_dict['PathOrToken'] = "/{user}/bday-group-" + db_type + ".ics/"
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map(bday) owner1/owner1 outside own folder, only self -> 403")
+            json_dict = {}
+            json_dict['User'] = "owner1"
+            json_dict['PathMapped'] = path_abook2
+            json_dict['PathOrToken'] = "/user1/shared-bday-" + db_type + ".ics/"
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map(bday) owner1/owner1, only self / denied m -> 403")
+            json_dict = {}
+            json_dict['User'] = "owner1"
+            json_dict['PathMapped'] = path_abook_m
+            json_dict['PathOrToken'] = path_self_m
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map(bday) user1/owner1, only self / granted M -> 200")
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_abook_M
+            json_dict['PathOrToken'] = path_user1_M
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map(bday) owner1/owner1, only self disabled -> 403")
+            self.configure({"sharing": {"permit_create_map_only_self": "False"}})
+            privileges = self._propfind_privileges(path_abook2, login="owner1:owner1pw")
+            assert "RADICALE:share-map-self" not in privileges
+            json_dict = {}
+            json_dict['User'] = "owner1"
+            json_dict['PathMapped'] = path_abook2
+            json_dict['PathOrToken'] = path_self2
+            json_dict['Conversion'] = "bday"
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
     def test_sharing_api_permissions_default(self) -> None:
         """sharing API usage tests related to global permissions."""
         self.configure({"auth": {"type": "htpasswd",

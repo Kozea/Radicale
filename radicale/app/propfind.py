@@ -365,6 +365,8 @@ def xml_propfind_response(
                     privileges.append("RADICALE:share-token")
                 if ("M" in raw_permissions or (self._sharing.permit_create_map and "m" not in raw_permissions)):
                     privileges.append("RADICALE:share-map")
+                elif self._sharing.permit_create_map_only_self and "m" not in raw_permissions:
+                    privileges.append("RADICALE:share-map-self")
 
             for human_tag in privileges:
                 privilege = ET.Element(xmlutils.make_clark("D:privilege"))

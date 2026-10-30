@@ -103,6 +103,7 @@ API_TYPES_V1: dict[str, type] = {
         "FeatureEnabledCollectionByToken": bool,
         "FeatureEnabledCollectionByBday": bool,
         "PermittedCreateCollectionByMap": bool,
+        "PermittedCreateCollectionByMapOnlySelf": bool,
         "PermittedCreateCollectionByToken": bool,
         "PermittedCreateCollectionByBday": bool,
         "ShareType": str,
@@ -277,6 +278,7 @@ class BaseSharing:
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
         self.permit_create_token = configuration.get("sharing", "permit_create_token")
         self.permit_create_map = configuration.get("sharing", "permit_create_map")
+        self.permit_create_map_only_self = configuration.get("sharing", "permit_create_map_only_self")
         self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
@@ -291,6 +293,7 @@ class BaseSharing:
         logger.info("sharing.collection_by_token: %s", self.sharing_collection_by_token)
         logger.info("sharing.permit_create_token: %s", self.permit_create_token)
         logger.info("sharing.permit_create_map  : %s", self.permit_create_map)
+        logger.info("sharing.permit_create_map_only_self: %s", self.permit_create_map_only_self)
         logger.info("sharing.default_permissions_create_token: %r", self.default_permissions_create_token)
         logger.info("sharing.default_permissions_create_map  : %r", self.default_permissions_create_map)
         logger.info("sharing.permit_properties_overlay: %s", self.permit_properties_overlay)
@@ -726,11 +729,15 @@ class BaseSharing:
             logger.trace("sharing/map: not active")
             return None
 
-    def _map_create_permitted(self, permissions: str) -> bool:
-        """Whether a collection with these rights permissions may be mapped."""
+    def _map_create_permitted(self, permissions: str, owner: str, User: str, PathOrToken: str) -> bool:
+        """Whether owner may map a collection with these rights permissions to User at PathOrToken."""
         if self.permit_create_map:
             return "m" not in permissions
-        return "M" in permissions
+        if "M" in permissions:
+            return True
+        # to self only: share for the owner, in the owner's own folder
+        return (self.permit_create_map_only_self and "m" not in permissions and
+                User == owner and PathOrToken.startswith("/" + owner + "/"))
 
     # *** POST API ***
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
@@ -1244,8 +1251,8 @@ class BaseSharing:
                     logger.warning(api_info + ": share already exists with PathMapped=%r User=%r Conversion=%r", PathMapped, User, Conversion)
                     return httputils.CONFLICT
 
-                if not self._map_create_permitted(access.permissions):
-                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=%s permissions=%r)", PathMapped, user, self.permit_create_map, access.permissions)
+                if not self._map_create_permitted(access.permissions, user, User, PathOrToken):
+                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=%s permit_only_self=%s permissions=%r User=%r)", PathMapped, user, self.permit_create_map, self.permit_create_map_only_self, access.permissions, User)
                     return httputils.NOT_ALLOWED
 
                 if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
@@ -1460,8 +1467,8 @@ class BaseSharing:
                     new_user = share['User'] if User is None else User
                     new_path_mapped = share['PathMapped'] if PathMapped is None else str(PathMapped)
                     access = Access(self._rights, user, user_groups, new_path_mapped, None)
-                    if not self._map_create_permitted(access.permissions):
-                        logger.warning(api_info + ": change to PathMapped=%r User=%r not allowed for owner %r (permit=%s permissions=%r)", new_path_mapped, new_user, user, self.permit_create_map, access.permissions)
+                    if not self._map_create_permitted(access.permissions, user, new_user, PathOrToken):
+                        logger.warning(api_info + ": change to PathMapped=%r User=%r not allowed for owner %r (permit=%s permit_only_self=%s permissions=%r)", new_path_mapped, new_user, user, self.permit_create_map, self.permit_create_map_only_self, access.permissions)
                         return httputils.NOT_ALLOWED
 
                 if user == share['User']:
@@ -1596,6 +1603,7 @@ class BaseSharing:
             if ShareType in ["all", "map"]:
                 answer['FeatureEnabledCollectionByMap'] = self.sharing_collection_by_map
                 answer['PermittedCreateCollectionByMap'] = self.permit_create_map
+                answer['PermittedCreateCollectionByMapOnlySelf'] = self.permit_create_map_only_self
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
                 answer['PermittedCreateCollectionByToken'] = self.permit_create_token

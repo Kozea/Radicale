@@ -2471,6 +2471,19 @@ Default: `false`
 * If `False` it can be explicitly granted by *rights* permissions: `M`
 * If `True` it can be explicitly forbidden by *rights* permissions: `m`
 
+##### permit_create_map_only_self
+
+_(>= 3.9.1)_
+
+Permit create of map-based sharing to self only, e.g. for a birthday calendar, without permitting sharing with other users
+
+Default: `false`
+
+* Only used if `permit_create_map` is `False`
+* The share must be for the owner (`User` is the owner) and in the owner's own folder
+* It can be explicitly forbidden by *rights* permissions: `m`
+* *Rights* permission `M` still grants map-based sharing with other users
+
 ##### permit_properties_overlay
 
 _(>= 3.7.0)_
@@ -2826,7 +2839,7 @@ The following `permissions` are recognized:
 * **T:** permit create of token-based sharing of collection in case `permit_create_token=False` _(>= 3.7.0)_
 * **t:** deny create of token-based sharing of collection in case `permit_create_token=True` _(>= 3.7.0)_
 * **M:** permit create of map-based sharing of collection in case `permit_create_map= False` _(>= 3.7.0)_
-* **m:** deny create of map-based sharing of collection in case `permit_create_map=True` _(>= 3.7.0)_
+* **m:** deny create of map-based sharing of collection in case `permit_create_map=True` _(>= 3.7.0)_, or to self in case `permit_create_map_only_self=True` _(>= 3.9.1)_
 * **P:** permit properties overlay in case permit_properties_overlay=False _(>= 3.7.0)_
 * **p:** deny properties overlay in case permit_properties_overlay=True _(>= 3.7.0)_
 * **E:** enable enforce properties overlay in case enforce_properties_overlay=False _(>= 3.7.0)_

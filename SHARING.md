@@ -200,6 +200,8 @@ Map-based sharing can be accessed as usual after authentication and authorizatio
 
  * `permit_create_map`
    * supported *rights* permissions: `Mm`
+ * `permit_create_map_only_self`
+   * supported *rights* permissions: `m`
 
 #### Workflow
 
@@ -317,6 +319,7 @@ ApiVersion=1
 Status='success'
 FeatureEnabledCollectionByMap=True
 PermittedCreateCollectionByMap=True
+PermittedCreateCollectionByMapOnlySelf=False
 FeatureEnabledCollectionByToken=True
 PermittedCreateCollectionByToken=True
 SupportedConversions=(bday none)
@@ -335,6 +338,7 @@ curl -u user:$userpw --silent -H "accept: application/json" -d "" http://localho
   "Status": "success",
   "FeatureEnabledCollectionByMap": true,
   "PermittedCreateCollectionByMap": true,
+  "PermittedCreateCollectionByMapOnlySelf": false,
   "FeatureEnabledCollectionByToken": true,
   "PermittedCreateCollectionByToken": true,
   "SupportedConversions": [
@@ -426,6 +430,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
    * Provided `User` has at least read access to `PathOrToken`
    * Global permitted by `permit_create_map = True` or `rights` permission `M`
    * Global denied by `permit_create_map = False` or `rights` permission `m`
+   * To self (`User` is the `Owner`, `PathOrToken` in the folder of the `Owner`) also permitted by `permit_create_map_only_self = True`, unless `rights` permission `m`
 
  * Input
 

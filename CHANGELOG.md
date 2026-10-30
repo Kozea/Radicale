@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.1.dev
+* Add: [sharing] permit_create_map_only_self: permit map-based sharing to self only (e.g. birthday calendar) without sharing with other users
 * Fix: [sharing] owner cannot change the user or the mapped collection of a map-based share if not permitted to create it
 * Fix: doc of rights permissions `Mm` and `Tt` in reference config and SHARING.md
 * Add: free/busy view returns one VEVENT per busy period (`?view=freebusy`, a token with Actions `view=freebusy`, and the WebUI link). `format=vfreebusy` still returns one VFREEBUSY

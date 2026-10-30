@@ -632,6 +632,10 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "false",
             "help": "permit create of map-based sharing",
             "type": bool}),
+        ("permit_create_map_only_self", {
+            "value": "false",
+            "help": "permit create of map-based sharing to self only, in case permit_create_map is false",
+            "type": bool}),
         ("permit_properties_overlay", {
             "value": "false",
             "help": "permit properties overlay",

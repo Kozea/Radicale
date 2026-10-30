@@ -105,6 +105,7 @@ export class Permission {
     static #_WRITE_CONTENT = "D:write-content";
     static #_WRITE_PROPERTIES = "D:write-properties";
     static #_SHARE_MAP = "RADICALE:share-map";
+    static #_SHARE_MAP_SELF = "RADICALE:share-map-self";
     static #_SHARE_TOKEN = "RADICALE:share-token";
 
     // Accessors for "get" functions only (no "set" functions)
@@ -112,6 +113,7 @@ export class Permission {
     static get WRITE_CONTENT() { return this.#_WRITE_CONTENT; }
     static get WRITE_PROPERTIES() { return this.#_WRITE_PROPERTIES; }
     static get SHARE_MAP() { return this.#_SHARE_MAP; }
+    static get SHARE_MAP_SELF() { return this.#_SHARE_MAP_SELF; }
     static get SHARE_TOKEN() { return this.#_SHARE_TOKEN; }
 }
 
@@ -149,5 +151,11 @@ export class Collection {
             return false;
         }
         return this.permissions.includes(permission);
+    }
+
+    can_share_by_map() {
+        // sharing to self is only useful for a conversion, which needs an address book
+        return this.has_permission(Permission.SHARE_MAP) ||
+            (this.type === CollectionType.ADDRESSBOOK && this.has_permission(Permission.SHARE_MAP_SELF));
     }
 }
