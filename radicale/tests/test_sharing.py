@@ -4061,6 +4061,76 @@ permissions: RrWw""")
             privileges_P = self._propfind_privileges(path_share, login="user1:user1pw")
             assert "D:write-properties" in privileges_P
 
+    def test_sharing_api_permissions_map_update(self) -> None:
+        """sharing API: changing User or PathMapped of a map needs the create permission."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[default-collection]
+user: .+
+collection: {user}
+permissions: RrWw
+[owner1-share]
+user: owner1
+collection: {user}/cal-share-[^/]+(/.*)?
+permissions: RrWwM
+[default]
+user: .+
+collection: {user}(/.*)?
+permissions: RrWw""")
+
+        self.configure({"rights": {"file": rights_file_path}})
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "False",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file"}})
+
+        json_dict: dict
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_share = "/owner1/cal-share-" + db_type + "/"
+            path_private = "/owner1/cal-private-" + db_type + "/"
+            path_user1 = "/user1/cal-owner1-" + db_type + ".ics/"
+            self.mkcalendar(path_share, login="owner1:owner1pw")
+            self.mkcalendar(path_private, login="owner1:owner1pw")
+
+            logging.info("\n*** create map user1/owner1, granted M -> 200")
+            json_dict = {}
+            json_dict['User'] = "user1"
+            json_dict['PathMapped'] = path_share
+            json_dict['PathOrToken'] = path_user1
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** update map PathMapped to collection without M -> 403")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1
+            json_dict['PathMapped'] = path_private
+            _, headers, answer = self._sharing_api_json("map", "update", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** update map User, granted M -> 200")
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1
+            json_dict['User'] = "user3"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** update map User, globally enabled -> 200")
+            self.configure({"sharing": {"permit_create_map": "True"}})
+            json_dict = {}
+            json_dict['PathOrToken'] = path_user1
+            json_dict['User'] = "user1"
+            _, headers, answer = self._sharing_api_json("map", "update", check=200, login="owner1:owner1pw", json_dict=json_dict)
+            self.configure({"sharing": {"permit_create_map": "False"}})
+
     def test_sharing_api_permissions_default(self) -> None:
         """sharing API usage tests related to global permissions."""
         self.configure({"auth": {"type": "htpasswd",

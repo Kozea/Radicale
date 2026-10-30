@@ -588,6 +588,7 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 
  * Authorization
    * Authenticated user is `Owner` or `User`
+   * On change of `User` or `PathMapped` of a *map*, `Owner` must be permitted to create it (see "map/create")
 
  * Input
 

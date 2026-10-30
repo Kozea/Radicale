@@ -726,6 +726,12 @@ class BaseSharing:
             logger.trace("sharing/map: not active")
             return None
 
+    def _map_create_permitted(self, permissions: str) -> bool:
+        """Whether a collection with these rights permissions may be mapped."""
+        if self.permit_create_map:
+            return "m" not in permissions
+        return "M" in permissions
+
     # *** POST API ***
     def post(self, environ: types.WSGIEnviron, base_prefix: str, path: str, user: str, user_groups: set, request_info: dict) -> types.WSGIResponse:
         # Late import to avoid circular dependency in config
@@ -1238,14 +1244,9 @@ class BaseSharing:
                     logger.warning(api_info + ": share already exists with PathMapped=%r User=%r Conversion=%r", PathMapped, User, Conversion)
                     return httputils.CONFLICT
 
-                if self.permit_create_map is False:
-                    if "M" not in access.permissions:
-                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False and missing permission 'M')", PathMapped, user)
-                        return httputils.NOT_ALLOWED
-                else:
-                    if "m" in access.permissions:
-                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but explicit denied by permission 'm')", PathMapped, user)
-                        return httputils.NOT_ALLOWED
+                if not self._map_create_permitted(access.permissions):
+                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=%s permissions=%r)", PathMapped, user, self.permit_create_map, access.permissions)
+                    return httputils.NOT_ALLOWED
 
                 if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
                     if PathOrToken.startswith("/{user}/"):
@@ -1451,6 +1452,16 @@ class BaseSharing:
                     access = Access(self._rights, user, user_groups, str(PathMapped), None)
                     if not access.check("r") and "i" not in access.permissions:
                         logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
+                        return httputils.NOT_ALLOWED
+
+                if ShareType == "map" and ((User is not None and User != share['User']) or
+                                           (PathMapped is not None and PathMapped != share['PathMapped'])):
+                    # changing the user or the mapped collection is like creating a new share
+                    new_user = share['User'] if User is None else User
+                    new_path_mapped = share['PathMapped'] if PathMapped is None else str(PathMapped)
+                    access = Access(self._rights, user, user_groups, new_path_mapped, None)
+                    if not self._map_create_permitted(access.permissions):
+                        logger.warning(api_info + ": change to PathMapped=%r User=%r not allowed for owner %r (permit=%s permissions=%r)", new_path_mapped, new_user, user, self.permit_create_map, access.permissions)
                         return httputils.NOT_ALLOWED
 
                 if user == share['User']:

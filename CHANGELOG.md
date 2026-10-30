@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.1.dev
+* Fix: [sharing] owner cannot change the user or the mapped collection of a map-based share if not permitted to create it
 * Fix: doc of rights permissions `Mm` and `Tt` in reference config and SHARING.md
 * Add: free/busy view returns one VEVENT per busy period (`?view=freebusy`, a token with Actions `view=freebusy`, and the WebUI link). `format=vfreebusy` still returns one VFREEBUSY
 
