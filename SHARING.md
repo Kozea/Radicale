@@ -375,8 +375,8 @@ Create a share by mapping a collection of an `Owner` to a token.
  * Authorization
    * `PathMapped` is existing and a collection
    * Authenticated user as `Owner` has at least read access to `PathMapped`
-   * Global permitted by `permit_create_token = True` or `rights` permission `t`
-   * Global denied by `permit_create_token = False` or `rights` permission `T`
+   * Global permitted by `permit_create_token = True` or `rights` permission `T`
+   * Global denied by `permit_create_token = False` or `rights` permission `t`
 
  * Input
 
@@ -424,8 +424,8 @@ Create a share by mapping a collection of an `Owner` to an `User`.
    * `PathMapped` is not existing already as a share target for same `User`
    * Authenticated user as `Owner` has at least read access to `PathMapped`
    * Provided `User` has at least read access to `PathOrToken`
-   * Global permitted by `permit_create_map = True` or `rights` permission `m`
-   * Global denied by `permit_create_map = False` or `rights` permission `M`
+   * Global permitted by `permit_create_map = True` or `rights` permission `M`
+   * Global denied by `permit_create_map = False` or `rights` permission `m`
 
  * Input
 
