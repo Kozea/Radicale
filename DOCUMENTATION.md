@@ -2474,6 +2474,7 @@ Default: `false`
   the share must be for the owner (`User` is the owner) and in the owner's own folder
 * If `False` or `self` it can be explicitly granted by *rights* permissions: `M`
 * If `True` or `self` it can be explicitly forbidden by *rights* permissions: `m`
+* If `True` or `False` it can be explicitly limited to self by *rights* permissions: `S` _(>= 3.9.1)_
 
 ##### permit_properties_overlay
 
@@ -2831,6 +2832,7 @@ The following `permissions` are recognized:
 * **t:** deny create of token-based sharing of collection in case `permit_create_token=True` _(>= 3.7.0)_
 * **M:** permit create of map-based sharing of collection in case `permit_create_map=False` or `self` _(>= 3.7.0)_
 * **m:** deny create of map-based sharing of collection in case `permit_create_map=True` or `self` _(>= 3.7.0)_
+* **S:** permit create of map-based sharing of collection to self only, whatever `permit_create_map` is _(>= 3.9.1)_
 * **P:** permit properties overlay in case permit_properties_overlay=False _(>= 3.7.0)_
 * **p:** deny properties overlay in case permit_properties_overlay=True _(>= 3.7.0)_
 * **E:** enable enforce properties overlay in case enforce_properties_overlay=False _(>= 3.7.0)_

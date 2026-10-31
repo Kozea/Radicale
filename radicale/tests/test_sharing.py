@@ -4149,6 +4149,10 @@ permissions: RrWwM
 user: owner1
 collection: {user}/abook-m-[^/]+(/.*)?
 permissions: RrWwm
+[owner1-S]
+user: owner1
+collection: {user}/abook-S-[^/]+(/.*)?
+permissions: RrWwS
 [owner1-read-user1]
 user: owner1
 collection: user1/shared-[^/]+
@@ -4182,14 +4186,17 @@ permissions: RrWw""")
             path_abook2 = "/owner1/abook2-" + db_type + "/"
             path_abook_M = "/owner1/abook-M-" + db_type + "/"
             path_abook_m = "/owner1/abook-m-" + db_type + "/"
+            path_abook_S = "/owner1/abook-S-" + db_type + "/"
             path_self = "/owner1/bday-" + db_type + ".ics/"
             path_self2 = "/owner1/bday2-" + db_type + ".ics/"
             path_self_m = "/owner1/bday-m-" + db_type + ".ics/"
+            path_self_S = "/owner1/bday-S-" + db_type + ".ics/"
             path_user1 = "/user1/bday-owner1-" + db_type + ".ics/"
             path_user1_M = "/user1/bday-owner1-M-" + db_type + ".ics/"
+            path_user1_S = "/user1/bday-owner1-S-" + db_type + ".ics/"
 
             logging.info("\n*** prepare")
-            for path in [path_abook, path_abook2, path_abook_M, path_abook_m]:
+            for path in [path_abook, path_abook2, path_abook_M, path_abook_m, path_abook_S]:
                 self.create_addressbook(path, login="owner1:owner1pw")
             self.put(path_abook + "contact2-with-bday.vcf", get_file_content("contact2-with-bday.vcf"), login="owner1:owner1pw")
 
@@ -4290,6 +4297,34 @@ permissions: RrWw""")
             json_dict['PathOrToken'] = path_self2
             json_dict['Conversion'] = "bday"
             _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            for permit_create_map in ["False", "True"]:
+                logging.info("\n*** permit_create_map=%s / limited to self by S", permit_create_map)
+                self.configure({"sharing": {"permit_create_map": permit_create_map}})
+                privileges_S = self._propfind_privileges(path_abook_S, login="owner1:owner1pw")
+                assert "RADICALE:share-map-self" in privileges_S
+                assert "RADICALE:share-map" not in privileges_S
+
+                logging.info("\n*** create map(bday) user1/owner1, permit_create_map=%s / limited to self by S -> 403", permit_create_map)
+                json_dict = {}
+                json_dict['User'] = "user1"
+                json_dict['PathMapped'] = path_abook_S
+                json_dict['PathOrToken'] = path_user1_S
+                json_dict['Conversion'] = "bday"
+                _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+                logging.info("\n*** create map(bday) owner1/owner1, permit_create_map=%s / limited to self by S -> 200", permit_create_map)
+                json_dict = {}
+                json_dict['User'] = "owner1"
+                json_dict['PathMapped'] = path_abook_S
+                json_dict['PathOrToken'] = path_self_S
+                json_dict['Conversion'] = "bday"
+                _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+                logging.info("\n*** delete map(bday) owner1/owner1 -> 200")
+                json_dict = {}
+                json_dict['PathOrToken'] = path_self_S
+                _, headers, answer = self._sharing_api_json("map", "delete", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
     def test_sharing_api_permissions_default(self) -> None:
         """sharing API usage tests related to global permissions."""

@@ -365,6 +365,7 @@ type = none
 #  self: only to self (e.g. birthday calendar), the share must be in the own folder
 #  If False or self it can be explicitly granted by permissions: M
 #  If True or self it can be explicitly forbidden by permissions: m
+#  If True or False it can be explicitly limited to self by permissions: S
 #permit_create_map = false
 
 # Permit properties overlay

@@ -731,6 +731,8 @@ class BaseSharing:
         """Level of map-based sharing ("true", "self" or "false") for a collection with these rights permissions."""
         if "M" in permissions:
             return "true"
+        if "S" in permissions:
+            return "self"
         if "m" in permissions:
             return "false"
         return self.permit_create_map
