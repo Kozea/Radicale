@@ -363,9 +363,10 @@ def xml_propfind_response(
                 # only offer this privileges if sharing is enabled and not being a share (nested sharing is not supported)
                 if ("T" in raw_permissions or (self._sharing.permit_create_token and "t" not in raw_permissions)):
                     privileges.append("RADICALE:share-token")
-                if ("M" in raw_permissions or (self._sharing.permit_create_map and "m" not in raw_permissions)):
+                map_create_level = self._sharing.map_create_level(raw_permissions)
+                if map_create_level == "true":
                     privileges.append("RADICALE:share-map")
-                elif self._sharing.permit_create_map_only_self and "m" not in raw_permissions:
+                elif map_create_level == "self":
                     privileges.append("RADICALE:share-map-self")
 
             for human_tag in privileges:

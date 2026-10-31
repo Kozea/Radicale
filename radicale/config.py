@@ -56,6 +56,9 @@ VALIDATE_TYPES: Sequence[str] = ("none", "minimal", "unicode-letter", "unicode-n
 # serves H2C, and it is only imported when it is asked for (`radicale/server.py`).
 SERVER_TYPES: Sequence[str] = ("builtin", "hypercorn")
 
+# The values of `[sharing] permit_create_map`: map to anyone, only to oneself, or not at all.
+PERMIT_CREATE_MAP: Sequence[str] = ("true", "self", "false")
+
 
 def positive_int(value: Any) -> int:
     value = int(value)
@@ -148,6 +151,14 @@ def server_types(value: Any) -> str:
     if value not in SERVER_TYPES:
         raise ValueError("unsupported server type: %r (supported: %s)"
                          % (value, "|".join(SERVER_TYPES)))
+    return value
+
+
+def permit_create_map(value: Any) -> str:
+    value = str(value).strip().lower()
+    if value not in PERMIT_CREATE_MAP:
+        raise ValueError("unsupported value: %r (supported: %s)"
+                         % (value, "|".join(PERMIT_CREATE_MAP)))
     return value
 
 
@@ -630,12 +641,9 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": bool}),
         ("permit_create_map", {
             "value": "false",
-            "help": "permit create of map-based sharing",
-            "type": bool}),
-        ("permit_create_map_only_self", {
-            "value": "false",
-            "help": "permit create of map-based sharing to self only, in case permit_create_map is false",
-            "type": bool}),
+            "help": "permit create of map-based sharing: true, self (to self only) or false",
+            "type": permit_create_map,
+            "internal": PERMIT_CREATE_MAP}),
         ("permit_properties_overlay", {
             "value": "false",
             "help": "permit properties overlay",

@@ -4132,8 +4132,8 @@ permissions: RrWw""")
             self.configure({"sharing": {"permit_create_map": "False"}})
 
     @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
-    def test_sharing_api_permissions_map_only_self(self) -> None:
-        """sharing API usage tests related to permit_create_map_only_self."""
+    def test_sharing_api_permissions_map_self(self) -> None:
+        """sharing API usage tests related to permit_create_map = self."""
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
             f.write("""\
@@ -4164,8 +4164,7 @@ permissions: RrWw""")
                                  "htpasswd_encryption": "plain"},
                         "sharing": {
                                     "type": "csv",
-                                    "permit_create_map": "False",
-                                    "permit_create_map_only_self": "True",
+                                    "permit_create_map": "self",
                                     "collection_by_map": "True"},
                         "logging": {"request_header_on_debug": "False",
                                     "response_content_on_debug": "True",
@@ -4177,7 +4176,7 @@ permissions: RrWw""")
         for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
             logging.info("\n*** test: %s", db_type)
             self.configure({"sharing": {"type": db_type,
-                                        "permit_create_map_only_self": "True"}})
+                                        "permit_create_map": "self"}})
 
             path_abook = "/owner1/abook-" + db_type + "/"
             path_abook2 = "/owner1/abook2-" + db_type + "/"
@@ -4200,7 +4199,7 @@ permissions: RrWw""")
             assert answer_dict['PermittedCreateCollectionByMap'] is False
             assert answer_dict['PermittedCreateCollectionByMapOnlySelf'] is True
 
-            logging.info("\n*** check PROPFIND privileges: RADICALE:share-map-self (only_self=True)")
+            logging.info("\n*** check PROPFIND privileges: RADICALE:share-map-self (permit_create_map=self)")
             privileges = self._propfind_privileges(path_abook, login="owner1:owner1pw")
             assert "RADICALE:share-map-self" in privileges
             assert "RADICALE:share-map" not in privileges
@@ -4281,8 +4280,8 @@ permissions: RrWw""")
             json_dict['Conversion'] = "bday"
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
-            logging.info("\n*** create map(bday) owner1/owner1, only self disabled -> 403")
-            self.configure({"sharing": {"permit_create_map_only_self": "False"}})
+            logging.info("\n*** create map(bday) owner1/owner1, permit_create_map=False -> 403")
+            self.configure({"sharing": {"permit_create_map": "False"}})
             privileges = self._propfind_privileges(path_abook2, login="owner1:owner1pw")
             assert "RADICALE:share-map-self" not in privileges
             json_dict = {}

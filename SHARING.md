@@ -198,10 +198,8 @@ Map-based sharing can be accessed as usual after authentication and authorizatio
 
 #### Permission Control
 
- * `permit_create_map`
+ * `permit_create_map` (`true`, `self` or `false`)
    * supported *rights* permissions: `Mm`
- * `permit_create_map_only_self`
-   * supported *rights* permissions: `m`
 
 #### Workflow
 
@@ -430,7 +428,7 @@ Create a share by mapping a collection of an `Owner` to an `User`.
    * Provided `User` has at least read access to `PathOrToken`
    * Global permitted by `permit_create_map = True` or `rights` permission `M`
    * Global denied by `permit_create_map = False` or `rights` permission `m`
-   * To self (`User` is the `Owner`, `PathOrToken` in the folder of the `Owner`) also permitted by `permit_create_map_only_self = True`, unless `rights` permission `m`
+   * To self only (`User` is the `Owner`, `PathOrToken` in the folder of the `Owner`) by `permit_create_map = self`
 
  * Input
 

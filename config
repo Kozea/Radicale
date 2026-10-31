@@ -361,14 +361,11 @@ type = none
 #permit_create_token = false
 
 # Permit create of map-based sharing
-#  If False it can be explicitly granted by permissions: M
-#  If True it can be explicitly forbidden by permissions: m
+# Value: true | self | false
+#  self: only to self (e.g. birthday calendar), the share must be in the own folder
+#  If False or self it can be explicitly granted by permissions: M
+#  If True or self it can be explicitly forbidden by permissions: m
 #permit_create_map = false
-
-# Permit create of map-based sharing to self only (e.g. birthday calendar)
-#  Only used if permit_create_map is False, the share must be in the own folder
-#  Can be explicitly forbidden by permissions: m
-#permit_create_map_only_self = false
 
 # Permit properties overlay
 #  If False it can be explicitly granted by share permissions: P
