@@ -36,8 +36,9 @@ Permissions:
   - o: deny overwriting a collection in case permit_overwrite_collection=True (>= 3.3.0)
   - T: permit create of token-based sharing of collection in case permit_create_token=False (>= 3.7.0)
   - t: deny create of token-based sharing of collection in case permit_create_token=True (>= 3.7.0)
-  - M: permit create of map-based sharing of collection in case permit_create_map=False (>= 3.7.0)
-  - m: deny create of map-based sharing of collection in case permit_create_map=True (>= 3.7.0)
+  - M: permit create of map-based sharing of collection in case permit_create_map=False or self (>= 3.7.0)
+  - m: deny create of map-based sharing of collection in case permit_create_map=True or self (>= 3.7.0)
+  - S: permit create of map-based sharing of collection to self only, whatever permit_create_map is (>= 3.9.1)
   - P: permit properties overlay in case permit_properties_overlay=False (>= 3.7.0)
   - p: deny properties overlay in case permit_properties_overlay=True (>= 3.7.0)
   - E: enable enforce properties overlay in case enforce_properties_overlay=False (>= 3.7.0)
@@ -59,7 +60,7 @@ from radicale import config, utils
 INTERNAL_TYPES: Sequence[str] = ("authenticated", "owner_write", "owner_only",
                                  "from_file")
 
-INTERNAL_PERMISSIONS: str = "RrifWwDdOoTtMmPpEel"
+INTERNAL_PERMISSIONS: str = "RrifWwDdOoTtMmSPpEel"
 INTERNAL_PERMISSIONS_ITEM: str = "rwdDoD"  # used in radicale/app/base.py
 
 

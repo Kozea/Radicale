@@ -198,8 +198,8 @@ Map-based sharing can be accessed as usual after authentication and authorizatio
 
 #### Permission Control
 
- * `permit_create_map`
-   * supported *rights* permissions: `Mm`
+ * `permit_create_map` (`true`, `self` or `false`)
+   * supported *rights* permissions: `MmS`
 
 #### Workflow
 
@@ -317,6 +317,7 @@ ApiVersion=1
 Status='success'
 FeatureEnabledCollectionByMap=True
 PermittedCreateCollectionByMap=True
+PermittedCreateCollectionByMapOnlySelf=False
 FeatureEnabledCollectionByToken=True
 PermittedCreateCollectionByToken=True
 SupportedConversions=(bday none)
@@ -335,6 +336,7 @@ curl -u user:$userpw --silent -H "accept: application/json" -d "" http://localho
   "Status": "success",
   "FeatureEnabledCollectionByMap": true,
   "PermittedCreateCollectionByMap": true,
+  "PermittedCreateCollectionByMapOnlySelf": false,
   "FeatureEnabledCollectionByToken": true,
   "PermittedCreateCollectionByToken": true,
   "SupportedConversions": [
@@ -375,8 +377,8 @@ Create a share by mapping a collection of an `Owner` to a token.
  * Authorization
    * `PathMapped` is existing and a collection
    * Authenticated user as `Owner` has at least read access to `PathMapped`
-   * Global permitted by `permit_create_token = True` or `rights` permission `t`
-   * Global denied by `permit_create_token = False` or `rights` permission `T`
+   * Global permitted by `permit_create_token = True` or `rights` permission `T`
+   * Global denied by `permit_create_token = False` or `rights` permission `t`
 
  * Input
 
@@ -424,8 +426,9 @@ Create a share by mapping a collection of an `Owner` to an `User`.
    * `PathMapped` is not existing already as a share target for same `User`
    * Authenticated user as `Owner` has at least read access to `PathMapped`
    * Provided `User` has at least read access to `PathOrToken`
-   * Global permitted by `permit_create_map = True` or `rights` permission `m`
-   * Global denied by `permit_create_map = False` or `rights` permission `M`
+   * Global permitted by `permit_create_map = True` or `rights` permission `M`
+   * Global denied by `permit_create_map = False` or `rights` permission `m`
+   * To self only (`User` is the `Owner`, `PathOrToken` in the folder of the `Owner`) by `permit_create_map = self` or `rights` permission `S`
 
  * Input
 
@@ -588,6 +591,7 @@ Execute delete+create in case `PathOrToken` needs to be changed.
 
  * Authorization
    * Authenticated user is `Owner` or `User`
+   * On change of `User` or `PathMapped` of a *map*, `Owner` must be permitted to create it (see "map/create")
 
  * Input
 

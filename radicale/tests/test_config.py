@@ -120,6 +120,21 @@ class TestConfig:
         assert "unsupported server type: 'nginx'" in str(e)
         assert "builtin|hypercorn" in str(e)
 
+    def test_sharing_permit_create_map(self) -> None:
+        configuration = config.load()
+        assert configuration.get("sharing", "permit_create_map") == "false"
+        for value, expected in (("True", "true"), (" self ", "self"), ("FALSE", "false")):
+            configuration.update({"sharing": {"permit_create_map": value}}, "test")
+            assert configuration.get("sharing", "permit_create_map") == expected
+
+    def test_invalid_sharing_permit_create_map(self) -> None:
+        configuration = config.load()
+        with pytest.raises(Exception) as exc_info:
+            configuration.update({"sharing": {"permit_create_map": "yes"}}, "test")
+        e = exc_info.value
+        assert "unsupported value: 'yes'" in str(e)
+        assert "true|self|false" in str(e)
+
     def test_invalid_section(self) -> None:
         configuration = config.load()
         with pytest.raises(Exception) as exc_info:
