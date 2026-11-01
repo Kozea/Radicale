@@ -254,25 +254,30 @@ class TestHookWiring(BaseTest):
                      "from_email": "jeff@example.com",
                      "itip_owner_map": "jeff=jeff@example.com"}})
 
-    def _future_event(self, attendees):
-        start = (datetime.now() + timedelta(days=1)).strftime("%Y%m%dT%H%M%SZ")
-        end = (datetime.now() + timedelta(days=1, hours=2)).strftime("%Y%m%dT%H%M%SZ")
-        return _event(attendees, dtstart=start, dtend=end)
+    def _future_event(self, attendees, start):
+        return _event(
+            attendees,
+            dtstart=start.strftime("%Y%m%dT%H%M%SZ"),
+            dtend=(start + timedelta(hours=2)).strftime("%Y%m%dT%H%M%SZ"))
 
     def test_put_adding_one_attendee_dryrun_logs_only_the_new_attendee(self, caplog):
         caplog.set_level(logging.INFO)
         self.mkcalendar("/calendar.ics/", login="jeff:password")
         path = "/calendar.ics/event1.ics"
-        self.put(path, self._future_event([ALICE, BOB]), login="jeff:password")
+        # Use the same event time for both PUTs. Only attendees change.
+        start = datetime.now() + timedelta(days=1)
+        self.put(path, self._future_event([ALICE, BOB], start), login="jeff:password")
         # An update to an existing item returns 204, not 201.
-        self.put(path, self._future_event([ALICE, BOB, CAROL]), check=204, login="jeff:password")
+        self.put(path, self._future_event([ALICE, BOB, CAROL], start),
+                 check=204, login="jeff:password")
         dryrun_to = [log for log in caplog.messages
                      if "DRY-RUN send_scheduling_email / to_addresses" in log]
-        # Two PUTs: first PUT notified Alice and Bob, second PUT
-        # notified Carol only. The last dry-run line is the proof
-        # that existing attendees were not re-notified.
-        assert dryrun_to[-1] == "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['carol@example.com']"
-        assert len([log for log in dryrun_to if "carol@example.com" in log]) == 1
+        # First PUT notifies Alice and Bob; the second notifies Carol only.
+        assert dryrun_to == [
+            "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['alice@example.com']",
+            "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['bob@example.com']",
+            "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['carol@example.com']",
+        ]
 
 
 class TestHookWiringLegacy(BaseTest):
