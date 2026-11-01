@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import ast
 import csv
-import json
 import os
 from typing import Union
 
@@ -411,19 +411,9 @@ class Sharing(sharing.BaseSharing):
                                 if row[fieldname] is None or row[fieldname] == '':
                                     row[fieldname] = {}
                                 else:
-                                    field = row[fieldname].lstrip('"').rstrip('"')
-                                    logger.trace("json prep quote replacer match (before): %s", field)
-                                    field = field.replace('"', '\\"').replace("\\'", "'")  # escape "
-                                    field = field.replace("{'", '{"')  # replace for JSON start {' -> {"
-                                    field = field.replace("'}", '"}')  # replace for JSON end '} -> "}
-                                    field = field.replace("': '", '": "')  # replace for JSON entry/value ': ' -> ": "
-                                    field = field.replace("': {", '": {')  # replace for JSON entry/value ': { -> ": {
-                                    field = field.replace("': ", '": ')  # replace for JSON entry/value ':  -> ":(whitespace)
-                                    field = field.replace("', '", '", "')  # replace for JSON delimiter ', ' -> ", "
-                                    field = field.replace(", '", ', "')  # replace for JSON delimiter , ' -> , "
-                                    logger.trace("json prep quote replacer match (after) : %s", field)
+                                    field = row[fieldname]
                                     try:
-                                        row[fieldname] = json.loads(field)
+                                        row[fieldname] = ast.literal_eval(field)
                                     except Exception as e:
                                         logger.error("sharing database row error in type conversion fieldname=%r field=%r row=%r error: %r", fieldname, field, row, e)
                                         return False

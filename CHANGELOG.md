@@ -6,6 +6,7 @@
 * Fix: [sharing] owner cannot change the user or the mapped collection of a map-based share if not permitted to create it
 * Fix: doc of rights permissions `Mm` and `Tt` in reference config and SHARING.md
 * Add: free/busy view returns one VEVENT per busy period (`?view=freebusy`, a token with Actions `view=freebusy`, and the WebUI link). `format=vfreebusy` still returns one VFREEBUSY
+* Fix: [sharing] CSV database: improve JSON parser for particular cells
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)
