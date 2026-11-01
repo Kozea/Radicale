@@ -92,7 +92,7 @@ export class ShareCollectionScene {
     this._cancel_btn.onclick = () => this._oncancel();
 
     let can_share_by_token = this._collection.has_permission(Permission.SHARE_TOKEN);
-    let can_share_by_map = this._collection.has_permission(Permission.SHARE_MAP);
+    let can_share_by_map = this._collection.can_share_by_map();
 
     if (can_share_by_token) {
       if (this._share_by_token_btn) {

@@ -566,7 +566,7 @@ export class CollectionsScene {
             displayPermissions(collection, permissions_container);
         }
 
-        let can_share = collection.has_permission(Permission.SHARE_MAP) || collection.has_permission(Permission.SHARE_TOKEN);
+        let can_share = collection.can_share_by_map() || collection.has_permission(Permission.SHARE_TOKEN);
         if (share_option) {
             if (can_share) {
                 share_option.classList.remove("hidden");

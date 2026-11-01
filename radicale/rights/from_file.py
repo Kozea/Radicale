@@ -81,6 +81,10 @@ class Rights(rights.BaseRights):
                     error = "conflicting 'e' + 'E'"
                 if "m" in permission and "M" in permission:
                     error = "conflicting 'm' + 'M'"
+                if "S" in permission and "M" in permission:
+                    error = "conflicting 'S' + 'M'"
+                if "S" in permission and "m" in permission:
+                    error = "conflicting 'S' + 'm'"
                 if "t" in permission and "T" in permission:
                     error = "conflicting 't' + 'T'"
                 # test for server-side flag permissions

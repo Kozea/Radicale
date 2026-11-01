@@ -1071,6 +1071,38 @@ permissions: RrWwMm""")
         except Exception:
             raise
 
+        logging.info("\n*** check conflicting rights: SM")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[owner1-SM]
+user: owner1
+collection: {user}/cal-SM(/.*)?
+permissions: RrWwSM""")
+
+        try:
+            self.configure({"rights": {"file": rights_file_path, "type": "from_file"}})
+        except RuntimeError as e:
+            logging.debug("Exception: %s", str(e))
+            assert "SM" in str(e)
+        except Exception:
+            raise
+
+        logging.info("\n*** check conflicting rights: Sm")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[owner1-Sm]
+user: owner1
+collection: {user}/cal-Sm(/.*)?
+permissions: RrWwSm""")
+
+        try:
+            self.configure({"rights": {"file": rights_file_path, "type": "from_file"}})
+        except RuntimeError as e:
+            logging.debug("Exception: %s", str(e))
+            assert "Sm" in str(e)
+        except Exception:
+            raise
+
         logging.info("\n*** check conflicting rights: pP")
         with open(rights_file_path, "w") as f:
             f.write("""\

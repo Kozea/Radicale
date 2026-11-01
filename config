@@ -356,13 +356,16 @@ type = none
 #collection_by_map = false
 
 # Permit create of token-based sharing
-#  If False it can be explicitly granted by permissions: t
-#  If True it can be explicitly forbidden by permissions: T
+#  If False it can be explicitly granted by permissions: T
+#  If True it can be explicitly forbidden by permissions: t
 #permit_create_token = false
 
 # Permit create of map-based sharing
-#  If False it can be explicitly granted by permissions: m
-#  If True it can be explicitly forbidden by permissions: M
+# Value: true | self | false
+#  self: only to self (e.g. birthday calendar), the share must be in the own folder
+#  If False or self it can be explicitly granted by permissions: M
+#  If True or self it can be explicitly forbidden by permissions: m
+#  If True or False it can be explicitly limited to self by permissions: S
 #permit_create_map = false
 
 # Permit properties overlay

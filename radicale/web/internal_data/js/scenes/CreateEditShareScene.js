@@ -46,6 +46,7 @@ export class CreateEditShareScene {
         this._shareType = shareType;
         this._share = share;
         this._edit = !!share;
+        this._only_self = false;
         this._pathMapped = decodeURIComponent(collection.href);
 
         this._html_scene = get_element_by_id("createeditsharescene");
@@ -187,7 +188,7 @@ export class CreateEditShareScene {
                 if (this._shareuser_input.value === "") {
                     this._shareuser_input.value = this._user;
                 }
-            } else {
+            } else if (!this._only_self) {
                 if (this._shareuser_input.value === this._user) {
                     this._shareuser_input.value = "";
                 }
@@ -427,8 +428,10 @@ export class CreateEditShareScene {
         title.textContent = this._edit ? "Edit Share" : "New Share";
         this._submit_btn.textContent = this._edit ? "Save" : "Create";
 
-        this._shareuser_input.value = (this._edit && this._share) ? this._share.User : "";
-        this._shareuser_input.disabled = this._edit;
+        // only sharing to self is permitted, e.g. for a birthday calendar
+        this._only_self = this._shareType === "map" && !this._collection.has_permission(Permission.SHARE_MAP);
+        this._shareuser_input.value = (this._edit && this._share) ? this._share.User : (this._only_self ? this._user : "");
+        this._shareuser_input.disabled = this._edit || this._only_self;
         this._enabled_checkbox.checked = (this._edit && this._share && this._share.EnabledByOwner !== null) ? this._share.EnabledByOwner : true;
         this._hidden_checkbox.checked = (this._edit && this._share && this._share.HiddenByOwner !== null) ? this._share.HiddenByOwner : false;
 
@@ -461,13 +464,16 @@ export class CreateEditShareScene {
             this._properties_write_deny.checked = true;
         }
 
-        let initial_conversion = (this._edit && this._share && this._share.Conversion) ? this._share.Conversion : "none";
+        let initial_conversion = (this._edit && this._share && this._share.Conversion) ? this._share.Conversion : (this._only_self ? "bday" : "none");
 
         collectionsCache.getServerFeatures(this._user, this._password, this._errorHandler.setError, (features) => {
             this._conversions_container.innerHTML = "";
             let supported = (features.sharing && features.sharing.SupportedConversions) || [];
             if (supported.length > 0) {
                 let options = ["none", ...supported.filter(opt => opt !== "none")];
+                if (this._only_self) {
+                    options = options.filter(opt => opt !== "none");
+                }
                 options.forEach(opt => {
                     let id = "newshare_conv_" + opt;
                     let radio = document.createElement("input");
