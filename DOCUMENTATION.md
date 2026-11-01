@@ -2229,6 +2229,51 @@ When disabled, send one email per attendee email address.
 
 Default: `False`
 
+##### itip_enabled
+
+Enable optional iTIP (RFC 5546) scheduling messages sent by email using iMIP
+(RFC 6047). With this setting enabled, the email hook sends individual
+`REQUEST` and `CANCEL` messages instead of legacy event notifications.
+Each outgoing calendar message contains only the recipient's attendee entry.
+
+New events send invitations to eligible attendees. Adding an attendee sends
+an invitation only to the new attendee when other event details are unchanged.
+Removing an attendee sends a cancellation to the removed attendee; changing
+event details sends updates to existing attendees; deleting an event sends
+cancellations. Saving an event without changes does not send another message.
+Attendees with `SCHEDULE-AGENT=CLIENT` or `SCHEDULE-AGENT=NONE` do not receive
+server-generated messages.
+
+Requires the email hook (`type = email`), SMTP configuration, and a non-empty
+`itip_owner_map`. This setting cannot be used with `mass_email = True`.
+
+Only resources containing a single `VEVENT` are supported, including recurring
+masters using `RRULE`. Recurrence overrides with multiple `VEVENT` components
+are not supported. This is not a complete CalDAV scheduling implementation:
+incoming attendee replies and RFC 6638 inbox/outbox handling are not provided.
+SMTP delivery is best-effort, without a persistent queue or retries; an
+unchanged resave will not retry an email lost to a delivery failure.
+
+Default: `False`
+
+##### itip_owner_map
+
+Explicit mapping from authenticated Radicale usernames to organizer email
+addresses, used to authorize outgoing iTIP messages. Supply comma-separated
+`username=email` pairs, for example:
+
+```ini
+itip_owner_map = alice=alice@example.com, bob=bob@example.com
+```
+
+This setting is required when `itip_enabled = True`. A scheduling message is
+sent only when the event's `ORGANIZER` email matches the authenticated user's
+mapped address (case-insensitively). Unmapped users and organizer mismatches
+send no scheduling messages. The SMTP `from_email` setting does not establish
+organizer ownership.
+
+Default: (unset)
+
 ##### new_or_added_to_event_template
 
 _(>= 3.5.5)_

@@ -34,6 +34,11 @@ import vobject
 
 from radicale.hook import (BaseHook, HookNotificationItem,
                            HookNotificationItemTypes)
+from radicale.hook.email.scheduling import (PlannedMessage, build_itip_ics,
+                                            build_itip_message,
+                                            check_ownership, parse_event,
+                                            parse_owner_map, plan_messages,
+                                            resolve_owner_identities)
 from radicale.log import logger
 
 PLUGIN_CONFIG_SCHEMA = {
@@ -109,6 +114,14 @@ This is an automated message. Please do not reply.""",
         "mass_email": {
             "value": False,
             "type": bool,
+        },
+        "itip_enabled": {
+            "value": False,
+            "type": bool,
+        },
+        "itip_owner_map": {
+            "value": "",
+            "type": str,
         }
     }
 }
@@ -705,7 +718,9 @@ class EmailConfig:
                  dryrun: bool,
                  new_or_added_to_event_template: MessageTemplate,
                  deleted_or_removed_from_event_template: MessageTemplate,
-                 updated_event_template: MessageTemplate):
+                 updated_event_template: MessageTemplate,
+                 itip_enabled: bool = False,
+                 itip_owner_map: str = ""):
         self.host = host
         self.port = port
         self.security = SMTP_SECURITY_TYPE_ENUM.from_string(value=security)
@@ -715,6 +730,8 @@ class EmailConfig:
         self.from_email = from_email
         self.send_mass_emails = send_mass_emails
         self.dryrun = dryrun
+        self.itip_enabled = itip_enabled
+        self.itip_owner_map = itip_owner_map
         self.new_or_added_to_event_template = new_or_added_to_event_template
         self.deleted_or_removed_from_event_template = deleted_or_removed_from_event_template
         self.updated_event_template = updated_event_template
@@ -724,10 +741,34 @@ class EmailConfig:
         Return a string representation of the EmailConfig.
         """
         return f"EmailConfig(host={self.host}, port={self.port}, username={self.username}, " \
-               f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails}, dryrun={self.dryrun})"
+               f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails}, dryrun={self.dryrun}, " \
+               f"itip_enabled={self.itip_enabled}, " \
+               f"itip_owner_map={self.itip_owner_map!r})"
 
     def __repr__(self):
         return self.__str__()
+
+    def validate_itip_config(self) -> None:
+        """Raise on invalid iTIP configuration.
+
+        ``mass_email`` and ``itip_enabled`` cannot both be true,
+        and ``itip_enabled`` requires a non-empty
+        ``itip_owner_map``. Fail at startup instead of silently
+        falling back to legacy sending.
+        """
+        if self.itip_enabled and self.send_mass_emails:
+            raise ValueError(
+                "hook.mass_email and hook.itip_enabled cannot both be "
+                "true: mass_email sends one grouped legacy email, "
+                "itip_enabled sends one per-recipient iTIP message")
+        if self.itip_enabled and not (self.itip_owner_map or "").strip():
+            raise ValueError(
+                "hook.itip_enabled requires hook.itip_owner_map: "
+                "outbound iTIP needs an explicit actor-to-organizer-"
+                "email map, because a bare username matching by "
+                "local-part could match a different domain, and "
+                "Radicale has no authoritative principal-to-email "
+                "mapping to fall back to")
 
     def send_added_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
@@ -764,6 +805,49 @@ class EmailConfig:
         return self._prepare_and_send_email(template=self.deleted_or_removed_from_event_template, attendees=attendees,
                                             event=event,
                                             ics_attachment=None)
+
+    def send_scheduling_email(self, planned: PlannedMessage,
+                              event: EmailEvent, source_ics: str,
+                              sequence: Optional[int] = None) -> bool:
+        """Send one planned iTIP/iMIP message to one recipient.
+
+        ``event`` provides the title/time/location for the
+        plain-text template; ``source_ics`` is the new event
+        for REQUEST and the old event for CANCEL, so a removed
+        attendee still gets a well-formed CANCEL. Called only
+        in iTIP mode; when ``itip_enabled`` is False the hook
+        uses the legacy path instead.
+        """
+        if planned.kind in ("created", "added"):
+            template = self.new_or_added_to_event_template
+        elif planned.kind in ("removed", "deleted"):
+            template = self.deleted_or_removed_from_event_template
+        else:
+            template = self.updated_event_template
+        attendee = Attendee(ContentLine(
+            key="attendee", value="mailto:%s" % planned.recipient_email,
+            params={"CN": [planned.recipient_name]} if planned.recipient_name else {}))
+        body = template.build_message(event=event, from_email=self.from_email,
+                                      mass_email=False, attendee=attendee)
+        subject = template.build_subject(event=event, from_email=self.from_email,
+                                         mass_email=False, attendee=attendee)
+        try:
+            itip_ics = build_itip_ics(source_ics, planned.method, planned.recipient_email,
+                                      sequence=sequence)
+        except Exception as e:
+            logger.error("Failed to build iTIP message for %r: %s", planned.recipient_email, e)
+            return False
+        text = build_itip_message(from_email=self.from_email,
+                                  to_email=planned.recipient_email,
+                                  subject=subject, body_text=body,
+                                  itip_ics=itip_ics, method=planned.method)
+        if self.dryrun is True:
+            logger.notice("Hook 'email': DRY-RUN send_scheduling_email / to_addresses=%r",
+                          [planned.recipient_email])
+            logger.notice("Hook 'email': DRY-RUN send_scheduling_email / subject=%r", subject)
+            logger.notice("Hook 'email': DRY-RUN send_scheduling_email / method=%r", planned.method)
+            return True
+        return self._smtp_send(text=text, to_addresses=[planned.recipient_email])
 
     def _prepare_and_send_email(self, template: MessageTemplate, attendees: List[Attendee],
                                 event: EmailEvent, ics_attachment: Optional[ICSEmailAttachment] = None) -> bool:
@@ -864,7 +948,10 @@ class EmailConfig:
 
         # Convert message to text
         text = message.as_string()
+        return self._smtp_send(text=text, to_addresses=to_addresses)
 
+    def _smtp_send(self, text: str, to_addresses: List[str]) -> bool:
+        """Send an already-built MIME message via the configured SMTP server."""
         try:
             if self.security == SMTP_SECURITY_TYPE_ENUM.EMPTY:
                 logger.warning("SMTP security type is empty, raising ValueError.")
@@ -937,6 +1024,8 @@ class Hook(BaseHook):
             from_email=self.configuration.get("hook", "from_email"),
             send_mass_emails=self.configuration.get("hook", "mass_email"),
             dryrun=self.configuration.get("hook", "dryrun"),
+            itip_enabled=self.configuration.get("hook", "itip_enabled"),
+            itip_owner_map=self.configuration.get("hook", "itip_owner_map"),
             new_or_added_to_event_template=MessageTemplate(
                 subject="You have been added to an event",
                 body=self.configuration.get("hook", "new_or_added_to_event_template")
@@ -950,6 +1039,9 @@ class Hook(BaseHook):
                 body=self.configuration.get("hook", "updated_event_template")
             )
         )
+        self.email_config.validate_itip_config()
+        # Malformed owner map fails hook load, not silently ignored.
+        self.owner_map = parse_owner_map(self.email_config.itip_owner_map)
         logger.info(
             "Email hook initialized with configuration: %s",
             self.email_config
@@ -973,158 +1065,216 @@ class Hook(BaseHook):
         if isinstance(notification_item, HookNotificationItem):
             self._process_event_and_notify(notification_item)
 
-    def _process_event_and_notify(self, notification_item: HookNotificationItem) -> None:
-        """
-        Process the event and send an email notification.
-        :param notification_item: The single item to process.
-        :type notification_item: HookNotificationItem
-        :return: None
-        """
-        email_success: bool
-        email_event: EmailEvent
-        new_event: Union[Event, None]
+    def _send_planned(self, planned, email_event: EmailEvent,
+                      previous_item_str, new_item_str) -> None:
+        """Send a list of planned messages for one event change.
 
+        One iTIP message per recipient. ``mass_email`` is
+        incompatible with iTIP mode and is rejected at Hook
+        init; this guard covers directly constructed configs.
+        """
+        if self.email_config.send_mass_emails:
+            logger.error("mass_email is incompatible with itip_enabled, sending nothing")
+            return
+        for message in planned:
+            cancel_sequence = None
+            if message.method == "CANCEL" and previous_item_str:
+                template_event = _read_event(vobject_data=previous_item_str)
+                source_ics = previous_item_str
+                # Ensure the cancellation supersedes both event revisions.
+                # For a deleted event this reduces to old + 1.
+                old_parsed = parse_event(previous_item_str)
+                new_parsed = parse_event(new_item_str) if new_item_str else None
+                old_seq = old_parsed.sequence if old_parsed else 0
+                new_seq = new_parsed.sequence if new_parsed else 0
+                cancel_sequence = max(old_seq, new_seq) + 1
+            else:
+                template_event = email_event
+                source_ics = new_item_str
+            success = self.email_config.send_scheduling_email(
+                planned=message, event=template_event, source_ics=source_ics,
+                sequence=cancel_sequence)
+            if not success:
+                logger.error("Failed to send scheduling notification (%s) to %s for event: %s",
+                             message.kind, message.recipient_email, email_event.event.uid)
+
+    def _owner_identities(self, notification_item) -> List[str]:
+        """Identities the hook can use to prove organizer ownership.
+
+        Explicit map only; never ``from_email``, never a bare
+        username. See resolve_owner_identities.
+
+        Actor provenance: ``notification_item.actor`` is set by
+        Radicale's storage layer from the authenticated user
+        (app/put.py: ``actor = user``, where ``user`` is the
+        result of the configured auth backend's login). It is
+        not parsed from the ICS content, ORGANIZER, or ATTENDEE
+        lines. A deployment whose auth backend trusts a proxy
+        header (e.g. http_remote_user) must trust that proxy.
+        """
+        actor = getattr(notification_item, "actor", None)
+        return resolve_owner_identities(actor, getattr(self, "owner_map", {}))
+
+    # Shared event processing. The iTIP and legacy paths share
+    # notification-type parsing, event reading, and past-event
+    # checking, but not their sending rules: legacy keeps its
+    # unparseable-previous-event fallback to send_added, while
+    # iTIP sends nothing when the previous event cannot be parsed.
+
+    def _notification_type(self, notification_item):
+        try:
+            return HookNotificationItemTypes(value=notification_item.type)
+        except ValueError:
+            logger.warning("Unknown notification item type: %s", notification_item.type)
+            return None
+
+    def _is_past_event(self, email_event) -> bool:
+        event = email_event.event
+        if not event:
+            return False
+        end_time = event.datetime_end
+        if not end_time or not end_time.time:
+            return False
+        event_end = end_time.time
+        now: Union[datetime, date]
+        if hasattr(event_end, "tzinfo"):
+            now = datetime.now(event_end.tzinfo) if event_end.tzinfo else datetime.now()
+        else:
+            now = date.today()
+        logger.trace("event_end=%r now=%r", event_end, now)
+        if event_end < (now - timedelta(minutes=1)):
+            logger.warning("Event end time is in the past, skipping notification for event: %s",
+                           event.uid)
+            return True
+        return False
+
+    def _upsert_parts(self, notification_item):
+        """Return (new_str, old_str, email_event) for an UPSERT, or None to skip."""
+        new_item_str = notification_item.new_content
+        previous_item_str = notification_item.old_content
+        if not ics_contents_contains_event(contents=new_item_str):
+            logger.debug("No event found in the ICS file, skipping notification.")
+            return None
+        email_event = _read_event(vobject_data=new_item_str)
+        if not email_event or not email_event.event:
+            logger.error("Failed to read event from new content: %s", new_item_str)
+            return None
+        if self._is_past_event(email_event):
+            return None
+        return new_item_str, previous_item_str, email_event
+
+    def _delete_parts(self, notification_item):
+        """Return (deleted_str, email_event) for a DELETE, or None to skip."""
+        deleted_item_str = notification_item.old_content
+        if not ics_contents_contains_event(contents=deleted_item_str):
+            logger.debug("No event found in the ICS file, skipping notification.")
+            return None
+        return deleted_item_str, _read_event(vobject_data=deleted_item_str)
+
+    def _process_event_and_notify(self, notification_item: HookNotificationItem) -> None:
+        """Dispatch one notification to the iTIP or legacy path."""
         if self.email_config.dryrun:
             logger.warning("Hook 'email': DRY-RUN received notification_item: %r", vars(notification_item))
         else:
             logger.debug("Received notification_item: %r", vars(notification_item))
-        try:
-            notification_type = HookNotificationItemTypes(value=notification_item.type)
-        except ValueError:
-            logger.warning("Unknown notification item type: %s", notification_item.type)
+        notification_type = self._notification_type(notification_item)
+        if notification_type is None or notification_type == HookNotificationItemTypes.CPATCH:
+            return
+        if notification_type == HookNotificationItemTypes.UPSERT:
+            parts = self._upsert_parts(notification_item)
+            if parts is None:
+                return
+            if self.email_config.itip_enabled:
+                self._process_itip_upsert(notification_item, *parts)
+            else:
+                self._process_legacy_upsert(*parts)
+            return
+        if notification_type == HookNotificationItemTypes.DELETE:
+            parts = self._delete_parts(notification_item)
+            if parts is None:
+                return
+            if self.email_config.itip_enabled:
+                self._process_itip_delete(notification_item, *parts)
+            else:
+                self._process_legacy_delete(*parts)
             return
 
-        if notification_type == HookNotificationItemTypes.CPATCH:
-            # Ignore cpatch notifications (PROPPATCH requests for WebDAV metadata updates)
+    def _process_itip_upsert(self, notification_item, new_item_str, previous_item_str, email_event) -> None:
+        if not previous_item_str:
+            logger.info("New event detected, sending notifications to all attendees: %s",
+                        email_event.event.uid)
+        owner_identities = self._owner_identities(notification_item)
+        new_parsed = parse_event(new_item_str)
+        if new_parsed is not None and not check_ownership(
+                new_parsed.organizer_email, owner_identities):
+            logger.error("Organizer %r does not match owner identities %r, "
+                         "skipping scheduling messages (attendee copy?) for event: %s",
+                         new_parsed.organizer_email, owner_identities,
+                         email_event.event.uid)
             return
-
-        elif notification_type == HookNotificationItemTypes.UPSERT:
-            # Handle upsert notifications
-
-            new_item_str: str = notification_item.new_content  # A serialized vobject.base.Component
-            previous_item_str: Optional[str] = notification_item.old_content
-
-            if not ics_contents_contains_event(contents=new_item_str):
-                # If ICS file does not contain an event, do not send any notifications (regardless of previous content).
-                logger.debug("No event found in the ICS file, skipping notification.")
-                return
-
-            email_event = _read_event(vobject_data=new_item_str)
-            if not email_event:
-                logger.error("Failed to read event from new content: %s", new_item_str)
-                return
-            email_event_event = email_event.event
-            if not email_event_event:
-                logger.error("Event could not be parsed from the new content: %s", new_item_str)
-                return
-            email_event_end_time = email_event_event.datetime_end
-            # Skip notification if the event end time is more than 1 minute in the past.
-            if email_event_end_time and email_event_end_time.time:
-                event_end = email_event_end_time.time
-                now: Union[datetime, date]
-                if hasattr(event_end, "tzinfo"):
-                    now = datetime.now(
-                        event_end.tzinfo) if event_end.tzinfo else datetime.now()  # Handle timezone-aware datetime
-                else:
-                    now = date.today()
-                logger.trace("event_end=%r now=%r", event_end, now)
-                if event_end < (now - timedelta(minutes=1)):
-                    logger.warning("Event end time is in the past, skipping notification for event: %s",
-                                   email_event_event.uid)
-                    return
-
-            if not previous_item_str:
-                # Dealing with a completely new event, no previous content to compare against.
-                # Email every attendee about the new event.
-                logger.info("New event detected, sending notifications to all attendees: %s",
-                            email_event.event.uid)
-                email_success = self.email_config.send_added_email(
-                    attendees=email_event.event.attendees,
-                    event=email_event
-                )
-                if not email_success:
-                    logger.error("Failed to send some or all added email notifications for event: %s",
-                                 email_event.event.uid)
-                return
-
-            # Dealing with an update to an existing event, compare new and previous content.
-            new_event = read_ics_event(contents=new_item_str)
-            if new_event is None:
-                return
-
-            previous_event: Optional[Event] = read_ics_event(contents=previous_item_str)
-            if not previous_event:
-                # If we cannot parse the previous event for some reason, simply treat it as a new event.
-                logger.warning("Previous event content could not be parsed, treating as a new event.")
-                email_success = self.email_config.send_added_email(
-                    attendees=email_event.event.attendees,
-                    event=email_event
-                )
-                if not email_success:
-                    logger.error("Failed to send some or all added email notifications for event: %s",
-                                 email_event.event.uid)
-                return
-
-            # Determine added, removed, and unaltered attendees
-            added_attendees, removed_attendees, unaltered_attendees = determine_added_removed_and_unaltered_attendees(
-                original_event=previous_event, new_event=new_event)
-
-            # Notify added attendees as "event created"
-            if added_attendees:
-                email_success = self.email_config.send_added_email(
-                    attendees=added_attendees,
-                    event=email_event
-                )
-                if not email_success:
-                    logger.error("Failed to send some or all added email notifications for event: %s",
-                                 email_event.event.uid)
-
-            # Notify removed attendees as "event deleted"
-            if removed_attendees:
-                email_success = self.email_config.send_deleted_email(
-                    attendees=removed_attendees,
-                    event=email_event
-                )
-                if not email_success:
-                    logger.error("Failed to send some or all removed email notifications for event: %s",
-                                 email_event.event.uid)
-
-            # Notify unaltered attendees as "event updated" if details other than attendees have changed
-            if unaltered_attendees and event_details_other_than_attendees_changed(original_event=previous_event,
-                                                                                  new_event=new_event):
-                email_success = self.email_config.send_updated_email(
-                    attendees=unaltered_attendees,
-                    event=email_event
-                )
-                if not email_success:
-                    logger.error("Failed to send some or all updated email notifications for event: %s",
-                                 email_event.event.uid)
-
-            # Skip sending notifications to existing attendees if the only changes made to the event
-            # were the addition/removal of other attendees.
-
+        if previous_item_str and parse_event(previous_item_str) is None:
+            logger.error("Previous event content could not be parsed, "
+                         "sending no scheduling messages for event: %s",
+                         email_event.event.uid)
             return
+        planned = plan_messages(previous_item_str, new_item_str,
+                                owner_identities=owner_identities)
+        self._send_planned(planned, email_event, previous_item_str, new_item_str)
 
-        elif notification_type == HookNotificationItemTypes.DELETE:
-            # Handle delete notifications
+    def _process_itip_delete(self, notification_item, deleted_item_str, email_event) -> None:
+        self._send_planned(plan_messages(deleted_item_str, None, deleted=True,
+                                         owner_identities=self._owner_identities(notification_item)),
+                           email_event, deleted_item_str, deleted_item_str)
 
-            deleted_item_str: str = notification_item.old_content  # A serialized vobject.base.Component
-
-            if not ics_contents_contains_event(contents=deleted_item_str):
-                # If the ICS file does not contain an event, we do not send any notifications.
-                logger.debug("No event found in the ICS file, skipping notification.")
-                return
-
-            email_event = _read_event(vobject_data=deleted_item_str)
-
+    def _process_legacy_upsert(self, new_item_str, previous_item_str, email_event) -> None:
+        if not previous_item_str:
+            logger.info("New event detected, sending notifications to all attendees: %s",
+                        email_event.event.uid)
+            email_success = self.email_config.send_added_email(
+                attendees=email_event.event.attendees, event=email_event)
+            if not email_success:
+                logger.error("Failed to send some or all added email notifications for event: %s",
+                             email_event.event.uid)
+            return
+        new_event = read_ics_event(contents=new_item_str)
+        if new_event is None:
+            return
+        previous_event = read_ics_event(contents=previous_item_str)
+        if not previous_event:
+            # Legacy fallback, deliberately different from iTIP:
+            # an unparseable previous event is treated as a new event.
+            logger.warning("Previous event content could not be parsed, treating as a new event.")
+            email_success = self.email_config.send_added_email(
+                attendees=email_event.event.attendees, event=email_event)
+            if not email_success:
+                logger.error("Failed to send some or all added email notifications for event: %s",
+                             email_event.event.uid)
+            return
+        added_attendees, removed_attendees, unaltered_attendees = determine_added_removed_and_unaltered_attendees(
+            original_event=previous_event, new_event=new_event)
+        if added_attendees:
+            email_success = self.email_config.send_added_email(
+                attendees=added_attendees, event=email_event)
+            if not email_success:
+                logger.error("Failed to send some or all added email notifications for event: %s",
+                             email_event.event.uid)
+        if removed_attendees:
             email_success = self.email_config.send_deleted_email(
-                attendees=email_event.event.attendees,
-                event=email_event
-            )
+                attendees=removed_attendees, event=email_event)
             if not email_success:
                 logger.error("Failed to send some or all deleted email notifications for event: %s",
                              email_event.event.uid)
+        if (unaltered_attendees and event_details_other_than_attendees_changed(
+                original_event=previous_event, new_event=new_event)):
+            email_success = self.email_config.send_updated_email(
+                attendees=unaltered_attendees, event=email_event)
+            if not email_success:
+                logger.error("Failed to send some or all updated email notifications for event: %s",
+                             email_event.event.uid)
 
-            return
-
-        return
+    def _process_legacy_delete(self, deleted_item_str, email_event) -> None:
+        email_success = self.email_config.send_deleted_email(
+            attendees=email_event.event.attendees, event=email_event)
+        if not email_success:
+            logger.error("Failed to send some or all deleted email notifications for event: %s",
+                         email_event.event.uid)

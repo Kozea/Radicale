@@ -741,6 +741,27 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "Send one email to all attendees, versus one email per attendee",
             "type": bool}),
+        ("itip_enabled", {
+            "value": "False",
+            "help": "Opt in to sending scheduling messages as iTIP (RFC 5546) "
+                    "over iMIP (RFC 6047), one per recipient with only "
+                    "that recipient listed, instead of a plain "
+                    "notification email with the full event attached. "
+                    "Defaults to False: iTIP messages are actionable "
+                    "invitations and cancellations, so enabling them "
+                    "must be deliberate. Set to False for the legacy behaviour.",
+            "type": bool}),
+        ("itip_owner_map", {
+            "value": "",
+            "help": "Explicit actor-to-organizer-email map for iTIP, as "
+                    "actor=email pairs separated by commas, e.g. "
+                    "alice=alice@example.com. Required when "
+                    "itip_enabled is True. When set, only the mapped email "
+                    "for the authenticated actor counts as organizer "
+                    "ownership; unmapped actors send nothing, and an empty "
+                    "map with itip_enabled is a config error. The SMTP "
+                    "from_email is never used as ownership evidence.",
+            "type": str}),
         ("new_or_added_to_event_template", {
             "value": """Hello $attendee_name,
 
