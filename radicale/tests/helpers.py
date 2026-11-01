@@ -72,6 +72,7 @@ def compare_dict(d: dict[str, str], d_ref: dict[str, str]) -> bool:
 
 def find_hook_json_in_list(lines: list[str]) -> str:
     """Find hook-json in list."""
+    s = None
     for line in lines:
         if line.find("\"hook-json ") != -1:
             r = re.search('.*\"hook-json ({.*})".*', line)

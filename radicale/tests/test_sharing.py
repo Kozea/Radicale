@@ -115,6 +115,28 @@ class TestSharingApiSanity(BaseTest):
         return _, headers, answer
 
     # Test functions
+    def test_sharing_api_base_none(self) -> None:
+        """test 'none' sharing database type"""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "none",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"}
+                        })
+
+        path_base = "/owner/calendar.ics/"
+        event = get_file_content("event1.ics")
+        path = path_base + "/event1.ics"
+        path_token = "/.token/v1/01234567890123456789012345678901234567890123"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_base, login="owner:ownerpw")
+        self.put(path, event, login="owner:ownerpw")
+        self.get(path, login="user:userpw", check=403)
+        self.get(path_token, login="user:userpw", check=403)
+
     def test_sharing_api_base_csv_custom(self) -> None:
         self.database_path = os.path.join(self.colpath, "collection-db/test.csv")
         self.configure({"sharing": {
@@ -4607,7 +4629,7 @@ permissions: RrWw""")
             status, prop = response["D:getetag"]
             assert status == 200 and prop.text
 
-    def test_sharing_api_map_propfind_overlay_api_base(self) -> None:
+    def test_sharing_api_map_propfind_overlay_api_base(self, caplog) -> None:
         """share-by-map API usage tests related to proppatch."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
@@ -4803,11 +4825,206 @@ permissions: RrWw""")
             assert status == 200 and prop.text == "#CCCCCC"
 
             # update map by user
-            logging.info("\n*** update properties with buggyy ones by user (form)")
+            logging.info("\n*** update properties with buggy ones by user (form)")
             form_array = ["User=" + "user"]
             form_array.append("PathOrToken=" + path_shared_r)
             form_array.append("Properties=BUGGYENTRY=BUGGYVALUE")
             _, headers, answer = self._sharing_api_form("map", "update", check=400, login="user:userpw", form_array=form_array)
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection as user with risky char 'single quote' for CSV -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER-'-APOSTROPH</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == "ICAL-OWNER-'-APOSTROPH"
+
+            if db_type == "csv":
+                db_path = os.path.join(self.colpath, "collection-db", "sharing.csv")
+                db = open(db_path, "r")
+                csv_raw = db.read()
+                db.close()
+                logging.debug("* Raw CSV:\n%s", csv_raw)
+
+            # reload database by trigger restart with configure
+            logging.info("\n*** reload database_type: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+            assert "ERROR" not in caplog.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == "ICAL-OWNER-'-APOSTROPH"
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection as user with risky char 'double quote' for CSV -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER-"-APOSTROPH</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-"-APOSTROPH'
+
+            if db_type == "csv":
+                db_path = os.path.join(self.colpath, "collection-db", "sharing.csv")
+                db = open(db_path, "r")
+                csv_raw = db.read()
+                db.close()
+                logging.debug("* Raw CSV:\n%s", csv_raw)
+
+            # reload database by trigger restart with configure
+            logging.info("\n*** reload database_type: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+            assert "ERROR" not in caplog.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-"-APOSTROPH'
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection as user with risky char 'single+double quote' for CSV -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER-"+'-APOSTROPH</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-"+\'-APOSTROPH'
+
+            if db_type == "csv":
+                db_path = os.path.join(self.colpath, "collection-db", "sharing.csv")
+                db = open(db_path, "r")
+                csv_raw = db.read()
+                db.close()
+                logging.debug("* Raw CSV:\n%s", csv_raw)
+
+            # reload database by trigger restart with configure
+            logging.info("\n*** reload database_type: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+            assert "ERROR" not in caplog.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-"+\'-APOSTROPH'
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection as user with risky char 'comma' for CSV -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER-,-APOSTROPH</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-,-APOSTROPH'
+
+            if db_type == "csv":
+                db_path = os.path.join(self.colpath, "collection-db", "sharing.csv")
+                db = open(db_path, "r")
+                csv_raw = db.read()
+                db.close()
+                logging.debug("* Raw CSV:\n%s", csv_raw)
+
+            # reload database by trigger restart with configure
+            logging.info("\n*** reload database_type: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+            assert "ERROR" not in caplog.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-,-APOSTROPH'
+
+            # execute PROPPATCH as user
+            logging.info("\n*** PROPPATCH collection as user with risky char 'semicolon' for CSV -> ok")
+            _, responses = self.proppatch(path_shared_r, """\
+<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+  <D:set>
+    <D:prop>
+      <C:calendar-description xmlns:C="urn:ietf:params:xml:ns:caldav">ICAL-OWNER-;-APOSTROPH</C:calendar-description>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>""", login="user:userpw")
+            logging.info("response: %r", responses)
+            response = responses[path_shared_r]
+            assert not isinstance(response, int) and len(response) == 1
+            status, prop = response["C:calendar-description"]
+            assert status == 200 and not prop.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-;-APOSTROPH'
+
+            if db_type == "csv":
+                db_path = os.path.join(self.colpath, "collection-db", "sharing.csv")
+                db = open(db_path, "r")
+                csv_raw = db.read()
+                db.close()
+                logging.debug("* Raw CSV:\n%s", csv_raw)
+
+            # reload database by trigger restart with configure
+            logging.info("\n*** reload database_type: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+            assert "ERROR" not in caplog.text
+
+            # verify overlay as user
+            logging.info("\n*** PROPFIND collection user (overlay) -> ok")
+            description = self._propfind_calendar_description(path_shared_r, login="user:userpw")
+            assert description == 'ICAL-OWNER-;-APOSTROPH'
 
     def test_sharing_api_map_propfind_overlay_api_delete(self) -> None:
         """share-by-map API usage tests related to proppatch."""
