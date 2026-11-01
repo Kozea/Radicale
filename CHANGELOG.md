@@ -7,6 +7,7 @@
 * Fix: doc of rights permissions `Mm` and `Tt` in reference config and SHARING.md
 * Add: free/busy view returns one VEVENT per busy period (`?view=freebusy`, a token with Actions `view=freebusy`, and the WebUI link). `format=vfreebusy` still returns one VFREEBUSY
 * Fix: [sharing] CSV database: improve JSON parser for particular cells
+* Add: opt-in iTIP scheduling to email hook
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)
