@@ -1218,7 +1218,11 @@ Use an OAuth2 server to authenticate users by relaying credentials from
 clients and handle results. OAuth2 authentication (SSO) directly on
 client is not supported. Use herefore <code>http_x_remote_user</code> in
 combination with SSO support in reverse proxy (e.g.
-Apache+mod_auth_openidc).</p></li>
+Apache+mod_auth_openidc).</p>
+<p>The installation of Python's <strong>requests</strong> module is
+required for this to work (<code>pip install radicale[oauth2]</code>, or
+an OS-wide installation of the distribution package, e.g.
+<code>python3-requests</code>).</p></li>
 <li><p><code>pam</code> <em>(&gt;= 3.5.0)</em><br>
 Use local PAM to authenticate users by relaying credentials from client
 and handle result.</p>
@@ -2101,7 +2105,11 @@ javascript:</p>
 <li><p><code>none</code><br>
 Disabled. Nothing will be notified.</p></li>
 <li><p><code>rabbitmq</code> <em>(&gt;= 3.2.0)</em><br>
-Push the message to the rabbitmq server.</p></li>
+Push the message to the rabbitmq server.</p>
+<p>The installation of Python's <strong>pika</strong> module is required
+for this to work (<code>pip install radicale[rabbitmq]</code>, or an
+OS-wide installation of the distribution package, e.g.
+<code>python3-pika</code>).</p></li>
 <li><p><code>email</code> <em>(&gt;= 3.5.5)</em><br>
 Send an email notification to event attendees.</p></li>
 </ul>
