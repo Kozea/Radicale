@@ -115,6 +115,28 @@ class TestSharingApiSanity(BaseTest):
         return _, headers, answer
 
     # Test functions
+    def test_sharing_api_base_none(self) -> None:
+        """test 'none' sharing database type"""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "none",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "True"}
+                        })
+
+        path_base = "/owner/calendar.ics/"
+        event = get_file_content("event1.ics")
+        path = path_base + "/event1.ics"
+        path_token = "/.token/v1/01234567890123456789012345678901234567890123"
+
+        logging.info("\n*** prepare")
+        self.mkcalendar(path_base, login="owner:ownerpw")
+        self.put(path, event, login="owner:ownerpw")
+        self.get(path, login="user:userpw", check=403)
+        self.get(path_token, login="user:userpw", check=403)
+
     def test_sharing_api_base_csv_custom(self) -> None:
         self.database_path = os.path.join(self.colpath, "collection-db/test.csv")
         self.configure({"sharing": {
