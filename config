@@ -516,6 +516,8 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 #smtp_password_file =
 #from_email =
 #mass_email = False
+#itip_enabled = False
+#itip_owner_map = alice=alice@example.com, bob=bob@example.com
 #new_or_added_to_event_template =
 #deleted_or_removed_from_event_template =
 #updated_event_template =
