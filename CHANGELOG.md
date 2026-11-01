@@ -8,6 +8,8 @@
 * Add: free/busy view returns one VEVENT per busy period (`?view=freebusy`, a token with Actions `view=freebusy`, and the WebUI link). `format=vfreebusy` still returns one VFREEBUSY
 * Fix: [sharing] CSV database: improve JSON parser for particular cells
 * Add: opt-in iTIP scheduling to email hook
+* Change: move `requests` to optional extra `oauth2` for OAuth2 authentication (`pip install radicale[oauth2]`)
+* Change: move `pika` to optional extra `rabbitmq` for the RabbitMQ hook (`pip install radicale[rabbitmq]`)
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)

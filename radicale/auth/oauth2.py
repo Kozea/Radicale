@@ -24,7 +24,13 @@
 Authentication backend that checks credentials against an oauth2 server auth endpoint
 """
 
-import requests
+try:
+    import requests
+except ImportError as e:
+    raise ImportError(
+        "the 'requests' module is required for [auth] type=oauth2: "
+        "install it with 'pip install radicale[oauth2]' or from your "
+        "distribution packages (e.g. python3-requests)") from e
 
 from radicale import auth
 from radicale.log import logger
