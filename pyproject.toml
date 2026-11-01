@@ -45,6 +45,7 @@ h2 = ["hypercorn>=0.17"]
 bcrypt = ["bcrypt"]
 argon2 = ["argon2-cffi"]
 ldap = ["ldap3"]
+python_ldap = ["python_ldap"]
 pam = ["pam"]
 dev = ["flake8", "isort", "mypy", "pytest", "pytest-playwright", "html5validator"]
 # Exact pins: the observed feature report depends on the client libraries
@@ -71,14 +72,23 @@ build-backend = "setuptools.build_meta"
 min_version = "4.0"
 envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "caldav_compat_test", "html5validator"]
 
-[tool.tox.env.py]
+[tool.tox.env.py_coverage]
 description = "Server: run 'pytest' (incl. coverage report)"
 extras = ["test"]
 deps = [
     "pytest",
-    "pytest-cov"
+    "pytest-cov",
+    "python-ldap",
 ]
 commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
+
+[tool.tox.env.py]
+description = "Server: run 'pytest'"
+extras = ["test"]
+deps = [
+    "pytest",
+]
+commands = [["pytest", "-r", "s", "."]]
 
 [tool.tox.env.py_loglevel_info]
 description = "Server: run 'pytest' with log level 'INFO'"
