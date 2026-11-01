@@ -2451,12 +2451,21 @@ Sharing</a>.</p>
 <h5>permit_create_map <a class="headerlink" href="#permit_create_map">&para;</a></h5>
 <p><em>(&gt;= 3.7.0)</em></p>
 <p>Permit create of map-based sharing</p>
+<p>One of <code>true</code>, <code>self</code> <em>(&gt;= 3.9.1)</em> or
+<code>false</code></p>
 <p>Default: <code>false</code></p>
 <ul>
-<li>If <code>False</code> it can be explicitly granted by
-<em>rights</em> permissions: <code>M</code></li>
-<li>If <code>True</code> it can be explicitly forbidden by
-<em>rights</em> permissions: <code>m</code></li>
+<li><code>self</code> permits map-based sharing to self only, e.g. for a
+birthday calendar, without permitting sharing with other users: the
+share must be for the owner (<code>User</code> is the owner) and in the
+owner's own folder</li>
+<li>If <code>False</code> or <code>self</code> it can be explicitly
+granted by <em>rights</em> permissions: <code>M</code></li>
+<li>If <code>True</code> or <code>self</code> it can be explicitly
+forbidden by <em>rights</em> permissions: <code>m</code></li>
+<li>If <code>True</code> or <code>False</code> it can be explicitly
+limited to self by <em>rights</em> permissions: <code>S</code>
+<em>(&gt;= 3.9.1)</em></li>
 </ul>
 </section>
 <section class="level5" id="permit_properties_overlay">
@@ -2809,10 +2818,14 @@ collection in case <code>permit_create_token=False</code> <em>(&gt;=
 in case <code>permit_create_token=True</code> <em>(&gt;=
 3.7.0)</em></li>
 <li><strong>M:</strong> permit create of map-based sharing of collection
-in case <code>permit_create_map= False</code> <em>(&gt;=
-3.7.0)</em></li>
+in case <code>permit_create_map=False</code> or <code>self</code>
+<em>(&gt;= 3.7.0)</em></li>
 <li><strong>m:</strong> deny create of map-based sharing of collection
-in case <code>permit_create_map=True</code> <em>(&gt;= 3.7.0)</em></li>
+in case <code>permit_create_map=True</code> or <code>self</code>
+<em>(&gt;= 3.7.0)</em></li>
+<li><strong>S:</strong> permit create of map-based sharing of collection
+to self only, whatever <code>permit_create_map</code> is <em>(&gt;=
+3.9.1)</em></li>
 <li><strong>P:</strong> permit properties overlay in case
 permit_properties_overlay=False <em>(&gt;= 3.7.0)</em></li>
 <li><strong>p:</strong> deny properties overlay in case
