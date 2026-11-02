@@ -118,7 +118,7 @@ class TestConfig:
             configuration.update({"server": {"type": "nginx"}}, "test")
         e = exc_info.value
         assert "unsupported server type: 'nginx'" in str(e)
-        assert "builtin|hypercorn" in str(e)
+        assert "builtin|hypercorn|cheroot" in str(e)
 
     def test_sharing_permit_create_map(self) -> None:
         configuration = config.load()
