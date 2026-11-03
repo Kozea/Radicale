@@ -557,6 +557,18 @@ class TestOrganizerIsUsername:
         assert resolve_owner_identities(
             "Jeff@Example.COM", {}, organizer_is_username=True) == ["jeff@example.com"]
 
+    def test_owner_addresses(self):
+        from radicale.hook.email.scheduling import owner_addresses
+        owner_map = "jeff@example.com=jeff@calendar.example.com"
+        assert owner_addresses("jeff@example.com", owner_map, True) == [
+            "jeff@calendar.example.com", "jeff@example.com"]
+        assert owner_addresses("Jeff@Example.com", owner_map, False) == [
+            "jeff@calendar.example.com"]
+        assert owner_addresses("bob@example.com", owner_map, False) == []
+        # The hook refuses a malformed map at load; here it gives nothing.
+        assert owner_addresses("jeff", "jeff", True) == []
+        assert owner_addresses(None, owner_map, True) == []
+
     def test_username_email(self):
         from radicale.hook.email.scheduling import username_email
         assert username_email(" Jeff@Example.COM ") == "jeff@example.com"
@@ -675,12 +687,14 @@ class TestCalendarUserAddressSet(BaseTest):
             "rights": {"file": rights_file_path, "type": "from_file"}})
         self.configure({"auth": {"type": "none"}})
 
-    def _enable(self, enabled=True):
+    def _enable(self, enabled=True, owner_map=None):
+        if owner_map is None:
+            owner_map = "" if enabled else "jeff=jeff@example.com"
         self.configure({
             "hook": {"type": "email", "dryrun": "True",
                      "itip_enabled": "True",
                      "from_email": "calendar@example.com",
-                     "itip_owner_map": "" if enabled else "jeff=jeff@example.com",
+                     "itip_owner_map": owner_map,
                      "itip_organizer_is_username": str(enabled)}})
 
     def _hrefs(self, path, user):
@@ -701,6 +715,27 @@ class TestCalendarUserAddressSet(BaseTest):
         self._enable(False)
         assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
             "/jeff%40example.com/"]
+
+    def test_mapped_address_listed_first(self):
+        self._enable(owner_map="jeff@example.com=jeff@calendar.example.com")
+        assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
+            "mailto:jeff@calendar.example.com", "mailto:jeff@example.com",
+            "/jeff%40example.com/"]
+
+    def test_mapped_address_without_option(self):
+        self._enable(False, owner_map="jeff=jeff@example.com")
+        assert self._hrefs("/jeff/", "jeff") == [
+            "mailto:jeff@example.com", "/jeff/"]
+
+    def test_unmapped_user_gets_path_only(self):
+        self._enable(False, owner_map="bob=bob@example.com")
+        assert self._hrefs("/jeff/", "jeff") == ["/jeff/"]
+
+    def test_other_users_mapped_address_not_listed(self):
+        self._enable(False, owner_map="bob=bob@example.com")
+        # Create Bob's principal, then look at it as Jeff.
+        self._hrefs("/bob/", "bob")
+        assert self._hrefs("/bob/", "jeff") == ["/bob/"]
 
     def test_non_email_user_gets_path_only(self):
         self._enable()

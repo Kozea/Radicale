@@ -761,7 +761,9 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
                     "ownership; unmapped actors send nothing, and an empty "
                     "map with itip_enabled is a config error unless "
                     "itip_organizer_is_username is True. The SMTP "
-                    "from_email is never used as ownership evidence.",
+                    "from_email is never used as ownership evidence. "
+                    "The user's own principal lists the mapped address "
+                    "first in calendar-user-address-set.",
             "type": str}),
         ("itip_organizer_is_username", {
             "value": "False",

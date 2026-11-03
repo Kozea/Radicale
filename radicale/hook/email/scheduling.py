@@ -31,6 +31,7 @@ it does not queue, retry, or track delivery. An SMTP failure
 loses the message, and a repeated save plans nothing.
 """
 
+import functools
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -49,6 +50,7 @@ __all__ = [
     "build_itip_ics",
     "build_itip_message",
     "check_ownership",
+    "owner_addresses",
     "parse_owner_map",
     "resolve_owner_identities",
     "username_email",
@@ -265,6 +267,28 @@ def resolve_owner_identities(actor: Optional[str],
         if email and email not in identities:
             identities.append(email)
     return identities
+
+
+@functools.lru_cache(maxsize=8)
+def _cached_owner_map(text: str) -> Dict[str, str]:
+    return parse_owner_map(text)
+
+
+def owner_addresses(actor: Optional[str], owner_map_text: Optional[str],
+                    organizer_is_username: bool = False) -> List[str]:
+    """The organizer addresses an actor owns, for its principal.
+
+    The same identities as resolve_owner_identities, from the
+    ``itip_owner_map`` setting as written: the mapped address
+    first, then the username with ``organizer_is_username``.
+    A malformed map gives no mapped address here; the hook
+    refuses to load with it.
+    """
+    try:
+        owner_map = _cached_owner_map(owner_map_text or "")
+    except ValueError:
+        owner_map = {}
+    return resolve_owner_identities(actor, owner_map, organizer_is_username)
 
 
 def check_ownership(organizer_email: Optional[str],

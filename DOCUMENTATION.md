@@ -2293,7 +2293,9 @@ This setting is required when `itip_enabled = True`, unless
 sent only when the event's `ORGANIZER` email matches the authenticated user's
 mapped address (case-insensitively). Unmapped users and organizer mismatches
 send no scheduling messages. The SMTP `from_email` setting does not establish
-organizer ownership.
+organizer ownership. The user's own principal lists the mapped address
+first in `calendar-user-address-set` (RFC 6638), so CalDAV clients can set
+it as `ORGANIZER`.
 
 Default: (unset)
 
@@ -2308,8 +2310,8 @@ entry. A username that is not an email address gets nothing from this
 setting. It can be combined with `itip_owner_map`: a user then owns both the
 mapped address and the username address. With this setting enabled,
 `itip_owner_map` may be empty. The user's own principal then also lists
-`mailto:<username>` in `calendar-user-address-set` (RFC 6638), so CalDAV
-clients can set it as `ORGANIZER`.
+`mailto:<username>` in `calendar-user-address-set` (RFC 6638), after a mapped
+address, so CalDAV clients can set it as `ORGANIZER`.
 
 Only enable it when usernames are email addresses that users cannot choose
 freely, for example behind a single sign-on reverse proxy
