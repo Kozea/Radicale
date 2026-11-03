@@ -759,9 +759,23 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
                     "itip_enabled is True. When set, only the mapped email "
                     "for the authenticated actor counts as organizer "
                     "ownership; unmapped actors send nothing, and an empty "
-                    "map with itip_enabled is a config error. The SMTP "
-                    "from_email is never used as ownership evidence.",
+                    "map with itip_enabled is a config error unless "
+                    "itip_organizer_is_username is True. The SMTP "
+                    "from_email is never used as ownership evidence. "
+                    "The user's own principal lists the mapped address "
+                    "first in calendar-user-address-set.",
             "type": str}),
+        ("itip_organizer_is_username", {
+            "value": "False",
+            "help": "For iTIP, an actor whose username is an email "
+                    "address also owns that organizer address, without "
+                    "an itip_owner_map entry; an empty map is then "
+                    "allowed, and the user's own principal lists "
+                    "mailto:<username> in calendar-user-address-set. "
+                    "Only enable when usernames are emails the "
+                    "user cannot choose freely (e.g. single sign-on "
+                    "reverse proxy, LDAP mail as login).",
+            "type": bool}),
         ("new_or_added_to_event_template", {
             "value": """Hello $attendee_name,
 

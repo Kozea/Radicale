@@ -30,6 +30,7 @@ from typing import (Dict, Iterable, Iterator, List, Optional, Sequence, Tuple,
 from radicale import (httputils, pathutils, rights, sharing, storage, types,
                       utils, xmlutils)
 from radicale.app.base import Access, ApplicationBase
+from radicale.hook.email.scheduling import owner_addresses
 from radicale.log import logger
 
 
@@ -256,6 +257,18 @@ def xml_propfind_response(
                       xmlutils.make_clark("CR:addressbook-home-set"),
                       xmlutils.make_clark("C:calendar-home-set")) and
               is_collection and collection.is_principal):
+            if (tag == xmlutils.make_clark("C:calendar-user-address-set") and
+                    user and not shares and collection.path == user):
+                # RFC 6638 2.4.1: the user's own principal also lists the
+                # addresses the email hook accepts as ORGANIZER, first, for
+                # clients taking the first href of the set
+                for address in owner_addresses(
+                        user,
+                        self.configuration.get("hook", "itip_owner_map"),
+                        self.configuration.get("hook", "itip_organizer_is_username")):
+                    child_element = ET.Element(xmlutils.make_clark("D:href"))
+                    child_element.text = "mailto:" + address
+                    element.append(child_element)
             child_element = ET.Element(xmlutils.make_clark("D:href"))
             child_element.text = xmlutils.make_href(base_prefix, path)
             if share:

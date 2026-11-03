@@ -530,3 +530,220 @@ class TestBuilderGuardAndCancelSequence:
                               sequence=max(old_seq, new_seq) + 1)
         assert "SEQUENCE:6" in itip
         assert "METHOD:CANCEL" in itip
+
+
+def _email_config(**kwargs):
+    from radicale.hook.email import EmailConfig, MessageTemplate
+    options = dict(host="smtp.example.com", port=587, security="starttls",
+                   ssl_verify_mode="REQUIRED", username="", password="",
+                   from_email="jeff@example.com", send_mass_emails=False,
+                   dryrun=True,
+                   new_or_added_to_event_template=MessageTemplate(subject="x", body="y"),
+                   deleted_or_removed_from_event_template=MessageTemplate(subject="x", body="y"),
+                   updated_event_template=MessageTemplate(subject="x", body="y"),
+                   itip_enabled=True, itip_owner_map="")
+    options.update(kwargs)
+    return EmailConfig(**options)
+
+
+class TestOrganizerIsUsername:
+    """itip_organizer_is_username: a username that is an email owns it."""
+
+    def test_email_username_is_an_owner_identity(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        assert resolve_owner_identities(
+            "jeff@example.com", {}, organizer_is_username=True) == ["jeff@example.com"]
+        # Compared case-insensitively, like the map.
+        assert resolve_owner_identities(
+            "Jeff@Example.COM", {}, organizer_is_username=True) == ["jeff@example.com"]
+
+    def test_owner_addresses(self):
+        from radicale.hook.email.scheduling import owner_addresses
+        owner_map = "jeff@example.com=jeff@calendar.example.com"
+        assert owner_addresses("jeff@example.com", owner_map, True) == [
+            "jeff@calendar.example.com", "jeff@example.com"]
+        assert owner_addresses("Jeff@Example.com", owner_map, False) == [
+            "jeff@calendar.example.com"]
+        assert owner_addresses("bob@example.com", owner_map, False) == []
+        # The hook refuses a malformed map at load; here it gives nothing.
+        assert owner_addresses("jeff", "jeff", True) == []
+        assert owner_addresses(None, owner_map, True) == []
+
+    def test_username_email(self):
+        from radicale.hook.email.scheduling import username_email
+        assert username_email(" Jeff@Example.COM ") == "jeff@example.com"
+        for actor in ["jeff", "jeff@", "@example.com", "a@b@example.com",
+                      "jeff smith@example.com", "", None]:
+            assert username_email(actor) is None, actor
+
+    def test_non_email_username_gets_nothing(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        for actor in ["jeff", "jeff@", "@example.com", "a@b@example.com",
+                      "jeff smith@example.com", "", None]:
+            assert resolve_owner_identities(
+                actor, {}, organizer_is_username=True) == [], actor
+
+    def test_option_off_keeps_map_only(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        assert resolve_owner_identities("jeff@example.com", {}) == []
+        assert resolve_owner_identities(
+            "jeff@example.com", {"jeff@example.com": "other@example.com"}) == [
+            "other@example.com"]
+
+    def test_map_and_option_together(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        m = {"jeff": "jeff@example.com",
+             "boss@example.com": "jeff@example.com",
+             "alice@example.com": "alice@example.com"}
+        # A non-email actor still gets its mapped address.
+        assert resolve_owner_identities("jeff", m, True) == ["jeff@example.com"]
+        # An email actor gets both its mapped address and itself.
+        owner = resolve_owner_identities("boss@example.com", m, True)
+        assert owner == ["jeff@example.com", "boss@example.com"]
+        event = _event([ALICE, BOB])
+        assert len(plan(None, event, owner=owner)) == 2
+        # Same address in the map and as username: listed once.
+        assert resolve_owner_identities("alice@example.com", m, True) == [
+            "alice@example.com"]
+
+    def test_mismatched_organizer_plans_nothing(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        owner = resolve_owner_identities("alice@example.com", {}, True)
+        assert plan(None, _event([ALICE, BOB]), owner=owner) == []
+
+    def test_empty_map_with_option_is_accepted(self):
+        _email_config(itip_organizer_is_username=True).validate_itip_config()
+
+    def test_empty_map_without_option_is_still_config_error(self):
+        import pytest
+        with pytest.raises(ValueError):
+            _email_config(itip_organizer_is_username=False).validate_itip_config()
+
+    def test_mass_email_with_option_is_still_config_error(self):
+        import pytest
+        with pytest.raises(ValueError):
+            _email_config(itip_organizer_is_username=True,
+                          send_mass_emails=True).validate_itip_config()
+
+
+class TestHookWiringOrganizerIsUsername(BaseTest):
+    """End-to-end: empty map, ownership from the username, dry-run."""
+
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
+        import os
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("[allow all]\nuser: .*\ncollection: .*\npermissions: RrWw")
+        self.configure({
+            "rights": {"file": rights_file_path, "type": "from_file"}})
+        self.configure({"auth": {"type": "none"}})
+        # No itip_owner_map: hook load must accept it with the option.
+        self.configure({
+            "hook": {"type": "email", "dryrun": "True",
+                     "itip_enabled": "True",
+                     "from_email": "calendar@example.com",
+                     "itip_organizer_is_username": "True"}})
+
+    def _put_new_event(self, login, caplog):
+        caplog.set_level(logging.INFO)
+        self.mkcalendar("/calendar.ics/", login=login)
+        start = datetime.now() + timedelta(days=1)
+        event = _event([ALICE, BOB], dtstart=start.strftime("%Y%m%dT%H%M%SZ"),
+                       dtend=(start + timedelta(hours=2)).strftime("%Y%m%dT%H%M%SZ"))
+        self.put("/calendar.ics/event1.ics", event, login=login)
+        return [log for log in caplog.messages
+                if "DRY-RUN send_scheduling_email / to_addresses" in log]
+
+    def test_email_username_matching_organizer_sends(self, caplog):
+        assert self._put_new_event("Jeff@Example.com:password", caplog) == [
+            "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['alice@example.com']",
+            "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['bob@example.com']",
+        ]
+
+    def test_email_username_other_organizer_sends_nothing(self, caplog):
+        # Organizer is jeff@example.com, the user is Alice.
+        assert self._put_new_event("alice@example.com:password", caplog) == []
+
+    def test_non_email_username_sends_nothing(self, caplog):
+        assert self._put_new_event("jeff:password", caplog) == []
+
+
+class TestCalendarUserAddressSet(BaseTest):
+    """calendar-user-address-set lists mailto:<username> with the option."""
+
+    PROPFIND = """<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <prop><C:calendar-user-address-set/></prop>
+</propfind>"""
+
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
+        import os
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("[allow all]\nuser: .*\ncollection: .*\npermissions: RrWw")
+        self.configure({
+            "rights": {"file": rights_file_path, "type": "from_file"}})
+        self.configure({"auth": {"type": "none"}})
+
+    def _enable(self, enabled=True, owner_map=None):
+        if owner_map is None:
+            owner_map = "" if enabled else "jeff=jeff@example.com"
+        self.configure({
+            "hook": {"type": "email", "dryrun": "True",
+                     "itip_enabled": "True",
+                     "from_email": "calendar@example.com",
+                     "itip_owner_map": owner_map,
+                     "itip_organizer_is_username": str(enabled)}})
+
+    def _hrefs(self, path, user):
+        _, responses = self.propfind(path, self.PROPFIND,
+                                     login="%s:password" % user)
+        response = responses[path.replace("@", "%40")]
+        assert not isinstance(response, int)
+        status, prop = response["C:calendar-user-address-set"]
+        assert status == 200
+        return [href.text for href in prop]
+
+    def test_email_user_gets_mailto_and_path(self):
+        self._enable()
+        assert self._hrefs("/Jeff@Example.com/", "Jeff@Example.com") == [
+            "mailto:jeff@example.com", "/Jeff%40Example.com/"]
+
+    def test_option_off_gets_path_only(self):
+        self._enable(False)
+        assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
+            "/jeff%40example.com/"]
+
+    def test_mapped_address_listed_first(self):
+        self._enable(owner_map="jeff@example.com=jeff@calendar.example.com")
+        assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
+            "mailto:jeff@calendar.example.com", "mailto:jeff@example.com",
+            "/jeff%40example.com/"]
+
+    def test_mapped_address_without_option(self):
+        self._enable(False, owner_map="jeff=jeff@example.com")
+        assert self._hrefs("/jeff/", "jeff") == [
+            "mailto:jeff@example.com", "/jeff/"]
+
+    def test_unmapped_user_gets_path_only(self):
+        self._enable(False, owner_map="bob=bob@example.com")
+        assert self._hrefs("/jeff/", "jeff") == ["/jeff/"]
+
+    def test_other_users_mapped_address_not_listed(self):
+        self._enable(False, owner_map="bob=bob@example.com")
+        # Create Bob's principal, then look at it as Jeff.
+        self._hrefs("/bob/", "bob")
+        assert self._hrefs("/bob/", "jeff") == ["/bob/"]
+
+    def test_non_email_user_gets_path_only(self):
+        self._enable()
+        assert self._hrefs("/jeff/", "jeff") == ["/jeff/"]
+
+    def test_other_users_principal_gets_no_mailto(self):
+        self._enable()
+        # Create Bob's principal, then look at it as Jeff.
+        self._hrefs("/bob@example.com/", "bob@example.com")
+        assert self._hrefs("/bob@example.com/", "jeff@example.com") == [
+            "/bob%40example.com/"]

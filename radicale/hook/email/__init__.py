@@ -122,6 +122,10 @@ This is an automated message. Please do not reply.""",
         "itip_owner_map": {
             "value": "",
             "type": str,
+        },
+        "itip_organizer_is_username": {
+            "value": False,
+            "type": bool,
         }
     }
 }
@@ -720,7 +724,8 @@ class EmailConfig:
                  deleted_or_removed_from_event_template: MessageTemplate,
                  updated_event_template: MessageTemplate,
                  itip_enabled: bool = False,
-                 itip_owner_map: str = ""):
+                 itip_owner_map: str = "",
+                 itip_organizer_is_username: bool = False):
         self.host = host
         self.port = port
         self.security = SMTP_SECURITY_TYPE_ENUM.from_string(value=security)
@@ -732,6 +737,7 @@ class EmailConfig:
         self.dryrun = dryrun
         self.itip_enabled = itip_enabled
         self.itip_owner_map = itip_owner_map
+        self.itip_organizer_is_username = itip_organizer_is_username
         self.new_or_added_to_event_template = new_or_added_to_event_template
         self.deleted_or_removed_from_event_template = deleted_or_removed_from_event_template
         self.updated_event_template = updated_event_template
@@ -743,7 +749,8 @@ class EmailConfig:
         return f"EmailConfig(host={self.host}, port={self.port}, username={self.username}, " \
                f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails}, dryrun={self.dryrun}, " \
                f"itip_enabled={self.itip_enabled}, " \
-               f"itip_owner_map={self.itip_owner_map!r})"
+               f"itip_owner_map={self.itip_owner_map!r}, " \
+               f"itip_organizer_is_username={self.itip_organizer_is_username})"
 
     def __repr__(self):
         return self.__str__()
@@ -753,22 +760,26 @@ class EmailConfig:
 
         ``mass_email`` and ``itip_enabled`` cannot both be true,
         and ``itip_enabled`` requires a non-empty
-        ``itip_owner_map``. Fail at startup instead of silently
-        falling back to legacy sending.
+        ``itip_owner_map`` unless ``itip_organizer_is_username``
+        is set. Fail at startup instead of silently falling back
+        to legacy sending.
         """
         if self.itip_enabled and self.send_mass_emails:
             raise ValueError(
                 "hook.mass_email and hook.itip_enabled cannot both be "
                 "true: mass_email sends one grouped legacy email, "
                 "itip_enabled sends one per-recipient iTIP message")
-        if self.itip_enabled and not (self.itip_owner_map or "").strip():
+        if (self.itip_enabled and not (self.itip_owner_map or "").strip()
+                and not self.itip_organizer_is_username):
             raise ValueError(
-                "hook.itip_enabled requires hook.itip_owner_map: "
+                "hook.itip_enabled requires hook.itip_owner_map or "
+                "hook.itip_organizer_is_username: "
                 "outbound iTIP needs an explicit actor-to-organizer-"
-                "email map, because a bare username matching by "
-                "local-part could match a different domain, and "
-                "Radicale has no authoritative principal-to-email "
-                "mapping to fall back to")
+                "email map (or usernames that are emails), because "
+                "a bare username matching by local-part could match "
+                "a different domain, and Radicale has no "
+                "authoritative principal-to-email mapping to fall "
+                "back to")
 
     def send_added_email(self, attendees: List[Attendee], event: EmailEvent) -> bool:
         """
@@ -1026,6 +1037,7 @@ class Hook(BaseHook):
             dryrun=self.configuration.get("hook", "dryrun"),
             itip_enabled=self.configuration.get("hook", "itip_enabled"),
             itip_owner_map=self.configuration.get("hook", "itip_owner_map"),
+            itip_organizer_is_username=self.configuration.get("hook", "itip_organizer_is_username"),
             new_or_added_to_event_template=MessageTemplate(
                 subject="You have been added to an event",
                 body=self.configuration.get("hook", "new_or_added_to_event_template")
@@ -1101,8 +1113,10 @@ class Hook(BaseHook):
     def _owner_identities(self, notification_item) -> List[str]:
         """Identities the hook can use to prove organizer ownership.
 
-        Explicit map only; never ``from_email``, never a bare
-        username. See resolve_owner_identities.
+        The explicit map, plus the username itself when it is an
+        email address and ``itip_organizer_is_username`` is set;
+        never ``from_email``, never a bare username. See
+        resolve_owner_identities.
 
         Actor provenance: ``notification_item.actor`` is set by
         Radicale's storage layer from the authenticated user
@@ -1113,7 +1127,9 @@ class Hook(BaseHook):
         header (e.g. http_remote_user) must trust that proxy.
         """
         actor = getattr(notification_item, "actor", None)
-        return resolve_owner_identities(actor, getattr(self, "owner_map", {}))
+        return resolve_owner_identities(
+            actor, getattr(self, "owner_map", {}),
+            organizer_is_username=self.email_config.itip_organizer_is_username)
 
     # Shared event processing. The iTIP and legacy paths share
     # notification-type parsing, event reading, and past-event

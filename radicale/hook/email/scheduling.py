@@ -31,6 +31,7 @@ it does not queue, retry, or track delivery. An SMTP failure
 loses the message, and a repeated save plans nothing.
 """
 
+import functools
 import re
 from dataclasses import dataclass
 from datetime import datetime
@@ -49,8 +50,10 @@ __all__ = [
     "build_itip_ics",
     "build_itip_message",
     "check_ownership",
+    "owner_addresses",
     "parse_owner_map",
     "resolve_owner_identities",
+    "username_email",
     "extract_email",
     "parse_event",
     "plan_messages",
@@ -229,18 +232,63 @@ def parse_owner_map(text: Optional[str]) -> Dict[str, str]:
     return result
 
 
+# One "@" with a non-empty local part and domain, no whitespace.
+_USERNAME_EMAIL = re.compile(r"[^@\s]+@[^@\s]+")
+
+
+def username_email(actor: Optional[str]) -> Optional[str]:
+    """The lower-cased email address an actor's username is, or None."""
+    if not actor:
+        return None
+    actor = actor.strip().lower()
+    return actor if _USERNAME_EMAIL.fullmatch(actor) else None
+
+
 def resolve_owner_identities(actor: Optional[str],
-                             owner_map: Optional[Dict[str, str]]) -> List[str]:
+                             owner_map: Optional[Dict[str, str]],
+                             organizer_is_username: bool = False) -> List[str]:
     """Resolve the owner identities for one actor.
 
-    Only the mapped email for the actor counts; an unmapped
-    actor, or an empty map, gets no identities. The SMTP
-    ``from_email`` is never evidence of ownership.
+    The mapped email for the actor counts. With
+    ``organizer_is_username``, an actor whose username is an
+    email address also owns that address. Any other actor gets
+    no identities. The SMTP ``from_email`` is never evidence of
+    ownership.
     """
-    if not owner_map or not actor:
+    if not actor:
         return []
-    mapped = owner_map.get(actor.strip().lower())
-    return [mapped] if mapped else []
+    actor = actor.strip().lower()
+    identities: List[str] = []
+    mapped = (owner_map or {}).get(actor)
+    if mapped:
+        identities.append(mapped)
+    if organizer_is_username:
+        email = username_email(actor)
+        if email and email not in identities:
+            identities.append(email)
+    return identities
+
+
+@functools.lru_cache(maxsize=8)
+def _cached_owner_map(text: str) -> Dict[str, str]:
+    return parse_owner_map(text)
+
+
+def owner_addresses(actor: Optional[str], owner_map_text: Optional[str],
+                    organizer_is_username: bool = False) -> List[str]:
+    """The organizer addresses an actor owns, for its principal.
+
+    The same identities as resolve_owner_identities, from the
+    ``itip_owner_map`` setting as written: the mapped address
+    first, then the username with ``organizer_is_username``.
+    A malformed map gives no mapped address here; the hook
+    refuses to load with it.
+    """
+    try:
+        owner_map = _cached_owner_map(owner_map_text or "")
+    except ValueError:
+        owner_map = {}
+    return resolve_owner_identities(actor, owner_map, organizer_is_username)
 
 
 def check_ownership(organizer_email: Optional[str],
