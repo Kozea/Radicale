@@ -2266,7 +2266,8 @@ Attendees with `SCHEDULE-AGENT=CLIENT` or `SCHEDULE-AGENT=NONE` do not receive
 server-generated messages.
 
 Requires the email hook (`type = email`), SMTP configuration, and a non-empty
-`itip_owner_map`. This setting cannot be used with `mass_email = True`.
+`itip_owner_map` or `itip_organizer_is_username = True`. This setting cannot
+be used with `mass_email = True`.
 
 Only resources containing a single `VEVENT` are supported, including recurring
 masters using `RRULE`. Recurrence overrides with multiple `VEVENT` components
@@ -2287,13 +2288,36 @@ addresses, used to authorize outgoing iTIP messages. Supply comma-separated
 itip_owner_map = alice=alice@example.com, bob=bob@example.com
 ```
 
-This setting is required when `itip_enabled = True`. A scheduling message is
+This setting is required when `itip_enabled = True`, unless
+`itip_organizer_is_username = True`. A scheduling message is
 sent only when the event's `ORGANIZER` email matches the authenticated user's
 mapped address (case-insensitively). Unmapped users and organizer mismatches
 send no scheduling messages. The SMTP `from_email` setting does not establish
 organizer ownership.
 
 Default: (unset)
+
+##### itip_organizer_is_username
+
+_(>= 3.9.1)_
+
+When enabled, an authenticated user whose username is an email address
+(one `@`, non-empty local part and domain, no whitespace) owns that address
+as `ORGANIZER`, compared case-insensitively, without an `itip_owner_map`
+entry. A username that is not an email address gets nothing from this
+setting. It can be combined with `itip_owner_map`: a user then owns both the
+mapped address and the username address. With this setting enabled,
+`itip_owner_map` may be empty.
+
+Only enable it when usernames are email addresses that users cannot choose
+freely, for example behind a single sign-on reverse proxy
+(`http_x_remote_user`) whose identity provider vouches for the email, or with
+LDAP using the mail attribute as login. Accounts created by an administrator
+(e.g. `htpasswd`) are fine too. Where someone can pick their own username,
+a username that looks like another person's email address would let them
+send invitations and cancellations as that address.
+
+Default: `False`
 
 ##### new_or_added_to_event_template
 

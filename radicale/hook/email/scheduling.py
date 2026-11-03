@@ -229,18 +229,32 @@ def parse_owner_map(text: Optional[str]) -> Dict[str, str]:
     return result
 
 
+# One "@" with a non-empty local part and domain, no whitespace.
+_USERNAME_EMAIL = re.compile(r"[^@\s]+@[^@\s]+")
+
+
 def resolve_owner_identities(actor: Optional[str],
-                             owner_map: Optional[Dict[str, str]]) -> List[str]:
+                             owner_map: Optional[Dict[str, str]],
+                             organizer_is_username: bool = False) -> List[str]:
     """Resolve the owner identities for one actor.
 
-    Only the mapped email for the actor counts; an unmapped
-    actor, or an empty map, gets no identities. The SMTP
-    ``from_email`` is never evidence of ownership.
+    The mapped email for the actor counts. With
+    ``organizer_is_username``, an actor whose username is an
+    email address also owns that address. Any other actor gets
+    no identities. The SMTP ``from_email`` is never evidence of
+    ownership.
     """
-    if not owner_map or not actor:
+    if not actor:
         return []
-    mapped = owner_map.get(actor.strip().lower())
-    return [mapped] if mapped else []
+    actor = actor.strip().lower()
+    identities: List[str] = []
+    mapped = (owner_map or {}).get(actor)
+    if mapped:
+        identities.append(mapped)
+    if (organizer_is_username and _USERNAME_EMAIL.fullmatch(actor)
+            and actor not in identities):
+        identities.append(actor)
+    return identities
 
 
 def check_ownership(organizer_email: Optional[str],

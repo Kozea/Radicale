@@ -521,6 +521,10 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 #mass_email = False
 #itip_enabled = False
 #itip_owner_map = alice=alice@example.com, bob=bob@example.com
+# iTIP: a username that is an email address owns that organizer address
+# Only enable if usernames are emails users cannot choose freely
+# (e.g. single sign-on reverse proxy, LDAP mail as login)
+#itip_organizer_is_username = False
 #new_or_added_to_event_template =
 #deleted_or_removed_from_event_template =
 #updated_event_template =
