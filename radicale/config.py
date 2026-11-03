@@ -768,7 +768,9 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "help": "For iTIP, an actor whose username is an email "
                     "address also owns that organizer address, without "
                     "an itip_owner_map entry; an empty map is then "
-                    "allowed. Only enable when usernames are emails the "
+                    "allowed, and the user's own principal lists "
+                    "mailto:<username> in calendar-user-address-set. "
+                    "Only enable when usernames are emails the "
                     "user cannot choose freely (e.g. single sign-on "
                     "reverse proxy, LDAP mail as login).",
             "type": bool}),

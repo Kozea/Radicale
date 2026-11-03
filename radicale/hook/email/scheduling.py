@@ -51,6 +51,7 @@ __all__ = [
     "check_ownership",
     "parse_owner_map",
     "resolve_owner_identities",
+    "username_email",
     "extract_email",
     "parse_event",
     "plan_messages",
@@ -233,6 +234,14 @@ def parse_owner_map(text: Optional[str]) -> Dict[str, str]:
 _USERNAME_EMAIL = re.compile(r"[^@\s]+@[^@\s]+")
 
 
+def username_email(actor: Optional[str]) -> Optional[str]:
+    """The lower-cased email address an actor's username is, or None."""
+    if not actor:
+        return None
+    actor = actor.strip().lower()
+    return actor if _USERNAME_EMAIL.fullmatch(actor) else None
+
+
 def resolve_owner_identities(actor: Optional[str],
                              owner_map: Optional[Dict[str, str]],
                              organizer_is_username: bool = False) -> List[str]:
@@ -251,9 +260,10 @@ def resolve_owner_identities(actor: Optional[str],
     mapped = (owner_map or {}).get(actor)
     if mapped:
         identities.append(mapped)
-    if (organizer_is_username and _USERNAME_EMAIL.fullmatch(actor)
-            and actor not in identities):
-        identities.append(actor)
+    if organizer_is_username:
+        email = username_email(actor)
+        if email and email not in identities:
+            identities.append(email)
     return identities
 
 

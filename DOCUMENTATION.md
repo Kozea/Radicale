@@ -2307,7 +2307,9 @@ as `ORGANIZER`, compared case-insensitively, without an `itip_owner_map`
 entry. A username that is not an email address gets nothing from this
 setting. It can be combined with `itip_owner_map`: a user then owns both the
 mapped address and the username address. With this setting enabled,
-`itip_owner_map` may be empty.
+`itip_owner_map` may be empty. The user's own principal then also lists
+`mailto:<username>` in `calendar-user-address-set` (RFC 6638), so CalDAV
+clients can set it as `ORGANIZER`.
 
 Only enable it when usernames are email addresses that users cannot choose
 freely, for example behind a single sign-on reverse proxy

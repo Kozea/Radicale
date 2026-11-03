@@ -557,6 +557,13 @@ class TestOrganizerIsUsername:
         assert resolve_owner_identities(
             "Jeff@Example.COM", {}, organizer_is_username=True) == ["jeff@example.com"]
 
+    def test_username_email(self):
+        from radicale.hook.email.scheduling import username_email
+        assert username_email(" Jeff@Example.COM ") == "jeff@example.com"
+        for actor in ["jeff", "jeff@", "@example.com", "a@b@example.com",
+                      "jeff smith@example.com", "", None]:
+            assert username_email(actor) is None, actor
+
     def test_non_email_username_gets_nothing(self):
         from radicale.hook.email.scheduling import resolve_owner_identities
         for actor in ["jeff", "jeff@", "@example.com", "a@b@example.com",
@@ -648,3 +655,60 @@ class TestHookWiringOrganizerIsUsername(BaseTest):
 
     def test_non_email_username_sends_nothing(self, caplog):
         assert self._put_new_event("jeff:password", caplog) == []
+
+
+class TestCalendarUserAddressSet(BaseTest):
+    """calendar-user-address-set lists mailto:<username> with the option."""
+
+    PROPFIND = """<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <prop><C:calendar-user-address-set/></prop>
+</propfind>"""
+
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
+        import os
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("[allow all]\nuser: .*\ncollection: .*\npermissions: RrWw")
+        self.configure({
+            "rights": {"file": rights_file_path, "type": "from_file"}})
+        self.configure({"auth": {"type": "none"}})
+
+    def _enable(self, enabled=True):
+        self.configure({
+            "hook": {"type": "email", "dryrun": "True",
+                     "itip_enabled": "True",
+                     "from_email": "calendar@example.com",
+                     "itip_owner_map": "" if enabled else "jeff=jeff@example.com",
+                     "itip_organizer_is_username": str(enabled)}})
+
+    def _hrefs(self, path, user):
+        _, responses = self.propfind(path, self.PROPFIND,
+                                     login="%s:password" % user)
+        response = responses[path.replace("@", "%40")]
+        assert not isinstance(response, int)
+        status, prop = response["C:calendar-user-address-set"]
+        assert status == 200
+        return [href.text for href in prop]
+
+    def test_email_user_gets_mailto_and_path(self):
+        self._enable()
+        assert self._hrefs("/Jeff@Example.com/", "Jeff@Example.com") == [
+            "mailto:jeff@example.com", "/Jeff%40Example.com/"]
+
+    def test_option_off_gets_path_only(self):
+        self._enable(False)
+        assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
+            "/jeff%40example.com/"]
+
+    def test_non_email_user_gets_path_only(self):
+        self._enable()
+        assert self._hrefs("/jeff/", "jeff") == ["/jeff/"]
+
+    def test_other_users_principal_gets_no_mailto(self):
+        self._enable()
+        # Create Bob's principal, then look at it as Jeff.
+        self._hrefs("/bob@example.com/", "bob@example.com")
+        assert self._hrefs("/bob@example.com/", "jeff@example.com") == [
+            "/bob%40example.com/"]
