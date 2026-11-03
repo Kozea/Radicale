@@ -2245,8 +2245,9 @@ does not send another message. Attendees with
 <code>SCHEDULE-AGENT=CLIENT</code> or <code>SCHEDULE-AGENT=NONE</code>
 do not receive server-generated messages.</p>
 <p>Requires the email hook (<code>type = email</code>), SMTP
-configuration, and a non-empty <code>itip_owner_map</code>. This setting
-cannot be used with <code>mass_email = True</code>.</p>
+configuration, and a non-empty <code>itip_owner_map</code> or
+<code>itip_organizer_is_username = True</code>. This setting cannot be
+used with <code>mass_email = True</code>.</p>
 <p>Only resources containing a single <code>VEVENT</code> are supported,
 including recurring masters using <code>RRULE</code>. Recurrence
 overrides with multiple <code>VEVENT</code> components are not
@@ -2263,13 +2264,40 @@ failure.</p>
 email addresses, used to authorize outgoing iTIP messages. Supply
 comma-separated <code>username=email</code> pairs, for example:</p>
 <div class="sourceCode" id="cb52"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb52-1"><a aria-hidden="true" href="#cb52-1" tabindex="-1"></a><span class="dt">itip_owner_map </span><span class="ot">=</span><span class="st"> alice=alice@example.com, bob=bob@example.com</span></span></code></pre></div>
-<p>This setting is required when <code>itip_enabled = True</code>. A
-scheduling message is sent only when the event's <code>ORGANIZER</code>
-email matches the authenticated user's mapped address
-(case-insensitively). Unmapped users and organizer mismatches send no
-scheduling messages. The SMTP <code>from_email</code> setting does not
-establish organizer ownership.</p>
+<p>This setting is required when <code>itip_enabled = True</code>,
+unless <code>itip_organizer_is_username = True</code>. A scheduling
+message is sent only when the event's <code>ORGANIZER</code> email
+matches the authenticated user's mapped address (case-insensitively).
+Unmapped users and organizer mismatches send no scheduling messages. The
+SMTP <code>from_email</code> setting does not establish organizer
+ownership. The user's own principal lists the mapped address first in
+<code>calendar-user-address-set</code> (RFC 6638), so CalDAV clients can
+set it as <code>ORGANIZER</code>.</p>
 <p>Default: (unset)</p>
+</section>
+<section class="level5" id="itip_organizer_is_username">
+<h5>itip_organizer_is_username <a class="headerlink" href="#itip_organizer_is_username">&para;</a></h5>
+<p><em>(&gt;= 3.9.1)</em></p>
+<p>When enabled, an authenticated user whose username is an email
+address (one <code>@</code>, non-empty local part and domain, no
+whitespace) owns that address as <code>ORGANIZER</code>, compared
+case-insensitively, without an <code>itip_owner_map</code> entry. A
+username that is not an email address gets nothing from this setting. It
+can be combined with <code>itip_owner_map</code>: a user then owns both
+the mapped address and the username address. With this setting enabled,
+<code>itip_owner_map</code> may be empty. The user's own principal then
+also lists <code>mailto:&lt;username&gt;</code> in
+<code>calendar-user-address-set</code> (RFC 6638), after a mapped
+address, so CalDAV clients can set it as <code>ORGANIZER</code>.</p>
+<p>Only enable it when usernames are email addresses that users cannot
+choose freely, for example behind a single sign-on reverse proxy
+(<code>http_x_remote_user</code>) whose identity provider vouches for
+the email, or with LDAP using the mail attribute as login. Accounts
+created by an administrator (e.g. <code>htpasswd</code>) are fine too.
+Where someone can pick their own username, a username that looks like
+another person's email address would let them send invitations and
+cancellations as that address.</p>
+<p>Default: <code>False</code></p>
 </section>
 <section class="level5" id="new_or_added_to_event_template">
 <h5>new_or_added_to_event_template <a class="headerlink" href="#new_or_added_to_event_template">&para;</a></h5>
