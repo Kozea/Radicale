@@ -43,6 +43,7 @@ class StoragePartDiscover(StorageBase):
             Callable[[str, Optional[str]], ContextManager[None]]] = None,
             user_groups: Set[str] = set([])
             ) -> Iterator[types.CollectionOrItem]:
+        logger.trace("storage/discover: path=%r depth=%r", path, depth)
         # assert isinstance(self, multifilesystem.Storage)
         if child_context_manager is None:
             child_context_manager = _null_child_context_manager
