@@ -2518,6 +2518,61 @@ permissions: RrWw""")
         status, prop = response["D:getetag"]
         assert status == 200 and prop.text
 
+    def test_report_direct_write_item_ok(self) -> None:
+        """Test report request on a directly written item"""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        with open(os.path.join(self.colpath, "collection-root", "calendar.ics", "event.ics"), "w") as f:
+            f.write(event)
+        _, responses = self.report(event_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""")
+        assert len(responses) == 1
+        response = responses[event_path]
+        assert isinstance(response, dict)
+        status, prop = response["D:getetag"]
+        assert status == 200 and prop.text
+
+    def test_report_direct_write_item_broken_exception(self) -> None:
+        """Test report request on a directly written broken item resulting in exception"""
+        self.configure({"storage": {"skip_broken_item": False}})
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        event = get_file_content("broken-vevent.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        with open(os.path.join(self.colpath, "collection-root", "calendar.ics", "event.ics"), "w") as f:
+            f.write(event)
+        _, responses = self.report(event_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", check=500)
+
+    def test_report_direct_write_item_broken_skip(self) -> None:
+        """Test report request on a directly written broken item"""
+        self.configure({"storage": {"skip_broken_item": True}})
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+        event = get_file_content("broken-vevent.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        with open(os.path.join(self.colpath, "collection-root", "calendar.ics", "event.ics"), "w") as f:
+            f.write(event)
+        _, responses = self.report(event_path, """\
+<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:C="urn:ietf:params:xml:ns:caldav">
+    <D:prop xmlns:D="DAV:">
+        <D:getetag />
+    </D:prop>
+</C:calendar-query>""", check=404)
+
     def test_report_free_busy(self) -> None:
         """Test free busy report on a few items"""
         calendar_path = "/calendar.ics/"
