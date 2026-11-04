@@ -54,7 +54,6 @@ else:
 if isinstance(level, str):
     level = getattr(logging, level.upper())
     assert isinstance(level, int)
-radicale.log.logger.setLevel(level)
 
 
 class BaseTest:
@@ -78,6 +77,7 @@ class BaseTest:
                         "_filesystem_fsync": "False"},
             # Set incorrect authentication delay to a short duration
             "auth": {"delay": "0.001"}})
+        radicale.log.logger.setLevel(level)
 
     def configure(self, config_: types.CONFIG) -> None:
         self.configuration.update(config_, "test", privileged=True)

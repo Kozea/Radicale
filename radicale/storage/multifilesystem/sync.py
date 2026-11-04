@@ -56,6 +56,7 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
         state = {}
         token_name_hash = sha256()
         # Find the history of all existing and deleted items
+        logger.trace("storage/sync")
         for href, item in itertools.chain(
                 ((item.href, item) for item in self.get_all()),
                 ((href, None) for href in self._get_deleted_history_hrefs())):

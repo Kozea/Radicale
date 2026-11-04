@@ -55,6 +55,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
 
     def _get(self, href: str, verify_href: bool = True
              ) -> Optional[radicale_item.Item]:
+        logger.trace("storage/_get: href=%r", href)
         if verify_href:
             try:
                 if not pathutils.is_safe_filesystem_path_component(href):
@@ -141,7 +142,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     except Exception as e:
                         if self._skip_broken_item:
                             logger.warning("Skip broken item %r in %r: %s", href, self.path, e)
-                            return None
+                            raise ValueError
                         else:
                             raise RuntimeError("Failed to load item %r in %r: %s" %
                                                (href, self.path, e)) from e
@@ -172,6 +173,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         # we only need to call os.listdir once.
         files = None
         for href in hrefs:
+            logger.trace("storage/get_multi: href=%r", href)
             if files is None:
                 # List dir after hrefs returned one item, the iterator may be
                 # empty and the for-loop is never executed.
@@ -184,13 +186,20 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                 yield (href, None)
             else:
                 if pathutils.file_check_size(path, self._storage._max_resource_size):
-                    yield (href, self._get(href, verify_href=False))
+                    try:
+                        yield (href, self._get(href, verify_href=False))
+                    except ValueError:
+                        continue
 
     def get_all(self) -> Iterator[radicale_item.Item]:
         for href in self._list():
+            logger.trace("storage/get_all: href=%r", href)
             # We don't need to check for collisions, because the file names
             # are from os.listdir.
-            item = self._get(href, verify_href=False)
+            try:
+                item = self._get(href, verify_href=False)
+            except ValueError:
+                continue
             if item is not None:
                 if pathutils.file_check_size(os.path.join(self._filesystem_path, href), self._storage._max_resource_size):
                     yield item
