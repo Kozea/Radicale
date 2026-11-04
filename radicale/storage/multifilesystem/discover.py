@@ -78,7 +78,10 @@ class StoragePartDiscover(StorageBase):
             pathutils.unstrip_path(sane_path, True))
 
         if href:
-            item = collection._get(href)
+            try:
+                item = collection._get(href)
+            except ValueError:
+                return
             if item is not None:
                 if pathutils.file_check_size(filesystem_path, self._max_resource_size):
                     yield item

@@ -186,7 +186,10 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                 yield (href, None)
             else:
                 if pathutils.file_check_size(path, self._storage._max_resource_size):
-                    yield (href, self._get(href, verify_href=False))
+                    try:
+                        yield (href, self._get(href, verify_href=False))
+                    except ValueError:
+                        continue
 
     def get_all(self) -> Iterator[radicale_item.Item]:
         for href in self._list():
