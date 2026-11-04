@@ -41,7 +41,8 @@ import pytest
 
 from radicale import config, server
 from radicale.tests import BaseTest
-from radicale.tests.helpers import configuration_to_dict, get_file_path
+from radicale.tests.helpers import (configuration_to_dict, get_file_content,
+                                    get_file_path)
 
 
 class DisabledRedirectHandler(request.HTTPRedirectHandler):
@@ -304,6 +305,160 @@ class TestCherootServerRequests(TestBaseServerRequests):
         self.thread.start()
         status, _, _ = self.request("GET", "/%C3%A9t%C3%A9/", check=None)
         assert status in (302, 401, 404)
+
+
+class TestBaseServerStandalone(BaseTest):
+    def test_standalone_wsgi_server_help(self, capsys) -> None:
+        """Test the internal server standalone: help"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--help",
+                ]
+        with pytest.raises(SystemExit) as e:
+            __main__.run()
+        assert e.type == SystemExit
+        assert e.value.code == 0
+        captured = capsys.readouterr()
+        assert "help" in captured.out
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_item_broken(self) -> None:
+        """Test the internal server standalone: verify-item 'broken'"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-item", get_file_path("broken-vcard.vcf"),
+                ]
+        with pytest.raises(SystemExit) as e:
+            __main__.run()
+        assert e.type == SystemExit
+        assert e.value.code == 1
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_item_broken2(self, caplog) -> None:
+        """Test the internal server standalone: verify-item 'broken'"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-item", get_file_path("allprop.xml"),
+                ]
+        caplog.clear()
+        with pytest.raises(SystemExit) as e:
+            __main__.run()
+        assert e.type == SystemExit
+        assert e.value.code == 1
+        assert "Hexdump" in caplog.text
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_item_ok(self) -> None:
+        """Test the internal server standalone: verify-item 'ok'"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-item", get_file_path("event1.ics"),
+                ]
+        __main__.run()
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_collection_broken(self) -> None:
+        """Test the internal server standalone: verify-collection"""
+        self.configure({"auth": {"type": "none"},
+                        "rights": {"type": "owner_only"},
+                        })
+
+        self.create_addressbook("/owner/abook.vcf/", login="owner:ownerpw")
+        # write item as PUT will reject broken one
+        contact = get_file_content("contact1.vcf")
+        with open(os.path.join(self.colpath, "collection-root", "owner", "abook.vcf", "contact1.vcf"), "w") as f:
+            f.write(contact)
+        contact = get_file_content("broken-vcard.vcf")
+        with open(os.path.join(self.colpath, "collection-root", "owner", "abook.vcf", "broken-vcard.vcf"), "w") as f:
+            f.write(contact)
+
+        level = self.configuration.get("logging", "level")
+        if 'PYTEST_RADICALE_LOGLEVEL' in os.environ:
+            level = os.environ["PYTEST_RADICALE_LOGLEVEL"]
+
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-storage",
+                "--logging-level", level,
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        with pytest.raises(SystemExit) as e:
+            __main__.run()
+        assert e.type == SystemExit
+        assert e.value.code == 1
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_collection_ok(self) -> None:
+        """Test the internal server standalone: verify-collection"""
+        self.configure({"auth": {"type": "none"},
+                        "rights": {"type": "owner_only"},
+                        })
+
+        self.mkcalendar("/owner/calendar.ics/", login="owner:ownerpw")
+        event = get_file_content("event8.ics")
+        path = "/owner/calendar.ics/event8.ics"
+        self.put(path, event, login="owner:ownerpw")
+
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-storage",
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        __main__.run()
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_sharing_db_none(self) -> None:
+        """Test the internal server standalone: verify-sharing"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-sharing",
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        with pytest.raises(SystemExit) as e:
+            __main__.run()
+        assert e.type == SystemExit
+        assert e.value.code == 1
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_sharing_db_csv(self) -> None:
+        """Test the internal server standalone: verify-sharing 'csv'"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-sharing",
+                "--sharing-type", "csv",
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        __main__.run()
+        sys.argv = sys_argv_orig
+
+    def test_standalone_wsgi_server_verify_sharing_db_files(self) -> None:
+        """Test the internal server standalone: verify-sharing 'files'"""
+        from radicale import __main__
+        sys_argv_orig = sys.argv
+        sys.argv = [
+                "radicale",
+                "--verify-sharing",
+                "--sharing-type", "files",
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        __main__.run()
+        sys.argv = sys_argv_orig
 
 
 class TestHypercornConfiguration:
