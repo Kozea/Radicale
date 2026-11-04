@@ -34,6 +34,7 @@ import defusedxml.ElementTree as DefusedET
 import pytest
 import vobject
 
+import radicale
 from radicale import pathutils, storage, utils, xmlutils
 from radicale.item import get_etag
 from radicale.tests import RESPONSES, BaseTest
@@ -343,6 +344,18 @@ permissions: RrWw""")
         event = get_file_content("broken-vevent.ics")
         path = "/calendar.ics/broken-vevent.ics"
         self.put(path, event, check=400)
+
+    @pytest.mark.skipif(radicale.log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
+    def test_add_event_broken_hexdump(self, caplog) -> None:
+        """Add a broken event with hexdump."""
+        self.configure({"logging": {"bad_put_request_content": True}})
+        caplog.set_level(logging.DEBUG)
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("broken-vevent.ics")
+        path = "/calendar.ics/broken-vevent.ics"
+        caplog.clear()
+        self.put(path, event, check=400)
+        assert "Hexdump" in caplog.text
 
     def test_add_events_broken2(self) -> None:
         """Add a broken event (2nd one is broken)."""
