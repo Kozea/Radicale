@@ -90,6 +90,7 @@ class BaseCollection:
     @property
     def etag(self) -> str:
         """Encoded as quoted-string (see RFC 2616)."""
+        logger.trace("storage/etag")
         etag = sha256()
         for item in self.get_all():
             assert item.href
@@ -113,6 +114,8 @@ class BaseCollection:
                  invalid.
 
         """
+
+        logger.trace("storage/sync")
 
         def hrefs_iter() -> Iterator[str]:
             for item in self.get_all():
@@ -156,21 +159,22 @@ class BaseCollection:
             return
         tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, self.tag)
-        logger.trace("STORAGE/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
+        logger.trace("storage/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
         for item in self.get_all():
-            logger.trace("STORAGE/get_filtered: component_name=%s tag=%s", item.component_name, tag)
+            logger.trace("storage/get_filtered: component_name=%s tag=%s", item.component_name, tag)
             if tag is not None and tag != item.component_name:
                 continue
             istart, iend = item.time_range
-            logger.trace("STORAGE/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
+            logger.trace("storage/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
             if istart >= end or iend <= start:
-                logger.trace("STORAGE/get_filtered: skip iuid=%s", item.uid)
+                logger.trace("storage/get_filtered: skip iuid=%s", item.uid)
                 continue
-            logger.trace("STORAGE/get_filtered: add iuid=%s", item.uid)
+            logger.trace("storage/get_filtered: add iuid=%s", item.uid)
             yield item, simple and (start <= istart or iend <= end)
 
     def has_uid(self, uid: str) -> bool:
         """Check if a UID exists in the collection."""
+        logger.trace("storage/has_uid")
         for item in self.get_all():
             if item.uid == uid:
                 return True
@@ -225,6 +229,7 @@ class BaseCollection:
 
     def serialize(self, vcf_to_ics: bool = False, ShareActions: dict = {}) -> str:
         """Get the unicode string representing the whole collection."""
+        logger.trace("storage/serialize")
         if self.tag == "VCALENDAR":
             in_vcalendar = False
             vtimezones = ""
