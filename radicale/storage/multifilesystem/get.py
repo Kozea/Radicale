@@ -142,7 +142,7 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                     except Exception as e:
                         if self._skip_broken_item:
                             logger.warning("Skip broken item %r in %r: %s", href, self.path, e)
-                            return None
+                            raise ValueError
                         else:
                             raise RuntimeError("Failed to load item %r in %r: %s" %
                                                (href, self.path, e)) from e
@@ -193,7 +193,10 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
             logger.trace("storage/get_all: href=%r", href)
             # We don't need to check for collisions, because the file names
             # are from os.listdir.
-            item = self._get(href, verify_href=False)
+            try:
+                item = self._get(href, verify_href=False)
+            except ValueError:
+                continue
             if item is not None:
                 if pathutils.file_check_size(os.path.join(self._filesystem_path, href), self._storage._max_resource_size):
                     yield item
