@@ -229,6 +229,34 @@ class TestMultiFileSystem(BaseTest):
             assert answer is not None
             assert "\r\nUID:%s\r\n" % uid in answer
 
+    def test_get_contacts_broken_skip(self) -> None:
+        """Try to add broken contact, but skip."""
+        self.configure({"storage": {"skip_broken_item": True}})
+        path = "/contacts.vcf/"
+        self.create_addressbook(path)
+        # write item as PUT will reject broken one
+        contact = get_file_content("contact1.vcf")
+        with open(os.path.join(self.colpath, "collection-root", "contacts.vcf", "contact1.vcf"), "w") as f:
+            f.write(contact)
+        contact = get_file_content("broken-vcard.vcf")
+        with open(os.path.join(self.colpath, "collection-root", "contacts.vcf", "broken-vcard.vcf"), "w") as f:
+            f.write(contact)
+        self.get(path, check=200)
+
+    def test_get_contacts_broken_raise(self) -> None:
+        """Try to add broken contact, but skip."""
+        self.configure({"storage": {"skip_broken_item": False}})
+        path = "/contacts.vcf/"
+        self.create_addressbook(path)
+        # write item as PUT will reject broken one
+        contact = get_file_content("contact1.vcf")
+        with open(os.path.join(self.colpath, "collection-root", "contacts.vcf", "contact1.vcf"), "w") as f:
+            f.write(contact)
+        contact = get_file_content("broken-vcard.vcf")
+        with open(os.path.join(self.colpath, "collection-root", "contacts.vcf", "broken-vcard.vcf"), "w") as f:
+            f.write(contact)
+        self.get(path, check=500)
+
     @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_collection_storage_dummy_case_sensitivity(self) -> None:
         """Test collection storage case sensitivity."""
