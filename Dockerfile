@@ -6,7 +6,7 @@ FROM python:3-alpine AS builder
 ARG VERSION=master
 
 # Optional dependencies (e.g. bcrypt or ldap)
-ARG DEPENDENCIES=bcrypt
+ARG DEPENDENCIES=bcrypt,h2
 
 RUN apk add --no-cache --virtual .build-deps gcc libffi-dev musl-dev rust cargo \
     && python -m venv /app/venv \
