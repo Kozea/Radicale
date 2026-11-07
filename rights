@@ -140,3 +140,25 @@
 #user: .+@([^@]+)
 #collection: {0}/[^/]+
 #permissions: r
+
+## static shared collections (default collection directory)
+#[calendarsWriter]
+#groups: admins
+#collection: GROUPS/[^/]+
+#permissions: rw
+
+#[calendarsReader]
+#user: .+
+#collection: GROUPS/[^/]+
+#permissions: r
+
+## static shared collections using [group] group_collections_folder="MYGROUPS"
+#[calendarsWriterCustom]
+#groups: admins
+#collection: MYGROUPS/[^/]+
+#permissions: rw
+
+#[calendarsReaderCustom]
+#user: .+
+#collection: MYGROUPS/[^/]+
+#permissions: r
