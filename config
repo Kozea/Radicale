@@ -20,6 +20,7 @@
 # IPv6 syntax: [address]:port
 # Hostname syntax (using "getaddrinfo" to resolve to IPv4/IPv6 adress(es)): hostname:port
 # For example: 0.0.0.0:9999, [::]:9999, localhost:9999
+# Note: while builtin has internal support for handling IPv4 and IPv6 binding separate, hypercorn hasn't as of now.
 #hosts = localhost:5232
 
 # Max parallel connections
