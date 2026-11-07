@@ -12,6 +12,7 @@
 * Change: move `pika` to optional extra `rabbitmq` for the RabbitMQ hook (`pip install radicale[rabbitmq]`)
 * Add: [server] type: serve with cheroot (HTTP/1.1, keep-alive; `pip install radicale[cheroot]`)
 * Fix: [auth]: add server hostname as SNI option (ldap3+tls) for proper validation
+* Adjustment: CLI option --verify-storage returns now non-zero exit code in case of broken items are found and [storage] skip_broken_item=True
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)
