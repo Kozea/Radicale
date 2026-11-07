@@ -23,21 +23,26 @@ calendars and address books.
 """
 
 import radicale.rights.authenticated as authenticated
-from radicale import pathutils
+from radicale import logger, pathutils
 
 
 class Rights(authenticated.Rights):
 
     def authorization(self, user: str, user_groups: set, path: str) -> str:
         if self._verify_user and not user:
+            logger.trace("rights/owner_only: user=%r path=%r -> permission %r", user, path, "")
             return ""
         sane_path = pathutils.strip_path(path)
         if not sane_path:
+            logger.trace("rights/owner_only: user=%r path=%r -> permission %r", user, path, "R")
             return "R"
         if self._verify_user and user != sane_path.split("/", maxsplit=1)[0]:
+            logger.trace("rights/owner_only: user=%r path=%r -> permission %r", user, path, "")
             return ""
         if "/" not in sane_path:
+            logger.trace("rights/owner_only: user=%r path=%r -> permission %r", user, path, "RW")
             return "RW"
         if sane_path.count("/") == 1:
+            logger.trace("rights/owner_only: user=%r path=%r -> permission %r", user, path, "rw")
             return "rw"
         return ""

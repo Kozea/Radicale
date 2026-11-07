@@ -933,8 +933,30 @@ permissions: i""")
         event1 = get_file_content("event1.ics")
         self.put("/user/calendar/event1.ics", event1)
 
+    def test_owner_only_rights(self) -> None:
+        """Test owner_only rights permissions."""
+        self.configure({"auth": {"type": "none"},
+                        "rights": {"type": "owner_only"},
+                        "logging": {"rights_rule_doesnt_match_on_debug": True},
+                        })
+
+        logging.info("\n*** preparation")
+        os.mkdir(os.path.join(self.colpath, "collection-root", "user"))
+        path_collection = "/user/calendar/"
+        self.mkcalendar(path_collection, login="user:userpw")
+        event1 = get_file_content("event1.ics")
+        logging.info("\n*** put item into existing calendar")
+        self.put(path_collection + "/event1.ics", event1, login="user:userpw")
+        logging.info("\n*** put item as upload whole calendar")
+        self.put(path_collection, event1, login="user:userpw")
+        logging.info("\n*** put item as upload whole calendar to main folder")
+        self.put("/user", event1, login="user:userpw", check=403)
+        logging.info("\n*** put item as upload whole new calendar")
+        path_collection = "/user/calendar2/"
+        self.put(path_collection, event1, login="user:userpw")
+
     def test_property_adjustments_rights(self) -> None:
-        """tests property adjustment rights permissions."""
+        """Test property adjustment rights permissions."""
         rights_file_path = os.path.join(self.colpath, "rights")
         with open(rights_file_path, "w") as f:
             f.write("""\
