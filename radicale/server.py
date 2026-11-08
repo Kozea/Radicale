@@ -335,6 +335,7 @@ def serve_hypercorn(configuration: config.Configuration,
     hosts: List[Tuple[str, int]] = configuration.get("server", "hosts")
     use_ssl: bool = configuration.get("server", "ssl")
     hypercorn_config = HypercornConfig()
+    hypercorn_config.loglevel = configuration.get("logging", "level")
     hypercorn_config.bind = hypercorn_bind(hosts)
     # `max_content_length` is a limit of the application, but hypercorn's WSGI wrapper rejects a
     # body past its own limit before the application sees it, so the two have to agree; 0 is no
