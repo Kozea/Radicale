@@ -3369,11 +3369,18 @@ Here are the steps to install Radicale via Docker Compose:
 
 #### Linux Distribution Packages
 
+>[!CAUTION]
+> Check that package is well-maintained to avoid use of buggy or even insecure version!
+
 Radicale has been packaged for:
 
 * [ArchLinux](https://www.archlinux.org/packages/community/any/radicale/) by
   David Runge
 * [Debian](https://packages.debian.org/radicale) by Jonas Smedegaard
+  * see also [Wiki/Installing on Debian or Ubuntu Linux](https://github.com/Kozea/Radicale/wiki/Installing-on-Debian-or-Ubuntu-Linux)
+* [Ubuntu](http://packages.ubuntu.com/radicale) by the MOTU and Jonas
+  Smedegaard
+  * see also [Wiki/Installing on Debian or Ubuntu Linux](https://github.com/Kozea/Radicale/wiki/Installing-on-Debian-or-Ubuntu-Linux)
 * [Gentoo](https://packages.gentoo.org/packages/www-apps/radicale)
   by René Neumann, Maxim Koltsov and Manuel Rüger
 * [Fedora/EnterpriseLinux](https://src.fedoraproject.org/rpms/radicale) by Jorti
@@ -3388,8 +3395,6 @@ Radicale has been packaged for:
 * [Slackware](http://schoepfer.info/slackware.xhtml#packages-network) by
   Johannes Schöpfer
 * [Trisquel](http://packages.trisquel.info/search?searchon=names&keywords=radicale)
-* [Ubuntu](http://packages.ubuntu.com/radicale) by the MOTU and Jonas
-  Smedegaard
 
 Radicale is also
 [available on Cloudron](https://cloudron.io/button.html?app=org.radicale.cloudronapp2).
