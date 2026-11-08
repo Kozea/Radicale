@@ -866,27 +866,6 @@ TLS requests can fail intermittently with `cheroot` until PyPy has the fix of
 
 Default: `builtin`
 
-Note: while `builtin` has internal support for handling IPv4 and IPv6 binding
- separate, `hypercorn` hasn't as of now. Following config runs into error
-message
-
-```ini
-[server]
-hosts = [::]:5232,0.0.0.0:5232
-```
-
-while having (here OS Linux):
-
-``` bash
-# Sysctl status:
-sysctl net.ipv6.bindv6only
-net.ipv6.bindv6only = 0
-```
-
-Solutions:
- - reduce `hosts` config to IPv4 or IPv6
- - adjust toggle on OS Linux by `sysctl -w net.ipv6.bindv6only=1` (don't forget to make this permanent)
-
 ##### hosts
 
 A comma separated list of addresses that the server will bind to. A host name
@@ -895,6 +874,25 @@ is bound on every address it resolves to, as with the built-in server; with
 one logs it and serves the others.
 
 Default: `localhost:5232`
+
+Note: while server type `builtin` has internal support for handling IPv4 and IPv6 binding
+ separate, `hypercorn` hasn't as of now. Following config runs into error
+message
+
+```ini
+[server]
+type = hypercorn
+hosts = [::]:5232,0.0.0.0:5232
+```
+while having (here OS Linux):
+``` bash
+# Sysctl status:
+sysctl net.ipv6.bindv6only
+net.ipv6.bindv6only = 0
+```
+Solutions:
+ - reduce `hosts` config to IPv4 or IPv6 only
+ - adjust toggle on OS Linux by `sysctl -w net.ipv6.bindv6only=1` (don't forget to make this permanent)
 
 ##### max_connections
 
