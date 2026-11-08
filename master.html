@@ -1027,22 +1027,6 @@ while the others are served, as with the built-in server. On PyPy, TLS
 requests can fail intermittently with <code>cheroot</code> until PyPy
 has the fix of <a href="https://github.com/pypy/pypy/issues/5634">pypy/pypy#5634</a>.</p>
 <p>Default: <code>builtin</code></p>
-<p>Note: while <code>builtin</code> has internal support for handling
-IPv4 and IPv6 binding separate, <code>hypercorn</code> hasn't as of now.
-Following config runs into error message</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb44-1"><a aria-hidden="true" href="#cb44-1" tabindex="-1"></a><span class="kw">[server]</span></span>
-<span id="cb44-2"><a aria-hidden="true" href="#cb44-2" tabindex="-1"></a><span class="dt">hosts </span><span class="ot">=</span><span class="st"> [::]:5232,0.0.0.0:5232</span></span></code></pre></div>
-<p>while having (here OS Linux):</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a aria-hidden="true" href="#cb45-1" tabindex="-1"></a><span class="co"># Sysctl status:</span></span>
-<span id="cb45-2"><a aria-hidden="true" href="#cb45-2" tabindex="-1"></a><span class="ex">sysctl</span> net.ipv6.bindv6only</span>
-<span id="cb45-3"><a aria-hidden="true" href="#cb45-3" tabindex="-1"></a><span class="ex">net.ipv6.bindv6only</span> = 0</span></code></pre></div>
-<p>Solutions:</p>
-<ul>
-<li>reduce <code>hosts</code> config to IPv4 or IPv6</li>
-<li>adjust toggle on OS Linux by
-<code>sysctl -w net.ipv6.bindv6only=1</code> (don't forget to make this
-permanent)</li>
-</ul>
 </section>
 <section class="level5" id="hosts">
 <h5>hosts <a class="headerlink" href="#hosts">&para;</a></h5>
@@ -1051,6 +1035,23 @@ host name is bound on every address it resolves to, as with the built-in
 server; with <code>hypercorn</code> a failure to bind one of them stops
 the server, while the built-in one logs it and serves the others.</p>
 <p>Default: <code>localhost:5232</code></p>
+<p>Note: while server type <code>builtin</code> has internal support for
+handling IPv4 and IPv6 binding separate, <code>hypercorn</code> hasn't
+as of now. Following config runs into error message</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode ini"><code class="sourceCode ini"><span id="cb44-1"><a aria-hidden="true" href="#cb44-1" tabindex="-1"></a><span class="kw">[server]</span></span>
+<span id="cb44-2"><a aria-hidden="true" href="#cb44-2" tabindex="-1"></a><span class="dt">type </span><span class="ot">=</span><span class="st"> hypercorn</span></span>
+<span id="cb44-3"><a aria-hidden="true" href="#cb44-3" tabindex="-1"></a><span class="dt">hosts </span><span class="ot">=</span><span class="st"> [::]:5232,0.0.0.0:5232</span></span></code></pre></div>
+<p>while having (here OS Linux):</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a aria-hidden="true" href="#cb45-1" tabindex="-1"></a><span class="co"># Sysctl status:</span></span>
+<span id="cb45-2"><a aria-hidden="true" href="#cb45-2" tabindex="-1"></a><span class="ex">sysctl</span> net.ipv6.bindv6only</span>
+<span id="cb45-3"><a aria-hidden="true" href="#cb45-3" tabindex="-1"></a><span class="ex">net.ipv6.bindv6only</span> = 0</span></code></pre></div>
+<p>Solutions:</p>
+<ul>
+<li>reduce <code>hosts</code> config to IPv4 or IPv6 only</li>
+<li>adjust toggle on OS Linux by
+<code>sysctl -w net.ipv6.bindv6only=1</code> (don't forget to make this
+permanent)</li>
+</ul>
 </section>
 <section class="level5" id="max_connections">
 <h5>max_connections <a class="headerlink" href="#max_connections">&para;</a></h5>
