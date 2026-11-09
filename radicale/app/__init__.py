@@ -41,6 +41,11 @@ import zlib
 from http import client
 from typing import Iterable, List, Mapping, Tuple, Union
 
+try:
+    from compression import zstd
+except ImportError:
+    zstd = None
+
 from radicale import config, httputils, log, pathutils, types, utils
 from radicale.app import base as app_base
 from radicale.app.base import ApplicationBase
@@ -317,7 +322,12 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     environ.get("HTTP_ACCEPT_ENCODING", "").split(",")
                     if encoding.strip()]
 
-                if "gzip" in accept_encoding:
+                if zstd is not None and "zstd" in accept_encoding:
+                    zcomp = zstd.ZstdCompressor()
+                    answer = zcomp.compress(answer) + zcomp.flush()
+                    headers["Content-Encoding"] = "zstd"
+                    content_encoding = "zstd"
+                elif "gzip" in accept_encoding:
                     zcomp = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
                     answer = zcomp.compress(answer) + zcomp.flush()
                     headers["Content-Encoding"] = "gzip"
