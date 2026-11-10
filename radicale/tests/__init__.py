@@ -90,6 +90,14 @@ class BaseTest:
                 check: Optional[int] = None, **kwargs
                 ) -> Tuple[int, Dict[str, str], str]:
         """Send a request."""
+        status, headers, answer = self.request_raw(
+            method, path, data, check, **kwargs)
+        return status, headers, answer.decode()
+
+    def request_raw(self, method: str, path: str, data: Optional[str] = None,
+                    check: Optional[int] = None, **kwargs
+                    ) -> Tuple[int, Dict[str, str], bytes]:
+        """Send a request and return the undecoded response body."""
         login = kwargs.pop("login", None)
         if login is not None and not isinstance(login, str):
             raise TypeError("login argument must be %r, not %r" %
@@ -143,7 +151,7 @@ class BaseTest:
         assert status is not None and headers is not None
         assert check is None or status == check, "%d != %d" % (status, check)
 
-        return status, headers, answers[0].decode() if answers else ""
+        return status, headers, answers[0] if answers else b""
 
     @staticmethod
     def parse_responses(text: str) -> RESPONSES:
