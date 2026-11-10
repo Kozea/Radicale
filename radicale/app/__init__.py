@@ -297,7 +297,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             headers = dict(headers)
             content_encoding = "plain"
             # Set content length
-            answers = []
+            answers: list[bytes] = []
             if answer is not None:
                 if isinstance(answer, str):
                     if self._response_content_on_debug:
@@ -333,6 +333,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                     headers["Content-Encoding"] = "gzip"
                     content_encoding = "gzip"
 
+                assert isinstance(answer, bytes)
                 headers["Content-Length"] = str(len(answer))
                 answers.append(answer)
 
