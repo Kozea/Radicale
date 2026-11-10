@@ -301,6 +301,8 @@ class Auth(auth.BaseAuth):
                 raise RuntimeError(f"_login3 StartTLS Error: {e}")
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach LDAP server")
+        except RuntimeError:
+            raise
         except Exception as e:
             logger.debug(f"_login3 error 1 {e} (reader)")
             pass
@@ -397,6 +399,8 @@ class Auth(auth.BaseAuth):
             conn.unbind()
             logger.debug(f"_login3 {login} successfully authenticated")
             return login, groups
+        except RuntimeError:
+            raise
         except Exception as e:
             logger.debug(f"_login3 error 2 {e}")
             pass

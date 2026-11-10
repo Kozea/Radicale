@@ -415,6 +415,7 @@ def log_conditional(name: str, condition: dict, value: dict) -> bool:
                 elif condition[token]["match"] in ["excluded", "excl"]:
                     if value[token] != "unknown":
                         ip_net = ipaddress.ip_network(value[token])
+                        ip = ipaddress.ip_network(condition[token]["value"])
                         if type(ip_net) is ipaddress.IPv4Network and type(ip) is ipaddress.IPv4Network:
                             if ip_net.subnet_of(ip):
                                 return False
