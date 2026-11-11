@@ -416,8 +416,9 @@ class TestMultiFileSystem(BaseTest):
         self.mkcalendar("/calendar.ics/")
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
+        caplog.clear()
         self.put(path, event)
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
@@ -440,8 +441,9 @@ class TestMultiFileSystem(BaseTest):
         event = get_file_content("event1.ics")
         path = "/calendar.ics/event1.ics"
         self.put(path, event)
+        caplog.clear()
         self.delete(path)
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
@@ -460,8 +462,9 @@ class TestMultiFileSystem(BaseTest):
         """Run hook and check placeholders via debug log: MKCALENDAR"""
         caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s', 'actor':'%(actor)s'}\""}})
+        caplog.clear()
         self.mkcalendar("/calendar.ics/")
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
@@ -480,8 +483,9 @@ class TestMultiFileSystem(BaseTest):
         """Run hook and check placeholders via debug log: MKCOL"""
         caplog.set_level(logging.DEBUG)
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s', 'actor':'%(actor)s'}\""}})
+        caplog.clear()
         self.mkcol("/user1/")
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
@@ -502,8 +506,9 @@ class TestMultiFileSystem(BaseTest):
         self.configure({"storage": {"hook": "echo \"hook-json {'user':'%(user)s', 'cwd':'%(cwd)s', 'path':'%(path)s', 'request':'%(request)s', 'to_path':'%(to_path)s', 'actor':'%(actor)s'}\""}})
         self.mkcalendar("/calendar.ics/")
         proppatch = get_file_content("proppatch_set_calendar_color.xml")
+        caplog.clear()
         _, responses = self.proppatch("/calendar.ics/", proppatch)
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
@@ -527,9 +532,10 @@ class TestMultiFileSystem(BaseTest):
         path1 = "/calendar.ics/event1.ics"
         path2 = "/calendar.ics/event2.ics"
         self.put(path1, event)
+        caplog.clear()
         self.request("MOVE", path1, check=201,
                      HTTP_DESTINATION="http://127.0.0.1/"+path2)
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {

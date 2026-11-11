@@ -10098,8 +10098,9 @@ END:VCARD
         logging.info("\n*** PUT as owner")
         event = get_file_content("event1.ics")
         path = "/owner/calendar.ics/event1.ics"
+        caplog.clear()
         self.put(path, event, login="owner:ownerpw")
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
@@ -10134,8 +10135,9 @@ END:VCARD
         logging.info("\n*** PUT as user")
         event = get_file_content("event2.ics")
         path = "/user/calendar-shared.ics/event2.ics"
+        caplog.clear()
         self.put(path, event, login="user:userpw")
-        s = find_hook_json_in_list(caplog.messages)
+        s = find_hook_json_in_list(list(caplog.messages))
         logging.debug("** json to load: %r", s)
         d = json.loads(s)
         d_ref = {
