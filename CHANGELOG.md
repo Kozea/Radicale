@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.9.2.dev
+
 ## 3.9.1
 * Add: [sharing] permit_create_map = self: permit map-based sharing to self only (e.g. birthday calendar) without sharing with other users
 * Add: [rights] permission `S`: permit map-based sharing to self only, whatever permit_create_map is
