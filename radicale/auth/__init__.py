@@ -69,6 +69,7 @@ AUTH_SOCKET_FAMILY: Sequence[str] = ("AF_UNIX", "AF_INET", "AF_INET6")
 REMOTE_ADDR_SOURCE: Sequence[str] = ("REMOTE_ADDR", "X-Remote-Addr")
 
 NO_LOGIN_NO_GROUPS: Tuple[str, set] = ("", set([]))
+NO_LOGIN: str = ""
 
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
@@ -263,7 +264,7 @@ class BaseAuth:
             time.sleep(sleep)
 
     @final
-    def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, str, set]:
+    def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, set, str]:
         """
         Returns the
          - ``login`` or ``""`` for invalid credentials
@@ -271,7 +272,9 @@ class BaseAuth:
          - ``user_groups`` (if supported by authentication type) or ``set([])`` if invalid or no groups are supplied
         """
         time_ns_begin = time.time_ns()
-        result_from_cache = False
+        _type: str = self._type
+        (result, groups) = NO_LOGIN_NO_GROUPS
+        login_orig: str = login
         if self._lc_username:
             login = login.lower()
         if self._uc_username:
@@ -280,9 +283,16 @@ class BaseAuth:
             login = unquote(login)
         if self._strip_domain:
             login = login.split('@')[0]
+        if len(login) == 0:
+            if len(login_orig) > 0:
+                logger.warning("Login verification impossible as turned empty: %r -> %r", login_orig, login)
+            else:
+                logger.warning("Login verification impossible as is empty: %r", login)
+            self._sleep_for_constant_exec_time(time_ns_begin)
+            return (result, groups, _type)  # NO_LOGIN_NO_GROUPS
+
         if self._cache_logins is True:
             # time_ns is also used as salt
-            result = ""
             digest = ""
             time_ns = time.time_ns()
             # cleanup failed login cache to avoid out-of-memory
@@ -301,7 +311,7 @@ class BaseAuth:
                 if cache_failed_cleanup_entries > 0:
                     for digest in cache_failed_cleanup:
                         (login_expired, age_failed) = cache_failed_cleanup[digest]
-                        logger.debug("Login failed cache entry for user+password expired: '%s' (age: %d > %d sec)", login_expired, age_failed, self._cache_failed_logins_expiry)
+                        logger.debug("Login failed cache entry for user+password expired: %r (age: %d > %d sec)", login_expired, age_failed, self._cache_failed_logins_expiry)
                         del self._cache_failed[digest]
                 self._lock.release()
                 logger.debug("Login failed cache investigation finished")
@@ -312,9 +322,9 @@ class BaseAuth:
                 # login+password found in cache "failed" -> shortcut return
                 (time_ns_cache, login_cache) = cache_failed_entry
                 age_failed = int((time_ns - time_ns_cache) / 10**9)
-                logger.debug("Login failed cache entry for user+password found: '%s' (age: %d sec)", login_cache, age_failed)
-                self._sleep_for_constant_exec_time(time_ns_begin)
-                return ("", self._type + " / cached", set([]))
+                logger.debug("Login failed cache entry for user+password found: %r (age: %d sec)", login_cache, age_failed)
+                _type = _type + "/cached"
+                return (result, groups, _type)  # NO_LOGIN_NO_GROUPS
             cache_successful_entry = self._cache_successful.get(login)
             if cache_successful_entry:
                 # login found in cache "successful"
@@ -323,28 +333,28 @@ class BaseAuth:
                 if digest == digest_cache:
                     age_success = int((time_ns - time_ns_cache) / 10**9)
                     if age_success > self._cache_successful_logins_expiry:
-                        logger.debug("Login successful cache entry for user+password found but expired: '%s' (age: %d > %d sec)", login, age_success, self._cache_successful_logins_expiry)
+                        logger.debug("Login successful cache entry for user+password found but expired: %r (age: %d > %d sec)", login, age_success, self._cache_successful_logins_expiry)
                         # delete expired success from cache
                         self._lock.acquire()
                         self._cache_successful.pop(login, None)
                         self._lock.release()
                         digest = ""
                     else:
-                        logger.debug("Login successful cache entry for user+password found: '%s' (age: %d sec)", login, age_success)
+                        logger.debug("Login successful cache entry for user+password found: %r (age: %d sec)", login, age_success)
                         result = login
-                        result_from_cache = True
+                        _type = _type + "/cached"
                 else:
-                    logger.debug("Login successful cache entry for user+password not matching: '%s'", login)
+                    logger.debug("Login successful cache entry for user+password not matching: %r", login)
                     digest = ""
             else:
                 # login not found in cache, caculate always to avoid timing attacks
                 digest = self._cache_digest(login, password, str(time_ns))
             if result == "":
                 # verify login+password via configured backend
-                logger.debug("Login verification for user+password via backend: '%s'", login)
+                logger.debug("Login verification for user+password via backend %r: %r", _type, login)
                 (result, groups) = self._login_ext_with_groups(login, password, context)
                 if result != "":
-                    logger.debug("Login successful for user+password via backend: '%s'", login)
+                    logger.debug("Login successful for user+password via backend %r: %r", _type, login)
                     if digest == "":
                         # successful login, but expired, digest must be recalculated
                         digest = self._cache_digest(login, password, str(time_ns))
@@ -352,28 +362,24 @@ class BaseAuth:
                     self._lock.acquire()
                     self._cache_successful[login] = (digest, time_ns, groups)
                     self._lock.release()
-                    logger.debug("Login successful cache for user set: '%s'", login)
+                    logger.debug("Login successful cache for user set: %r", login)
                     self._lock.acquire()
                     if self._cache_failed.pop(digest_failed, None):
-                        logger.debug("Login failed cache for user cleared: '%s'", login)
+                        logger.debug("Login failed cache for user cleared: %r", login)
                     self._lock.release()
                 else:
-                    logger.debug("Login failed for user+password via backend: '%s'", login)
+                    logger.debug("Login failed for user+password via backend: %r", login)
                     self._lock.acquire()
                     self._cache_failed[digest_failed] = (time_ns, login)
                     self._lock.release()
-                    logger.debug("Login failed cache for user set: '%s'", login)
-            if result_from_cache is True:
-                if result == "":
-                    self._sleep_for_constant_exec_time(time_ns_begin)
-                return (result, self._type + " / cached", groups)
-            else:
-                if result == "":
-                    self._sleep_for_constant_exec_time(time_ns_begin)
-                return (result, self._type, groups)
+                    logger.debug("Login failed cache for user set: %r", login)
         else:
             # self._cache_logins is False
+            logger.debug("Login verification for user+password via backend %r: %r", _type, login)
             (result, groups) = self._login_ext_with_groups(login, password, context)
-            if result == "":
-                self._sleep_for_constant_exec_time(time_ns_begin)
-            return (result, self._type, groups)
+            if result != "":
+                logger.debug("Login successful for user+password via backend %r: %r", _type, login)
+        # finally
+        if result == "":
+            self._sleep_for_constant_exec_time(time_ns_begin)
+        return (result, groups, _type)
