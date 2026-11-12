@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.9.1.dev
+## 3.9.1
 * Add: [sharing] permit_create_map = self: permit map-based sharing to self only (e.g. birthday calendar) without sharing with other users
 * Add: [rights] permission `S`: permit map-based sharing to self only, whatever permit_create_map is
 * Fix: [sharing] owner cannot change the user or the mapped collection of a map-based share if not permitted to create it
