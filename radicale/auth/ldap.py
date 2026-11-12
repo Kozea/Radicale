@@ -264,7 +264,8 @@ class Auth(auth.BaseAuth):
             conn.unbind()
             logger.debug(f"_login2 {login} successfully authenticated")
             return login, ldap_groups
-        except self.ldap.INVALID_CREDENTIALS:
+        except Exception as e:
+            logger.error(f"_login2 LDAP bind for {login} failed: {e}")
             return auth.NO_LOGIN_NO_GROUPS
 
     def _login3(self, login: str, password: str) -> Tuple[str, set]:
