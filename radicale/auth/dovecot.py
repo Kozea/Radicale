@@ -50,7 +50,7 @@ class Auth(auth.BaseAuth):
         else:
             self.family = socket.AF_INET6
 
-    def _login_ext(self, login, password, context) -> str:
+    def _login_ext(self, login: str, password: str, context: auth.AuthContext) -> str:
         """Validate credentials.
 
         Check if the ``login``/``password`` pair is valid according to Dovecot.
@@ -61,10 +61,14 @@ class Auth(auth.BaseAuth):
         https://dovecot.org/doc/auth-protocol.txt
 
         """
+        if not login:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty user): %r", "dovecot", login)
+            return auth.NO_LOGIN
+        elif not password:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty password): %r", "dovecot", login)
+            return auth.NO_LOGIN
 
         logger.info("Authentication request (dovecot): '{}'".format(login))
-        if not login or not password:
-            return ""
 
         with closing(socket.socket(
                 self.family,

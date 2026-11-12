@@ -61,7 +61,7 @@ from radicale.app.propfind import ApplicationPartPropfind
 from radicale.app.proppatch import ApplicationPartProppatch
 from radicale.app.put import ApplicationPartPut
 from radicale.app.report import ApplicationPartReport
-from radicale.auth import AuthContext
+from radicale.auth import NO_LOGIN_NO_GROUPS, AuthContext
 from radicale.log import logger
 
 # Combination of types.WSGIStartResponse and WSGI application return value
@@ -566,12 +566,13 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 self.configuration, environ, base64.b64decode(
                     authorization.encode("ascii"))).split(":", 1)
 
-        user_groups: set = set([])
-        if login and not app_base._check_user_format(self._storage, login, self._validate_user_value, self._urldecode_username):
-            info = "not compliant to %r" % self._validate_user_value
-            user = ""
-        else:
-            (user, info, user_groups) = self._auth.login(login, password, context) or ("", "", set([])) if login else ("", "", set([]))
+        (user, user_groups) = NO_LOGIN_NO_GROUPS
+        if login:
+            if not app_base._check_user_format(self._storage, login, self._validate_user_value, self._urldecode_username):
+                info = "not compliant to %r" % self._validate_user_value
+                user = ""
+            else:
+                (user, user_groups, info) = self._auth.login(login, password, context)
         request_info: dict = {
                               "method": request_method,
                               "login": login, # not 'user' in this step

@@ -331,7 +331,7 @@ class TestBaseAuthRequests(BaseTest):
         for line in caplog.messages:
             if line == "Successful login: 'tmp' (htpasswd)":
                 htpasswd_found = True
-            elif line == "Successful login: 'tmp' (htpasswd / cached)":
+            elif line == "Successful login: 'tmp' (htpasswd/cached)":
                 htpasswd_cached_found = True
         if (htpasswd_found is False) or (htpasswd_cached_found is False):
             raise ValueError("Logging misses expected log lines")
@@ -346,7 +346,7 @@ class TestBaseAuthRequests(BaseTest):
         for line in caplog.messages:
             if line == "Failed login attempt from unknown: 'tmp' (htpasswd)":
                 htpasswd_found = True
-            elif line == "Failed login attempt from unknown: 'tmp' (htpasswd / cached)":
+            elif line == "Failed login attempt from unknown: 'tmp' (htpasswd/cached)":
                 htpasswd_cached_found = True
         if (htpasswd_found is False) or (htpasswd_cached_found is False):
             raise ValueError("Logging misses expected log lines")

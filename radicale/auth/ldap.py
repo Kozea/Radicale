@@ -264,7 +264,8 @@ class Auth(auth.BaseAuth):
             conn.unbind()
             logger.debug(f"_login2 {login} successfully authenticated")
             return login, ldap_groups
-        except self.ldap.INVALID_CREDENTIALS:
+        except Exception as e:
+            logger.error(f"_login2 LDAP bind for {login} failed: {e}")
             return auth.NO_LOGIN_NO_GROUPS
 
     def _login3(self, login: str, password: str) -> Tuple[str, set]:
@@ -406,6 +407,13 @@ class Auth(auth.BaseAuth):
         In next step the DN of the user to authenticate will be searched.
         In the last step the authentication of the user will be proceeded.
         """
+        if not login:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty user): %r", "ldap", login)
+            return auth.NO_LOGIN_NO_GROUPS
+        elif not password:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty password): %r", "ldap", login)
+            return auth.NO_LOGIN_NO_GROUPS
+
         if self._ldap_module_version == 2:
             return self._login2(login, password)
         return self._login3(login, password)

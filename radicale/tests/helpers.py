@@ -74,11 +74,10 @@ def find_hook_json_in_list(lines: list[str]) -> str:
     """Find hook-json in list."""
     s = None
     for line in lines:
-        if line.find("\"hook-json ") != -1:
-            r = re.search('.*\"hook-json ({.*})".*', line)
+        if line.find("hook-json ") != -1:
+            r = re.search('\nhook-json ({.*})\n', line)
             if r:
                 s = r.group(1).replace("'", "\"")
-            else:
                 break
     assert s is not None
     return s
