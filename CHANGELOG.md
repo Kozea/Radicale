@@ -17,6 +17,7 @@
 * Fix: auth: reject empty login earlier and empty password on all external verification types
 * Improvement: auth/ldap: align catch of exceptions of python-ldap with python-ldap3
 * Improvement: extend USER/PATH blacklist "minimal" with backtick and `$`
+* Feature: support zstd compression for responses
 
 ## 3.9.0
 * Add: [server] type: serve with hypercorn, which additionally speaks HTTP/2 over cleartext (H2C) on the same socket (`pip install radicale[h2]`)
