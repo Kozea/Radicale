@@ -1316,6 +1316,41 @@ permissions: RrWw""")
         status, prop = response["CS:getctag"]
         assert status == 200 and prop.text
 
+    def test_propfind_getctag_create_delete(self) -> None:
+        """CS:getctag must not return to an earlier value when an item is
+        created and deleted again (the collection returns to an earlier
+        state). Clients that cached the earlier value would otherwise miss
+        the deletion."""
+        calendar_path = "/calendar.ics/"
+        self.mkcalendar(calendar_path)
+
+        def getctag() -> str:
+            _, responses = self.propfind(calendar_path, """\
+<?xml version="1.0"?>
+<propfind xmlns="DAV:" xmlns:CS="http://calendarserver.org/ns/">
+  <prop>
+    <CS:getctag />
+  </prop>
+</propfind>""")
+            response = responses[calendar_path]
+            assert not isinstance(response, int)
+            status, prop = response["CS:getctag"]
+            assert status == 200 and prop.text
+            return prop.text
+
+        ctag_before = getctag()
+        event = get_file_content("event1.ics")
+        event_path = posixpath.join(calendar_path, "event.ics")
+        self.put(event_path, event)
+        ctag_created = getctag()
+        assert ctag_created != ctag_before
+        self.delete(event_path)
+        ctag_deleted = getctag()
+        assert ctag_deleted != ctag_created
+        if not self.full_sync_token_support:
+            return
+        assert ctag_deleted != ctag_before
+        
     def test_propfind_supported_address_data(self) -> None:
         """Read property CR:supported-address-data on addressbook"""
         self.create_addressbook("/addressbook.vcf/")
