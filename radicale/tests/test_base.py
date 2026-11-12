@@ -22,6 +22,7 @@ Radicale tests with simple requests.
 """
 
 import datetime
+import gzip
 import logging
 import os
 import plistlib
@@ -29,6 +30,11 @@ import posixpath
 import sys
 import urllib
 from typing import Any, Callable, ClassVar, Iterable, List, Optional, Tuple
+
+try:
+    from compression import zstd
+except ImportError:
+    zstd = None
 
 import defusedxml.ElementTree as DefusedET
 import pytest
@@ -161,6 +167,44 @@ permissions: RrWw""")
             _, headers, _ = self.request("GET", path, check=301,
                                          HTTP_X_SCRIPT_NAME="/radicale")
             assert headers.get("Location") == "/radicale%s" % sane_path
+
+    def test_response_compression(self) -> None:
+        """Responses are compressed according to Accept-Encoding."""
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        path = "/calendar.ics/event1.ics"
+        self.put(path, event)
+        _, _, expected = self.request("GET", path, check=200)
+        assert "UID:event" in expected
+
+        cases: List[Tuple[Optional[str], Optional[str]]] = [
+            (None, None),
+            ("", None),
+            ("identity", None),
+            ("deflate, br", None),
+            ("gzip", "gzip"),
+            ("deflate, gzip", "gzip"),
+            ("gzip,deflate", "gzip")]
+        if zstd is not None:
+            cases.extend([
+                ("zstd", "zstd"),
+                ("gzip, zstd", "zstd"),
+                ("zstd, gzip", "zstd"),
+                ("deflate, gzip, br, zstd", "zstd")])
+        for accept_encoding, expected_encoding in cases:
+            kwargs = {}
+            if accept_encoding is not None:
+                kwargs["http_accept_encoding"] = accept_encoding
+            _, headers, body = self.request_raw("GET", path, check=200,
+                                                **kwargs)
+            msg = "Accept-Encoding: %r" % accept_encoding
+            assert headers.get("Content-Encoding") == expected_encoding, msg
+            assert headers["Content-Length"] == str(len(body)), msg
+            if expected_encoding == "gzip":
+                body = gzip.decompress(body)
+            elif expected_encoding == "zstd":
+                body = zstd.decompress(body)
+            assert body.decode() == expected, msg
 
     def test_add_event(self) -> None:
         """Add an event."""
