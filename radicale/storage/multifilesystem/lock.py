@@ -86,15 +86,16 @@ class StoragePartLock(StorageBase):
                 to_path = kwargs.get('to_path', "")
                 actor = kwargs.get('actor', user)
                 if to_path != "":
-                    to_path = shlex.quote(self._get_collection_root_folder() + to_path)
+                    to_path = shlex.quote(os.path.join(self._get_collection_root_folder(), to_path.removeprefix('/'))).replace('$', '\\$')
                 try:
                     command = self._hook % {
-                        "path": shlex.quote(self._get_collection_root_folder() + path),
+                        "path": shlex.quote(os.path.join(self._get_collection_root_folder(), path.removeprefix('/'))).replace('$', '\\$'),
                         "to_path": to_path,
                         "cwd": shlex.quote(self._filesystem_folder),
                         "request": shlex.quote(request),
-                        "actor": shlex.quote(actor or "Anonymous"),
-                        "user": shlex.quote(user or "Anonymous")}
+                        "actor": shlex.quote(actor or "Anonymous").replace('$', '\\$'),
+                        "user": shlex.quote(user or "Anonymous").replace('$', '\\$')
+                        }
                 except KeyError as e:
                     logger.error(
                         "Storage hook contains not supported placeholder %s "
