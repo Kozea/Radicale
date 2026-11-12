@@ -530,7 +530,7 @@ def xml_propfind_response(
                     is404 = True
             elif tag == xmlutils.make_clark("CS:getctag"):
                 if is_leaf:
-                    element.text = collection.etag
+                    element.text, _ = collection.sync()
                 else:
                     is404 = True
             elif tag == xmlutils.make_clark("D:sync-token"):
