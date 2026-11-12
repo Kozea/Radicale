@@ -1,6 +1,6 @@
 # RadicaleIMAP IMAP authentication plugin for Radicale.
 # Copyright © 2017, 2020 Unrud <unrud@outlook.com>
-# Copyright © 2025-2025 Peter Bieringer <pb@bieringer.de>
+# Copyright © 2025-2026 Peter Bieringer <pb@bieringer.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,7 +54,14 @@ class Auth(auth.BaseAuth):
         else:
             logger.info("auth imap append domain: %s", self._append_domain)
 
-    def _login(self, login, password) -> str:
+    def _login(self, login: str, password: str) -> str:
+        if not login:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty user): %r", "imap", login)
+            return auth.NO_LOGIN
+        elif not password:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty password): %r", "imap", login)
+            return auth.NO_LOGIN
+
         try:
             if sys.version_info < (3, 10):
                 connection: Union[imaplib.IMAP4, imaplib.IMAP4_SSL]

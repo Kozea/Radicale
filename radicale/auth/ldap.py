@@ -406,6 +406,13 @@ class Auth(auth.BaseAuth):
         In next step the DN of the user to authenticate will be searched.
         In the last step the authentication of the user will be proceeded.
         """
+        if not login:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty user): %r", "ldap", login)
+            return auth.NO_LOGIN_NO_GROUPS
+        elif not password:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty password): %r", "ldap", login)
+            return auth.NO_LOGIN_NO_GROUPS
+
         if self._ldap_module_version == 2:
             return self._login2(login, password)
         return self._login3(login, password)

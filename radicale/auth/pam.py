@@ -58,7 +58,11 @@ class Auth(auth.BaseAuth):
 
     def _login_ext_with_groups(self, login: str, password: str, context: auth.AuthContext) -> Tuple[str, set]:
         """Check if ``user``/``password`` couple is valid, return login and set of groups."""
-        if login is None or password is None:
+        if not login:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty user): %r", "pam", login)
+            return auth.NO_LOGIN_NO_GROUPS
+        elif not password:
+            logger.warning("Login rejected for user+password by backend %r (requires non-empty password): %r", "pam", login)
             return auth.NO_LOGIN_NO_GROUPS
 
         # Check whether the user exists in the PAM system
