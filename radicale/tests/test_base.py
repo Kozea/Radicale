@@ -1350,7 +1350,7 @@ permissions: RrWw""")
         if not self.full_sync_token_support:
             return
         assert ctag_deleted != ctag_before
-        
+
     def test_propfind_supported_address_data(self) -> None:
         """Read property CR:supported-address-data on addressbook"""
         self.create_addressbook("/addressbook.vcf/")
