@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.2.dev
+* Fix: propfind CS:getctag: use the sync-token so the value never repeats
 
 ## 3.9.1
 * Add: [sharing] permit_create_map = self: permit map-based sharing to self only (e.g. birthday calendar) without sharing with other users
