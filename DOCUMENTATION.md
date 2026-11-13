@@ -1110,6 +1110,10 @@ Available types are:
 
   User groups are supported _(>= 3.8.0)_
 
+When using the web UI with authentication handled by the browser or reverse proxy
+(e.g. header-based auth, OIDC redirects), set [`prefer_browser_login`](#prefer_browser_login)
+to `True` to skip the login page.
+
 Default: `none` _(< 3.5.0)_ / `denyall` _(>= 3.5.0)_
 
 ##### cache_logins
@@ -1848,10 +1852,9 @@ Default: `internal`
 
 _(>= 3.7.4)_
 
-Try to use browser based login rather than the built in login in the web UI. This 
-can be helpful if the login system you are using uses redirects, such as in
-an OIDC setup. For this to work properly, you will also have to make sure CORS
-headers are configured correctly.s
+Includes browser credentials in the web UI's initial authentication probe, skipping
+the login page if the server accepts them. Useful when authentication involves
+redirects (e.g. OIDC) or header-based auth set by a reverse proxy.
 
 Default: `False`
 
