@@ -186,11 +186,19 @@ class ParallelHTTPSServer(ParallelHTTPServer):
         if protocol:
             logger.info("SSL set explicit protocols (maybe not all supported by underlying OpenSSL): '%s'", protocol)
             context.options = utils.ssl_context_options_by_protocol(protocol, context.options)
-            context.minimum_version = utils.ssl_context_minimum_version_by_options(context.options)
-            if (context.minimum_version == 0):
+            # OpenSSL 3 rejects version 0 on assignment, so the intended
+            # "no protocol active" result never reaches the comparison.
+            try:
+                context.minimum_version = utils.ssl_context_minimum_version_by_options(context.options)
+            except ValueError:
                 raise RuntimeError("No SSL minimum protocol active")
-            context.maximum_version = utils.ssl_context_maximum_version_by_options(context.options)
-            if (context.maximum_version == 0):
+            if context.minimum_version == 0:
+                raise RuntimeError("No SSL minimum protocol active")
+            try:
+                context.maximum_version = utils.ssl_context_maximum_version_by_options(context.options)
+            except ValueError:
+                raise RuntimeError("No SSL maximum protocol active")
+            if context.maximum_version == 0:
                 raise RuntimeError("No SSL maximum protocol active")
         else:
             logger.info("SSL active protocols: (system-default)")

@@ -301,6 +301,10 @@ class Auth(auth.BaseAuth):
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach LDAP server")
         except Exception as e:
+            # A failed reader StartTLS is raised as RuntimeError above. Leaving
+            # it here would continue into bind() without TLS.
+            if isinstance(e, RuntimeError) and "StartTLS" in str(e):
+                raise
             logger.debug(f"_login3 error 1 {e} (reader)")
             pass
         if not conn.bind(read_server_info=False):

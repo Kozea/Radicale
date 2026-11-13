@@ -700,3 +700,46 @@ class TestBaseAuthRequests(BaseTest):
     def test_denyall(self) -> None:
         self.configure({"auth": {"type": "denyall"}})
         self.propfind("/tmp/", login="tmp:", check=401)
+
+    def test_htpasswd_cache_reload_uses_new_password(self) -> None:
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\n")
+        self.configure({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": "plain",
+                     "htpasswd_cache": "True",
+                     "delay": "0"},
+            "server": {"delay_on_error": "0"}})
+        self.propfind("/", login="tmp:bepo", check=207)
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:newsecret\n")
+        self.propfind("/", login="tmp:newsecret", check=207)
+        self.propfind("/", login="tmp:bepo", check=401)
+
+    def test_htpasswd_cache_reread_skips_bad_line_and_reminds(self, monkeypatch, caplog) -> None:
+        import radicale.auth.htpasswd as htpasswd_module
+
+        caplog.set_level(logging.WARNING)
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\n")
+        self.configure({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd_file_path,
+                     "htpasswd_encryption": "plain",
+                     "htpasswd_cache": "True",
+                     "delay": "0"},
+            "server": {"delay_on_error": "0"}})
+        self.propfind("/", login="tmp:bepo", check=207)
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\n:broken\n")
+        clock = {"now": 1_000_000.0}
+        monkeypatch.setattr(htpasswd_module.time, "time", lambda: clock["now"])
+        self.propfind("/", login="tmp:bepo", check=207)
+        clock["now"] += 61
+        caplog.clear()
+        self.propfind("/", login="tmp:bepo", check=207)
+        assert any("htpasswd file still contains issues (REMINDER" in message
+                   for message in caplog.messages)

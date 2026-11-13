@@ -163,3 +163,87 @@ permissions: RrWw""")
         assert any("notification_item: {'type': 'delete'" in line and
                    "'actor': 'user'" in line
                    for line in caplog.messages)
+
+    def _publish_with_fake_pika(self, monkeypatch, failures):
+        """Configure a live rabbitmq hook whose pika connection is fake."""
+        import radicale.hook.rabbitmq as rabbitmq_hook
+
+        published = []
+        connections = []
+        pending = list(failures)
+
+        class Channel:
+            def queue_declare(self, **kwargs):
+                self.declared = kwargs
+
+            def basic_publish(self, exchange, routing_key, body):
+                if pending:
+                    failure = pending.pop(0)
+                    if failure is not None:
+                        raise failure
+                published.append(body)
+
+        class Connection:
+            def __init__(self, parameters):
+                # URLParameters already validated the endpoint.
+                assert parameters.host
+                connections.append(parameters)
+                self._channel = Channel()
+
+            def channel(self):
+                return self._channel
+
+        monkeypatch.setattr(rabbitmq_hook.pika, "BlockingConnection", Connection)
+        self.configure({
+            "hook": {
+                "type": "rabbitmq",
+                "dryrun": "False",
+                "rabbitmq_endpoint": "amqp://guest:guest@127.0.0.1:5672/%2F",
+                "rabbitmq_topic": "radicale",
+                "rabbitmq_queue_type": "classic",
+            }})
+        return published, connections
+
+    @pytest.mark.skipif(has_pika == 0, reason="No pika module installed")
+    def test_publish_sends_notification_json(self, monkeypatch) -> None:
+        published, connections = self._publish_with_fake_pika(monkeypatch, [])
+        self.mkcalendar("/calendar.ics/")
+        event = get_file_content("event1.ics")
+        self.put("/calendar.ics/event1.ics", event)
+        assert len(connections) == 1
+        assert len(published) == 1
+        body = published[0]
+        assert isinstance(body, bytes)
+        parsed = json.loads(body.decode())
+        assert body.decode() == json.dumps(parsed, sort_keys=True, indent=4)
+        assert parsed["type"] == "upsert"
+        assert "UID:event1" in parsed["content"]
+
+    @pytest.mark.skipif(has_pika == 0, reason="No pika module installed")
+    def test_channel_error_reconnects_and_publishes_once(self, monkeypatch) -> None:
+        from pika.exceptions import ChannelWrongStateError
+
+        published, connections = self._publish_with_fake_pika(
+            monkeypatch, [ChannelWrongStateError()])
+        self.mkcalendar("/calendar.ics/")
+        self.put("/calendar.ics/event1.ics", get_file_content("event1.ics"))
+        assert len(connections) == 2
+        assert len(published) == 1
+        parsed = json.loads(published[0].decode())
+        assert parsed["type"] == "upsert"
+        assert "UID:event1" in parsed["content"]
+
+    @pytest.mark.skipif(has_pika == 0, reason="No pika module installed")
+    def test_second_publish_failure_does_not_recurse(self, monkeypatch, caplog) -> None:
+        from pika.exceptions import ChannelWrongStateError
+
+        caplog.set_level(logging.ERROR)
+        published, connections = self._publish_with_fake_pika(
+            monkeypatch, [ChannelWrongStateError(), ChannelWrongStateError()])
+        self.mkcalendar("/calendar.ics/")
+        self.put("/calendar.ics/event1.ics", get_file_content("event1.ics"))
+        assert published == []
+        assert len(connections) == 2
+        assert any(
+            "An exception occurred during publishing hook notification item" in line
+            for line in caplog.messages)
