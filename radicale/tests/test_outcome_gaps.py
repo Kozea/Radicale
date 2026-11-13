@@ -229,6 +229,33 @@ class TestApplicationLimits(BaseTest):
         self.application._storage.create_collection = fail_principal_os
         self.propfind("/tmp/", login="tmp:bepo", check=500)
 
+    def test_predefined_collection_valueerror_is_logged(self, caplog) -> None:
+        caplog.set_level(logging.WARNING)
+        htpasswd = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd, "w") as handle:
+            handle.write("tmp:bepo\n")
+        self.configure({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd,
+                     "htpasswd_encryption": "plain"},
+            "rights": {"type": "owner_write"},
+            "storage": {"predefined_collections": json.dumps({
+                "calendar.ics/": {"tag": "VCALENDAR", "D:displayname": "Predefined"}})}})
+        real = self.application._storage.create_collection
+
+        def fail_predefined(href, items=None, props=None):
+            if href.strip("/") != "tmp":
+                raise ValueError("predefined collection rejected")
+            return real(href, items=items, props=props)
+
+        self.application._storage.create_collection = fail_predefined
+        self.propfind("/tmp/", login="tmp:bepo", check=207)
+        assert any(
+            "Failed to create predefined collection" in message
+            and "calendar.ics/" in message
+            and "predefined collection rejected" in message
+            for message in caplog.messages)
+
     def test_request_body_over_max_length_returns_413(self) -> None:
         self.configure({
             "server": {"_internal_server": "True", "max_content_length": "8"}})
@@ -479,6 +506,73 @@ END:VCALENDAR
         element = responses["/calendar.ics/"]["C:supported-calendar-component-set"][1]
         names = [child.attrib["name"] for child in element.findall(xmlutils.make_clark("C:comp"))]
         assert names == ["VEVENT", "VTODO"]
+
+    def test_shared_proppatch_overlay_maps_valueerror(self) -> None:
+        htpasswd = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd, "w") as handle:
+            handle.write("owner:ownerpw\nuser:userpw\n")
+        self.configure({
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": htpasswd,
+                     "htpasswd_encryption": "plain"},
+            "rights": {"type": "owner_only"},
+            "sharing": {
+                "type": "csv",
+                "collection_by_map": "True",
+                "permit_create_map": "True",
+            }})
+        mapped = "/owner/calendar.ics/"
+        shared = "/user/shared.ics/"
+        self.mkcalendar(mapped, login="owner:ownerpw")
+        created = json.dumps({
+            "User": "user",
+            "PathMapped": mapped,
+            "PathOrToken": shared,
+            "Permissions": "rP",
+            "Enabled": True,
+            "Hidden": False,
+        })
+        _status, _headers, answer = self.request(
+            "POST", "/.sharing/v1/map/create", created,
+            login="owner:ownerpw", content_type="application/json",
+            accept="application/json", check=200)
+        assert json.loads(answer)["Status"] == "success"
+        enabled = json.dumps({
+            "User": "user",
+            "PathMapped": mapped,
+            "PathOrToken": shared,
+        })
+        _status, _headers, answer = self.request(
+            "POST", "/.sharing/v1/map/enable", enabled,
+            login="user:userpw", content_type="application/json",
+            accept="application/json", check=200)
+        assert json.loads(answer)["Status"] == "success"
+        proppatch = """<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:">
+<D:set>
+<D:prop>
+  <I:calendar-color xmlns:I="http://apple.com/ns/ical/">#112233</I:calendar-color>
+</D:prop>
+</D:set>
+</D:propertyupdate>"""
+
+        def raise_enospc(*_args, **_kwargs):
+            raise ValueError("failed [Errno %d]" % errno.ENOSPC)
+
+        self.application._sharing.sharing_collection_update = raise_enospc
+        status, _headers, body = self.request(
+            "PROPPATCH", shared, proppatch, login="user:userpw", check=None)
+        assert status == 507
+        assert body == "Insufficient Storage.  Please contact the administrator."
+
+        def raise_plain(*_args, **_kwargs):
+            raise ValueError("properties are not acceptable")
+
+        self.application._sharing.sharing_collection_update = raise_plain
+        status, _headers, body = self.request(
+            "PROPPATCH", shared, proppatch, login="user:userpw", check=None)
+        assert status == 400
+        assert body == "Bad Request"
 
 
 class TestStorageAndDecoding(BaseTest):
