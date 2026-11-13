@@ -316,9 +316,10 @@ class _Ldap3Script:
 
 def _install_ldap3(monkeypatch, script):
     class Tls:
-        def __init__(self, validate=None, ca_certs_file=None):
+        def __init__(self, validate=None, ca_certs_file=None, sni=None, **kwargs):
             self.validate = validate
             self.ca_certs_file = ca_certs_file
+            self.sni = sni
 
     class Server:
         def __init__(self, uri, use_ssl=False, tls=None):
@@ -506,8 +507,7 @@ class TestLdap3Auth:
 
         _install_ldap3(monkeypatch, _Ldap3Script(user_starttls_error=True))
         plugin = load_auth(updates)
-        with pytest.raises(RuntimeError, match="StartTLS"):
-            _login(plugin, "alice", "secret")
+        assert _login(plugin, "alice", "secret") == ("", "ldap")
 
         _install_ldap3(monkeypatch, _Ldap3Script(reader_generic_tls_error=True))
         plugin = load_auth(updates)
@@ -816,9 +816,15 @@ def _patch_posix(monkeypatch, users, groups):
         group_gid, members = groups[name]
         return SimpleNamespace(gr_name=name, gr_gid=group_gid, gr_mem=list(members))
 
+    def getgrouplist(name, gid):
+        extra = [group_gid for _group_name, (group_gid, members) in groups.items()
+                 if name in members and group_gid != gid]
+        return [gid, *extra]
+
     monkeypatch.setattr(pam_auth.pwd, "getpwnam", getpwnam)
     monkeypatch.setattr(pam_auth.grp, "getgrgid", getgrgid)
     monkeypatch.setattr(pam_auth.grp, "getgrnam", getgrnam)
+    monkeypatch.setattr(pam_auth.os, "getgrouplist", getgrouplist)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
@@ -840,11 +846,12 @@ class TestPamAuth:
             "pam_service": "calendar",
             "pam_group_membership": "calendars",
         })
-        assert _login(plugin, "alice", "secret") == ("alice", "pam")
-        # gr_mem is copied, then the primary group name is appended.
-        assert set(plugin._groups) == {"bob", "calendars"}
-        assert _login(plugin, "bob", "secret") == ("bob", "pam")
-        assert set(plugin._groups) == {"bob", "users"}
+        user, groups_found, auth_type = plugin.login("alice", "secret", auth.AuthContext())
+        assert (user, auth_type) == ("alice", "pam")
+        assert groups_found == {"calendars"}
+        user, groups_found, auth_type = plugin.login("bob", "secret", auth.AuthContext())
+        assert (user, auth_type) == ("bob", "pam")
+        assert groups_found == {"users", "calendars"}
 
     def test_rejects_unknown_user_missing_group_and_bad_password(self, monkeypatch, caplog):
         caplog.set_level(logging.DEBUG)
@@ -859,8 +866,8 @@ class TestPamAuth:
         })
         assert _login(plugin, "missing", "secret") == ("", "pam")
         assert "PAM user not found" in caplog.text
-        assert plugin._login("alice", None) == ""
-        assert plugin._login(None, "secret") == ""
+        assert plugin._login_ext_with_groups("alice", None, auth.AuthContext()) == ("", set())
+        assert plugin._login_ext_with_groups(None, "secret", auth.AuthContext()) == ("", set())
 
         caplog.clear()
         assert _login(plugin, "alice", "secret") == ("", "pam")
@@ -898,8 +905,9 @@ class TestPamAuth:
 
         monkeypatch.setattr("pam.authenticate", authenticate)
         plugin = load_auth({"type": "pam", "pam_group_membership": "", "pam_service": "radicale"})
-        assert _login(plugin, "alice", "secret") == ("alice", "pam")
-        assert set(plugin._groups) == {"users"}
+        user, groups_found, auth_type = plugin.login("alice", "secret", auth.AuthContext())
+        assert (user, auth_type) == ("alice", "pam")
+        assert groups_found == {"users"}
         assert "INSECURE" in caplog.text
         assert _login(plugin, "alice", "wrong") == ("", "pam")
 

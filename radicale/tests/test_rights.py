@@ -1207,11 +1207,11 @@ class TestCollectionRights(BaseTest):
                      "htpasswd_filename": self._htpasswd,
                      "htpasswd_encryption": "plain"}})
         self.mkcalendar("/tmp/calendar.ics/", login="tmp:bepo")
-        assert self.application._rights.authorization("tmp", "/tmp/calendar.ics/") == "rw"
-        assert self.application._rights.authorization("other", "/tmp/calendar.ics/") == "rw"
+        assert self.application._rights.authorization("tmp", set(), "/tmp/calendar.ics/") == "rw"
+        assert self.application._rights.authorization("other", set(), "/tmp/calendar.ics/") == "rw"
         deeper = "/tmp/calendar.ics/nested/event1.ics"
-        assert self.application._rights.authorization("tmp", "/tmp/calendar.ics/event1.ics") == ""
-        assert self.application._rights.authorization("tmp", deeper) == ""
+        assert self.application._rights.authorization("tmp", set(), "/tmp/calendar.ics/event1.ics") == ""
+        assert self.application._rights.authorization("tmp", set(), deeper) == ""
         event = get_file_content("event1.ics")
         self.put(deeper, event, login="other:bepo", check=403)
 
@@ -1223,10 +1223,10 @@ class TestCollectionRights(BaseTest):
                      "htpasswd_filename": self._htpasswd,
                      "htpasswd_encryption": "plain"}})
         self.mkcalendar("/tmp/calendar.ics/", login="tmp:bepo")
-        assert self.application._rights.authorization("tmp", "/tmp/calendar.ics/") == "rw"
-        assert self.application._rights.authorization("other", "/tmp/calendar.ics/") == "r"
+        assert self.application._rights.authorization("tmp", set(), "/tmp/calendar.ics/") == "rw"
+        assert self.application._rights.authorization("other", set(), "/tmp/calendar.ics/") == "r"
         self.propfind("/tmp/calendar.ics/", login="other:bepo", check=207)
         self.put("/tmp/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR",
                  login="other:bepo", check=403)
         assert self.application._rights.authorization(
-            "other", "/tmp/calendar.ics/event1.ics") == ""
+            "other", set(), "/tmp/calendar.ics/event1.ics") == ""

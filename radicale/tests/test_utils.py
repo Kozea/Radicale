@@ -20,9 +20,15 @@ Tests for utils module.
 """
 
 import logging
+import os
 import ssl
+import sys
+from types import SimpleNamespace
 
-from radicale import utils
+import pytest
+
+from radicale import auth, config, utils
+from radicale.auth import none as none_auth
 
 
 class TestUtils:
@@ -110,18 +116,6 @@ class TestUtils:
             ssl_context_minimum_version = utils.ssl_context_minimum_version_by_options(ssl_context_options)
             logging.debug("ssl_context_options=%r", ssl_context_options)
             assert ssl_context_minimum_version == version
-
-
-"""Outcome tests for address, SSL, hash, and plugin helpers."""
-
-import os
-import sys
-from types import SimpleNamespace
-
-import pytest
-
-from radicale import auth, config
-from radicale.auth import none as none_auth
 
 
 def _enabled_protocols(options):

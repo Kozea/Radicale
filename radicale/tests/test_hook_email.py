@@ -23,6 +23,7 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta
+from typing import Any, cast
 
 import pytest
 
@@ -404,21 +405,21 @@ permissions: RrWw""")
         recipients = [address for _sender, addresses, _message in fake.messages for address in addresses]
         assert "janedoe@example.com" in recipients
         assert "johndoe@example.com" in recipients
-        sent = self.application._hook.email_config._send_email(
+        sent = cast(Any, self.application._hook).email_config._send_email(
             "subject line", "body", [type("A", (), {"email": "janedoe@example.com"})()])
         assert sent is True
 
     def test_smtp_exception_returns_false(self, monkeypatch) -> None:
         self._install_fake_smtp(monkeypatch, boom=True)
         self._email_hook()
-        sent = self.application._hook.email_config._send_email(
+        sent = cast(Any, self.application._hook).email_config._send_email(
             "subject line", "body", [type("A", (), {"email": "janedoe@example.com"})()])
         assert sent is False
 
     def test_empty_smtp_security_raises(self) -> None:
         self._email_hook(security="")
         with pytest.raises(ValueError, match="SMTP security type cannot be empty"):
-            self.application._hook.email_config._send_email(
+            cast(Any, self.application._hook).email_config._send_email(
                 "subject line", "body", [type("A", (), {"email": "janedoe@example.com"})()])
 
     def test_starttls_and_tls_verify_mode(self, monkeypatch) -> None:

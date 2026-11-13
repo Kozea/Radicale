@@ -24,6 +24,7 @@ import socket
 import sys
 import wsgiref.util
 from io import BytesIO
+from typing import Any, cast
 
 import pytest
 
@@ -31,8 +32,7 @@ import radicale
 import radicale.item as radicale_item
 from radicale import httputils, pathutils, xmlutils
 from radicale.storage.multifilesystem import Collection
-from radicale.tests import BaseTest
-from radicale.tests import broken_hook
+from radicale.tests import BaseTest, broken_hook
 from radicale.tests.helpers import get_file_content
 
 CALENDAR_MKCOL = """<?xml version="1.0" encoding="utf-8" ?>
@@ -108,14 +108,16 @@ class TestWsgiAndHooks(BaseTest):
             with open(path, "w") as handle:
                 handle.write(config_text)
 
+        recorded = {"status": 0}
+
         def start_response(status, headers):
-            start_response.status = int(status.split()[0])
+            recorded["status"] = int(status.split()[0])
 
         try:
             environ = {"RADICALE_CONFIG": path_a, "wsgi.errors": sys.stderr}
             wsgiref.util.setup_testing_defaults(environ)
             list(radicale.application(environ, start_response))
-            assert start_response.status == 302
+            assert recorded["status"] == 302
             environ = {"RADICALE_CONFIG": path_b, "wsgi.errors": sys.stderr}
             wsgiref.util.setup_testing_defaults(environ)
             with pytest.raises(ValueError, match="RADICALE_CONFIG must not change"):
@@ -198,7 +200,9 @@ class TestApplicationLimits(BaseTest):
         self.propfind("/tmp/", login="tmp:bepo", check=207)
         _status, responses = self.propfind("/tmp/calendar.ics/", login="tmp:bepo")
         response = responses["/tmp/calendar.ics/"]
-        assert response["D:displayname"][1].text == "Predefined"
+        assert not isinstance(response, int)
+        _prop_status, displayname = response["D:displayname"]
+        assert displayname.text == "Predefined"
 
     def test_principal_create_failure_returns_500(self) -> None:
         htpasswd = os.path.join(self.colpath, ".htpasswd")
@@ -218,7 +222,7 @@ class TestApplicationLimits(BaseTest):
                 raise ValueError("cannot create principal")
             return real(href, items=items, props=props)
 
-        self.application._storage.create_collection = fail_principal
+        cast(Any, self.application._storage).create_collection = fail_principal
         self.propfind("/tmp/", login="tmp:bepo", check=500)
 
         def fail_principal_os(href, items=None, props=None):
@@ -226,7 +230,7 @@ class TestApplicationLimits(BaseTest):
                 raise OSError(errno.EIO, "principal create failed")
             return real(href, items=items, props=props)
 
-        self.application._storage.create_collection = fail_principal_os
+        cast(Any, self.application._storage).create_collection = fail_principal_os
         self.propfind("/tmp/", login="tmp:bepo", check=500)
 
     def test_predefined_collection_valueerror_is_logged(self, caplog) -> None:
@@ -248,7 +252,7 @@ class TestApplicationLimits(BaseTest):
                 raise ValueError("predefined collection rejected")
             return real(href, items=items, props=props)
 
-        self.application._storage.create_collection = fail_predefined
+        cast(Any, self.application._storage).create_collection = fail_predefined
         self.propfind("/tmp/", login="tmp:bepo", check=207)
         assert any(
             "Failed to create predefined collection" in message
@@ -271,7 +275,7 @@ class TestWebdavErrors(BaseTest):
         _grant_write(self)
 
     def _call(self, method, path, data=b"", content_length=None, content_type=None):
-        environ = {}
+        environ: dict[str, Any] = {}
         wsgiref.util.setup_testing_defaults(environ)
         environ["REQUEST_METHOD"] = method
         environ["PATH_INFO"] = path
@@ -427,8 +431,11 @@ END:VCALENDAR
         self.put("/named.ics/", body)
         _status, responses = self.propfind("/named.ics/", PROPFIND_NAMES)
         response = responses["/named.ics/"]
-        assert response["D:displayname"][1].text == "My Calendar"
-        assert response["C:calendar-description"][1].text == "A description"
+        assert not isinstance(response, int)
+        _prop_status, displayname = response["D:displayname"]
+        assert displayname.text == "My Calendar"
+        _prop_status, description = response["C:calendar-description"]
+        assert description.text == "A description"
 
     @pytest.mark.parametrize(("code", "status"), [
         (errno.ENOSPC, 507),
@@ -482,7 +489,9 @@ END:VCALENDAR
   </D:prop>
 </D:propfind>"""
         _status, responses = self.propfind("/subscribed.ics/", propfind)
-        resourcetype = responses["/subscribed.ics/"]["D:resourcetype"][1]
+        response = responses["/subscribed.ics/"]
+        assert not isinstance(response, int)
+        _prop_status, resourcetype = response["D:resourcetype"]
         assert resourcetype.find(xmlutils.make_clark("CS:subscribed")) is not None
         components = """<?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -503,7 +512,9 @@ END:VCALENDAR
   </D:prop>
 </D:propfind>"""
         _status, responses = self.propfind("/calendar.ics/", propfind)
-        element = responses["/calendar.ics/"]["C:supported-calendar-component-set"][1]
+        response = responses["/calendar.ics/"]
+        assert not isinstance(response, int)
+        _prop_status, element = response["C:supported-calendar-component-set"]
         names = [child.attrib["name"] for child in element.findall(xmlutils.make_clark("C:comp"))]
         assert names == ["VEVENT", "VTODO"]
 
@@ -559,7 +570,7 @@ END:VCALENDAR
         def raise_enospc(*_args, **_kwargs):
             raise ValueError("failed [Errno %d]" % errno.ENOSPC)
 
-        self.application._sharing.sharing_collection_update = raise_enospc
+        cast(Any, self.application._sharing).sharing_collection_update = raise_enospc
         status, _headers, body = self.request(
             "PROPPATCH", shared, proppatch, login="user:userpw", check=None)
         assert status == 507
@@ -568,7 +579,7 @@ END:VCALENDAR
         def raise_plain(*_args, **_kwargs):
             raise ValueError("properties are not acceptable")
 
-        self.application._sharing.sharing_collection_update = raise_plain
+        cast(Any, self.application._sharing).sharing_collection_update = raise_plain
         status, _headers, body = self.request(
             "PROPPATCH", shared, proppatch, login="user:userpw", check=None)
         assert status == 400
@@ -660,8 +671,10 @@ class TestStorageAndDecoding(BaseTest):
         with open(os.path.join(collection._filesystem_path, "broken.ics"), "w") as handle:
             handle.write("this is not a calendar component")
         self.propfind("/calendar.ics/", check=207)
-        assert collection._get("broken.ics") is None
-        assert any("Skip broken item" in message for message in caplog.messages)
+        with pytest.raises(ValueError):
+            collection._get("broken.ics")
+        assert any("Skip broken item" in message and "broken.ics" in message
+                   for message in caplog.messages)
 
     def test_unsafe_href_load_returns_none(self) -> None:
         collection = self._collection()
@@ -688,7 +701,7 @@ class TestStorageAndDecoding(BaseTest):
 
     def test_short_request_body_is_400_on_put(self) -> None:
         self.mkcalendar("/calendar.ics/")
-        environ = {}
+        environ: dict[str, Any] = {}
         wsgiref.util.setup_testing_defaults(environ)
         environ["REQUEST_METHOD"] = "PUT"
         environ["PATH_INFO"] = "/calendar.ics/event1.ics"
