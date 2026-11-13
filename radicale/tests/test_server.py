@@ -359,7 +359,9 @@ class TestBaseServerRequests(BaseTest):
         try:
             secured = context.wrap_socket(raw, server_hostname="127.0.0.1")
             try:
-                assert secured.cipher()[0] == suite
+                cipher = secured.cipher()
+                assert cipher is not None
+                assert cipher[0] == suite
             finally:
                 secured.close()
         except Exception:

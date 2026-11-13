@@ -26,7 +26,8 @@ import sys
 import pytest
 
 import radicale.__main__ as main
-from radicale import VERSION, log as radicale_log
+from radicale import VERSION
+from radicale import log as radicale_log
 from radicale.tests.helpers import get_file_path
 
 

@@ -190,17 +190,15 @@ class ParallelHTTPSServer(ParallelHTTPServer):
             # "no protocol active" result never reaches the comparison.
             try:
                 context.minimum_version = utils.ssl_context_minimum_version_by_options(context.options)
-                minimum_version = context.minimum_version
             except ValueError:
-                minimum_version = 0
-            if minimum_version == 0:
+                raise RuntimeError("No SSL minimum protocol active")
+            if context.minimum_version == 0:
                 raise RuntimeError("No SSL minimum protocol active")
             try:
                 context.maximum_version = utils.ssl_context_maximum_version_by_options(context.options)
-                maximum_version = context.maximum_version
             except ValueError:
-                maximum_version = 0
-            if maximum_version == 0:
+                raise RuntimeError("No SSL maximum protocol active")
+            if context.maximum_version == 0:
                 raise RuntimeError("No SSL maximum protocol active")
         else:
             logger.info("SSL active protocols: (system-default)")

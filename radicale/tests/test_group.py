@@ -24,11 +24,12 @@ import logging
 import os
 import sys
 import tempfile
+from typing import Any, cast
 
 import pytest
 
 import radicale
-from radicale import pathutils
+from radicale import auth, pathutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -473,14 +474,26 @@ permissions: r
 
         import radicale.auth.pam  # imported for the PAM login path; not at module level
 
-        assert radicale.auth.pam.Auth
+        assert radicale.auth.pam.Auth.__name__ == "Auth"
         login = pwd.getpwuid(os.getuid()).pw_name
         self.configure({
             "auth": {"type": "pam"},
             "group": {"type": "from_auth"},
             "rights": {"type": "owner_only"}})
         assert self.application._group.groups(login) == set()
-        self.application._auth.pam_authenticate = lambda *args, **kwargs: True
+        cast(Any, self.application._auth).pam_authenticate = lambda *args, **kwargs: True
+        user, groups, auth_type = self.application._auth.login(
+            login, "secret", auth.AuthContext())
+        assert (user, auth_type) == (login, "pam")
+        assert groups
+        seen = []
+        real_authorization = self.application._rights.authorization
+
+        def authorization(user_name, user_groups, path):
+            seen.append((user_name, set(user_groups), path))
+            return real_authorization(user_name, user_groups, path)
+
+        cast(Any, self.application._rights).authorization = authorization
         self.propfind("/", login="%s:secret" % login, check=207)
-        assert self.application._rights._user_groups == self.application._auth._groups
-        assert self.application._auth._groups
+        assert any(user_name == login and user_groups == groups
+                   for user_name, user_groups, _path in seen)

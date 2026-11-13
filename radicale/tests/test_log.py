@@ -19,7 +19,6 @@
 import io
 import logging
 import os
-import sys
 
 import pytest
 

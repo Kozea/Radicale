@@ -19,7 +19,7 @@
 
 class Hook:
     constructed = 0
-    notifications = []
+    notifications: list = []
 
     def __init__(self, configuration):
         type(self).constructed += 1
