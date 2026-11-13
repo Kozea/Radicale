@@ -276,6 +276,153 @@ class TestBaseServerRequests(BaseTest):
             p.terminate()
             p.wait()
 
+    def test_serve_raises_when_lookup_fails(self) -> None:
+        self.configure({"server": {"hosts": "no-such-host.invalid:9", "ssl": "False"}})
+        with pytest.raises(RuntimeError, match="No servers started"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_serve_raises_when_bind_fails(self) -> None:
+        held = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        held.bind((self.sockname[0], self.sockname[1]))
+        held.listen(1)
+        try:
+            with pytest.raises(RuntimeError, match="No servers started"):
+                server.serve(self.configuration, self.shutdown_socket)
+        finally:
+            held.close()
+
+    def test_unreadable_certificate_names_the_file(self) -> None:
+        missing = os.path.join(self.colpath, "missing-cert.pem")
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": missing,
+                       "key": get_file_path("key.pem")}})
+        with pytest.raises(RuntimeError, match="missing-cert.pem"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_ssl_minimum_protocol_inactive(self) -> None:
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "protocol": "-ALL"}})
+        with pytest.raises(RuntimeError, match="No SSL minimum protocol active"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_ssl_maximum_protocol_inactive(self, monkeypatch) -> None:
+        monkeypatch.setattr(
+            server.utils, "ssl_context_minimum_version_by_options",
+            lambda _options: ssl.TLSVersion.TLSv1_2)
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "protocol": "-ALL"}})
+        with pytest.raises(RuntimeError, match="No SSL maximum protocol active"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def _https_exchange(self, context):
+        opener = request.build_opener(
+            request.HTTPSHandler(context=context), DisabledRedirectHandler)
+        req = request.Request(
+            "https://%s:%d/" % (self.sockname[0], self.sockname[1]))
+        while True:
+            assert self.thread.is_alive()
+            try:
+                with opener.open(req) as response:
+                    return response.getcode(), response.read()
+            except HTTPError as error:
+                return error.code, error.read()
+            except URLError as error:
+                if isinstance(error.reason, ConnectionRefusedError):
+                    time.sleep(0.05)
+                    continue
+                raise
+
+    def test_ciphersuite_is_used_for_the_handshake(self) -> None:
+        suite = "ECDHE-RSA-AES128-GCM-SHA256"
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "ciphersuite": suite,
+                       "protocol": "TLSv1.2"}})
+        self.thread.start()
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        context.maximum_version = ssl.TLSVersion.TLSv1_2
+        context.set_ciphers(suite)
+        status, _body = self._https_exchange(context)
+        assert status == 302
+        raw = socket.create_connection((self.sockname[0], self.sockname[1]))
+        try:
+            secured = context.wrap_socket(raw, server_hostname="127.0.0.1")
+            try:
+                assert secured.cipher()[0] == suite
+            finally:
+                secured.close()
+        except Exception:
+            raw.close()
+            raise
+
+    def test_client_certificate_and_handshake_failure(self) -> None:
+        import subprocess
+
+        ca_key = os.path.join(self.colpath, "ca.key")
+        ca_pem = os.path.join(self.colpath, "ca.pem")
+        server_key = os.path.join(self.colpath, "server.key")
+        server_csr = os.path.join(self.colpath, "server.csr")
+        server_pem = os.path.join(self.colpath, "server.pem")
+        client_key = os.path.join(self.colpath, "client.key")
+        client_csr = os.path.join(self.colpath, "client.csr")
+        client_pem = os.path.join(self.colpath, "client.pem")
+        subprocess.check_call([
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", ca_key, "-out", ca_pem, "-days", "2",
+            "-subj", "/CN=RadicaleTestCA",
+            "-addext", "basicConstraints=critical,CA:TRUE",
+            "-addext", "keyUsage=critical,keyCertSign,cRLSign"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "req", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", server_key, "-out", server_csr,
+            "-subj", "/CN=127.0.0.1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "x509", "-req", "-in", server_csr,
+            "-CA", ca_pem, "-CAkey", ca_key, "-CAcreateserial",
+            "-out", server_pem, "-days", "2"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "req", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", client_key, "-out", client_csr,
+            "-subj", "/CN=radicale-client",
+            "-addext", "extendedKeyUsage=clientAuth"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "x509", "-req", "-in", client_csr,
+            "-CA", ca_pem, "-CAkey", ca_key, "-CAcreateserial",
+            "-out", client_pem, "-days", "2",
+            "-copy_extensions", "copy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": server_pem,
+                       "key": server_key,
+                       "certificate_authority": ca_pem}})
+        self.thread.start()
+        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.check_hostname = False
+        client_context.verify_mode = ssl.CERT_NONE
+        client_context.load_cert_chain(client_pem, client_key)
+        status, _body = self._https_exchange(client_context)
+        assert status == 302
+        anonymous = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        anonymous.check_hostname = False
+        anonymous.verify_mode = ssl.CERT_NONE
+        with pytest.raises((URLError, ssl.SSLError, ConnectionError)):
+            self._https_exchange(anonymous)
+        status, _body = self._https_exchange(client_context)
+        assert status == 302
+
 
 class TestCherootServerRequests(TestBaseServerRequests):
     """The same tests as the built-in server, with `[server] type = cheroot`."""

@@ -1188,3 +1188,45 @@ permissions: RrWwu""")
             assert "u" in str(e)
         except Exception:
             raise
+
+
+class TestCollectionRights(BaseTest):
+    """Collection-level rights that the principal tests do not reach."""
+
+    def _users(self) -> None:
+        htpasswd_file_path = os.path.join(self.colpath, ".htpasswd")
+        with open(htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\nother:bepo\n")
+        self._htpasswd = htpasswd_file_path
+
+    def test_authenticated_collection_and_deeper_path(self) -> None:
+        self._users()
+        self.configure({
+            "rights": {"type": "authenticated"},
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": self._htpasswd,
+                     "htpasswd_encryption": "plain"}})
+        self.mkcalendar("/tmp/calendar.ics/", login="tmp:bepo")
+        assert self.application._rights.authorization("tmp", "/tmp/calendar.ics/") == "rw"
+        assert self.application._rights.authorization("other", "/tmp/calendar.ics/") == "rw"
+        deeper = "/tmp/calendar.ics/nested/event1.ics"
+        assert self.application._rights.authorization("tmp", "/tmp/calendar.ics/event1.ics") == ""
+        assert self.application._rights.authorization("tmp", deeper) == ""
+        event = get_file_content("event1.ics")
+        self.put(deeper, event, login="other:bepo", check=403)
+
+    def test_owner_write_collection_and_deeper_path(self) -> None:
+        self._users()
+        self.configure({
+            "rights": {"type": "owner_write"},
+            "auth": {"type": "htpasswd",
+                     "htpasswd_filename": self._htpasswd,
+                     "htpasswd_encryption": "plain"}})
+        self.mkcalendar("/tmp/calendar.ics/", login="tmp:bepo")
+        assert self.application._rights.authorization("tmp", "/tmp/calendar.ics/") == "rw"
+        assert self.application._rights.authorization("other", "/tmp/calendar.ics/") == "r"
+        self.propfind("/tmp/calendar.ics/", login="other:bepo", check=207)
+        self.put("/tmp/calendar.ics/", "BEGIN:VCALENDAR\r\nEND:VCALENDAR",
+                 login="other:bepo", check=403)
+        assert self.application._rights.authorization(
+            "other", "/tmp/calendar.ics/event1.ics") == ""

@@ -24,6 +24,8 @@ import os
 import re
 from datetime import datetime, timedelta
 
+import pytest
+
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -329,3 +331,139 @@ permissions: RrWw""")
                 "dryrun": "True",
             }
         })
+
+    def _install_fake_smtp(self, monkeypatch, boom=False):
+        import smtplib
+
+        import radicale.hook.email as email_hook
+
+        fail = boom
+
+        class FakeSMTP:
+            created = []
+            messages = []
+
+            def __init__(self, host=None, port=None, context=None, **kwargs):
+                self.host = host
+                self.port = port
+                self.context = context
+                self.starttls_context = None
+                FakeSMTP.created.append(self)
+
+            def ehlo(self):
+                return (250, b"ok")
+
+            def starttls(self, context=None, **kwargs):
+                self.starttls_context = context
+                return (220, b"ready")
+
+            def login(self, user=None, password=None):
+                return (235, b"ok")
+
+            def sendmail(self, from_addr, to_addrs, msg):
+                if fail:
+                    raise smtplib.SMTPException("send failed")
+                FakeSMTP.messages.append((from_addr, list(to_addrs), msg))
+                return {}
+
+            def quit(self):
+                return (221, b"bye")
+
+        FakeSMTP.created = []
+        FakeSMTP.messages = []
+        monkeypatch.setattr(email_hook.smtplib, "SMTP", FakeSMTP)
+        monkeypatch.setattr(email_hook.smtplib, "SMTP_SSL", FakeSMTP)
+        return FakeSMTP
+
+    def _email_hook(self, security="none", verify_mode="REQUIRED", dryrun="False"):
+        self.configure({
+            "hook": {
+                "type": "email",
+                "dryrun": dryrun,
+                "smtp_server": "127.0.0.1",
+                "smtp_port": "2525",
+                "smtp_security": security,
+                "smtp_ssl_verify_mode": verify_mode,
+                "from_email": "calendar@example.com",
+                "mass_email": "False",
+            }})
+
+    def _future_event(self, summary="Event") -> str:
+        event = get_file_content("event1.ics")
+        event = self._replace_end_date_in_event(event, self._future_date_timestamp())
+        return event.replace("SUMMARY:Event", "SUMMARY:" + summary, 1)
+
+    def test_send_includes_attendee_and_subject(self, monkeypatch) -> None:
+        fake = self._install_fake_smtp(monkeypatch)
+        self._email_hook()
+        self.mkcalendar("/calendar.ics/")
+        self.put("/calendar.ics/event1.ics", self._future_event())
+        assert fake.messages
+        for _sender, recipients, message in fake.messages:
+            assert "You have been added to an event" in message
+        recipients = [address for _sender, addresses, _message in fake.messages for address in addresses]
+        assert "janedoe@example.com" in recipients
+        assert "johndoe@example.com" in recipients
+        sent = self.application._hook.email_config._send_email(
+            "subject line", "body", [type("A", (), {"email": "janedoe@example.com"})()])
+        assert sent is True
+
+    def test_smtp_exception_returns_false(self, monkeypatch) -> None:
+        self._install_fake_smtp(monkeypatch, boom=True)
+        self._email_hook()
+        sent = self.application._hook.email_config._send_email(
+            "subject line", "body", [type("A", (), {"email": "janedoe@example.com"})()])
+        assert sent is False
+
+    def test_empty_smtp_security_raises(self) -> None:
+        self._email_hook(security="")
+        with pytest.raises(ValueError, match="SMTP security type cannot be empty"):
+            self.application._hook.email_config._send_email(
+                "subject line", "body", [type("A", (), {"email": "janedoe@example.com"})()])
+
+    def test_starttls_and_tls_verify_mode(self, monkeypatch) -> None:
+        import ssl
+
+        expected = {
+            "REQUIRED": ssl.CERT_REQUIRED,
+            "OPTIONAL": ssl.CERT_OPTIONAL,
+            "NONE": ssl.CERT_NONE,
+        }
+        for security in ("starttls", "tls"):
+            for mode, verify in expected.items():
+                fake = self._install_fake_smtp(monkeypatch)
+                self._email_hook(security=security, verify_mode=mode)
+                self.mkcalendar("/calendar.ics/", check=None)
+                self.put("/calendar.ics/event1.ics",
+                         self._future_event(summary="Mode " + mode + " " + security),
+                         check=None)
+                assert fake.created
+                contexts = []
+                for client in fake.created:
+                    if client.starttls_context is not None:
+                        contexts.append(client.starttls_context)
+                    if client.context is not None:
+                        contexts.append(client.context)
+                assert contexts
+                assert all(context.verify_mode == verify for context in contexts)
+
+    def test_event_update_uses_updated_template(self, monkeypatch) -> None:
+        fake = self._install_fake_smtp(monkeypatch)
+        self._email_hook()
+        self.mkcalendar("/calendar.ics/")
+        self.put("/calendar.ics/event1.ics", self._future_event())
+        fake.messages.clear()
+        self.put("/calendar.ics/event1.ics", self._future_event(summary="Event moved"), check=None)
+        assert fake.messages
+        assert any("An event you are invited to has been updated" in message
+                   for _sender, _recipients, message in fake.messages)
+        recipients = [address for _sender, addresses, _message in fake.messages for address in addresses]
+        assert "janedoe@example.com" in recipients
+
+    def test_non_calendar_item_sends_nothing(self, monkeypatch) -> None:
+        fake = self._install_fake_smtp(monkeypatch)
+        self._email_hook()
+        self.create_addressbook("/contacts.vcf/")
+        self.put("/contacts.vcf/contact1.vcf", get_file_content("contact1.vcf"))
+        assert fake.messages == []
+        assert fake.created == []
