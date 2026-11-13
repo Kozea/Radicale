@@ -456,3 +456,31 @@ permissions: r
 </propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
         assert path_user1 in responses
         assert path_static_group1 not in responses
+
+    def test_from_auth_rejects_other_auth_types(self) -> None:
+        with open(self.htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\n")
+        with pytest.raises(RuntimeError, match="not supported by auth/type"):
+            self.configure({
+                "auth": {"type": "htpasswd",
+                         "htpasswd_filename": self.htpasswd_file_path,
+                         "htpasswd_encryption": "plain"},
+                "group": {"type": "from_auth"}})
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="PAM authentication is unavailable on Windows")
+    def test_from_auth_pam_groups_are_empty_and_copied(self) -> None:
+        import pwd
+
+        import radicale.auth.pam  # imported for the PAM login path; not at module level
+
+        assert radicale.auth.pam.Auth
+        login = pwd.getpwuid(os.getuid()).pw_name
+        self.configure({
+            "auth": {"type": "pam"},
+            "group": {"type": "from_auth"},
+            "rights": {"type": "owner_only"}})
+        assert self.application._group.groups(login) == set()
+        self.application._auth.pam_authenticate = lambda *args, **kwargs: True
+        self.propfind("/", login="%s:secret" % login, check=207)
+        assert self.application._rights._user_groups == self.application._auth._groups
+        assert self.application._auth._groups
