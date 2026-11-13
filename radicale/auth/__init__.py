@@ -205,6 +205,10 @@ class BaseAuth:
     _cache_failed_logins_expiry: int
     _cache_failed_logins_max_count: int
     _cache_secret_salt: str                 # persistent over runtime
+    _active: int
+    _active_logins: dict[str, int]
+    _active_logins_digest: dict[str, int]
+    _active_logins_salt_ns: int             # persistent over runtime
     _lock: threading.Lock
 
     def __init__(self, configuration: "config.Configuration") -> None:
@@ -266,6 +270,24 @@ class BaseAuth:
             self._cache_failed = AuthCache("failed", self._cache_failed_logins_max_count, self._cache_failed_logins_expiry)
             logger.trace("BaseAuth._cache_failed = %r", self._cache_failed)
             self._cache_secret_salt = secrets.token_urlsafe()
+        # concurrent active login session limiter by
+        #  tracking authentication sessions
+        #   overall
+        #   per login
+        #   per login+password
+        #  entering loop if limit is reached until max
+        #  if max is reached trigger caller to return 503
+        # limiter should work with or without active login cache
+        self._active_limiter: bool = False
+        self._active_logins_salt_ns = time.monotonic_ns()
+        self._active: int = 0
+        self._active_logins: dict[str, int] = dict()
+        self._active_logins_digest: dict[str, int] = dict()
+        self._active_limit: int = 16
+        self._active_logins_limit: int = 8
+        self._active_logins_digest_limit: int = 1
+        self._active_logins_delay: float = 1  # seconds
+        self._active_logins_delay_repeat_max: int = 10
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
@@ -392,6 +414,58 @@ class BaseAuth:
                 self._cache_failed.cleanup()
             return (result, groups, _type)  # NO_LOGIN_NO_GROUPS
 
+        if (self._type not in CACHE_LOGIN_TYPES):
+            # shortcut, no password to authenticate
+            (result, groups) = self._login_ext_with_groups(login, password, context)
+            return (result, groups, _type)
+
+        # calculate digest from login+password+runtime-salt
+        login_digest = login + ":" + self._cache_digest(login, password, str(self._active_logins_salt_ns))
+
+        if self._active_limiter:
+            # TODO: max entry limit for self._active_logins
+            # TODO: max entry limit for self._active_logins_digest
+            # increase counters
+            self._lock.acquire()
+            self._active += 1
+            if login in self._active_logins:
+                self._active_logins[login] += 1
+            else:
+                self._active_logins[login] = 1
+            if login_digest in self._active_logins_digest:
+                self._active_logins_digest[login_digest] += 1
+            else:
+                self._active_logins_digest[login_digest] = 1
+            self._lock.release()
+
+            # TODO: bypass repeat loop if self._cache_logins is True and entry is found (early lookup)
+
+            delay_repeat_counter: int = 0
+            while (delay_repeat_counter < self._active_logins_delay_repeat_max):
+                if self._active_logins_digest[login_digest] > self._active_logins_digest_limit:
+                    # active session with same digest (login+password)
+                    logger.trace("auth/login concurrent limit %d reached for login+password verification via backend %r: %r", self._active_logins_digest[login_digest], _type, login)
+                    pass
+                elif self._active_logins[login] > self._active_logins_limit:
+                    # active sessions with same user
+                    logger.trace("auth/login concurrent limit %d reached for login verification via backend %r: %r", self._active_logins[login], _type, login)
+                    pass
+                elif self._active > self._active_limit:
+                    # active sessions
+                    logger.trace("auth/login concurrent limit %d reached via backend %r: %r", self._active, _type, login)
+                    pass
+                else:
+                    break
+                logger.trace("auth/login concurrent limit reached delay: %.9f seconds (repeat counter: %d)", self._active_logins_delay, delay_repeat_counter)
+                time.sleep(self._active_logins_delay)
+                delay_repeat_counter += 1
+
+            if (delay_repeat_counter >= self._active_logins_delay_repeat_max):
+                # return authentication limit problem
+                _type = _type + "/error:temp:concurrent-session-limit"
+                logger.warning("auth/login concurrent limit delay repeat reached maximum: %d", delay_repeat_counter)
+                return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS
+
         if self._cache_logins is True:
             login_digest = login + ":" + self._cache_digest(login, password, self._cache_secret_salt)
             now_ns = time.monotonic_ns()
@@ -399,39 +473,62 @@ class BaseAuth:
             # check for cache failed login
             cache_failed_entry = self._cache_failed.get(login_digest)
             if cache_failed_entry:
-                # login+password found in cache "failed" -> shortcut return
+                # login+password found in cache "failed"
                 _type = _type + "/cached"
                 self._cache_successful.cleanup()
-                return (result, groups, _type)  # NO_LOGIN_NO_GROUPS
+            else:
+                cache_successful_entry = self._cache_successful.get(login_digest)
+                if cache_successful_entry:
+                    # login found in cache "successful"
+                    (expiry_ns_cache, login_cache, groups_cache) = cache_successful_entry
+                    result = login_cache
+                    groups = groups_cache
+                    _type = _type + "/cached"
 
-            cache_successful_entry = self._cache_successful.get(login_digest)
-            if cache_successful_entry:
-                # login found in cache "successful"
-                (expiry_ns_cache, login_cache, groups_cache) = cache_successful_entry
-                result = login_cache
-                groups = groups_cache
-                _type = _type + "/cached"
-
-            if result == "":
-                # verify login+password via configured backend
-                logger.debug("Login verification for user+password via backend %r: %r", _type, login)
-                (result, groups) = self._login_ext_with_groups(login, password, context)
-                if result != "":
-                    logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
-                    self._cache_successful.set_or_refresh(login_digest, result, groups)
-                    logger.debug("Login successful cache for user set: %r -> %r", login, result)
-                    if self._cache_failed.clear(login_digest):
-                        logger.debug("Login failed cache for user cleared: %r", login)
-                else:
-                    logger.debug("Login failed for user+password via backend: %r", login)
-                    self._cache_failed.set_or_refresh(login_digest, login)
-                    logger.debug("Login failed cache for user set: %r", login)
+                if result == "":
+                    # verify login+password via configured backend
+                    logger.debug("Login verification for user+password via backend %r: %r", _type, login)
+                    try:
+                        (result, groups) = self._login_ext_with_groups(login, password, context)
+                    except Exception as e:
+                        logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
+                        _type = _type + "/error:perm:backend"
+                    if result != "":
+                        logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
+                        # store successful login in cache
+                        self._cache_successful.set_or_refresh(login_digest, result, groups)
+                        logger.debug("Login successful cache for user set: %r -> %r", login, result)
+                        if self._cache_failed.clear(login_digest):
+                            logger.debug("Login failed cache for user cleared: %r", login)
+                    else:
+                        logger.debug("Login failed for user+password via backend: %r", login)
+                        self._cache_failed.set_or_refresh(login_digest, login)
+                        logger.debug("Login failed cache for user set: %r", login)
         else:
             # self._cache_logins is False
             logger.debug("Login verification for user+password via backend %r: %r", _type, login)
-            (result, groups) = self._login_ext_with_groups(login, password, context)
+            try:
+                (result, groups) = self._login_ext_with_groups(login, password, context)
+            except Exception as e:
+                logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
+                _type = _type + "/error:perm:backend"
             if result != "":
                 logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
+
+        if self._active_limiter:
+            # decrease counters
+            self._lock.acquire()
+            self._active -= 1
+            if login in self._active_logins:
+                if self._active_logins[login] > 0:
+                    self._active_logins[login] -= 1
+            if login_digest in self._active_logins_digest:
+                if self._active_logins_digest[login_digest] > 0:
+                    self._active_logins_digest[login_digest] -= 1
+            # TODO: cleanup old entries in self._active_logins
+            # TODO: cleanup old entries in self._active_logins_digest
+            self._lock.release()
+
         # finally
         if result == "":
             self._sleep_for_constant_exec_time(monotonic_ns_begin)
