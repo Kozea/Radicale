@@ -437,6 +437,28 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "owner:secret") == "/owner/"
 
     @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    def test_ldap3_sni_is_the_hostname_when_the_uri_has_a_port(self) -> None:
+        """SNI is the hostname when the LDAP URI has a custom port.
+
+        ldap3.Tls records ``sni``. The mock Server keeps that object, so this
+        fails if the port is included or if the argument is dropped.
+        """
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        # No CA file: that constructor does not pass sni.
+        self._configure_ldap3(
+            ldap_uri="ldaps://lldap.example.com:6360",
+            ldap_security="tls",
+            ldap_ssl_verify_mode="NONE",
+            ldap_ssl_ca_file="")
+        with directory.patch():
+            assert _principal(self, "owner:secret") == "/owner/"
+        assert directory.servers
+        for kwargs in directory.servers:
+            assert kwargs["use_ssl"] is True
+            assert kwargs["tls"].sni == "lldap.example.com"
+
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_certificate_warnings(self, caplog) -> None:
         caplog.set_level(logging.WARNING)
         self._configure_ldap3(ldap_security="tls", ldap_ssl_ca_file="")
