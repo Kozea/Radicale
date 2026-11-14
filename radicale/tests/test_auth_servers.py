@@ -445,7 +445,7 @@ class TestAuthServers(BaseTest):
         """
         directory = _MockLdap()
         directory.add(OWNER_DN, uid="owner", userPassword="secret")
-        # No CA file: that constructor does not pass sni.
+        # No CA file, so the constructor without ca_certs_file runs.
         self._configure_ldap3(
             ldap_uri="ldaps://lldap.example.com:6360",
             ldap_security="tls",
@@ -456,6 +456,33 @@ class TestAuthServers(BaseTest):
         assert directory.servers
         for kwargs in directory.servers:
             assert kwargs["use_ssl"] is True
+            assert kwargs["tls"].sni == "lldap.example.com"
+
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    def test_ldap3_sni_is_the_hostname_when_a_ca_file_is_set(self) -> None:
+        """SNI stays the hostname when a CA file is configured.
+
+        A CA file selects the ldap3.Tls constructor that also takes
+        ca_certs_file. The mock Server keeps that object. The hostname
+        and the CA file have to be on the same object, including when
+        the URI uses a port other than 636.
+        """
+        ca_file = os.path.join(self.colpath, "ca.pem")
+        with open(ca_file, "w", encoding="utf-8") as handle:
+            handle.write("not a certificate\n")
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        self._configure_ldap3(
+            ldap_uri="ldaps://lldap.example.com:6360",
+            ldap_security="tls",
+            ldap_ssl_verify_mode="REQUIRED",
+            ldap_ssl_ca_file=ca_file)
+        with directory.patch():
+            assert _principal(self, "owner:secret") == "/owner/"
+        assert directory.servers
+        for kwargs in directory.servers:
+            assert kwargs["use_ssl"] is True
+            assert kwargs["tls"].ca_certs_file == ca_file
             assert kwargs["tls"].sni == "lldap.example.com"
 
     @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")

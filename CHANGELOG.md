@@ -2,6 +2,7 @@
 
 ## 3.9.2.dev
 * Fix: [server] report an inactive SSL protocol before assigning version 0
+* Fix: [auth] keep the LDAP server hostname as SNI when a CA file is set
 * Fix: propfind CS:getctag: use the sync-token so the value never repeats
 * Fix: [auth]: add server hostname as SNI option (ldap3+tls) for proper validation did not strip non-standard port
 * Fix: propfind: honor [storage] skip_broken_item=True (uncatched after changes in 3.9.1)
