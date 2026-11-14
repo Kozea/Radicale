@@ -31,93 +31,6 @@ from radicale import auth, config, utils
 from radicale.auth import none as none_auth
 
 
-class TestUtils:
-    """Tests generic utils function."""
-
-    def test_format_unit_dec(self) -> None:
-        """Verify format unit decimal"""
-        test_matrix = {
-                1: "1",
-                1100: "1.1 k",
-                1100000: "1.1 m",
-                1100000000: "1.1 g",
-                }
-
-        for value in test_matrix:
-            string = utils.format_unit(value)
-            assert string == test_matrix[value]
-
-    def test_format_unit_bin(self) -> None:
-        """Verify format unit binary"""
-        test_matrix = {
-                1: "1",
-                1000: "1000",
-                2000: "2.0 K",
-                10000000: "9.5 M",
-                10000000000: "9.3 G",
-                }
-        for value in test_matrix:
-            string = utils.format_unit(value, binary=True)
-            assert string == test_matrix[value]
-
-    def test_ssl_context_options(self) -> None:
-        """Test SSL context options"""
-        test_matrix = {
-                "SSLv3": [ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                "TLSv1": [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                "TLSv1.2": [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_3],
-                "TLSv1.3": [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2],
-                "-ALL": [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                "ALL -SSLv3": [ssl.OP_NO_SSLv3],
-                "ALL -TLSv1": [ssl.OP_NO_TLSv1],
-                "ALL -TLSv1.1": [ssl.OP_NO_TLSv1_1],
-                "ALL -TLSv1.2": [ssl.OP_NO_TLSv1_2],
-                "ALL -TLSv1.3": [ssl.OP_NO_TLSv1_3],
-                }
-        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        for proto in test_matrix:
-            ssl_context_options = utils.ssl_context_options_by_protocol(proto, context.options)
-            logging.debug("ssl_context_options=%r", ssl_context_options)
-            for opt in test_matrix[proto]:
-                assert opt in ssl_context_options
-
-    def test_ssl_context_minium(self) -> None:
-        """Test SSL context minimum"""
-        test_matrix = {
-                ssl.TLSVersion.SSLv3: [ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1_1: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1_2: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1_3: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2],
-                }
-        for version in test_matrix:
-            logging.debug("test version=%r", version)
-            ssl_context_options = 0
-            for opt in test_matrix[version]:
-                ssl_context_options |= opt
-            ssl_context_minimum_version = utils.ssl_context_minimum_version_by_options(ssl_context_options)
-            logging.debug("ssl_context_options=%r", ssl_context_options)
-            assert ssl_context_minimum_version == version
-
-    def test_ssl_context_maximum(self) -> None:
-        """Test SSL context maximum"""
-        test_matrix = {
-                ssl.TLSVersion.SSLv3: [ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1_1: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1_2: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_3],
-                ssl.TLSVersion.TLSv1_3: [ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2],
-                }
-        for version in test_matrix:
-            logging.debug("test version=%r", version)
-            ssl_context_options = 0
-            for opt in test_matrix[version]:
-                ssl_context_options |= opt
-            ssl_context_minimum_version = utils.ssl_context_minimum_version_by_options(ssl_context_options)
-            logging.debug("ssl_context_options=%r", ssl_context_options)
-            assert ssl_context_minimum_version == version
-
-
 def _enabled_protocols(options):
     return {
         "SSLv3": not bool(options & ssl.OP_NO_SSLv3),
@@ -148,8 +61,11 @@ class TestUtilsOutcomes:
         assert utils.format_unit(-5) == "-5"
         assert utils.format_unit(1024, binary=True) == "1024"
         assert utils.format_unit(1025, binary=True) == "1.0 K"
+        assert utils.format_unit(2000, binary=True) == "2.0 K"
         assert utils.format_unit(5 * 1024 * 1024, binary=True) == "5.0 M"
+        assert utils.format_unit(10000000, binary=True) == "9.5 M"
         assert utils.format_unit(3 * 1024 * 1024 * 1024, binary=True) == "3.0 G"
+        assert utils.format_unit(10000000000, binary=True) == "9.3 G"
 
     def test_format_ut_boundaries(self):
         if sys.platform == "win32":
@@ -317,6 +233,10 @@ class TestUtilsOutcomes:
         ("ALL", _ALL_ON),
         ("-ALL", _ALL_OFF),
         ("ALL -TLSv1.1 -SSLv3", {"SSLv3": False, "TLSv1": True, "TLSv1.1": False, "TLSv1.2": True, "TLSv1.3": True}),
+        ("ALL -SSLv3", {"SSLv3": False, "TLSv1": True, "TLSv1.1": True, "TLSv1.2": True, "TLSv1.3": True}),
+        ("ALL -TLSv1", {"SSLv3": True, "TLSv1": False, "TLSv1.1": True, "TLSv1.2": True, "TLSv1.3": True}),
+        ("ALL -TLSv1.2", {"SSLv3": True, "TLSv1": True, "TLSv1.1": True, "TLSv1.2": False, "TLSv1.3": True}),
+        ("ALL -TLSv1.3", {"SSLv3": True, "TLSv1": True, "TLSv1.1": True, "TLSv1.2": True, "TLSv1.3": False}),
         ("-SSLv2", _ALL_OFF),
         ("-SSLv3", _ALL_OFF),
         ("-TLSv1", _ALL_OFF),
@@ -336,9 +256,17 @@ class TestUtilsOutcomes:
             utils.ssl_context_options_by_protocol("TLS1.4", 0)
 
     def test_ssl_version_bounds_and_protocol_list(self):
+        for protocol, version in (
+                ("SSLv3", ssl.TLSVersion.SSLv3),
+                ("TLSv1", ssl.TLSVersion.TLSv1),
+                ("TLSv1.1", ssl.TLSVersion.TLSv1_1),
+                ("TLSv1.2", ssl.TLSVersion.TLSv1_2),
+                ("TLSv1.3", ssl.TLSVersion.TLSv1_3),
+        ):
+            options = utils.ssl_context_options_by_protocol(protocol, 0)
+            assert utils.ssl_context_minimum_version_by_options(options) == version
+            assert utils.ssl_context_maximum_version_by_options(options) == version
         only_12 = utils.ssl_context_options_by_protocol("TLSv1.2", 0)
-        assert utils.ssl_context_minimum_version_by_options(only_12) == ssl.TLSVersion.TLSv1_2
-        assert utils.ssl_context_maximum_version_by_options(only_12) == ssl.TLSVersion.TLSv1_2
         everything = utils.ssl_context_options_by_protocol("ALL", 0)
         assert utils.ssl_context_minimum_version_by_options(everything) == ssl.TLSVersion.SSLv3
         assert utils.ssl_context_maximum_version_by_options(everything) == ssl.TLSVersion.TLSv1_3
