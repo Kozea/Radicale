@@ -473,7 +473,7 @@ class TestBaseServerStandalone(BaseTest):
         assert "help" in captured.out
         sys.argv = sys_argv_orig
 
-    def test_standalone_wsgi_server_verify_item_broken(self) -> None:
+    def test_standalone_wsgi_server_verify_item_broken(self, caplog) -> None:
         """Test the internal server standalone: verify-item 'broken'"""
         from radicale import __main__
         sys_argv_orig = sys.argv
@@ -481,10 +481,14 @@ class TestBaseServerStandalone(BaseTest):
                 "radicale",
                 "--verify-item", get_file_path("broken-vcard.vcf"),
                 ]
+        caplog.clear()
         with pytest.raises(SystemExit) as e:
             __main__.run()
         assert e.type == SystemExit
         assert e.value.code == 1
+        # prepare() returns false. A raised error uses the other critical line.
+        assert "Item verification failed" in caplog.text
+        assert "An exception occurred during item verification" not in caplog.text
         sys.argv = sys_argv_orig
 
     def test_standalone_wsgi_server_verify_item_broken2(self, caplog) -> None:
@@ -501,6 +505,9 @@ class TestBaseServerStandalone(BaseTest):
         assert e.type == SystemExit
         assert e.value.code == 1
         assert "Hexdump" in caplog.text
+        # read_components returns false. Raising instead still logs the hexdump.
+        assert "Item verification failed" in caplog.text
+        assert "An exception occurred during item verification" not in caplog.text
         sys.argv = sys_argv_orig
 
     def test_standalone_wsgi_server_verify_item_ok(self) -> None:
@@ -568,7 +575,7 @@ class TestBaseServerStandalone(BaseTest):
         __main__.run()
         sys.argv = sys_argv_orig
 
-    def test_standalone_wsgi_server_verify_sharing_db_none(self) -> None:
+    def test_standalone_wsgi_server_verify_sharing_db_none(self, caplog) -> None:
         """Test the internal server standalone: verify-sharing"""
         from radicale import __main__
         sys_argv_orig = sys.argv
@@ -577,10 +584,14 @@ class TestBaseServerStandalone(BaseTest):
                 "--verify-sharing",
                 "--storage-filesystem-folder=" + self.colpath,
                 ]
+        caplog.clear()
         with pytest.raises(SystemExit) as e:
             __main__.run()
         assert e.type == SystemExit
         assert e.value.code == 1
+        # verify() returned false. An exception uses the other critical line.
+        assert "Sharing database verification failed" in caplog.text
+        assert "An exception occurred during sharing database verification" not in caplog.text
         sys.argv = sys_argv_orig
 
     def test_standalone_wsgi_server_verify_sharing_db_csv(self) -> None:
@@ -596,7 +607,7 @@ class TestBaseServerStandalone(BaseTest):
         __main__.run()
         sys.argv = sys_argv_orig
 
-    def test_standalone_wsgi_server_verify_sharing_db_files(self) -> None:
+    def test_standalone_wsgi_server_verify_sharing_db_files(self, caplog) -> None:
         """Test the internal server standalone: verify-sharing 'files'"""
         from radicale import __main__
         sys_argv_orig = sys.argv
@@ -606,7 +617,22 @@ class TestBaseServerStandalone(BaseTest):
                 "--sharing-type", "files",
                 "--storage-filesystem-folder=" + self.colpath,
                 ]
+        caplog.clear()
         __main__.run()
+        assert "sharing database verification content successful" in caplog.text
+        # The first run creates the database. Token sharing initializes it
+        # again, so database_init must accept a directory that already exists.
+        sys.argv = [
+                "radicale",
+                "--verify-sharing",
+                "--sharing-type", "files",
+                "--sharing-collection-by-token", "True",
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        caplog.clear()
+        __main__.run()
+        assert "sharing database verification content successful" in caplog.text
+        assert os.path.isdir(os.path.join(self.colpath, "collection-db", "files"))
         sys.argv = sys_argv_orig
 
 

@@ -19,7 +19,6 @@
 import contextlib
 import io
 import logging
-import os
 import signal
 import sys
 
@@ -28,7 +27,6 @@ import pytest
 import radicale.__main__ as main
 from radicale import VERSION
 from radicale import log as radicale_log
-from radicale.tests.helpers import get_file_path
 
 
 def _exit_signals():
@@ -146,6 +144,10 @@ class TestMain:
             "--storage-filesystem-folder", str(tmp_path),
         ])
         assert code == 1
+        # "Failed to load item" is the RuntimeError from a disabled skip.
+        # The default skip path exits 1 as well, but never logs that text.
+        # "Storage verification failed" means that error was counted.
+        assert "Failed to load item" in caplog.text
         assert "Storage verification failed" in caplog.text
 
     def test_verify_storage_on_a_file_reports_the_exception(self, tmp_path, caplog):
@@ -159,21 +161,6 @@ class TestMain:
         assert code == 1
         assert "An exception occurred during storage verification:" in caplog.text
 
-    def test_verify_item_accepts_a_calendar(self, caplog):
-        caplog.set_level(logging.INFO)
-        code = _run_cli(["--verify-item", get_file_path("event1.ics")])
-        assert code == 0
-        assert "Item verification failed" not in caplog.text
-        assert "successful" in caplog.text
-
-    def test_verify_item_rejects_malformed_content(self, tmp_path, caplog):
-        caplog.set_level(logging.INFO)
-        item = tmp_path / "bad.ics"
-        item.write_text("this is not a calendar\n", encoding="utf-8")
-        code = _run_cli(["--verify-item", str(item)])
-        assert code == 1
-        assert "Item verification failed" in caplog.text
-
     def test_verify_item_missing_file_reports_the_exception(self, tmp_path, caplog):
         caplog.set_level(logging.INFO)
         missing = tmp_path / "absent.ics"
@@ -181,29 +168,6 @@ class TestMain:
         assert code == 1
         assert "An exception occurred during item verification:" in caplog.text
         assert "absent.ics" in caplog.text
-
-    def test_verify_sharing_none_backend_fails(self, tmp_path, caplog):
-        caplog.set_level(logging.INFO)
-        code = _run_cli([
-            "--verify-sharing",
-            "--storage-filesystem-folder", str(tmp_path),
-            "--sharing-type", "none",
-        ])
-        assert code == 1
-        assert "Sharing database verification failed" in caplog.text
-
-    def test_verify_sharing_files_backend_succeeds(self, tmp_path, caplog):
-        caplog.set_level(logging.INFO)
-        code = _run_cli([
-            "--verify-sharing",
-            "--storage-filesystem-folder", str(tmp_path),
-            "--sharing-type", "files",
-            "--sharing-collection-by-token", "True",
-        ])
-        assert code == 0
-        assert "Verifying sharing database" in caplog.text
-        assert "sharing database verification content successful" in caplog.text
-        assert os.path.isdir(os.path.join(str(tmp_path), "collection-db", "files"))
 
     def test_debug_flag_and_config_file_verify_storage(self, tmp_path, caplog):
         caplog.set_level(logging.DEBUG)
