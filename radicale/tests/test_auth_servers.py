@@ -45,13 +45,6 @@ except ModuleNotFoundError:
     skip_ldap3 = True
     pass
 
-skip_ldap = False
-try:
-    import ldap  # noqa:F401 (dynamically loaded for "test_ldap2_login")
-except ModuleNotFoundError:
-    skip_ldap = True
-    pass
-
 skip_pam = False
 try:
     import pam
@@ -167,6 +160,10 @@ def _install_ldap2(state: _Ldap2State) -> types.ModuleType:
             self.started_tls = True
 
         def simple_bind_s(self, dn: str, secret: str) -> None:
+            # python-ldap applies the certificate options only after a new TLS context.
+            if (ldap_mod.OPT_X_TLS_REQUIRE_CERT in self.options and
+                    ldap_mod.OPT_X_TLS_NEWCTX not in self.options):
+                raise RuntimeError("TLS context was not created")
             if dn == state.reader_dn:
                 if secret != state.reader_password:
                     raise Exception("reader bind failed")
@@ -367,7 +364,7 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "alias:secret") == "/owner/"
             auth_any: Any = self.application._auth
             user, user_groups = auth_any._login_ext_with_groups("alias", "secret", None)
-            assert "family" in user_groups
+            assert user_groups == {"family"}
 
     @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_group_search_failure_keeps_attribute_groups(self) -> None:
@@ -440,6 +437,16 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "owner:secret") == "/owner/"
 
     @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    def test_ldap3_certificate_warnings(self, caplog) -> None:
+        caplog.set_level(logging.WARNING)
+        self._configure_ldap3(ldap_security="tls", ldap_ssl_ca_file="")
+        assert "Certificate verification not possible" in caplog.text
+        caplog.clear()
+        self._configure_ldap3(ldap_security="none",
+                              ldap_ssl_ca_file=os.path.join(self.colpath, "ca.pem"))
+        assert "useless without encrypted" in caplog.text
+
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     def test_ldap3_login_failures(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         directory = _MockLdap()
@@ -471,15 +478,21 @@ class TestAuthServers(BaseTest):
             _principal(self, "owner:secret", check=500)
             assert "invalidCredentials" in caplog.text
 
-    @pytest.mark.skipif(skip_ldap is True, reason="No LDAP module 'ldap' found")
+            # A reader StartTLS failure must not fall through into bind() without TLS.
+            self._configure_ldap3(ldap_security="starttls")
+            start_tls.side_effect = ldap3.core.exceptions.LDAPStartTLSError("reader tls")
+            _principal(self, "owner:secret", check=500)
+            assert "StartTLS" in caplog.text
+
     def test_ldap2_login(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         state = _Ldap2State()
         user_dn = "uid=owner,ou=people,dc=example,dc=com"
         state.passwords[user_dn] = "secret"
         state.user_results = [("owner", (user_dn, {
-            "cn": [b"owner"],
-            "memberOf": [b"cn=family,ou=groups,dc=example,dc=com", "BAD"],
+            "cn": [b"carol"],
+            "memberOf": [b"cn=family,ou=groups,dc=example,dc=com",
+                         "cn=staff,ou=groups,dc=example,dc=com", "BAD"],
         }))]
         ldap_mod = _install_ldap2(state)
         ldap_auth.Auth._ldap_attributes = []
@@ -499,10 +512,10 @@ class TestAuthServers(BaseTest):
                 "ldap_groups_attribute": "memberOf",
             }})
         auth_any: Any = self.application._auth
-        assert _principal(self, "owner:secret") == "/owner/"
+        assert _principal(self, "owner:secret") == "/carol/"
         user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
-        assert "BAD" in user_groups
-        assert "cn=family,ou=groups,dc=example,dc=com" in user_groups
+        assert user == "carol"
+        assert user_groups == {"staff", "BAD", "cn=family,ou=groups,dc=example,dc=com"}
         conn = state.connections[-1]
         assert conn.started_tls is False
         assert conn.options[ldap_mod.OPT_X_TLS_REQUIRE_CERT] == ldap_mod.OPT_X_TLS_ALLOW
@@ -526,11 +539,13 @@ class TestAuthServers(BaseTest):
             ("cn=family,ou=groups,dc=example,dc=com", {}),
             ("cn=staff,ou=groups,dc=example,dc=com", {}),
         ]
-        assert _principal(self, "owner:secret") == "/owner/"
+        state.user_results[0][1][1]["cn"] = ["carol"]
+        assert _principal(self, "owner:secret") == "/carol/"
         assert state.connections[-1].started_tls is True
+        auth_any = self.application._auth
         user, user_groups = auth_any._login_ext_with_groups("owner", "secret", None)
-        assert "BAD" in user_groups
-        assert "cn=family,ou=groups,dc=example,dc=com" in user_groups
+        assert user == "carol"
+        assert user_groups == {"family", "staff"}
 
         assert _principal(self, "owner:wrong", check=401) == ""
         state.duplicate = True
@@ -576,16 +591,30 @@ class TestAuthServers(BaseTest):
         self._configure_imap(box, imap_security="starttls", imap_host="imap.example:1143",
                              imap_append_domain="example.com")
 
-    def test_imap_plain_tls_and_login_mechanism(self) -> None:
+        # A bracketed host with no port is what the ']' branch exists for.
+        self._configure_imap(box, imap_security="tls", imap_host="[::1]")
+        auth_any: Any = self.application._auth
+        assert auth_any._host == "::1"
+        assert auth_any._port == 993
+        # The port after ']' is concatenated back onto the bracketed address.
+        self._configure_imap(box, imap_security="starttls", imap_host="[::1]:1143")
+        auth_any = self.application._auth
+        assert auth_any._host == "::1"
+        assert auth_any._port == 1143
+
+        with pytest.raises(RuntimeError, match="unsupported IMAP security"):
+            self._configure_imap(box, imap_security="bogus")
+
+    def test_imap_plain_tls_and_login_mechanism(self, caplog) -> None:
         box = _ImapBox()
-        self._configure_imap(box, imap_security="tls")
+        self._configure_imap(box, imap_security="tls", imap_append_domain="example.com")
         with patch("radicale.auth.imap.imaplib.IMAP4_SSL", _FakeIMAP), \
                 patch("radicale.auth.imap.imaplib.IMAP4", _FakeIMAP):
             assert _principal(self, "owner:secret") == "/owner/"
         conn = box.connections[-1]
         assert conn.secure is True
         assert conn.port == 993
-        assert conn.auth_calls == [("PLAIN", b"owner\x00owner\x00secret")]
+        assert conn.auth_calls == [("PLAIN", b"owner@example.com\x00owner@example.com\x00secret")]
         assert conn.logout_called is True
 
         box = _ImapBox()
@@ -604,12 +633,15 @@ class TestAuthServers(BaseTest):
 
         box = _ImapBox()
         box.capabilities = ("AUTH=PLAIN",)
+        caplog.set_level(logging.WARNING)
         self._configure_imap(box, imap_security="none", imap_append_domain="")
+        assert "INSECURE" in caplog.text
         with patch("radicale.auth.imap.imaplib.IMAP4_SSL", _FakeIMAP), \
                 patch("radicale.auth.imap.imaplib.IMAP4", _FakeIMAP):
             assert _principal(self, "owner:secret") == "/owner/"
         assert box.connections[-1].port == 143
         assert box.connections[-1].secure is False
+        assert box.connections[-1].auth_calls == [("PLAIN", b"owner\x00owner\x00secret")]
 
     def test_imap_failures(self) -> None:
         box = _ImapBox()
@@ -670,6 +702,8 @@ class TestAuthServers(BaseTest):
                 raise OSError("unreachable")
             if mode == "denied":
                 return _OauthResponse(401, {})
+            if mode == "token401":
+                return _OauthResponse(401, {"access_token": "tok"})
             if mode == "empty":
                 return _OauthResponse(200, {"token_type": "bearer"})
             return _OauthResponse(200, {"access_token": "tok"})
@@ -683,6 +717,7 @@ class TestAuthServers(BaseTest):
             assert _principal(self, "owner:secret") == "/owner/"
             assert _principal(self, "empty:secret", check=401) == ""
             assert _principal(self, "denied:secret", check=401) == ""
+            assert _principal(self, "token401:secret", check=401) == ""
             assert _principal(self, "down:secret", check=401) == ""
             self.configure({"auth": {"oauth2_client_secret": ""}})
             assert _principal(self, "owner:secret") == "/owner/"
@@ -699,7 +734,7 @@ class TestAuthServers(BaseTest):
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
     @pytest.mark.skipif(skip_pam is True, reason="No PAM module found")
-    def test_pam(self) -> None:
+    def test_pam(self, caplog) -> None:
         class Pw:
             def __init__(self, uid: int, gid: int) -> None:
                 self.pw_uid = uid
@@ -755,8 +790,12 @@ class TestAuthServers(BaseTest):
             self.configure({"auth": {"type": "pam", "delay": "0.001", "pam_service": "radicale"},
                             "group": {"type": "from_auth"}})
             auth_any: Any = self.application._auth
+            caplog.set_level(logging.WARNING)
             assert auth_any._login_ext_with_groups(None, "secret", None) == auth.NO_LOGIN_NO_GROUPS
+            assert "requires non-empty user" in caplog.text
+            caplog.clear()
             assert auth_any._login_ext_with_groups("owner", None, None) == auth.NO_LOGIN_NO_GROUPS
+            assert "requires non-empty password" in caplog.text
             assert _principal(self, "missing:secret", check=401) == ""
             assert _principal(self, "owner:secret") == "/owner/"
             assert ("owner", "secret", "radicale") in calls
@@ -791,6 +830,24 @@ class TestAuthServers(BaseTest):
             groups.pop(10)
             self.configure({"auth": {"pam_group_membership": ""}})
             assert _principal(self, "owner:secret", check=401) == ""
+
+            # Primary membership is not stored in gr_mem.
+            users["alice"] = Pw(10, 20)
+            users["bob"] = Pw(11, 10)
+            groups[10] = Gr("users", [])
+            groups[20] = Gr("calendars", ["bob"])
+            self.configure({"auth": {"pam_group_membership": "calendars"}})
+            auth_any = self.application._auth
+            user, user_groups = auth_any._login_ext_with_groups("alice", "secret", None)
+            assert (user, user_groups) == ("alice", {"calendars"})
+            user, user_groups = auth_any._login_ext_with_groups("bob", "secret", None)
+            assert (user, user_groups) == ("bob", {"users", "calendars"})
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows")
+    def test_pam_missing_module(self) -> None:
+        with patch.dict(sys.modules, {"pam": None}):
+            with pytest.raises(ModuleNotFoundError, match="PAM authentication requires the Python pam module"):
+                self.configure({"auth": {"type": "pam"}})
 
 
 class _OauthResponse:
