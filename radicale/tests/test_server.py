@@ -377,9 +377,10 @@ class TestBaseServerRequests(BaseTest):
                        "ciphersuite": suite,
                        "protocol": "TLSv1.2"}})
         self.thread.start()
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.maximum_version = ssl.TLSVersion.TLSv1_2
         context.set_ciphers(suite)
         status, _body = self._https_exchange(context)
@@ -440,15 +441,17 @@ class TestBaseServerRequests(BaseTest):
                        "key": server_key,
                        "certificate_authority": ca_pem}})
         self.thread.start()
-        client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context = ssl.create_default_context()
         client_context.check_hostname = False
         client_context.verify_mode = ssl.CERT_NONE
+        client_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.load_cert_chain(client_pem, client_key)
         status, _body = self._https_exchange(client_context)
         assert status == 302
-        anonymous = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        anonymous = ssl.create_default_context()
         anonymous.check_hostname = False
         anonymous.verify_mode = ssl.CERT_NONE
+        anonymous.minimum_version = ssl.TLSVersion.TLSv1_2
         with pytest.raises((URLError, ssl.SSLError, ConnectionError)):
             self._https_exchange(anonymous)
         status, _body = self._https_exchange(client_context)
