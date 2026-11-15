@@ -276,6 +276,195 @@ class TestBaseServerRequests(BaseTest):
             p.terminate()
             p.wait()
 
+    def test_serve_raises_when_lookup_fails(self) -> None:
+        self.configure({"server": {"hosts": "no-such-host.invalid:9", "ssl": "False"}})
+        with pytest.raises(RuntimeError, match="No servers started"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_serve_raises_when_bind_fails(self) -> None:
+        held = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        held.bind((self.sockname[0], self.sockname[1]))
+        held.listen(1)
+        try:
+            with pytest.raises(RuntimeError, match="No servers started"):
+                server.serve(self.configuration, self.shutdown_socket)
+        finally:
+            held.close()
+
+    def test_unreadable_certificate_names_the_file(self) -> None:
+        missing = os.path.join(self.colpath, "missing-cert.pem")
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": missing,
+                       "key": get_file_path("key.pem")}})
+        with pytest.raises(RuntimeError, match="missing-cert.pem"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_ssl_minimum_protocol_inactive(self) -> None:
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "protocol": "-ALL"}})
+        with pytest.raises(RuntimeError, match="No SSL minimum protocol active"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_ssl_maximum_protocol_inactive(self, monkeypatch) -> None:
+        monkeypatch.setattr(
+            server.utils, "ssl_context_minimum_version_by_options",
+            lambda _options: ssl.TLSVersion.TLSv1_2)
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "protocol": "-ALL"}})
+        with pytest.raises(RuntimeError, match="No SSL maximum protocol active"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_ssl_rejected_minimum_version_is_not_an_inactive_protocol(self, monkeypatch) -> None:
+        """A ValueError from assigning a minimum version is not 'no protocol active'.
+
+        CPython 3.9 says ``Unsupported protocol version``. CPython 3.10 and
+        later say ``Unsupported TLS/SSL version``.
+        """
+        monkeypatch.setattr(
+            server.utils, "ssl_context_minimum_version_by_options",
+            lambda _options: 1)
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "protocol": "TLSv1.2"}})
+        with pytest.raises(ValueError, match="Unsupported (?:TLS/SSL|protocol) version"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def test_ssl_rejected_maximum_version_is_not_an_inactive_protocol(self, monkeypatch) -> None:
+        """A ValueError from assigning a maximum version is not 'no protocol active'.
+
+        CPython 3.9 says ``Unsupported protocol version``. CPython 3.10 and
+        later say ``Unsupported TLS/SSL version``.
+        """
+        monkeypatch.setattr(
+            server.utils, "ssl_context_minimum_version_by_options",
+            lambda _options: ssl.TLSVersion.TLSv1_2)
+        monkeypatch.setattr(
+            server.utils, "ssl_context_maximum_version_by_options",
+            lambda _options: 1)
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "protocol": "TLSv1.2"}})
+        with pytest.raises(ValueError, match="Unsupported (?:TLS/SSL|protocol) version"):
+            server.serve(self.configuration, self.shutdown_socket)
+
+    def _https_exchange(self, context):
+        opener = request.build_opener(
+            request.HTTPSHandler(context=context), DisabledRedirectHandler)
+        req = request.Request(
+            "https://%s:%d/" % (self.sockname[0], self.sockname[1]))
+        while True:
+            assert self.thread.is_alive()
+            try:
+                with opener.open(req) as response:
+                    return response.getcode(), response.read()
+            except HTTPError as error:
+                return error.code, error.read()
+            except URLError as error:
+                if isinstance(error.reason, ConnectionRefusedError):
+                    time.sleep(0.05)
+                    continue
+                raise
+
+    def test_ciphersuite_is_used_for_the_handshake(self) -> None:
+        suite = "ECDHE-RSA-AES128-GCM-SHA256"
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": get_file_path("cert.pem"),
+                       "key": get_file_path("key.pem"),
+                       "ciphersuite": suite,
+                       "protocol": "TLSv1.2"}})
+        self.thread.start()
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.maximum_version = ssl.TLSVersion.TLSv1_2
+        context.set_ciphers(suite)
+        status, _body = self._https_exchange(context)
+        assert status == 302
+        raw = socket.create_connection((self.sockname[0], self.sockname[1]))
+        try:
+            secured = context.wrap_socket(raw, server_hostname="127.0.0.1")
+            try:
+                cipher = secured.cipher()
+                assert cipher is not None
+                assert cipher[0] == suite
+            finally:
+                secured.close()
+        except Exception:
+            raw.close()
+            raise
+
+    def test_client_certificate_and_handshake_failure(self) -> None:
+        import subprocess
+
+        ca_key = os.path.join(self.colpath, "ca.key")
+        ca_pem = os.path.join(self.colpath, "ca.pem")
+        server_key = os.path.join(self.colpath, "server.key")
+        server_csr = os.path.join(self.colpath, "server.csr")
+        server_pem = os.path.join(self.colpath, "server.pem")
+        client_key = os.path.join(self.colpath, "client.key")
+        client_csr = os.path.join(self.colpath, "client.csr")
+        client_pem = os.path.join(self.colpath, "client.pem")
+        subprocess.check_call([
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", ca_key, "-out", ca_pem, "-days", "2",
+            "-subj", "/CN=RadicaleTestCA",
+            "-addext", "basicConstraints=critical,CA:TRUE",
+            "-addext", "keyUsage=critical,keyCertSign,cRLSign"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "req", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", server_key, "-out", server_csr,
+            "-subj", "/CN=127.0.0.1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "x509", "-req", "-in", server_csr,
+            "-CA", ca_pem, "-CAkey", ca_key, "-CAcreateserial",
+            "-out", server_pem, "-days", "2"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "req", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", client_key, "-out", client_csr,
+            "-subj", "/CN=radicale-client",
+            "-addext", "extendedKeyUsage=clientAuth"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call([
+            "openssl", "x509", "-req", "-in", client_csr,
+            "-CA", ca_pem, "-CAkey", ca_key, "-CAcreateserial",
+            "-out", client_pem, "-days", "2",
+            "-copy_extensions", "copy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.configure({
+            "server": {"ssl": "True",
+                       "certificate": server_pem,
+                       "key": server_key,
+                       "certificate_authority": ca_pem}})
+        self.thread.start()
+        client_context = ssl.create_default_context()
+        client_context.check_hostname = False
+        client_context.verify_mode = ssl.CERT_NONE
+        client_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        client_context.load_cert_chain(client_pem, client_key)
+        status, _body = self._https_exchange(client_context)
+        assert status == 302
+        anonymous = ssl.create_default_context()
+        anonymous.check_hostname = False
+        anonymous.verify_mode = ssl.CERT_NONE
+        anonymous.minimum_version = ssl.TLSVersion.TLSv1_2
+        with pytest.raises((URLError, ssl.SSLError, ConnectionError)):
+            self._https_exchange(anonymous)
+        status, _body = self._https_exchange(client_context)
+        assert status == 302
+
 
 class TestCherootServerRequests(TestBaseServerRequests):
     """The same tests as the built-in server, with `[server] type = cheroot`."""
@@ -324,7 +513,7 @@ class TestBaseServerStandalone(BaseTest):
         assert "help" in captured.out
         sys.argv = sys_argv_orig
 
-    def test_standalone_wsgi_server_verify_item_broken(self) -> None:
+    def test_standalone_wsgi_server_verify_item_broken(self, caplog) -> None:
         """Test the internal server standalone: verify-item 'broken'"""
         from radicale import __main__
         sys_argv_orig = sys.argv
@@ -332,10 +521,14 @@ class TestBaseServerStandalone(BaseTest):
                 "radicale",
                 "--verify-item", get_file_path("broken-vcard.vcf"),
                 ]
+        caplog.clear()
         with pytest.raises(SystemExit) as e:
             __main__.run()
         assert e.type == SystemExit
         assert e.value.code == 1
+        # prepare() returns false. A raised error uses the other critical line.
+        assert "Item verification failed" in caplog.text
+        assert "An exception occurred during item verification" not in caplog.text
         sys.argv = sys_argv_orig
 
     def test_standalone_wsgi_server_verify_item_broken2(self, caplog) -> None:
@@ -352,6 +545,9 @@ class TestBaseServerStandalone(BaseTest):
         assert e.type == SystemExit
         assert e.value.code == 1
         assert "Hexdump" in caplog.text
+        # read_components returns false. Raising instead still logs the hexdump.
+        assert "Item verification failed" in caplog.text
+        assert "An exception occurred during item verification" not in caplog.text
         sys.argv = sys_argv_orig
 
     def test_standalone_wsgi_server_verify_item_ok(self) -> None:
@@ -419,7 +615,7 @@ class TestBaseServerStandalone(BaseTest):
         __main__.run()
         sys.argv = sys_argv_orig
 
-    def test_standalone_wsgi_server_verify_sharing_db_none(self) -> None:
+    def test_standalone_wsgi_server_verify_sharing_db_none(self, caplog) -> None:
         """Test the internal server standalone: verify-sharing"""
         from radicale import __main__
         sys_argv_orig = sys.argv
@@ -428,10 +624,14 @@ class TestBaseServerStandalone(BaseTest):
                 "--verify-sharing",
                 "--storage-filesystem-folder=" + self.colpath,
                 ]
+        caplog.clear()
         with pytest.raises(SystemExit) as e:
             __main__.run()
         assert e.type == SystemExit
         assert e.value.code == 1
+        # verify() returned false. An exception uses the other critical line.
+        assert "Sharing database verification failed" in caplog.text
+        assert "An exception occurred during sharing database verification" not in caplog.text
         sys.argv = sys_argv_orig
 
     def test_standalone_wsgi_server_verify_sharing_db_csv(self) -> None:
@@ -447,7 +647,7 @@ class TestBaseServerStandalone(BaseTest):
         __main__.run()
         sys.argv = sys_argv_orig
 
-    def test_standalone_wsgi_server_verify_sharing_db_files(self) -> None:
+    def test_standalone_wsgi_server_verify_sharing_db_files(self, caplog) -> None:
         """Test the internal server standalone: verify-sharing 'files'"""
         from radicale import __main__
         sys_argv_orig = sys.argv
@@ -457,7 +657,22 @@ class TestBaseServerStandalone(BaseTest):
                 "--sharing-type", "files",
                 "--storage-filesystem-folder=" + self.colpath,
                 ]
+        caplog.clear()
         __main__.run()
+        assert "sharing database verification content successful" in caplog.text
+        # The first run creates the database. Token sharing initializes it
+        # again, so database_init must accept a directory that already exists.
+        sys.argv = [
+                "radicale",
+                "--verify-sharing",
+                "--sharing-type", "files",
+                "--sharing-collection-by-token", "True",
+                "--storage-filesystem-folder=" + self.colpath,
+                ]
+        caplog.clear()
+        __main__.run()
+        assert "sharing database verification content successful" in caplog.text
+        assert os.path.isdir(os.path.join(self.colpath, "collection-db", "files"))
         sys.argv = sys_argv_orig
 
 
@@ -472,9 +687,9 @@ class TestHypercornConfiguration:
 
     def _configuration(self, **server: str) -> config.Configuration:
         configuration = config.load()
-        # Nothing is written to the storage folder. A pytest temporary directory cannot be used
-        # instead: the VFAT and NTFS jobs fail its ownership check, because those filesystems
-        # report one fixed uid.
+        # Storage init creates collection-root here and writes an mtime probe.
+        # tempfile follows TEMP onto the filesystem under test. pytest's
+        # tmp_path is not used: --basetemp puts that base beside those mounts.
         configuration.update({"server": dict(server, type="hypercorn"),
                               "storage": {"filesystem_folder": tempfile.mkdtemp()}},
                              "test", privileged=True)

@@ -281,9 +281,12 @@ class Auth(auth.BaseAuth):
                 verifyMode = {"NONE": ssl.CERT_NONE,
                               "OPTIONAL": ssl.CERT_OPTIONAL,
                               "REQUIRED": ssl.CERT_REQUIRED}
-                tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], sni=urllib.parse.urlparse(self._ldap_uri).hostname)
+                # Both constructors take the hostname. The CA-file one used to
+                # replace the first and drop sni, so a custom port sent no name.
+                sni = urllib.parse.urlparse(self._ldap_uri).hostname
+                tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], sni=sni)
                 if self._ldap_ssl_ca_file != "":
-                    tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], ca_certs_file=self._ldap_ssl_ca_file)
+                    tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], ca_certs_file=self._ldap_ssl_ca_file, sni=sni)
                 if self._ldap_security == "tls":
                     logger.debug("_login3 using ssl (reader)")
                     server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
@@ -302,6 +305,10 @@ class Auth(auth.BaseAuth):
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach LDAP server")
         except Exception as e:
+            # A failed reader StartTLS is raised as RuntimeError above. Leaving
+            # it here would continue into bind() without TLS.
+            if isinstance(e, RuntimeError) and "StartTLS" in str(e):
+                raise
             logger.debug(f"_login3 error 1 {e} (reader)")
             pass
         if not conn.bind(read_server_info=False):

@@ -24,11 +24,12 @@ import logging
 import os
 import sys
 import tempfile
+from typing import Any, cast
 
 import pytest
 
 import radicale
-from radicale import pathutils
+from radicale import auth, pathutils
 from radicale.tests import BaseTest
 from radicale.tests.helpers import get_file_content
 
@@ -456,3 +457,43 @@ permissions: r
 </propfind>""", login="user1:user1pw", HTTP_DEPTH="1")
         assert path_user1 in responses
         assert path_static_group1 not in responses
+
+    def test_from_auth_rejects_other_auth_types(self) -> None:
+        with open(self.htpasswd_file_path, "w") as f:
+            f.write("tmp:bepo\n")
+        with pytest.raises(RuntimeError, match="not supported by auth/type"):
+            self.configure({
+                "auth": {"type": "htpasswd",
+                         "htpasswd_filename": self.htpasswd_file_path,
+                         "htpasswd_encryption": "plain"},
+                "group": {"type": "from_auth"}})
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="PAM authentication is unavailable on Windows")
+    def test_from_auth_pam_groups_are_empty_and_copied(self) -> None:
+        import pwd
+
+        import radicale.auth.pam  # imported for the PAM login path; not at module level
+
+        assert radicale.auth.pam.Auth.__name__ == "Auth"
+        login = pwd.getpwuid(os.getuid()).pw_name
+        self.configure({
+            "auth": {"type": "pam"},
+            "group": {"type": "from_auth"},
+            "rights": {"type": "owner_only"}})
+        assert self.application._group.groups(login) == set()
+        cast(Any, self.application._auth).pam_authenticate = lambda *args, **kwargs: True
+        user, groups, auth_type = self.application._auth.login(
+            login, "secret", auth.AuthContext())
+        assert (user, auth_type) == (login, "pam")
+        assert groups
+        seen = []
+        real_authorization = self.application._rights.authorization
+
+        def authorization(user_name, user_groups, path):
+            seen.append((user_name, set(user_groups), path))
+            return real_authorization(user_name, user_groups, path)
+
+        cast(Any, self.application._rights).authorization = authorization
+        self.propfind("/", login="%s:secret" % login, check=207)
+        assert any(user_name == login and user_groups == groups
+                   for user_name, user_groups, _path in seen)
