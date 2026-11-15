@@ -279,37 +279,6 @@ def time_range_match(vobject_item: vobject.base.Component,
     return matched
 
 
-def time_range_fill(vobject_item: vobject.base.Component,
-                    filter_: ET.Element, child_name: str, n: int = 1,
-                    max_occurrences: int = 0
-                    ) -> List[Tuple[datetime, datetime]]:
-    """Create a list of ``n`` occurances from the component/property ``child_name``
-       of ``vobject_item``."""
-    if not filter_.get("start") and not filter_.get("end"):
-        return []
-
-    start, end = parse_time_range(filter_)
-    ranges: List[Tuple[datetime, datetime]] = []
-
-    def range_fn(range_start: datetime, range_end: datetime,
-                 is_recurrence: bool) -> bool:
-        nonlocal ranges
-        if start < range_end and range_start < end:
-            ranges.append((range_start, range_end))
-            if n > 0 and len(ranges) >= n:
-                return True
-        if end < range_start and not is_recurrence:
-            return True
-        return False
-
-    def infinity_fn(range_start: datetime) -> bool:
-        return False
-
-    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn,
-                      max_occurrences=max_occurrences)
-    return ranges
-
-
 def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                       range_fn: Callable[[datetime, datetime, bool], bool],
                       infinity_fn: Callable[[datetime], bool],
