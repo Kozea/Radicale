@@ -96,9 +96,16 @@ class StoragePartDiscover(StorageBase):
             with child_context_manager(sane_path, href):
                 # We don't need to check for collisions, because the file
                 # names are from _list() (os.scandir).
-                item = collection._get(href, verify_href=False)
-                if item is not None:
-                    yield item
+                try:
+                    item = collection._get(href, verify_href=False)
+                    if item is not None:
+                        yield item
+                except ValueError:
+                    if child_context_manager != _null_child_context_manager:
+                        # used by verify-storage
+                        raise ValueError
+                    else:
+                        pass
 
         with os.scandir(filesystem_path) as entries:
             for entry in entries:
