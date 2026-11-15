@@ -242,6 +242,7 @@ class TestMultiFileSystem(BaseTest):
         with open(os.path.join(self.colpath, "collection-root", "contacts.vcf", "broken-vcard.vcf"), "w") as f:
             f.write(contact)
         self.get(path, check=200)
+        self.propfind(path, HTTP_DEPTH="1", check=207)
 
     def test_get_contacts_broken_raise(self) -> None:
         """Try to add broken contact, but skip."""
@@ -256,6 +257,7 @@ class TestMultiFileSystem(BaseTest):
         with open(os.path.join(self.colpath, "collection-root", "contacts.vcf", "broken-vcard.vcf"), "w") as f:
             f.write(contact)
         self.get(path, check=500)
+        self.propfind(path, HTTP_DEPTH="1", check=500)
 
     @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_collection_storage_dummy_case_sensitivity(self) -> None:
