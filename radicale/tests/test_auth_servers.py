@@ -45,6 +45,18 @@ except ModuleNotFoundError:
     skip_ldap3 = True
     pass
 
+# Presence check for test_ldap2_login. That test skips when python-ldap
+# is not installed. The test installs its own ldap module and does not
+# use this import.
+skip_ldap = False
+try:
+    import ldap  # noqa: F401
+except ImportError:
+    # A missing libldap raises ImportError, not ModuleNotFoundError.
+    # ModuleNotFoundError is a subclass, so a missing package still skips.
+    skip_ldap = True
+    pass
+
 skip_pam = False
 try:
     import pam
@@ -533,6 +545,7 @@ class TestAuthServers(BaseTest):
             _principal(self, "owner:secret", check=500)
             assert "StartTLS" in caplog.text
 
+    @pytest.mark.skipif(skip_ldap is True, reason="Cannot import LDAP module 'ldap'")
     def test_ldap2_login(self, caplog) -> None:
         caplog.set_level(logging.ERROR)
         state = _Ldap2State()
