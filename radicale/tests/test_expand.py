@@ -385,6 +385,40 @@ permissions: RrWw""")
         assert len(responses) == 0
         assert status == check
 
+        def test_report_with_max_expand_occurrence_unbounded_rrule(self) -> None:
+        """Test that the plain calendar-query time-range filter respects
+        max_expand_occurrence for unbounded RRULEs (PR #2354).
+
+        The event recurs daily forever from 2006, the queried week is in
+        November 2026. With the cap set to 10, only the first 10
+        occurrences (January 2006) are enumerated, so the event must not
+        match the queried week.
+        """
+        self.configure({"reporting": {"max_expand_occurrence": 10}})
+
+        uid = "event_daily_rrule_forever"
+        start = "20261115T000000Z"
+        end = "20261122T000000Z"
+
+        status, responses = self.report("/calendar.ics/",
+                                        self._req_without_expand(uid, start, end))
+        assert status == 207
+        assert len(responses) == 0
+
+    def test_report_with_max_expand_occurrence_unbounded_rrule_unlimited(self) -> None:
+        """Control for the test above: with the cap disabled (0), the
+        same unbounded event matches the queried week."""
+        self.configure({"reporting": {"max_expand_occurrence": 0}})
+
+        uid = "event_daily_rrule_forever"
+        start = "20261115T000000Z"
+        end = "20261122T000000Z"
+
+        status, responses = self.report("/calendar.ics/",
+                                        self._req_without_expand(uid, start, end))
+        assert status == 207
+        assert len(responses) == 1
+
     def test_report_vcalendar_all_components(self) -> None:
         """Test calendar-query with comp-filter VCALENDAR, returns all components."""
         self.mkcalendar("/test/")
