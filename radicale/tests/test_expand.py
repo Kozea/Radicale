@@ -385,7 +385,7 @@ permissions: RrWw""")
         assert len(responses) == 0
         assert status == check
 
-        def test_report_with_max_expand_occurrence_unbounded_rrule(self) -> None:
+    def test_report_with_max_expand_occurrence_unbounded_rrule(self) -> None:
         """Test that the plain calendar-query time-range filter respects
         max_expand_occurrence for unbounded RRULEs (PR #2354).
 
