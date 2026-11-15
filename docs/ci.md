@@ -77,4 +77,4 @@ Images are pushed to GHCR and Docker Hub.
 
 ## Local equivalents
 
-The wiki page [Development Testing Release](https://github.com/Kozea/Radicale/wiki/Development-Testing-Release) lists the tox environments, including filesystem environments that need root and a loop mount (`py_filesystem_vfat`, `py_filesystem_ntfs`, and others). Those are optional local runs. CI runs the three named in the table above.
+The wiki page [Development Testing Release](https://github.com/Kozea/Radicale/wiki/05-%E2%80%90-Development-Testing-Release) lists the tox environments, including filesystem environments that need root and a loop mount (`py_filesystem_vfat`, `py_filesystem_ntfs`, and others). Those are optional local runs. CI runs the three named in the table above.

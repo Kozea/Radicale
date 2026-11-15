@@ -21,7 +21,7 @@ Operator setup, options, and client notes stay in the files that already exist. 
 | Security contact and supported major version | [SECURITY.md](../SECURITY.md) |
 | Changelog | [CHANGELOG.md](../CHANGELOG.md) |
 | Requirements, tested Python versions, and install notes | [project wiki](https://github.com/Kozea/Radicale/wiki) |
-| Local test commands beyond CI | [Development Testing Release](https://github.com/Kozea/Radicale/wiki/Development-Testing-Release) |
+| Local test commands beyond CI | [Development Testing Release](https://github.com/Kozea/Radicale/wiki/05-%E2%80%90-Development-Testing-Release) |
 | Web UI type check | [radicale/web/README.md](../radicale/web/README.md) |
 | Browser integration tests | [integ_tests/README.md](../integ_tests/README.md) |
 | CalDAV client compatibility tests | [caldav_compat_tests/README.md](../caldav_compat_tests/README.md) |

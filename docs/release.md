@@ -2,7 +2,7 @@
 
 Maintainers ship a version. An agent does not tag, push tags, publish a GitHub Release, or run the PyPI or container workflows.
 
-The steps below are the ones written on the wiki page [Development Testing Release](https://github.com/Kozea/Radicale/wiki/Development-Testing-Release) (the release section). The workflows that run after a published GitHub Release are in [ci.md](ci.md). If the wiki and this file disagree, the wiki is the process the maintainers follow. Update this file in the same change that updates the wiki.
+The steps below are the ones written on the wiki page [Development Testing Release](https://github.com/Kozea/Radicale/wiki/05-%E2%80%90-Development-Testing-Release) (the release section). The workflows that run after a published GitHub Release are in [ci.md](ci.md). If the wiki and this file disagree, the wiki is the process the maintainers follow. Update this file in the same change that updates the wiki.
 
 ## Before the version commit
 
