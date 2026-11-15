@@ -712,12 +712,22 @@ class TestStorageAndDecoding(BaseTest):
         collection = self._collection()
         assert collection._get("a/b.ics") is None
 
-    def test_invalid_folder_umask_is_logged_and_raised(self, caplog) -> None:
+    def test_invalid_folder_umask_matches_the_platform(self, caplog) -> None:
         caplog.set_level(logging.CRITICAL)
+        # On win32, "zz" is not rejected: configure returns and no critical
+        # record says the umask is invalid. Other platforms raise ValueError
+        # and log that critical line, including the value.
+        if sys.platform == "win32":
+            self.configure({"storage": {"folder_umask": "zz"}})
+            assert not any(
+                "storage folder umask defined but invalid" in message
+                for message in caplog.messages)
+            return
         with pytest.raises(ValueError):
             self.configure({"storage": {"folder_umask": "zz"}})
-        assert any("storage folder umask defined but invalid" in message
-                   for message in caplog.messages)
+        assert any(
+            "storage folder umask defined but invalid" in message and "zz" in message
+            for message in caplog.messages)
 
     def test_decode_request_fails_when_every_charset_fails(self) -> None:
         class Undecodable(bytes):
