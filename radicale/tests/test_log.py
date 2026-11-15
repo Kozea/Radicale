@@ -19,10 +19,29 @@
 import io
 import logging
 import os
+import socket
 
 import pytest
 
 from radicale import log
+
+
+def _ensure_af_unix(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give later tests an ``AF_UNIX`` attribute when this platform has none.
+
+    Those tests replace ``socket.socket``. The value only has to make
+    ``hasattr`` true, so the missing-attribute return is not the branch
+    under test. It is not passed to the operating system.
+    """
+    if not hasattr(socket, "AF_UNIX"):
+        monkeypatch.setattr(socket, "AF_UNIX", object(), raising=False)
+
+
+def _journal_record() -> logging.LogRecord:
+    record = logging.LogRecord(
+        "radicale", logging.ERROR, __file__, 1, "journal-me", (), None)
+    record.ident = "1"
+    return record
 
 
 class TestLog:
@@ -198,16 +217,123 @@ class TestLog:
             handler._journal_stream_id = (stat.st_dev, stat.st_ino)
             assert handler._detect_journal(stream) is True
             assert handler._detect_journal(io.StringIO()) is False
-            record = logging.LogRecord("radicale", logging.ERROR, __file__, 1, "journal-me", (), None)
-            record.ident = "1"
-            sent = handler._try_emit_journal(record)
+            sent = handler._try_emit_journal(_journal_record())
+            # This host hits one of these. The tests below force the others.
+            if not hasattr(socket, "AF_UNIX"):
+                assert sent is False
+                assert handler._journal_socket is None
+                assert handler._journal_socket_failed is False
+                assert "Failed to connect to systemd journal" not in caplog.text
+            elif sent:
+                assert handler._journal_socket is not None
+                assert handler._journal_socket_failed is False
+                assert "Failed to connect to systemd journal" not in caplog.text
+            else:
+                assert handler._journal_socket is None
+                assert handler._journal_socket_failed is True
+                assert "Failed to connect to systemd journal" in caplog.text
         finally:
             stream.close()
-        if sent:
-            assert handler._journal_socket is not None
-        else:
-            assert sent is False
-            assert "Failed to connect to systemd journal" in caplog.text
+            journal = handler._journal_socket
+            handler._journal_socket = None
+            if journal is not None:
+                journal.close()
+                assert journal.fileno() == -1
+
+    def test_journal_skips_connect_when_af_unix_is_missing(self, monkeypatch, caplog):
+        caplog.set_level(logging.ERROR, logger="radicale")
+        monkeypatch.delattr(socket, "AF_UNIX", raising=False)
+        created = []
+
+        def spy_socket(*args, **kwargs):
+            created.append(args)
+            raise AssertionError("socket() without AF_UNIX")
+
+        monkeypatch.setattr(socket, "socket", spy_socket)
+        handler = log.ThreadedStreamHandler("journal")
+        assert handler._try_emit_journal(_journal_record()) is False
+        assert created == []
+        assert handler._journal_socket is None
+        assert handler._journal_socket_failed is False
+        assert "Failed to connect to systemd journal" not in caplog.text
+
+    def test_journal_does_not_retry_a_failed_connect(self, monkeypatch, caplog):
+        caplog.set_level(logging.ERROR, logger="radicale")
+        _ensure_af_unix(monkeypatch)
+
+        def refuse(*args, **kwargs):
+            raise AssertionError("socket() after a failed connect")
+
+        monkeypatch.setattr(socket, "socket", refuse)
+        handler = log.ThreadedStreamHandler("journal")
+        handler._journal_socket_failed = True
+        assert handler._try_emit_journal(_journal_record()) is False
+        assert handler._journal_socket is None
+        assert "Failed to connect to systemd journal" not in caplog.text
+
+    def test_journal_logs_when_connect_fails(self, monkeypatch, caplog):
+        caplog.set_level(logging.ERROR, logger="radicale")
+        _ensure_af_unix(monkeypatch)
+        attempts = {"n": 0}
+        closed = {"n": 0}
+
+        class ConnectFails:
+            def __init__(self, family, type_, proto=-1):
+                attempts["n"] += 1
+                assert family == socket.AF_UNIX
+                assert type_ == socket.SOCK_DGRAM
+
+            def connect(self, address):
+                assert address == "/run/systemd/journal/socket"
+                raise OSError("no journal socket")
+
+            def close(self):
+                closed["n"] += 1
+
+            def sendall(self, data):
+                raise AssertionError("sendall after a failed connect")
+
+        monkeypatch.setattr(socket, "socket", ConnectFails)
+        handler = log.ThreadedStreamHandler("journal")
+        record = _journal_record()
+        assert handler._try_emit_journal(record) is False
+        assert attempts["n"] == 1
+        assert closed["n"] == 1
+        assert handler._journal_socket is None
+        assert handler._journal_socket_failed is True
+        assert "Failed to connect to systemd journal" in caplog.text
+        assert "no journal socket" in caplog.text
+        assert handler._try_emit_journal(record) is False
+        assert attempts["n"] == 1
+
+    def test_journal_send_keeps_the_socket(self, monkeypatch, caplog):
+        caplog.set_level(logging.ERROR, logger="radicale")
+        _ensure_af_unix(monkeypatch)
+        attempts = {"n": 0}
+        sent_payloads = []
+
+        class Connected:
+            def __init__(self, family, type_, proto=-1):
+                attempts["n"] += 1
+                assert family == socket.AF_UNIX
+                assert type_ == socket.SOCK_DGRAM
+
+            def connect(self, address):
+                assert address == "/run/systemd/journal/socket"
+
+            def sendall(self, data):
+                sent_payloads.append(data)
+
+        monkeypatch.setattr(socket, "socket", Connected)
+        handler = log.ThreadedStreamHandler("journal")
+        record = _journal_record()
+        assert handler._try_emit_journal(record) is True
+        assert handler._try_emit_journal(record) is True
+        assert attempts["n"] == 1
+        assert len(sent_payloads) == 2
+        assert all(b"journal-me" in payload for payload in sent_payloads)
+        assert handler._journal_socket_failed is False
+        assert "Failed to connect to systemd journal" not in caplog.text
 
     def test_setup_rejects_unknown_log_format(self, monkeypatch, caplog):
         caplog.set_level(logging.ERROR, logger="radicale")
