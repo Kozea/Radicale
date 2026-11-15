@@ -24,7 +24,7 @@ import socket
 import sys
 import wsgiref.util
 from io import BytesIO
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import pytest
 
@@ -150,24 +150,56 @@ class TestWsgiAndHooks(BaseTest):
 
 class TestApplicationLimits(BaseTest):
 
-    def test_temp_missing_or_not_writable(self) -> None:
-        saved = os.environ.get("TEMP")
+    def test_temp_missing_directory_raises(
+            self, monkeypatch: pytest.MonkeyPatch) -> None:
+        missing = os.path.join(self.colpath, "missing-temp")
+        monkeypatch.setenv("TEMP", missing)
+        with pytest.raises(RuntimeError, match="directory is not existing"):
+            self.configure({})
+
+    def test_temp_write_check_follows_os_access(
+            self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # uid 0 can still write mode 0500, and VFAT/NTFS reject chmod.
+        # Restoring TEMP after chmod in one finally block used to skip the
+        # restore when chmod raised, so later tests kept the missing directory.
         readonly = os.path.join(self.colpath, "readonly-temp")
         os.mkdir(readonly)
+        changed = False
         try:
-            os.environ["TEMP"] = os.path.join(self.colpath, "missing-temp")
-            with pytest.raises(RuntimeError, match="directory is not existing"):
+            try:
+                os.chmod(readonly, 0o500)
+            except OSError:
+                pass
+            else:
+                changed = True
+            monkeypatch.setenv("TEMP", readonly)
+            if os.access(readonly, os.W_OK):
+                # Still writable for this process, so Application must not
+                # raise. The assertion below needs os.access to return false.
+                # chmod did not do that, so force that answer.
                 self.configure({})
-            os.chmod(readonly, 0o500)
-            os.environ["TEMP"] = readonly
+                real_access = os.access
+
+                def deny_write(path: str, mode: int, *,
+                               dir_fd: Optional[int] = None,
+                               effective_ids: bool = False,
+                               follow_symlinks: bool = True) -> bool:
+                    if path == readonly and mode == os.W_OK:
+                        return False
+                    return real_access(
+                        path, mode, dir_fd=dir_fd,
+                        effective_ids=effective_ids,
+                        follow_symlinks=follow_symlinks)
+
+                monkeypatch.setattr(os, "access", deny_write)
             with pytest.raises(RuntimeError, match="not writable"):
                 self.configure({})
         finally:
-            os.chmod(readonly, 0o700)
-            if saved is None:
-                os.environ.pop("TEMP", None)
-            else:
-                os.environ["TEMP"] = saved
+            if changed:
+                try:
+                    os.chmod(readonly, 0o700)
+                except OSError:
+                    pass
 
     def test_script_name_must_be_a_prefix(self) -> None:
         with pytest.raises(RuntimeError, match="has to start with '/'"):
