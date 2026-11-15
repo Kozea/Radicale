@@ -31,7 +31,7 @@ For any changes, make sure that you:
   * Extend test suite in case of fixing an issue which is currently not covered
 * Code `diff` is easy to review.
 * Review the change for technical accuracy.
-* Local run of test suite passed successfully, see also [Wiki/Development Testing Release](https://github.com/Kozea/Radicale/wiki/05---Development-Testing-Release)
+* Local run of test suite passed successfully, see also [Wiki/Development Testing Release](https://github.com/Kozea/Radicale/wiki/05-%E2%80%90-Development-Testing-Release)
 * If possible, include extension of [CHANGELOG.md](https://github.com/Kozea/Radicale/blob/master/CHANGELOG.md).
 * If senseful, include adjustment/extension of [DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/master/DOCUMENTATION.md).
 * On new or adjusted options do not forget to extend/update reference [config](https://github.com/Kozea/Radicale/blob/master/config),
