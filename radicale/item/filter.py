@@ -85,7 +85,31 @@ def time_range_timestamps(time_filter: ET.Element) -> Tuple[int, int]:
     return (math.floor(start.timestamp()), math.ceil(end.timestamp()))
 
 
-def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
+def _capped_iter(iterable: Iterable[date], limit: int) -> Iterator[date]:
+    """Yield at most ``limit`` items from ``iterable``.
+
+    This bounds the work spent enumerating occurrences of a recurrence
+    rule: an infinite rule with a fine frequency (e.g. SECONDLY) and a
+    DTSTART far before the queried time range would otherwise force the
+    server to enumerate every occurrence from DTSTART on. ``limit`` <= 0
+    means no cap.
+    """
+    if limit <= 0:
+        yield from iterable
+        return
+    count = 0
+    for value in iterable:
+        count += 1
+        if count > limit:
+            logger.warning(
+                "item/filter: occurrence limit of %d hit, stopping "
+                "enumeration of recurrence rule", limit)
+            return
+        yield value
+
+
+def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0,
+               max_occurrences: int = 0) -> bool:
     """Check whether the ``item`` matches the comp ``filter_``.
 
     If ``level`` is ``0``, the filter is applied on the
@@ -153,16 +177,16 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
             if (level == 0) and (name == "VCALENDAR"):
                 for name_try in ("VTODO", "VEVENT", "VJOURNAL"):
                     try:
-                        if time_range_match(item.vobject_item, filter_[0], name_try, trigger):
+                        if time_range_match(item.vobject_item, filter_[0], name_try, trigger, max_occurrences):
                             return True
                     except Exception:
                         continue
                 return False
-            if not time_range_match(item.vobject_item, filter_[0], tag, trigger):
+            if not time_range_match(item.vobject_item, filter_[0], tag, trigger, max_occurrences):
                 return False
         elif child.tag == xmlutils.make_clark("C:comp-filter"):
             logger.trace("ITEM/FILTER/comp_match: comp-filter level=%d", level)
-            if not comp_match(item, child, level=level + 1):
+            if not comp_match(item, child, level=level + 1, max_occurrences=max_occurrences):
                 return False
         else:
             raise ValueError("Unexpected %r in comp-filter" % child.tag)
@@ -205,7 +229,8 @@ def prop_match(vobject_item: vobject.base.Component,
 
 
 def time_range_match(vobject_item: vobject.base.Component,
-                     filter_: ET.Element, child_name: str, trigger: TRIGGER) -> bool:
+                     filter_: ET.Element, child_name: str, trigger: TRIGGER,
+                     max_occurrences: int = 0) -> bool:
     """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
     # supporting since 3.5.4 now optional trigger (either absolute or relative offset)
@@ -249,12 +274,14 @@ def time_range_match(vobject_item: vobject.base.Component,
         return False
 
     logger.trace("ITEM/FILTER/time_range_match: start=(%s) end=(%s) child_name=%s", start, end, child_name)
-    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
+    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn,
+                      max_occurrences=max_occurrences)
     return matched
 
 
 def time_range_fill(vobject_item: vobject.base.Component,
-                    filter_: ET.Element, child_name: str, n: int = 1
+                    filter_: ET.Element, child_name: str, n: int = 1,
+                    max_occurrences: int = 0
                     ) -> List[Tuple[datetime, datetime]]:
     """Create a list of ``n`` occurances from the component/property ``child_name``
        of ``vobject_item``."""
@@ -278,14 +305,16 @@ def time_range_fill(vobject_item: vobject.base.Component,
     def infinity_fn(range_start: datetime) -> bool:
         return False
 
-    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
+    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn,
+                      max_occurrences=max_occurrences)
     return ranges
 
 
 def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                       range_fn: Callable[[datetime, datetime, bool], bool],
                       infinity_fn: Callable[[datetime], bool],
-                      component_fn: Optional[Callable[[vobject.base.Component], Optional[bool]]] = None) -> None:
+                      component_fn: Optional[Callable[[vobject.base.Component], Optional[bool]]] = None,
+                      max_occurrences: int = 0) -> None:
     """Visit all time ranges in the component/property ``child_name`` of
     `vobject_item`` with visitors ``range_fn`` and ``infinity_fn``.
 
@@ -299,6 +328,11 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
 
     ``component_fn``, if given, is called for each VEVENT before its
     occurrences are visited. If it returns False, that VEVENT is skipped.
+
+    ``max_occurrences`` bounds how many occurrences of a single recurrence
+    rule are enumerated (``0`` means no bound). This keeps one query from
+    doing unbounded work on an infinite rule whose DTSTART is far before
+    the queried range.
 
     See rfc4791-9.9.
 
@@ -326,8 +360,9 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                 if infinity_fn(date_to_datetime(dtstart)):
                     return (), True
                 break
-        return filter(lambda dtstart: dtstart not in ignore,
-                      child.getrruleset(addRDate=True)), False
+        return _capped_iter(filter(lambda dtstart: dtstart not in ignore,
+                                   child.getrruleset(addRDate=True)),
+                            max_occurrences), False
 
     def get_children(components: Iterable[vobject.base.Component]) -> Iterator[
                          Tuple[vobject.base.Component, bool, List[date]]]:

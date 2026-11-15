@@ -214,7 +214,8 @@ def freebusy_periods(item: radicale_item.Item,
         return False
 
     radicale_filter.visit_time_ranges(
-        item.vobject_item, "VEVENT", range_fn, infinity_fn, component_fn)
+        item.vobject_item, "VEVENT", range_fn, infinity_fn, component_fn,
+        max_occurrences=max_occurrence)
     if max_occurrence > 0 and examined >= max_occurrence:
         raise ValueError("FREEBUSY occurrences limit of {} hit"
                          .format(max_occurrence))
@@ -265,7 +266,7 @@ def freebusy_collection_text(collection: storage.BaseCollection,
         item, filter_matched = retrieved_items.pop(0)
         if not filter_matched:
             try:
-                if not test_filter(collection_tag, item, filter_element):
+                if not test_filter(collection_tag, item, filter_element, max_occurrence):
                     continue
             except ValueError as e:
                 raise ValueError("Failed to free-busy filter item %r from %r: %s" %
@@ -458,7 +459,7 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                 if share['Conversion'] == "bday" and item_href is not None:
                     item_href = item_href.removesuffix(".vcf") + ".ics"
             try:
-                if not all(test_filter(collection_tag, item, filter_)
+                if not all(test_filter(collection_tag, item, filter_, max_occurrence)
                            for filter_ in main_filters):
                     continue
             except ValueError as e:
@@ -1001,7 +1002,7 @@ def retrieve_items(
 
 
 def test_filter(collection_tag: str, item: radicale_item.Item,
-                filter_: ET.Element) -> bool:
+                filter_: ET.Element, max_occurrence: int = 0) -> bool:
     """Match an item against a filter."""
     if (collection_tag == "VCALENDAR" and
             filter_.tag != xmlutils.make_clark("C:%s" % filter_)):
@@ -1011,7 +1012,8 @@ def test_filter(collection_tag: str, item: radicale_item.Item,
             raise ValueError("Filter with %d children" % len(filter_))
         if filter_[0].tag != xmlutils.make_clark("C:comp-filter"):
             raise ValueError("Unexpected %r in filter" % filter_[0].tag)
-        return radicale_filter.comp_match(item, filter_[0])
+        return radicale_filter.comp_match(item, filter_[0],
+                                          max_occurrences=max_occurrence)
     if (collection_tag == "VADDRESSBOOK" and
             filter_.tag != xmlutils.make_clark("CR:%s" % filter_)):
         for child in filter_:
