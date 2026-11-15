@@ -4,6 +4,10 @@
 
 * [Telugu](https://github.com/Kozea/Radicale/blob/master/docs/translations/DOCUMENTATION.te.md)
 
+## Developer documentation
+
+This file is the operator manual. The source layout, the on-disk data, the packages, CI, and the release steps are in [docs/README.md](docs/README.md).
+
 ## Getting started
 
 #### About Radicale

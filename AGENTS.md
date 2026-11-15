@@ -2,6 +2,10 @@
 
 These rules apply to every change in this repository.
 
+The layout of the program is in [docs/README.md](docs/README.md). Read that index before changing behavior. Operator options stay in `DOCUMENTATION.md`, `config`, and `SHARING.md`. Do not copy them into `docs/`.
+
+Do not tag a release, push a tag, or publish to PyPI or a container registry. [docs/release.md](docs/release.md) describes what maintainers do. [docs/ci.md](docs/ci.md) describes the workflows that run after they publish.
+
 ## One change per commit
 
 Put each logical change in its own commit. Do not bundle unrelated edits. Leave unrelated files untouched.
