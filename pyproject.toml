@@ -135,7 +135,9 @@ commands_pre = [
     ["sudo", "/usr/bin/mount", "-o", "loop,umask=000,utf8=no", "/tmp/vfat.img", "/tmp/vfat"],
 ]
 setenv = { TEMP = "/tmp/vfat" }
-commands = [["pytest", "-r", "s", "."]]
+# pytest refuses a base temporary directory it does not own. This mount
+# reports one uid, so keep pytest's own tmp off it. Storage still uses TEMP.
+commands = [["pytest", "-r", "s", "--basetemp=/tmp/pytest-basetemp-vfat", "."]]
 commands_post = [
     # umount image
     ["sudo", "/usr/bin/umount", "-d", "/tmp/vfat"],
@@ -163,7 +165,9 @@ commands_pre = [
     ["sudo", "/usr/bin/mount", "-o", "loop,umask=000,utf8", "/tmp/vfat-utf8.img", "/tmp/vfat-utf8"],
 ]
 setenv = { TEMP = "/tmp/vfat-utf8" }
-commands = [["pytest", "-r", "s", "."]]
+# pytest refuses a base temporary directory it does not own. This mount
+# reports one uid, so keep pytest's own tmp off it. Storage still uses TEMP.
+commands = [["pytest", "-r", "s", "--basetemp=/tmp/pytest-basetemp-vfat-utf8", "."]]
 commands_post = [
     # umount image
     ["sudo", "/usr/bin/umount", "-d", "/tmp/vfat-utf8"],
@@ -220,7 +224,9 @@ commands_pre = [
     ["sudo", "/usr/bin/mount", "-o", "loop,umask=0000", "/tmp/ntfs.img", "/tmp/ntfs"],
 ]
 setenv = { TEMP = "/tmp/ntfs" }
-commands = [["pytest", "-r", "s", "."]]
+# pytest refuses a base temporary directory it does not own. This mount
+# reports one uid, so keep pytest's own tmp off it. Storage still uses TEMP.
+commands = [["pytest", "-r", "s", "--basetemp=/tmp/pytest-basetemp-ntfs", "."]]
 commands_post = [
     # umount image
     ["sudo", "/usr/bin/umount", "-d", "/tmp/ntfs"],

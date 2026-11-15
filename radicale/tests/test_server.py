@@ -679,9 +679,9 @@ class TestHypercornConfiguration:
 
     def _configuration(self, **server: str) -> config.Configuration:
         configuration = config.load()
-        # Nothing is written to the storage folder. A pytest temporary directory cannot be used
-        # instead: the VFAT and NTFS jobs fail its ownership check, because those filesystems
-        # report one fixed uid.
+        # Storage init creates collection-root here and writes an mtime probe.
+        # tempfile follows TEMP onto the filesystem under test. pytest's
+        # tmp_path is not used: --basetemp puts that base beside those mounts.
         configuration.update({"server": dict(server, type="hypercorn"),
                               "storage": {"filesystem_folder": tempfile.mkdtemp()}},
                              "test", privileged=True)
