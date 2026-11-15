@@ -322,7 +322,11 @@ class TestBaseServerRequests(BaseTest):
             server.serve(self.configuration, self.shutdown_socket)
 
     def test_ssl_rejected_minimum_version_is_not_an_inactive_protocol(self, monkeypatch) -> None:
-        """A ValueError from assigning a minimum version is not 'no protocol active'."""
+        """A ValueError from assigning a minimum version is not 'no protocol active'.
+
+        CPython 3.9 says ``Unsupported protocol version``. CPython 3.10 and
+        later say ``Unsupported TLS/SSL version``.
+        """
         monkeypatch.setattr(
             server.utils, "ssl_context_minimum_version_by_options",
             lambda _options: 1)
@@ -331,11 +335,15 @@ class TestBaseServerRequests(BaseTest):
                        "certificate": get_file_path("cert.pem"),
                        "key": get_file_path("key.pem"),
                        "protocol": "TLSv1.2"}})
-        with pytest.raises(ValueError, match="Unsupported TLS/SSL version"):
+        with pytest.raises(ValueError, match="Unsupported (?:TLS/SSL|protocol) version"):
             server.serve(self.configuration, self.shutdown_socket)
 
     def test_ssl_rejected_maximum_version_is_not_an_inactive_protocol(self, monkeypatch) -> None:
-        """A ValueError from assigning a maximum version is not 'no protocol active'."""
+        """A ValueError from assigning a maximum version is not 'no protocol active'.
+
+        CPython 3.9 says ``Unsupported protocol version``. CPython 3.10 and
+        later say ``Unsupported TLS/SSL version``.
+        """
         monkeypatch.setattr(
             server.utils, "ssl_context_minimum_version_by_options",
             lambda _options: ssl.TLSVersion.TLSv1_2)
@@ -347,7 +355,7 @@ class TestBaseServerRequests(BaseTest):
                        "certificate": get_file_path("cert.pem"),
                        "key": get_file_path("key.pem"),
                        "protocol": "TLSv1.2"}})
-        with pytest.raises(ValueError, match="Unsupported TLS/SSL version"):
+        with pytest.raises(ValueError, match="Unsupported (?:TLS/SSL|protocol) version"):
             server.serve(self.configuration, self.shutdown_socket)
 
     def _https_exchange(self, context):
