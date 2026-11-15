@@ -20,6 +20,7 @@ import contextlib
 import io
 import logging
 import signal
+import socket
 import sys
 
 import pytest
@@ -36,6 +37,31 @@ def _exit_signals():
     else:
         numbers.extend((signal.SIGHUP, signal.SIGQUIT))
     return numbers
+
+
+@contextlib.contextmanager
+def _closing_cli_socketpairs(monkeypatch):
+    """Close the socketpair ``run`` opens after the replaced serve returns.
+
+    The success path's signal handler has already closed one end. Closing
+    that end again does not raise. The caller checks both ends.
+    """
+    opened = []
+    real_socketpair = socket.socketpair
+
+    def tracking_socketpair(*args, **kwargs):
+        pair = real_socketpair(*args, **kwargs)
+        opened.append(pair)
+        return pair
+
+    monkeypatch.setattr(socket, "socketpair", tracking_socketpair)
+    try:
+        yield opened
+    finally:
+        for left, right in opened:
+            # close() is idempotent if the signal handler already closed one end.
+            left.close()
+            right.close()
 
 
 def _run_cli(args):
@@ -207,15 +233,19 @@ class TestMain:
             return None
 
         monkeypatch.setattr(main.server, "serve", fake_serve)
-        code = _run_cli([
-            "--storage-filesystem-folder", str(tmp_path),
-            "--auth-type", "radicale.tests.custom.auth",
-            "--auth-custom-flag=yes",
-            "--auth-beta", "two",
-            "--auth-gamma",
-            "--headers-X-Trace", "abc",
-        ])
+        with _closing_cli_socketpairs(monkeypatch) as opened:
+            code = _run_cli([
+                "--storage-filesystem-folder", str(tmp_path),
+                "--auth-type", "radicale.tests.custom.auth",
+                "--auth-custom-flag=yes",
+                "--auth-beta", "two",
+                "--auth-gamma",
+                "--headers-X-Trace", "abc",
+            ])
         assert code == 0
+        assert len(opened) == 1
+        for end in opened[0]:
+            assert end.fileno() == -1
         assert seen["auth_type"] == "radicale.tests.custom.auth"
         assert seen["custom_flag"] == "yes"
         assert seen["beta"] == "two"
@@ -231,9 +261,13 @@ class TestMain:
             raise RuntimeError("refused to bind")
 
         monkeypatch.setattr(main.server, "serve", fake_serve)
-        code = _run_cli([
-            "--storage-filesystem-folder", str(tmp_path),
-            "--auth-type", "none",
-        ])
+        with _closing_cli_socketpairs(monkeypatch) as opened:
+            code = _run_cli([
+                "--storage-filesystem-folder", str(tmp_path),
+                "--auth-type", "none",
+            ])
         assert code == 1
+        assert len(opened) == 1
+        for end in opened[0]:
+            assert end.fileno() == -1
         assert "An exception occurred during server startup: refused to bind" in caplog.text
