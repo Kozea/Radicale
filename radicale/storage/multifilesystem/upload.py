@@ -65,7 +65,6 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                              (href, self.path, e)) from e
         # Track the change
         self._update_history_etag(href, item)
-        self._clean_history()
         uploaded_item = self._get(href, verify_href=False)
         if uploaded_item is None:
             raise RuntimeError("Storage modified externally")
