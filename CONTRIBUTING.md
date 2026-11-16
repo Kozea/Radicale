@@ -15,7 +15,9 @@ A [pull request](/en/pull-requests/reference/pull-requests) is a way to suggest 
 When we merge those changes, they're available as nightly (UTC) built [container](https://github.com/Kozea/Radicale/pkgs/container/radicale), see also 
 [Wiki/Installing-on-Docker](https://github.com/Kozea/Radicale/wiki/Installing-on-Docker).
 
-In case of bigger changes, please start a discussion first [Radicale/Discussions](https://github.com/Kozea/Radicale/discussions)
+In case of bigger changes, please start a discussion first [Radicale/Discussions](https://github.com/Kozea/Radicale/discussions).
+
+The source layout, data on disk, CI, and the release steps are in [docs/README.md](docs/README.md).
  
 ### Reviewing your own pull requests
 
