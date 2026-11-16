@@ -124,6 +124,10 @@ This is an automated message. Please do not reply.""",
             "value": "",
             "type": str,
         },
+        "itip_owner_reply_to": {
+            "value": False,
+            "type": bool,
+        },
         "itip_organizer_is_username": {
             "value": False,
             "type": bool,
@@ -726,7 +730,8 @@ class EmailConfig:
                  updated_event_template: MessageTemplate,
                  itip_enabled: bool = False,
                  itip_owner_map: str = "",
-                 itip_organizer_is_username: bool = False):
+                 itip_organizer_is_username: bool = False,
+                 itip_owner_reply_to: bool = False):
         self.host = host
         self.port = port
         self.security = SMTP_SECURITY_TYPE_ENUM.from_string(value=security)
@@ -739,6 +744,7 @@ class EmailConfig:
         self.itip_enabled = itip_enabled
         self.itip_owner_map = itip_owner_map
         self.itip_organizer_is_username = itip_organizer_is_username
+        self.itip_owner_reply_to = itip_owner_reply_to
         self.new_or_added_to_event_template = new_or_added_to_event_template
         self.deleted_or_removed_from_event_template = deleted_or_removed_from_event_template
         self.updated_event_template = updated_event_template
@@ -751,7 +757,8 @@ class EmailConfig:
                f"from_email={self.from_email}, send_mass_emails={self.send_mass_emails}, dryrun={self.dryrun}, " \
                f"itip_enabled={self.itip_enabled}, " \
                f"itip_owner_map={self.itip_owner_map!r}, " \
-               f"itip_organizer_is_username={self.itip_organizer_is_username})"
+               f"itip_organizer_is_username={self.itip_organizer_is_username}, " \
+               f"itip_owner_reply_to={self.itip_owner_reply_to})"
 
     def __repr__(self):
         return self.__str__()
@@ -820,7 +827,8 @@ class EmailConfig:
 
     def send_scheduling_email(self, planned: PlannedMessage,
                               event: EmailEvent, source_ics: str,
-                              sequence: Optional[int] = None) -> bool:
+                              sequence: Optional[int] = None,
+                              reply_to_email: Optional[str] = None) -> bool:
         """Send one planned iTIP/iMIP message to one recipient.
 
         ``event`` provides the title/time/location for the
@@ -849,10 +857,16 @@ class EmailConfig:
         except Exception as e:
             logger.error("Failed to build iTIP message for %r: %s", planned.recipient_email, e)
             return False
-        text = build_itip_message(from_email=self.from_email,
-                                  to_email=planned.recipient_email,
-                                  subject=subject, body_text=body,
-                                  itip_ics=itip_ics, method=planned.method)
+        try:
+            text = build_itip_message(from_email=self.from_email,
+                                      to_email=planned.recipient_email,
+                                      subject=subject, body_text=body,
+                                      itip_ics=itip_ics, method=planned.method,
+                                      reply_to_email=reply_to_email)
+        except ValueError as e:
+            logger.error("Unsafe Reply-To for scheduling notification to %r: %s",
+                         planned.recipient_email, e)
+            return False
         if self.dryrun is True:
             logger.notice("Hook 'email': DRY-RUN send_scheduling_email / to_addresses=%r",
                           [planned.recipient_email])
@@ -1040,6 +1054,7 @@ class Hook(BaseHook):
             itip_enabled=self.configuration.get("hook", "itip_enabled"),
             itip_owner_map=self.configuration.get("hook", "itip_owner_map"),
             itip_organizer_is_username=self.configuration.get("hook", "itip_organizer_is_username"),
+            itip_owner_reply_to=self.configuration.get("hook", "itip_owner_reply_to"),
             new_or_added_to_event_template=MessageTemplate(
                 subject="You have been added to an event",
                 body=self.configuration.get("hook", "new_or_added_to_event_template")
@@ -1080,7 +1095,8 @@ class Hook(BaseHook):
             self._process_event_and_notify(notification_item)
 
     def _send_planned(self, planned, email_event: EmailEvent,
-                      previous_item_str, new_item_str) -> None:
+                      previous_item_str, new_item_str,
+                      reply_to_email: Optional[str] = None) -> None:
         """Send a list of planned messages for one event change.
 
         One iTIP message per recipient. ``mass_email`` is
@@ -1107,10 +1123,19 @@ class Hook(BaseHook):
                 source_ics = new_item_str
             success = self.email_config.send_scheduling_email(
                 planned=message, event=template_event, source_ics=source_ics,
-                sequence=cancel_sequence)
+                sequence=cancel_sequence, reply_to_email=reply_to_email)
             if not success:
                 logger.error("Failed to send scheduling notification (%s) to %s for event: %s",
                              message.kind, message.recipient_email, email_event.event.uid)
+
+    def _owner_reply_to(self, notification_item) -> Optional[str]:
+        """Return the explicit map address for this authenticated actor."""
+        if not self.email_config.itip_owner_reply_to:
+            return None
+        actor = getattr(notification_item, "actor", None)
+        if not actor:
+            return None
+        return getattr(self, "owner_map", {}).get(actor.strip().lower())
 
     def _owner_identities(self, notification_item) -> List[str]:
         """Identities the hook can use to prove organizer ownership.
@@ -1238,12 +1263,14 @@ class Hook(BaseHook):
             return
         planned = plan_messages(previous_item_str, new_item_str,
                                 owner_identities=owner_identities)
-        self._send_planned(planned, email_event, previous_item_str, new_item_str)
+        self._send_planned(planned, email_event, previous_item_str, new_item_str,
+                           reply_to_email=self._owner_reply_to(notification_item))
 
     def _process_itip_delete(self, notification_item, deleted_item_str, email_event) -> None:
         self._send_planned(plan_messages(deleted_item_str, None, deleted=True,
                                          owner_identities=self._owner_identities(notification_item)),
-                           email_event, deleted_item_str, deleted_item_str)
+                           email_event, deleted_item_str, deleted_item_str,
+                           reply_to_email=self._owner_reply_to(notification_item))
 
     def _process_legacy_upsert(self, new_item_str, previous_item_str, email_event) -> None:
         if not previous_item_str:

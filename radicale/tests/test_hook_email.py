@@ -266,6 +266,18 @@ permissions: RrWw""")
         assert len([log for log in logs if "New event detected, sending notifications to all attendees: event1" in log]) == 1
         assert len([log for log in logs if "Hello everyone" in log]) == 0
 
+    def test_itip_owner_reply_to_config(self) -> None:
+        from radicale.hook.email import Hook
+
+        self.configure({"hook": {"type": "email", "dryrun": "True"}})
+        hook = Hook(self.configuration)
+        assert hook.email_config.itip_owner_reply_to is False
+
+        self.configure({"hook": {"type": "email", "dryrun": "True",
+                                 "itip_owner_reply_to": "True"}})
+        hook = Hook(self.configuration)
+        assert hook.email_config.itip_owner_reply_to is True
+
     def test_smtp_password_file(self) -> None:
         from radicale.hook.email import Hook
 

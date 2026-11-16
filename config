@@ -522,6 +522,10 @@ Content-Security-Policy = default-src 'self'; object-src 'none'
 #mass_email = False
 #itip_enabled = False
 #itip_owner_map = alice=alice@example.com, bob=bob@example.com
+# Add Reply-To from the authenticated actor's explicit map entry on iTIP email
+# (requires itip_enabled = True); with no entry, Reply-To is omitted.
+# The global from_email remains the MIME From and SMTP envelope sender.
+#itip_owner_reply_to = False
 # iTIP: a username that is an email address owns that organizer address
 # Only enable if usernames are emails users cannot choose freely
 # (e.g. single sign-on reverse proxy, LDAP mail as login)

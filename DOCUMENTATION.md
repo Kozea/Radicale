@@ -2304,6 +2304,42 @@ it as `ORGANIZER`.
 
 Default: (unset)
 
+##### itip_owner_reply_to
+
+_(>= 3.9.2.dev)_
+
+When enabled, add a `Reply-To` header to outgoing iTIP invitations, updates, and
+cancellations using the authenticated actor's explicit entry in
+`itip_owner_map`. This option is relevant when `type = email` and
+`itip_enabled = True`.
+
+For example, with the following configuration:
+
+```ini
+[hook]
+type = email
+from_email = calendar@example.com
+itip_enabled = True
+itip_owner_map = alice=alice@example.com, bob=bob@example.com
+itip_owner_reply_to = True
+```
+
+Alice's authorized scheduling notifications use `calendar@example.com` as the
+MIME `From` and SMTP envelope sender, and `alice@example.com` as `Reply-To`.
+SMTP server configuration and any required credentials are still needed; this
+snippet illustrates Reply-To behavior, not a complete mail-server setup.
+
+The default is `False`, so existing behavior is unchanged unless explicitly
+enabled. If the authenticated actor has no explicit map entry, no `Reply-To`
+is added and ordinary email replies use the global `from_email` address. The
+`itip_organizer_is_username` option may authorize scheduling for an email
+username, but does not provide a Reply-To address. This routes ordinary email
+replies only; it does not process calendar RSVP replies or add scheduling
+inboxes/outboxes or delegated-calendar ownership discovery. Legacy email
+notifications are unchanged.
+
+Default: `False`
+
 ##### itip_organizer_is_username
 
 _(>= 3.9.1)_

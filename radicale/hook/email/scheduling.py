@@ -500,7 +500,8 @@ def build_itip_ics(source_ics: str, method: str, recipient_email: str,
 
 
 def build_itip_message(from_email: str, to_email: str, subject: str,
-                       body_text: str, itip_ics: str, method: str) -> str:
+                       body_text: str, itip_ics: str, method: str,
+                       reply_to_email: Optional[str] = None) -> str:
     """Build an iMIP message: plain text plus a text/calendar part.
 
     The calendar part carries ``method=REQUEST`` (or CANCEL) so a
@@ -511,6 +512,10 @@ def build_itip_message(from_email: str, to_email: str, subject: str,
     message["From"] = from_email
     message["To"] = to_email
     message["Subject"] = subject
+    if reply_to_email:
+        if "\r" in reply_to_email or "\n" in reply_to_email:
+            raise ValueError("Reply-To must not contain CR or LF")
+        message["Reply-To"] = reply_to_email
     message["Date"] = formatdate(localtime=True)
     message.attach(MIMEText(body_text, "plain"))
     calendar_part = MIMEText(itip_ics, "calendar", "utf-8")

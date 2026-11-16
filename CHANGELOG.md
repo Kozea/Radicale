@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+* Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
+
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0
 * Fix: [auth] keep the LDAP server hostname as SNI when a CA file is set

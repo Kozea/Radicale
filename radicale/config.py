@@ -765,6 +765,13 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
                     "The user's own principal lists the mapped address "
                     "first in calendar-user-address-set.",
             "type": str}),
+        ("itip_owner_reply_to", {
+            "value": "False",
+            "help": "For iTIP messages only, set Reply-To from the authenticated "
+                    "actor's explicit itip_owner_map entry. If no entry exists, "
+                    "omit Reply-To; do not fall back to the username. The global "
+                    "from_email remains the From and SMTP sender.",
+            "type": bool}),
         ("itip_organizer_is_username", {
             "value": "False",
             "help": "For iTIP, an actor whose username is an email "
