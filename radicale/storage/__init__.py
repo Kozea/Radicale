@@ -25,6 +25,7 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 """
 
 import json
+import logging
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Callable, ContextManager, Dict, Iterable, Iterator, List,
@@ -159,13 +160,15 @@ class BaseCollection:
             return
         tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, self.tag)
-        logger.trace("storage/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
         for item in self.get_all():
             logger.trace("storage/get_filtered: component_name=%s tag=%s", item.component_name, tag)
             if tag is not None and tag != item.component_name:
                 continue
             istart, iend = item.time_range
-            logger.trace("storage/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("storage/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
             if istart >= end or iend <= start:
                 logger.trace("storage/get_filtered: skip iuid=%s", item.uid)
                 continue
