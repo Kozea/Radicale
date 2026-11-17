@@ -29,7 +29,6 @@ import pytest
 import vobject
 
 import radicale.app as app_module
-import radicale.app.put as put_module
 import radicale.app.report as report_module
 from radicale import pathutils, xmlutils
 from radicale.app.base import Access
@@ -43,7 +42,7 @@ from radicale.tests.helpers import get_file_content
 from radicale.tests.test_cov_app import (ACCESS_FORBIDDEN, BAD_REQUEST,
                                          PROPFIND_ONE, PROPPATCH_NAME,
                                          SUBSCRIBED_MKCOL, Hook, _event,
-                                         _grant, _set_rights)
+                                         _grant, _set_rights, _vcard)
 
 EXPAND = (
     "<?xml version='1.0' encoding='utf-8'?>"
@@ -569,41 +568,110 @@ permissions: R
         assert "Stay" in self.get("/cal.ics/inner/event.ics")[1]
         assert self.get("/cal.ics/inner/new.ics", check=404)[0] == 404
 
+    def _item_hrefs(self, path):
+        return sorted(self._collection(path)._list())
+
     def test_whole_collection_put_notifies_new_and_replaced_items(self):
+        """A collection upload reports new and replaced items by stored href.
+
+        A normal UID is stored as ``uid`` plus the type suffix. A UID whose
+        ``uid + suffix`` is not a safe filename is the boundary: the written
+        name is the fallback, and a second upload of that same UID still
+        reports the previous body. One request that keeps one UID and adds
+        another distinguishes those two classes. An address book uses
+        ``.vcf`` instead of ``.ics``.
+        """
         self.configure({"hook": {"type": "radicale.tests.test_cov_app"}})
-        real_prepare = put_module.prepare
 
-        def listed(*args, **kwargs):
-            items, tag, whole, props, exc = real_prepare(*args, **kwargs)
-            materialized = list(items)
-            for item in materialized:
-                if not item.href and item.uid:
-                    suffix = ".vcf" if tag == "VADDRESSBOOK" else ".ics"
-                    item.href = item.uid + suffix
-            return materialized, tag, whole, props, exc
+        def notified(path, body):
+            Hook.events = []
+            status, _, answer = self.request("PUT", path, body, check=None)
+            assert status in (201, 204) and answer == ""
+            return list(Hook.events)
 
-        put_module.prepare = listed
-        try:
-            status, _, body = self.request(
-                "PUT", "/calendar.ics/", _event(summary="Original"), check=None)
-            assert status == 201 and body == ""
-            assert len(Hook.events) == 1
-            created = Hook.events[0]
-            assert created.old_content is None
-            assert "Original" in created.new_content
-            assert "UID:evt" in self.get("/calendar.ics/")[1]
-            status, _, body = self.request(
-                "PUT", "/calendar.ics/", _event(summary="Renamed"), check=None)
-        finally:
-            put_module.prepare = real_prepare
-        assert status in (201, 204) and body == ""
-        assert len(Hook.events) == 2
-        replaced = Hook.events[1]
-        assert replaced.old_content is not None
-        assert "Original" in replaced.old_content
-        assert "Renamed" in replaced.new_content
-        assert "Renamed" in self.get("/calendar.ics/")[1]
-        assert "Original" not in self.get("/calendar.ics/")[1]
+        created = notified("/calendar.ics/", _event(summary="Original"))
+        assert len(created) == 1
+        assert created[0].old_content is None
+        assert created[0].content == created[0].new_content
+        assert "SUMMARY:Original" in created[0].content
+        assert self._item_hrefs("/calendar.ics/") == ["evt.ics"]
+        assert "SUMMARY:Original" in self.get("/calendar.ics/evt.ics")[1]
+
+        replaced = notified("/calendar.ics/", _event(summary="Renamed"))
+        assert len(replaced) == 1
+        payload = json.loads(replaced[0].to_json())
+        assert "SUMMARY:Original" in payload["old_content"]
+        assert "SUMMARY:Renamed" not in payload["old_content"]
+        assert payload["content"] == payload["new_content"]
+        assert "SUMMARY:Renamed" in payload["content"]
+        assert "SUMMARY:Original" not in payload["content"]
+        assert self._item_hrefs("/calendar.ics/") == ["evt.ics"]
+        assert "SUMMARY:Renamed" in self.get("/calendar.ics/evt.ics")[1]
+
+        both = (
+            "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Test//EN\r\n"
+            "BEGIN:VEVENT\r\nUID:evt\r\nDTSTAMP:20130101T000000Z\r\n"
+            "DTSTART:20130901T160000Z\r\nDTEND:20130901T170000Z\r\n"
+            "SUMMARY:Kept\r\nEND:VEVENT\r\n"
+            "BEGIN:VEVENT\r\nUID:extra\r\nDTSTAMP:20130101T000000Z\r\n"
+            "DTSTART:20130902T160000Z\r\nDTEND:20130902T170000Z\r\n"
+            "SUMMARY:Extra\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+        mixed = notified("/calendar.ics/", both)
+        assert len(mixed) == 2
+        by_uid = {}
+        for event in mixed:
+            body = json.loads(event.to_json())
+            if "UID:extra" in body["new_content"]:
+                by_uid["extra"] = body
+            elif "UID:evt" in body["new_content"]:
+                by_uid["evt"] = body
+        assert set(by_uid) == {"evt", "extra"}
+        assert "SUMMARY:Renamed" in by_uid["evt"]["old_content"]
+        assert by_uid["evt"]["content"] == by_uid["evt"]["new_content"]
+        assert "SUMMARY:Kept" in by_uid["evt"]["content"]
+        assert "SUMMARY:Renamed" not in by_uid["evt"]["content"]
+        assert by_uid["extra"]["old_content"] is None
+        assert by_uid["extra"]["content"] == by_uid["extra"]["new_content"]
+        assert "SUMMARY:Extra" in by_uid["extra"]["content"]
+        assert self._item_hrefs("/calendar.ics/") == ["evt.ics", "extra.ics"]
+
+        hidden = notified("/dotted.ics/", _event(uid=".hidden", summary="First"))
+        assert len(hidden) == 1
+        assert hidden[0].old_content is None
+        assert hidden[0].content == hidden[0].new_content
+        assert "SUMMARY:First" in hidden[0].content
+        hidden_hrefs = self._item_hrefs("/dotted.ics/")
+        assert len(hidden_hrefs) == 1
+        assert hidden_hrefs[0] != ".hidden.ics"
+        assert "SUMMARY:First" in self.get(
+            "/dotted.ics/" + hidden_hrefs[0])[1]
+        hidden_replaced = notified(
+            "/dotted.ics/", _event(uid=".hidden", summary="Second"))
+        assert len(hidden_replaced) == 1
+        hidden_payload = json.loads(hidden_replaced[0].to_json())
+        assert "SUMMARY:First" in hidden_payload["old_content"]
+        assert hidden_payload["content"] == hidden_payload["new_content"]
+        assert "SUMMARY:Second" in hidden_payload["content"]
+        assert "SUMMARY:First" not in hidden_payload["content"]
+        assert self._item_hrefs("/dotted.ics/") == hidden_hrefs
+        assert "SUMMARY:Second" in self.get(
+            "/dotted.ics/" + hidden_hrefs[0])[1]
+
+        card = notified("/book/", _vcard(fn="Ada"))
+        assert len(card) == 1
+        assert card[0].old_content is None
+        assert card[0].content == card[0].new_content
+        assert "FN:Ada" in card[0].content
+        assert self._item_hrefs("/book/") == ["card.vcf"]
+        card_replaced = notified("/book/", _vcard(fn="Ada Lovelace"))
+        assert len(card_replaced) == 1
+        card_payload = json.loads(card_replaced[0].to_json())
+        assert "FN:Ada\r\n" in card_payload["old_content"]
+        assert "Lovelace" not in card_payload["old_content"]
+        assert card_payload["content"] == card_payload["new_content"]
+        assert "FN:Ada Lovelace" in card_payload["content"]
+        assert self._item_hrefs("/book/") == ["card.vcf"]
+        assert "FN:Ada Lovelace" in self.get("/book/card.vcf")[1]
 
 
 class TestCovAppRestSharing(BaseTest):
