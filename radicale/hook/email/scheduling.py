@@ -139,8 +139,6 @@ def parse_event(ics: Optional[str]) -> Optional[EventInfo]:
             vevents = [calendar.vevent]
         except Exception:
             return None
-    if not vevents:
-        return None
     event = None
     for candidate in vevents:
         if _first_value(candidate, "recurrence-id") is None:
@@ -512,7 +510,9 @@ def build_itip_ics(source_ics: str, method: str, recipient_email: str,
                 sequence_lines[0].value = target
             else:
                 try:
-                    event.add("sequence").value = target
+                    # A newly added line uses text behavior, which
+                    # serializes only a string. An int becomes "1".
+                    event.add("sequence").value = str(target)
                 except Exception:
                     pass
         # Strip server directives from the organizer line.
