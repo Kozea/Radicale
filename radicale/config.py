@@ -753,9 +753,11 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "type": bool}),
         ("itip_owner_map", {
             "value": "{}",
-            "help": "Explicit actor-to-organizer-email map for iTIP, as a JSON "
-                    "object mapping usernames to email strings, e.g. "
-                    '{"alice": "alice@example.com"}. Required when '
+            "help": "Ordered username-regex-to-email map for iTIP, as a JSON "
+                    "object with full-string, case-insensitive patterns and "
+                    "numeric brace replacements ({1}, {2}; {0} is the whole "
+                    "username). First matching rule wins, e.g. "
+                    '{"(alice|bob)": "{1}@example.com"}. Required when '
                     "itip_enabled is True. When set, only the mapped email "
                     "for the authenticated actor counts as organizer "
                     "ownership; unmapped actors send nothing, and an empty "

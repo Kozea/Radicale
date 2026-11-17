@@ -204,7 +204,7 @@ class PlannedMessage:
 
 
 def parse_owner_map(value: Optional[Union[str, Dict[str, Any]]]) -> Dict[str, str]:
-    """Parse and normalize the JSON actor-to-organizer-email map."""
+    """Parse and validate ordered username regex-to-email template rules."""
     if value is None or value == "":
         return {}
     if isinstance(value, str):
@@ -223,18 +223,57 @@ def parse_owner_map(value: Optional[Union[str, Dict[str, Any]]]) -> Dict[str, st
     if not isinstance(value, dict):
         raise ValueError("itip_owner_map must be a JSON object")
     result: Dict[str, str] = {}
+    seen = set()
     for actor, email in value.items():
         if not isinstance(actor, str) or not isinstance(email, str):
             raise ValueError("itip_owner_map keys and values must be strings")
-        normalized_actor = actor.strip().lower()
+        normalized_actor = actor.strip()
         normalized_email = email.strip().lower()
-        if (not normalized_actor or not normalized_email or
-                "@" not in normalized_email):
+        if not normalized_actor or not normalized_email:
             raise ValueError("malformed itip_owner_map entry: %r" % actor)
-        if normalized_actor in result:
+        if normalized_actor in seen:
             raise ValueError("duplicate actor in itip_owner_map: %r" % normalized_actor)
+        seen.add(normalized_actor)
+        _owner_rule(normalized_actor, normalized_email)
         result[normalized_actor] = normalized_email
     return result
+
+
+@functools.lru_cache(maxsize=256)
+def _owner_rule(pattern: str, template: str) -> re.Pattern:
+    """Compile a rule and validate its numeric brace substitutions."""
+    import string
+
+    try:
+        regex = re.compile(pattern, re.IGNORECASE)
+        has_fields = False
+        for _, field, spec, conversion in string.Formatter().parse(template):
+            has_fields = has_fields or field is not None
+            if field is not None and (
+                    not field.isascii() or not field.isdecimal() or
+                    int(field) > regex.groups or spec or conversion):
+                raise ValueError("expected {0} through {%d}" % regex.groups)
+        sample = template.format(*(["group"] * (regex.groups + 1)))
+        if not has_fields and not _USERNAME_EMAIL.fullmatch(sample):
+            raise ValueError("expected a single email address")
+    except (re.error, ValueError, IndexError, KeyError) as e:
+        raise ValueError("invalid itip_owner_map rule %r: %s" % (pattern, e)) from e
+    return regex
+
+
+def mapped_owner_email(actor: Optional[str],
+                       owner_map: Optional[Dict[str, str]]) -> Optional[str]:
+    """Expand the first full-string rule, failing closed on invalid output."""
+    if not actor:
+        return None
+    actor = actor.strip()
+    for pattern, template in (owner_map or {}).items():
+        match = _owner_rule(pattern, template).fullmatch(actor)
+        if match:
+            address = template.format(match.group(0), *(
+                group or "" for group in match.groups())).strip().lower()
+            return address if _USERNAME_EMAIL.fullmatch(address) else None
+    return None
 
 
 # One "@" with a non-empty local part and domain, no whitespace.
@@ -262,9 +301,9 @@ def resolve_owner_identities(actor: Optional[str],
     """
     if not actor:
         return []
-    actor = actor.strip().lower()
+    actor = actor.strip()
     identities: List[str] = []
-    mapped = (owner_map or {}).get(actor)
+    mapped = mapped_owner_email(actor, owner_map)
     if mapped:
         identities.append(mapped)
     if organizer_is_username:

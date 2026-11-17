@@ -37,7 +37,8 @@ from radicale.hook import (BaseHook, HookNotificationItem,
                            HookNotificationItemTypes)
 from radicale.hook.email.scheduling import (PlannedMessage, build_itip_ics,
                                             build_itip_message,
-                                            check_ownership, parse_event,
+                                            check_ownership,
+                                            mapped_owner_email, parse_event,
                                             parse_owner_map, plan_messages,
                                             resolve_owner_identities)
 from radicale.log import logger
@@ -1136,7 +1137,7 @@ class Hook(BaseHook):
         actor = getattr(notification_item, "actor", None)
         if not actor:
             return None
-        return getattr(self, "owner_map", {}).get(actor.strip().lower())
+        return mapped_owner_email(actor, getattr(self, "owner_map", {}))
 
     def _owner_identities(self, notification_item) -> List[str]:
         """Identities the hook can use to prove organizer ownership.

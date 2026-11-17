@@ -537,17 +537,96 @@ class TestOwnerMapAndRecurrence:
     def test_parse_owner_map_valid(self):
         from radicale.hook.email.scheduling import parse_owner_map
         assert parse_owner_map('{"alice": "alice@example.com", " Bob ": "Bob@Example.com"}') == {
-            "alice": "alice@example.com", "bob": "bob@example.com"}
+            "alice": "alice@example.com", "Bob": "bob@example.com"}
         assert parse_owner_map("{}") == {}
         assert parse_owner_map(None) == {}
         assert parse_owner_map({"Alice": "Alice@Example.com"}) == {
-            "alice": "alice@example.com"}
+            "Alice": "alice@example.com"}
+
+    def test_regex_owner_map_scenarios(self):
+        from radicale.hook.email.scheduling import (parse_owner_map,
+                                                    resolve_owner_identities)
+        cases = [
+            ({"(.+)@(.+)": "{1}@{2}"}, "User1@Domain.Example", "user1@domain.example"),
+            ({"(user1|user2|user3)@(.+)": "{1}@{2}"}, "user2@domain.example", "user2@domain.example"),
+            ({r"(user3|user4)@(otherdomain\.example)": "{1}@{2}"}, "user4@otherdomain.example", "user4@otherdomain.example"),
+            ({"(.+)": "{1}@domain.example"}, "user1", "user1@domain.example"),
+            ({"(user1|user2)": "{1}@domain.example", "(user3|user4)": "{1}@otherdomain.example"}, "user3", "user3@otherdomain.example"),
+            ({"(.+)@(.+)": "{0}"}, "user1@domain.example", "user1@domain.example"),
+            ({r"(\S+)": "{1}@domain.example"}, "user1", "user1@domain.example"),
+            ({r"(\s+)": "whitespace@example.com", r"(\S+)": "{1}@domain.example"}, "user1", "user1@domain.example"),
+        ]
+        for rules, actor, expected in cases:
+            assert resolve_owner_identities(actor, parse_owner_map(rules)) == [expected]
+
+    def test_regex_owner_map_unicode_case_insensitive(self):
+        from radicale.hook.email.scheduling import (mapped_owner_email,
+                                                    owner_addresses,
+                                                    resolve_owner_identities)
+
+        # Lowercasing U+0130 expands it into two code points, preventing
+        # fullmatch even though re.IGNORECASE matches it against "i".
+        rules = {"i": "owner@example.com"}
+        assert mapped_owner_email("İ", rules) == "owner@example.com"
+        assert resolve_owner_identities("İ", rules) == ["owner@example.com"]
+        assert owner_addresses("İ", '{"i": "owner@example.com"}') == ["owner@example.com"]
+
+    def test_regex_owner_map_fullmatch_and_selection(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        rules = {"user1|user2": "selected@example.com"}
+        for actor in ["prefixuser1", "user2suffix", "user3", "user1\nextra"]:
+            assert resolve_owner_identities(actor, rules) == []
+        assert resolve_owner_identities("user2", rules) == ["selected@example.com"]
+        domain_rules = {r"(user3|user4)@(otherdomain\.example)": "{1}@{2}"}
+        assert resolve_owner_identities("user3@otherdomainXexample", domain_rules) == []
+
+    def test_regex_owner_map_first_match_wins(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        rules = {"alice": "special@example.com", "(.+)": "{1}@example.com"}
+        assert resolve_owner_identities("alice", rules) == ["special@example.com"]
+        assert resolve_owner_identities("bob", rules) == ["bob@example.com"]
+
+    def test_regex_owner_map_invalid_rules(self):
+        import pytest
+
+        from radicale.hook.email.scheduling import parse_owner_map
+        for pattern, template in [
+                ("(", "a@example.com"), ("a", "{1}@example.com"),
+                ("(a)", "{2}@example.com"), ("a", "{name}@example.com"),
+                ("a", "{0.__class__}@example.com"), ("a", "{0!r}@example.com"),
+                ("a", "{0:>10}@example.com"), ("a", "{0@example.com")]:
+            with pytest.raises(ValueError, match="invalid itip_owner_map rule"):
+                parse_owner_map({pattern: template})
+
+    def test_regex_owner_map_invalid_address_fails_closed(self):
+        from radicale.hook.email.scheduling import (parse_owner_map,
+                                                    resolve_owner_identities)
+        rules = parse_owner_map({"(.+)": "{1}@example.com"})
+        for actor in ["a@b", "a b", "a\rb", "a\nb"]:
+            assert resolve_owner_identities(actor, rules) == []
+        # An invalid first match must not fall through to a broader rule.
+        rules = {"(.+)": "{1}@bad@example.com", "alice": "safe@example.com"}
+        assert resolve_owner_identities("alice", rules) == []
+
+    def test_regex_owner_map_shared_by_principal_and_reply_to(self):
+        from types import SimpleNamespace
+
+        from radicale.hook.email import Hook
+        from radicale.hook.email.scheduling import (owner_addresses,
+                                                    parse_owner_map)
+        rules = '{"(alice|bob)": "{1}@example.com"}'
+        hook = object.__new__(Hook)
+        hook.email_config = SimpleNamespace(itip_owner_reply_to=True)
+        hook.owner_map = parse_owner_map(rules)
+        assert owner_addresses("Alice", rules) == ["alice@example.com"]
+        assert hook._owner_reply_to(SimpleNamespace(actor="Alice")) == "alice@example.com"
+        assert hook._owner_reply_to(SimpleNamespace(actor="mallory")) is None
 
     def test_parse_owner_map_malformed(self):
         import pytest
 
         from radicale.hook.email.scheduling import parse_owner_map
-        for bad in ["{bad", "[]", "null", '{"alice": 3}', '{"alice": "no-at-sign"}', '{"": "a@x.com"}', '{"a": "a@x.com", " A ": "b@x.com"}', '{"a": "a@x.com", "a": "b@x.com"}']:
+        for bad in ["{bad", "[]", "null", '{"alice": 3}', '{"alice": "no-at-sign"}', '{"": "a@x.com"}', '{"a": "a@x.com", " a ": "b@x.com"}', '{"a": "a@x.com", "a": "b@x.com"}']:
             with pytest.raises(ValueError):
                 parse_owner_map(bad)
 
