@@ -281,8 +281,8 @@ class Auth(auth.BaseAuth):
                 verifyMode = {"NONE": ssl.CERT_NONE,
                               "OPTIONAL": ssl.CERT_OPTIONAL,
                               "REQUIRED": ssl.CERT_REQUIRED}
-                # Both constructors take the hostname. The CA-file one used to
-                # replace the first and drop sni, so a custom port sent no name.
+                # SNI is the bare hostname of the URI (no port). It has to be
+                # passed to both constructors: the CA-file one replaces the first.
                 sni = urllib.parse.urlparse(self._ldap_uri).hostname
                 tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], sni=sni)
                 if self._ldap_ssl_ca_file != "":
