@@ -92,15 +92,15 @@ class TestUtilsOutcomes:
         assert alien == "content is not of type 'str' but '<class 'int'>'"
 
     def test_hexdump_marks_bytes_and_controls(self):
-        dumped = utils.hexdump_str("A\r\nü")
-        assert dumped.startswith("Hexdump of string:")
-        assert "41 " in dumped
-        assert "C" in dumped
-        assert "L" in dumped
-        lines = utils.hexdump_lines("A\r\nB")
-        assert lines.startswith("Hexdump of lines:")
-        assert "0  " in lines or "   0" in lines
-        assert "C" in lines
+        # CR and LF are flagged as C and L, "ü" is one 2-byte UTF-8 sequence
+        dumped = utils.hexdump_str("A\r\nü").splitlines()
+        assert dumped[0].startswith("Hexdump of string:")
+        assert dumped[1].startswith("00000000  41 0d 0a c3 bc ")
+        assert dumped[1].endswith("|A....           |.CL..           |")
+        lines = utils.hexdump_lines("A\r\nB").splitlines()
+        assert lines[0].startswith("Hexdump of lines:")
+        assert lines[1] == "   0    3/  3: 41 0d 0a |A..|.CL|"
+        assert lines[2] == "   1    1/  1: 42 |B|.|"
 
     def test_sha256_known_digests(self):
         empty = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -113,7 +113,7 @@ class TestUtilsOutcomes:
     def test_get_server_netloc(self):
         base = {"SERVER_NAME": "ignored", "SERVER_PORT": "5232", "wsgi.url_scheme": "http"}
         assert utils.get_server_netloc(dict(base, HTTP_HOST="cal.example")) == "cal.example:5232"
-        https = dict(base, HTTP_HOST="cal.example", wsgi_url_scheme="https")
+        https = dict(base, HTTP_HOST="cal.example")
         https["wsgi.url_scheme"] = "https"
         https["SERVER_PORT"] = "443"
         assert utils.get_server_netloc(https) == "cal.example"
@@ -144,11 +144,12 @@ class TestUtilsOutcomes:
         assert "(%d)" % os.getegid() in text
 
     def test_packages_version_lists_runtime_and_libraries(self):
-        text = utils.packages_version()
-        assert text.startswith("python=%d.%d.%d" % sys.version_info[:3])
-        assert "vobject=" in text
-        assert "ldap3=" in text
-        assert " " in text
+        entries = utils.packages_version().split(" ")
+        assert entries[0] == "python=%d.%d.%d" % sys.version_info[:3]
+        # every module is listed, as "n/a" when it is not installed
+        assert [e.split("=", 1)[0] for e in entries[1:]] == list(utils.RADICALE_MODULES)
+        assert all(e.split("=", 1)[1] for e in entries)
+        assert not entries[1:][list(utils.RADICALE_MODULES).index("vobject")].endswith("=n/a")
 
     def test_package_version_passlib_and_missing(self):
         assert utils.package_version("passlib")

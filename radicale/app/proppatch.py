@@ -93,6 +93,9 @@ def xml_proppatch(base_prefix: str, path: str,
             # always the case, but makes mypy happy
             collection.set_meta(all_props)
     for short_name in props_with_remove:
+        if short_name == "tag":
+            # props_from_request stores D:resourcetype under the key "tag"
+            short_name = "D:resourcetype"
         props_ok.append(ET.Element(xmlutils.make_clark(short_name)))
 
     return multistatus

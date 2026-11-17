@@ -144,7 +144,8 @@ class TestMain:
         assert code == 1
         assert "Invalid configuration:" in caplog.text
         assert "Failed to load" in caplog.text
-        assert str(missing) in caplog.text or "missing.conf" in caplog.text
+        # the path is logged with %r: backslashes are doubled on Windows
+        assert "Failed to load config file %r" % str(missing) in caplog.text
 
     def test_verify_storage_empty_folder_exits_zero(self, tmp_path, caplog):
         caplog.set_level(logging.INFO)
@@ -205,7 +206,7 @@ class TestMain:
         code = _run_cli(["-D", "-C", str(config_path), "--verify-storage"])
         assert code == 0
         assert "Verifying storage" in caplog.text
-        assert str(storage) in caplog.text or "filesystem" in caplog.text
+        assert "Storage location: %r" % str(storage) in caplog.text
 
     def test_logging_level_rejected_when_unknown(self, caplog):
         caplog.set_level(logging.INFO)

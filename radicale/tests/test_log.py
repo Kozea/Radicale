@@ -85,16 +85,20 @@ class TestLog:
         ({"useragent": {"match": "re", "value": r"Dav[0-9]+"}}, {"useragent": "Dav9"}, True),
         ({"useragent": {"match": "re", "value": r"^Other"}}, {"useragent": "Dav9"}, False),
         ({"status": {"match": "=", "value": "200"}}, {"status": 200}, True),
-        ({"status": {"match": ">", "value": "400"}}, {"status": 200}, True),
-        ({"status": {"match": ">", "value": "400"}}, {"status": 500}, False),
-        ({"status": {"match": "<", "value": "400"}}, {"status": 500}, True),
-        ({"status": {"match": "<", "value": "400"}}, {"status": 200}, False),
+        # "status" is compared as "actual OP configured value" (DOCUMENTATION.md:
+        # {"status": {"match": ">=", "value": "201"}} means status >= 201)
+        ({"status": {"match": ">", "value": "400"}}, {"status": 500}, True),
+        ({"status": {"match": ">", "value": "400"}}, {"status": 400}, False),
+        ({"status": {"match": ">", "value": "400"}}, {"status": 200}, False),
+        ({"status": {"match": "<", "value": "400"}}, {"status": 200}, True),
+        ({"status": {"match": "<", "value": "400"}}, {"status": 400}, False),
+        ({"status": {"match": "<", "value": "400"}}, {"status": 500}, False),
         ({"status": {"match": "<=", "value": "200"}}, {"status": 200}, True),
-        # Comparisons are "configured value OP actual": 200 <= 100 is false.
-        ({"status": {"match": "<=", "value": "200"}}, {"status": 100}, False),
+        ({"status": {"match": "<=", "value": "200"}}, {"status": 100}, True),
+        ({"status": {"match": "<=", "value": "200"}}, {"status": 201}, False),
         ({"status": {"match": ">=", "value": "200"}}, {"status": 200}, True),
-        # 200 >= 500 is false, so the condition does not pass.
-        ({"status": {"match": ">=", "value": "200"}}, {"status": 500}, False),
+        ({"status": {"match": ">=", "value": "200"}}, {"status": 500}, True),
+        ({"status": {"match": ">=", "value": "200"}}, {"status": 199}, False),
         ({"status": {"match": "!=", "value": "200"}}, {"status": 201}, True),
         ({"status": {"match": "<>", "value": "200"}}, {"status": 200}, False),
         ({"host": {"match": "=", "value": "192.0.2.10"}}, {"host": "192.0.2.10"}, True),
@@ -130,6 +134,16 @@ class TestLog:
     ])
     def test_log_conditional(self, condition, value, expected):
         assert log.log_conditional("unit", condition, value) is expected
+
+    def test_log_conditional_documented_example(self):
+        # Example from DOCUMENTATION.md (request_header_on_notice_condition)
+        condition = {"method": {"match": "equal", "value": "PUT"},
+                     "status": {"match": ">=", "value": "201"},
+                     "host": {"match": "included", "value": "127.0.0.0/8"}}
+        base = {"method": "PUT", "host": "127.0.0.1"}
+        assert log.log_conditional("doc", dict(condition), dict(base, status=201))
+        assert log.log_conditional("doc", dict(condition), dict(base, status=404))
+        assert not log.log_conditional("doc", dict(condition), dict(base, status=200))
 
     def test_trace_filter_keeps_only_matching_trace_records(self, caplog):
         caplog.set_level(log.LOG_LEVEL_TRACE, logger="radicale")

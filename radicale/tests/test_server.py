@@ -407,8 +407,16 @@ class TestBaseServerRequests(BaseTest):
             raise
 
     def test_client_certificate_and_handshake_failure(self) -> None:
-        import subprocess
-
+        # needs the openssl binary: "-copy_extensions" requires OpenSSL >= 3.0
+        try:
+            version = subprocess.run(
+                ["openssl", "version"], capture_output=True, text=True,
+                check=True).stdout.split()
+        except (OSError, subprocess.CalledProcessError):
+            pytest.skip("openssl binary not available")
+        if (version[0] != "OpenSSL" or
+                int(version[1].split(".")[0]) < 3):
+            pytest.skip("OpenSSL >= 3.0 binary required: %s" % " ".join(version))
         ca_key = os.path.join(self.colpath, "ca.key")
         ca_pem = os.path.join(self.colpath, "ca.pem")
         server_key = os.path.join(self.colpath, "server.key")
