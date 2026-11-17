@@ -509,9 +509,6 @@ END:VCALENDAR
     </D:prop>
   </D:set>
 </D:propertyupdate>"""
-        status, _headers, _answer = self.request(
-            "PROPPATCH", "/subscribed.ics/", subscribed, check=None)
-        assert status in (207, 400)
         propfind = """<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:" xmlns:CS="http://calendarserver.org/ns/">
   <D:prop>
@@ -522,6 +519,17 @@ END:VCALENDAR
         response = responses["/subscribed.ics/"]
         assert not isinstance(response, int)
         _prop_status, resourcetype = response["D:resourcetype"]
+        assert resourcetype.find(xmlutils.make_clark("C:calendar")) is not None
+        assert resourcetype.find(xmlutils.make_clark("CS:subscribed")) is None
+        _status, responses = self.proppatch("/subscribed.ics/", subscribed)
+        response = responses["/subscribed.ics/"]
+        assert not isinstance(response, int)
+        assert response["D:resourcetype"][0] == 200
+        _status, responses = self.propfind("/subscribed.ics/", propfind)
+        response = responses["/subscribed.ics/"]
+        assert not isinstance(response, int)
+        _prop_status, resourcetype = response["D:resourcetype"]
+        assert resourcetype.find(xmlutils.make_clark("C:calendar")) is None
         assert resourcetype.find(xmlutils.make_clark("CS:subscribed")) is not None
         components = """<?xml version="1.0" encoding="utf-8"?>
 <D:propertyupdate xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
