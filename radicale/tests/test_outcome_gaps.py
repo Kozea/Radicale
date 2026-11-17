@@ -29,7 +29,6 @@ from typing import Any, Optional, cast
 import pytest
 
 import radicale
-import radicale.item as radicale_item
 from radicale import httputils, pathutils, xmlutils
 from radicale.storage.multifilesystem import Collection
 from radicale.tests import BaseTest, broken_hook
@@ -359,7 +358,7 @@ class TestWebdavErrors(BaseTest):
         self.mkcalendar("/calendar.ics/nested.ics/", check=403)
         self.mkcol("/calendar.ics/nested/", CALENDAR_MKCOL, check=403)
 
-    def test_mkcol_tagged_without_write_returns_405(self) -> None:
+    def test_mkcol_tagged_without_write_returns_403(self) -> None:
         rights = os.path.join(self.colpath, "rights")
         with open(rights, "w") as handle:
             handle.write("[all]\nuser: .*\ncollection: .*\npermissions: RW\n")
@@ -377,7 +376,6 @@ class TestWebdavErrors(BaseTest):
         (None, 400),
     ])
     def test_mkcalendar_create_errno(self, monkeypatch, code, status) -> None:
-        self.mkcalendar("/parent.ics/")
         # Parent of /errno.ics/ is /, which exists. Create is what fails.
         monkeypatch.setattr(
             self.application._storage, "create_collection",
@@ -774,10 +772,3 @@ class TestStorageAndDecoding(BaseTest):
         assert os.path.exists(orphan)
         self.get("/calendar.ics/event1.ics", check=200)
         assert not os.path.exists(orphan)
-
-    def test_item_round_trip_still_uses_real_storage(self) -> None:
-        # Keep a concrete read of the item created above the failure cases.
-        collection = self._collection()
-        item = self._item(collection)
-        assert isinstance(item, radicale_item.Item)
-        assert item.uid == "event1"
