@@ -118,10 +118,19 @@ class _MockLdap:
         return patch.object(self.connection, name, autospec=True, side_effect=side_effect)
 
 
+def _raise_for_reader(error: BaseException) -> Any:
+    def side_effect(conn: Any, *args: Any, **kwargs: Any) -> bool:
+        if conn.user == _MockLdap.reader_dn:
+            raise error
+        return True
+    return side_effect
+
+
 def _raise_for_user(error: BaseException) -> Any:
-    def side_effect(conn: Any, *args: Any, **kwargs: Any) -> None:
+    def side_effect(conn: Any, *args: Any, **kwargs: Any) -> Any:
         if conn.user != _MockLdap.reader_dn:
             raise error
+        return True
     return side_effect
 
 
@@ -539,11 +548,56 @@ class TestAuthServers(BaseTest):
             _principal(self, "owner:secret", check=500)
             assert "invalidCredentials" in caplog.text
 
-            # A reader StartTLS failure must not fall through into bind() without TLS.
-            self._configure_ldap3(ldap_security="starttls")
-            start_tls.side_effect = ldap3.core.exceptions.LDAPStartTLSError("reader tls")
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    @pytest.mark.parametrize("failure", [
+        ldap3.core.exceptions.LDAPStartTLSError("reader tls"),
+        # A server refusing StartTLS is raised by Connection.extended() as an
+        # LDAPOperationResult subclass, not as LDAPStartTLSError.
+        ldap3.core.exceptions.LDAPProtocolErrorResult(
+            result=2, description="protocolError"),
+        ldap3.core.exceptions.LDAPUnavailableCriticalExtensionResult(
+            result=12, description="unavailableCriticalExtension"),
+        OSError("connection reset during handshake"),
+    ])
+    def test_ldap3_reader_starttls_failure_is_fatal(self, caplog, failure) -> None:
+        """A failed reader StartTLS must not continue into bind() without TLS."""
+        caplog.set_level(logging.DEBUG)
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        self._configure_ldap3(ldap_security="starttls")
+        with directory.patch() as start_tls, \
+                patch.object(directory.connection, "bind", autospec=True) as bind:
+            start_tls.side_effect = _raise_for_reader(failure)
             _principal(self, "owner:secret", check=500)
-            assert "StartTLS" in caplog.text
+            assert not any(call.args[0].user == _MockLdap.reader_dn
+                           for call in bind.call_args_list)
+        assert "StartTLS" in caplog.text
+
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    def test_ldap3_reader_starttls_not_started_is_fatal(self, caplog) -> None:
+        """start_tls() returning False (TLS not started) is not a success."""
+        caplog.set_level(logging.ERROR)
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        self._configure_ldap3(ldap_security="starttls")
+        with directory.patch() as start_tls, \
+                patch.object(directory.connection, "bind", autospec=True) as bind:
+            start_tls.return_value = False
+            _principal(self, "owner:secret", check=500)
+            bind.assert_not_called()
+        assert "StartTLS Error" in caplog.text
+
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    def test_ldap3_user_starttls_not_started_is_not_a_login(self) -> None:
+        """start_tls() returning False for the user bind must not send the password."""
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        self._configure_ldap3(ldap_security="starttls")
+        with directory.patch() as start_tls:
+            def side_effect(conn: Any, *args: Any, **kwargs: Any) -> bool:
+                return conn.user == _MockLdap.reader_dn
+            start_tls.side_effect = side_effect
+            assert _principal(self, "owner:secret", check=401) == ""
 
     @pytest.mark.skipif(skip_ldap is True, reason="Cannot import LDAP module 'ldap'")
     def test_ldap2_login(self, caplog) -> None:
