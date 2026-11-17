@@ -121,7 +121,7 @@ This is an automated message. Please do not reply.""",
             "type": bool,
         },
         "itip_owner_map": {
-            "value": "",
+            "value": "{}",
             "type": str,
         },
         "itip_owner_reply_to": {
@@ -729,7 +729,7 @@ class EmailConfig:
                  deleted_or_removed_from_event_template: MessageTemplate,
                  updated_event_template: MessageTemplate,
                  itip_enabled: bool = False,
-                 itip_owner_map: str = "",
+                 itip_owner_map: str = "{}",
                  itip_organizer_is_username: bool = False,
                  itip_owner_reply_to: bool = False):
         self.host = host
@@ -777,7 +777,8 @@ class EmailConfig:
                 "hook.mass_email and hook.itip_enabled cannot both be "
                 "true: mass_email sends one grouped legacy email, "
                 "itip_enabled sends one per-recipient iTIP message")
-        if (self.itip_enabled and not (self.itip_owner_map or "").strip()
+        owner_map = parse_owner_map(self.itip_owner_map)
+        if (self.itip_enabled and not owner_map
                 and not self.itip_organizer_is_username):
             raise ValueError(
                 "hook.itip_enabled requires hook.itip_owner_map or "

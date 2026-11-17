@@ -32,13 +32,14 @@ loses the message, and a repeated save plans nothing.
 """
 
 import functools
+import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import vobject
 from dateutil.tz import tzutc
@@ -202,33 +203,37 @@ class PlannedMessage:
     kind: str
 
 
-def parse_owner_map(text: Optional[str]) -> Dict[str, str]:
-    """Parse an actor-to-organizer-email map.
+def parse_owner_map(value: Optional[Union[str, Dict[str, Any]]]) -> Dict[str, str]:
+    """Parse and normalize the JSON actor-to-organizer-email map."""
+    if value is None or value == "":
+        return {}
+    if isinstance(value, str):
+        def reject_duplicate_keys(pairs: List[Tuple[str, Any]]) -> Dict[str, Any]:
+            result: Dict[str, Any] = {}
+            for key, item in pairs:
+                if key in result:
+                    raise ValueError("duplicate key in itip_owner_map: %r" % key)
+                result[key] = item
+            return result
 
-    Format: ``actor=email, actor2=email2``. Actors and emails are
-    lower-cased. Raises ValueError on a malformed entry, an
-    email without ``@``, or a duplicate actor, so a bad map
-    fails at startup instead of being silently ignored.
-    """
+        try:
+            value = json.loads(value, object_pairs_hook=reject_duplicate_keys)
+        except (ValueError, TypeError) as e:
+            raise ValueError("itip_owner_map must be a valid JSON object") from e
+    if not isinstance(value, dict):
+        raise ValueError("itip_owner_map must be a JSON object")
     result: Dict[str, str] = {}
-    if not text:
-        return result
-    if not isinstance(text, str):
-        raise ValueError("itip_owner_map must be a string")
-    for entry in text.split(","):
-        entry = entry.strip()
-        if not entry:
-            continue
-        if entry.count("=") != 1:
-            raise ValueError("malformed itip_owner_map entry: %r" % entry)
-        actor, email = entry.split("=", 1)
-        actor = actor.strip().lower()
-        email = email.strip().lower()
-        if not actor or not email or "@" not in email:
-            raise ValueError("malformed itip_owner_map entry: %r" % entry)
-        if actor in result:
-            raise ValueError("duplicate actor in itip_owner_map: %r" % actor)
-        result[actor] = email
+    for actor, email in value.items():
+        if not isinstance(actor, str) or not isinstance(email, str):
+            raise ValueError("itip_owner_map keys and values must be strings")
+        normalized_actor = actor.strip().lower()
+        normalized_email = email.strip().lower()
+        if (not normalized_actor or not normalized_email or
+                "@" not in normalized_email):
+            raise ValueError("malformed itip_owner_map entry: %r" % actor)
+        if normalized_actor in result:
+            raise ValueError("duplicate actor in itip_owner_map: %r" % normalized_actor)
+        result[normalized_actor] = normalized_email
     return result
 
 

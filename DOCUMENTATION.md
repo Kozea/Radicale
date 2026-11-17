@@ -2286,11 +2286,11 @@ Default: `False`
 ##### itip_owner_map
 
 Explicit mapping from authenticated Radicale usernames to organizer email
-addresses, used to authorize outgoing iTIP messages. Supply comma-separated
-`username=email` pairs, for example:
+addresses, used to authorize outgoing iTIP messages. Supply a valid JSON object
+mapping usernames to email strings, for example:
 
 ```ini
-itip_owner_map = alice=alice@example.com, bob=bob@example.com
+itip_owner_map = {"alice": "alice@example.com", "bob": "bob@example.com"}
 ```
 
 This setting is required when `itip_enabled = True`, unless
@@ -2302,7 +2302,7 @@ organizer ownership. The user's own principal lists the mapped address
 first in `calendar-user-address-set` (RFC 6638), so CalDAV clients can set
 it as `ORGANIZER`.
 
-Default: (unset)
+Default: `{}`
 
 ##### itip_owner_reply_to
 
@@ -2320,7 +2320,7 @@ For example, with the following configuration:
 type = email
 from_email = calendar@example.com
 itip_enabled = True
-itip_owner_map = alice=alice@example.com, bob=bob@example.com
+itip_owner_map = {"alice": "alice@example.com", "bob": "bob@example.com"}
 itip_owner_reply_to = True
 ```
 

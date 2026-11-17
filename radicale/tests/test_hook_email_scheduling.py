@@ -281,7 +281,7 @@ class TestHookWiring(BaseTest):
             "hook": {"type": "email", "dryrun": "True",
                      "itip_enabled": "True",
                      "from_email": "jeff@example.com",
-                     "itip_owner_map": "jeff=jeff@example.com"}})
+                     "itip_owner_map": '{"jeff": "jeff@example.com"}'}})
 
     def _future_event(self, attendees, start):
         return _event(
@@ -322,7 +322,7 @@ class TestReplyToEndToEnd(BaseTest):
         self.configure({"auth": {"type": "none"}})
         self.calls: List[Tuple[str, List[str], str]] = []
 
-    def _configure(self, *, enabled=True, owner_map="jeff=jeff@example.com",
+    def _configure(self, *, enabled=True, owner_map='{"jeff": "jeff@example.com"}',
                    username=False, itip=True):
         options = {"type": "email", "dryrun": "False",
                    "itip_enabled": str(itip), "itip_owner_map": owner_map,
@@ -374,7 +374,7 @@ class TestReplyToEndToEnd(BaseTest):
         assert parsed is not None and parsed.sequence == sequence
 
     def test_request_update_removed_cancel_and_delete_cancel(self, monkeypatch):
-        self._configure(owner_map="jeff=jeff@reply.example")
+        self._configure(owner_map='{"jeff": "jeff@reply.example"}')
         self._install_smtp(monkeypatch)
         self.mkcalendar("/calendar.ics/", login="jeff:password")
         path = "/calendar.ics/event.ics"
@@ -433,7 +433,7 @@ class TestReplyToEndToEnd(BaseTest):
                           recipient="alice@example.com", sequence=1)
 
     def test_missing_unmapped_mismatch_and_attendee_copy_are_suppressed(self, monkeypatch):
-        self._configure(enabled=True, owner_map="jeff=jeff@example.com")
+        self._configure(enabled=True, owner_map='{"jeff": "jeff@example.com"}')
         self._install_smtp(monkeypatch)
         start = datetime.now() + timedelta(days=2)
         event = self._future_event([ALICE], start)
@@ -473,7 +473,7 @@ class TestReplyToEndToEnd(BaseTest):
             assert recipients == ["alice@example.com"]
 
     def test_sequential_actors_do_not_leak_reply_address(self, monkeypatch):
-        self._configure(owner_map="jeff=jeff@example.com,bob=bob@example.com,unmapped=unused@example.com",
+        self._configure(owner_map='{"jeff": "jeff@example.com", "bob": "bob@example.com", "unmapped": "unused@example.com"}',
                         username=True)
         self._install_smtp(monkeypatch)
         start = datetime.now() + timedelta(days=2)
@@ -536,16 +536,18 @@ class TestOwnerMapAndRecurrence:
 
     def test_parse_owner_map_valid(self):
         from radicale.hook.email.scheduling import parse_owner_map
-        assert parse_owner_map("alice=alice@example.com, Bob=Bob@Example.com") == {
+        assert parse_owner_map('{"alice": "alice@example.com", " Bob ": "Bob@Example.com"}') == {
             "alice": "alice@example.com", "bob": "bob@example.com"}
-        assert parse_owner_map("") == {}
+        assert parse_owner_map("{}") == {}
         assert parse_owner_map(None) == {}
+        assert parse_owner_map({"Alice": "Alice@Example.com"}) == {
+            "alice": "alice@example.com"}
 
     def test_parse_owner_map_malformed(self):
         import pytest
 
         from radicale.hook.email.scheduling import parse_owner_map
-        for bad in ["alice", "alice=no-at-sign", "a=a@x.com, a=b@x.com", " =a@x.com"]:
+        for bad in ["{bad", "[]", "null", '{"alice": 3}', '{"alice": "no-at-sign"}', '{"": "a@x.com"}', '{"a": "a@x.com", " A ": "b@x.com"}', '{"a": "a@x.com", "a": "b@x.com"}']:
             with pytest.raises(ValueError):
                 parse_owner_map(bad)
 
@@ -632,7 +634,7 @@ class TestOwnerMapAndRecurrence:
                           new_or_added_to_event_template=MessageTemplate(subject="x", body="y"),
                           deleted_or_removed_from_event_template=MessageTemplate(subject="x", body="y"),
                           updated_event_template=MessageTemplate(subject="x", body="y"),
-                          itip_enabled=True, itip_owner_map="jeff=jeff@example.com")
+                          itip_enabled=True, itip_owner_map='{"jeff": "jeff@example.com"}')
         with pytest.raises(ValueError):
             cfg.validate_itip_config()
 
@@ -708,8 +710,11 @@ class TestMandatoryMapAndMasterParsing:
                           itip_enabled=True, itip_owner_map="")
         with pytest.raises(ValueError):
             cfg.validate_itip_config()
-        cfg.itip_owner_map = "jeff=jeff@example.com"
+        cfg.itip_owner_map = '{"jeff": "jeff@example.com"}'
         cfg.validate_itip_config()  # no error with an explicit map
+        cfg.itip_owner_map = "{}"
+        cfg.itip_organizer_is_username = True
+        cfg.validate_itip_config()  # an empty JSON object is valid with username ownership
 
     def test_itip_disabled_without_map_is_allowed(self):
         from radicale.hook.email import EmailConfig, MessageTemplate
@@ -774,7 +779,7 @@ class TestOwnerReplyToWiring:
         hook = Hook.__new__(Hook)
         hook.email_config = _email_config(
             itip_owner_reply_to=True,
-            itip_owner_map="alice=alice@example.com,bob=bob@example.com")
+            itip_owner_map='{"alice": "alice@example.com", "bob": "bob@example.com"}')
         hook.owner_map = {"alice": "alice@example.com", "bob": "bob@example.com"}
         assert hook._owner_reply_to(SimpleNamespace(actor=" Alice ")) == "alice@example.com"
         assert hook._owner_reply_to(SimpleNamespace(actor="bob")) == "bob@example.com"
@@ -841,7 +846,7 @@ class TestOrganizerIsUsername:
 
     def test_owner_addresses(self):
         from radicale.hook.email.scheduling import owner_addresses
-        owner_map = "jeff@example.com=jeff@calendar.example.com"
+        owner_map = '{"jeff@example.com": "jeff@calendar.example.com"}'
         assert owner_addresses("jeff@example.com", owner_map, True) == [
             "jeff@calendar.example.com", "jeff@example.com"]
         assert owner_addresses("Jeff@Example.com", owner_map, False) == [
@@ -971,7 +976,7 @@ class TestCalendarUserAddressSet(BaseTest):
 
     def _enable(self, enabled=True, owner_map=None):
         if owner_map is None:
-            owner_map = "" if enabled else "jeff=jeff@example.com"
+            owner_map = "" if enabled else '{"jeff": "jeff@example.com"}'
         self.configure({
             "hook": {"type": "email", "dryrun": "True",
                      "itip_enabled": "True",
@@ -999,22 +1004,22 @@ class TestCalendarUserAddressSet(BaseTest):
             "/jeff%40example.com/"]
 
     def test_mapped_address_listed_first(self):
-        self._enable(owner_map="jeff@example.com=jeff@calendar.example.com")
+        self._enable(owner_map='{"jeff@example.com": "jeff@calendar.example.com"}')
         assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
             "mailto:jeff@calendar.example.com", "mailto:jeff@example.com",
             "/jeff%40example.com/"]
 
     def test_mapped_address_without_option(self):
-        self._enable(False, owner_map="jeff=jeff@example.com")
+        self._enable(False, owner_map='{"jeff": "jeff@example.com"}')
         assert self._hrefs("/jeff/", "jeff") == [
             "mailto:jeff@example.com", "/jeff/"]
 
     def test_unmapped_user_gets_path_only(self):
-        self._enable(False, owner_map="bob=bob@example.com")
+        self._enable(False, owner_map='{"bob": "bob@example.com"}')
         assert self._hrefs("/jeff/", "jeff") == ["/jeff/"]
 
     def test_other_users_mapped_address_not_listed(self):
-        self._enable(False, owner_map="bob=bob@example.com")
+        self._enable(False, owner_map='{"bob": "bob@example.com"}')
         # Create Bob's principal, then look at it as Jeff.
         self._hrefs("/bob/", "bob")
         assert self._hrefs("/bob/", "jeff") == ["/bob/"]
