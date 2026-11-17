@@ -39,10 +39,12 @@ class CollectionPartMeta(CollectionBase):
             self._filesystem_path, ".Radicale.props")
 
     @overload
-    def get_meta(self, key: None = None) -> Mapping[str, str]: ...
+    def get_meta(self, key: None = None) -> Mapping[str, str]:
+        ...
 
     @overload
-    def get_meta(self, key: str) -> Optional[str]: ...
+    def get_meta(self, key: str) -> Optional[str]:
+        ...
 
     def get_meta(self, key: Optional[str] = None) -> Union[Mapping[str, str],
                                                            Optional[str]]:

@@ -523,14 +523,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
 
                     n_vevents += n_vev
                     if prop.tag == xmlutils.make_clark("D:getetag"):
-                        if n_vev > 0:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.trace("REPORT/xml_report: getetag/expanded element")
-                            element.text = item.etag
-                            found_props.append(element)
-                        else:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.trace("REPORT/xml_report: getetag/no expanded element")
+                        # n_vev == 0 already continued above.
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("REPORT/xml_report: getetag/expanded element")
+                        element.text = item.etag
+                        found_props.append(element)
                     else:
                         if logger.isEnabledFor(logging.DEBUG):
                             logger.trace("REPORT/xml_report: default")

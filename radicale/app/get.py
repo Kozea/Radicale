@@ -159,9 +159,6 @@ class ApplicationPartGet(ApplicationBase):
             if (not isinstance(item, storage.BaseCollection) or
                     item.tag != "VCALENDAR"):
                 return httputils.NOT_ALLOWED
-            if (not access.allows_freebusy(item) and
-                    "i" not in access.permissions):
-                return httputils.NOT_ALLOWED
             if query.get("view") != ["freebusy"]:
                 return httputils.BAD_REQUEST
             formats = query.get("format", [])
