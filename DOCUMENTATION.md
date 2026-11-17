@@ -2285,13 +2285,52 @@ Default: `False`
 
 ##### itip_owner_map
 
-Explicit mapping from authenticated Radicale usernames to organizer email
-addresses, used to authorize outgoing iTIP messages. Supply comma-separated
-`username=email` pairs, for example:
+Ordered mapping from authenticated Radicale username regular expressions to
+organizer email address templates, used to authorize outgoing iTIP messages.
+Supply a valid JSON object, for example:
 
 ```ini
-itip_owner_map = alice=alice@example.com, bob=bob@example.com
+itip_owner_map = {"alice": "alice@example.com", "bob": "bob@example.com"}
 ```
+
+Patterns are matched case-insensitively against the **whole** username (implicit
+`^` and `$`, including for alternatives). The first matching rule wins; place
+specific rules before catch-all rules. Replacements use `{1}`, `{2}`, etc. for
+capture groups and `{0}` for the whole username, not backslash references.
+Double braces (`{{` and `}}`) represent literal braces in replacement strings.
+Invalid regexes or replacement references are configuration errors. An expanded
+value that is not a single email address grants no mapped identity and supplies
+no Reply-To. The same rules supply ownership, principal addresses, and, when
+enabled, `itip_owner_reply_to`.
+
+Examples when the authenticated username still contains its domain:
+
+```ini
+# Pass all email usernames through
+itip_owner_map = {"(.+)@(.+)": "{1}@{2}"}
+# Or allow only selected users
+itip_owner_map = {"(user1|user2|user3)@(.+)": "{1}@{2}"}
+# Or restrict selected users to one domain (JSON requires doubled backslashes)
+itip_owner_map = {"(user3|user4)@(otherdomain\\.example)": "{1}@{2}"}
+```
+
+When `auth.strip_domain = True`, or usernames have no domain, append one:
+
+```ini
+# All users in one domain
+itip_owner_map = {"(.+)": "{1}@domain.example"}
+# Or selected users in different domains
+itip_owner_map = {"(user1|user2)": "{1}@domain.example", "(user3|user4)": "{1}@otherdomain.example"}
+```
+
+Mapping runs after authentication's username normalization; it cannot recover a
+stripped domain. Broad rules authorize every matching authenticated user, so use
+an allowlist if only selected users should send scheduling messages.
+
+**Migration:** Plain keys such as `alice` still work. All keys are now regexes:
+escape metacharacters in existing literal usernames, especially dots in email
+addresses (for example, `"alice@example\\.com"` in JSON). Do not lowercase
+regex syntax: escapes such as `\S` retain their usual Python regex meaning.
 
 This setting is required when `itip_enabled = True`, unless
 `itip_organizer_is_username = True`. A scheduling message is
@@ -2302,7 +2341,43 @@ organizer ownership. The user's own principal lists the mapped address
 first in `calendar-user-address-set` (RFC 6638), so CalDAV clients can set
 it as `ORGANIZER`.
 
-Default: (unset)
+Default: `{}`
+
+##### itip_owner_reply_to
+
+_(>= 3.9.2.dev)_
+
+When enabled, add a `Reply-To` header to outgoing iTIP invitations, updates, and
+cancellations using the authenticated actor's explicit entry in
+`itip_owner_map`. This option is relevant when `type = email` and
+`itip_enabled = True`.
+
+For example, with the following configuration:
+
+```ini
+[hook]
+type = email
+from_email = calendar@example.com
+itip_enabled = True
+itip_owner_map = {"alice": "alice@example.com", "bob": "bob@example.com"}
+itip_owner_reply_to = True
+```
+
+Alice's authorized scheduling notifications use `calendar@example.com` as the
+MIME `From` and SMTP envelope sender, and `alice@example.com` as `Reply-To`.
+SMTP server configuration and any required credentials are still needed; this
+snippet illustrates Reply-To behavior, not a complete mail-server setup.
+
+The default is `False`, so existing behavior is unchanged unless explicitly
+enabled. If the authenticated actor has no explicit map entry, no `Reply-To`
+is added and ordinary email replies use the global `from_email` address. The
+`itip_organizer_is_username` option may authorize scheduling for an email
+username, but does not provide a Reply-To address. This routes ordinary email
+replies only; it does not process calendar RSVP replies or add scheduling
+inboxes/outboxes or delegated-calendar ownership discovery. Legacy email
+notifications are unchanged.
+
+Default: `False`
 
 ##### itip_organizer_is_username
 
