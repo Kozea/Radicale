@@ -175,7 +175,7 @@ class Auth(auth.BaseAuth):
     def _login2(self, login: str, password: str) -> Tuple[str, set]:
         try:
             """Bind as reader dn"""
-            logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
+            logger.debug("_login2 %s, %s", self._ldap_uri, self._ldap_reader_dn)
             conn = self.ldap.initialize(self._ldap_uri)
             conn.protocol_version = self.ldap.VERSION3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
@@ -198,7 +198,7 @@ class Auth(auth.BaseAuth):
             conn.simple_bind_s(self._ldap_reader_dn, self._ldap_secret)
             """Search for the dn of user to authenticate"""
             escaped_login = self.ldap.filter.escape_filter_chars(login)
-            logger.debug(f"_login2 login escaped for LDAP filters: {escaped_login}")
+            logger.debug("_login2 login escaped for LDAP filters: %s", escaped_login)
             res = conn.search_s(
                 self._ldap_base,
                 self.ldap.SCOPE_SUBTREE,
@@ -207,11 +207,11 @@ class Auth(auth.BaseAuth):
             )
             if len(res) != 1:
                 """User could not be found unambiguously"""
-                logger.debug(f"_login2 no unique DN found for '{login}'")
+                logger.debug("_login2 no unique DN found for '%s'", login)
                 return auth.NO_LOGIN_NO_GROUPS
             user_entry = res[0]
             user_dn = user_entry[0]
-            logger.debug(f"_login2 found LDAP user DN {user_dn}")
+            logger.debug("_login2 found LDAP user DN %s", user_dn)
 
             """Let's collect the groups of the user."""
             groupDNs = []
@@ -247,7 +247,7 @@ class Auth(auth.BaseAuth):
                     login = user_entry[1][self._ldap_user_attr][0]
                     if isinstance(login, bytes):
                         login = login.decode('utf-8')
-                    logger.debug(f"_login2 user set to: '{login}'")
+                    logger.debug("_login2 user set to: '%s'", login)
 
             """Get RDNs of groups' DNs"""
             tmp = []
@@ -263,10 +263,10 @@ class Auth(auth.BaseAuth):
             logger.debug("_login2 LDAP groups of user: %s", ",".join(ldap_groups))
 
             conn.unbind()
-            logger.debug(f"_login2 {login} successfully authenticated")
+            logger.debug("_login2 %s successfully authenticated", login)
             return login, ldap_groups
         except Exception as e:
-            logger.error(f"_login2 LDAP bind for {login} failed: {e}")
+            logger.error("_login2 LDAP bind for %s failed: %s", login, e)
             return auth.NO_LOGIN_NO_GROUPS
 
     def _login3(self, login: str, password: str) -> Tuple[str, set]:
@@ -275,7 +275,7 @@ class Auth(auth.BaseAuth):
 
         """Connect the server"""
         try:
-            logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
+            logger.debug("_login3 %s, %s", self._ldap_uri, self._ldap_reader_dn)
             if self._ldap_security in ("tls", "starttls"):
                 logger.debug("_login3 using encryption (reader)")
                 verifyMode = {"NONE": ssl.CERT_NONE,
@@ -309,15 +309,15 @@ class Auth(auth.BaseAuth):
             # it here would continue into bind() without TLS.
             if isinstance(e, RuntimeError) and "StartTLS" in str(e):
                 raise
-            logger.debug(f"_login3 error 1 {e} (reader)")
+            logger.debug("_login3 error 1 %s (reader)", e)
             pass
         if not conn.bind(read_server_info=False):
             logger.debug("_login3 cannot bind (reader)")
             raise RuntimeError("Unable to read from LDAP server")
-        logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
+        logger.debug("_login3 bind as %s", self._ldap_reader_dn)
         """Search the user dn"""
         escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
-        logger.debug(f"_login3 login escaped for LDAP filters: {escaped_login}")
+        logger.debug("_login3 login escaped for LDAP filters: %s", escaped_login)
         try:
             conn.search(
                 search_base=self._ldap_base,
@@ -326,16 +326,16 @@ class Auth(auth.BaseAuth):
                 attributes=self._ldap_attributes
             )
         except Exception as e:
-            logger.error(f"_login3 LDAP search for {login} failed: {e}")
+            logger.error("_login3 LDAP search for %s failed: %s", login, e)
             return auth.NO_LOGIN_NO_GROUPS
         if len(conn.entries) != 1:
             """User could not be found unambiguously"""
-            logger.debug(f"_login3 no unique DN found for '{login}'")
+            logger.debug("_login3 no unique DN found for '%s'", login)
             return auth.NO_LOGIN_NO_GROUPS
 
         user_entry = conn.response[0]
         user_dn = user_entry['dn']
-        logger.debug(f"_login3 found LDAP user DN {user_dn}")
+        logger.debug("_login3 found LDAP user DN %s", user_dn)
 
         """Let's collect the groups of the user."""
         groupDNs = []
@@ -360,7 +360,7 @@ class Auth(auth.BaseAuth):
                 )
             except Exception as e:
                 """LDAP search failed: consider it as non-fatal - only groups missing"""
-                logger.debug(f"_ldap3: LDAP group search failed: {e}")
+                logger.debug("_ldap3: LDAP group search failed: %s", e)
             else:
                 """Fill groupDNs with DNs of groups found"""
                 groupDNs = []
@@ -380,7 +380,7 @@ class Auth(auth.BaseAuth):
             except self.ldap3.core.exceptions.LDAPStartTLSError as e:
                 raise RuntimeError(f"_login3 StartTLS Error: {e}")
             if not conn.bind(read_server_info=False):
-                logger.debug(f"_login3 user '{login}' cannot be found")
+                logger.debug("_login3 user '%s' cannot be found", login)
                 return auth.NO_LOGIN_NO_GROUPS
 
             """Get RDNs of groups' DNs"""
@@ -400,12 +400,12 @@ class Auth(auth.BaseAuth):
                         login = user_entry['attributes'][self._ldap_user_attr][0]
                     else:
                         login = user_entry['attributes'][self._ldap_user_attr]
-                    logger.debug(f"_login3 user set to: '{login}'")
+                    logger.debug("_login3 user set to: '%s'", login)
             conn.unbind()
-            logger.debug(f"_login3 {login} successfully authenticated")
+            logger.debug("_login3 %s successfully authenticated", login)
             return login, groups
         except Exception as e:
-            logger.debug(f"_login3 error 2 {e}")
+            logger.debug("_login3 error 2 %s", e)
             pass
         return auth.NO_LOGIN_NO_GROUPS
 

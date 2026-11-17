@@ -20,6 +20,7 @@
 
 import collections
 import itertools
+import logging
 import posixpath
 import socket
 import xml.etree.ElementTree as ET
@@ -76,7 +77,8 @@ def xml_propfind(
     # Writing answer
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
 
-    logger.trace("PROPFIND/xml_propfind: shares=%r", shares)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("PROPFIND/xml_propfind: shares=%r", shares)
 
     for item, permission, raw_permissions, conversion in allowed_items:
         write = "w" in permission
@@ -142,15 +144,19 @@ def xml_propfind_response(
 
     # lookup share
     share = None
-    logger.trace("PROPFIND/xml_propfind: conversion=%r item.path=%r", conversion, uri)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("PROPFIND/xml_propfind: conversion=%r item.path=%r", conversion, uri)
     for entry in shares:
-        logger.trace("PROPFIND/xml_propfind: check entry=%r", entry)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("PROPFIND/xml_propfind: check entry=%r", entry)
         if entry is not None:
-            logger.trace("PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("PROPFIND/xml_propfind: PathMapped=%r uri=%r", shares[entry]['PathMapped'], uri)
             if uri.startswith(shares[entry]['PathMapped']):
                 if conversion is not None and shares[entry]['Conversion'] == conversion:
                     share = shares[entry]
-                    logger.trace("PROPFIND/xml_propfind: found share=%r", share)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PROPFIND/xml_propfind: found share=%r", share)
                     break
 
     share_bday_automap = False
@@ -342,7 +348,8 @@ def xml_propfind_response(
                         not share_bday_automap):
                     privileges.append("C:read-free-busy")
             if not freebusy_only and share:
-                logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay)
                 permit_write_content = False
                 if write:
                     if "w" in share['Permissions']:
@@ -358,13 +365,15 @@ def xml_propfind_response(
                             ("p" in raw_permissions and "P" not in share['Permissions']) or
                             (not self._sharing.permit_properties_overlay and "P" not in raw_permissions and "P" not in share['Permissions'])):
                     if "l" not in raw_permissions and "l" not in share['Permissions']:
-                        logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: add D:write-properties")
                         privileges.append("D:write-properties")
                         # "write-content" + "write-properties" = "write" (rfc3744-3.2)
                         if permit_write_content:
                             privileges.append("D:write")
                     else:
-                        logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: skip D:write-properties because of permission 'l'")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND/xml_propfind_response/current-user-privilege-set: skip D:write-properties because of permission 'l'")
             elif not freebusy_only and write:
                 privileges.append("D:all")
                 privileges.append("D:write")
@@ -423,7 +432,8 @@ def xml_propfind_response(
             elif not is_collection or is_leaf:
                 if collection.tag == "VADDRESSBOOK" and share_bday_automap:
                     if isinstance(item, storage.BaseCollection):
-                        logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for collection")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for collection")
                         length = 0
                         for entry in item.get_all():
                             item_ics = entry.convert_vcf_to_ics(ShareActions=share['Actions'])
@@ -432,7 +442,8 @@ def xml_propfind_response(
                             length += len(item_ics.vobject_item.serialize().encode(encoding))
                         element.text = str(length)
                     else:
-                        logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for single item")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND/xml_propfind_response/getcontentlength: start bday automap handling for single item")
                         item_converted = item.convert_vcf_to_ics(ShareActions=share['Actions'])
                         if item_converted is not None:
                             element.text = str(len(item_converted.serialize()))
@@ -493,7 +504,8 @@ def xml_propfind_response(
                         displayname += " (BDAY)"
                 if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
-                    logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
                 if displayname is not None:
                     element.text = displayname
                 else:
@@ -502,7 +514,8 @@ def xml_propfind_response(
                 # Only for internal use by the web interface
                 if isinstance(item, storage.BaseCollection) and not collection.is_principal:
                     if collection.tag == "VADDRESSBOOK" and share_bday_automap:
-                        logger.trace("PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND/xml_propfind_response/getcontentcount: start bday automap handling")
                         items = []
                         for entry in item.get_all():
                             item_ics = entry.convert_vcf_to_ics(ShareActions=share['Actions'])
@@ -523,7 +536,8 @@ def xml_propfind_response(
                         displayname += " (BDAY)"
                 if share and 'Properties' in share and share['Properties'] is not None and "D:displayname" in share['Properties']:
                     displayname = share['Properties']["D:displayname"]
-                    logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PROPFIND/xml_propfind_response/displayname: replace from share properties with %r", displayname)
                 if displayname is not None:
                     element.text = displayname
                 else:
@@ -557,7 +571,8 @@ def xml_propfind_response(
                     # map/add from overlay
                     if share['Properties'][human_tag] is not None:
                         tag_text = share['Properties'][human_tag]
-                        logger.trace("PROPFIND/xml_propfind_response/%s: replace from share properties with %r", human_tag, tag_text)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND/xml_propfind_response/%s: replace from share properties with %r", human_tag, tag_text)
                 if tag_text is not None:
                     element.text = tag_text
                 else:
@@ -602,7 +617,8 @@ class ApplicationPartPropfind(ApplicationBase):
             if isinstance(item, storage.BaseCollection):
                 path = pathutils.unstrip_path(item.path, True)
                 raw_permissions = self._rights.authorization(user, user_groups, path)
-                logger.trace("PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r raw_permissions=%r", path, user, raw_permissions)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("PROPFIND/_collect_allowed_items/BaseCollection: path=%r user=%r raw_permissions=%r", path, user, raw_permissions)
                 if item.tag:
                     permissions = rights.intersect(raw_permissions, "rw")
                     target = "collection with tag %r" % item.path
@@ -654,9 +670,11 @@ class ApplicationPartPropfind(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                     shares[share['PathOrToken']] = share
-                    logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PROPFIND/shares: add mapping: PathOrToken=%r PathMapped=%r", share['PathOrToken'], share['PathMapped'])
                 else:
-                    logger.trace("PROPFIND/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PROPFIND/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         read_allowed = access.check("r")
         freebusy_only = "r" not in access.permissions and access.allows_freebusy()
@@ -675,7 +693,8 @@ class ApplicationPartPropfind(ApplicationBase):
             return httputils.REQUEST_TIMEOUT
         collection_uris: dict = {}
         with self._storage.acquire_lock("r", user):
-            logger.trace("PROPFIND: discover path=%r depth=%s", path, http_depth)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("PROPFIND: discover path=%r depth=%s", path, http_depth)
             items_iter = iter(self._storage.discover(
                 path, http_depth,
                 None, user_groups))
@@ -723,13 +742,15 @@ class ApplicationPartPropfind(ApplicationBase):
                     allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                     if isinstance(item, storage.BaseCollection):
                         uri = pathutils.unstrip_path(item.path, True)
-                        logger.trace("PROPFIND: append collection (share+conversion): %r", uri)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND: append collection (share+conversion): %r", uri)
                         collection_uris[uri] = 1
                 else:
                     allowed_items.append((item, permission, raw_permissions, None))
                     if isinstance(item, storage.BaseCollection):
                         uri = pathutils.unstrip_path(item.path, True)
-                        logger.trace("PROPFIND: append collection: %r", uri)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND: append collection: %r", uri)
                         collection_uris[uri] = 1
         if self._sharing._enabled:
             if http_depth == "1":
@@ -747,7 +768,8 @@ class ApplicationPartPropfind(ApplicationBase):
                         c_path = share['PathMapped']
                         c_user = share['Owner']
                         c_permissions_filter = share['Permissions']
-                        logger.trace("PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("PROPFIND: test shared collection: PathOrToken=%r PathMapped=%r Owner=%r Permissions=%r", c_share, c_path, c_user, c_permissions_filter)
                         c_access = Access(self._rights, c_user, set([]), c_path, c_permissions_filter)
                         share_freebusy_only = (
                             "f" in c_access.permissions and not c_access.check("r"))
@@ -767,7 +789,8 @@ class ApplicationPartPropfind(ApplicationBase):
                             if isinstance(item, storage.BaseCollection):
                                 uri = pathutils.unstrip_path(item.path, True)
                                 if share['Conversion'] != "bday" and uri in collection_uris:
-                                    logger.trace("PROPFIND: shared collection skipped (source existing): %r", uri)
+                                    if logger.isEnabledFor(logging.DEBUG):
+                                        logger.trace("PROPFIND: shared collection skipped (source existing): %r", uri)
                                     continue
                                 # backmap
                                 if uri.startswith(share['PathMapped']):
@@ -776,10 +799,12 @@ class ApplicationPartPropfind(ApplicationBase):
                                     uri = uri.removesuffix(".vcf") + ".ics"
                                 if uri not in collection_uris:
                                     allowed_items.append((item, permission, raw_permissions, share['Conversion']))
-                                    logger.trace("PROPFIND: shared collection append: %r", uri)
+                                    if logger.isEnabledFor(logging.DEBUG):
+                                        logger.trace("PROPFIND: shared collection append: %r", uri)
                                     collection_uris[uri] = 2
                                 else:
-                                    logger.trace("PROPFIND: shared collection skipped (backmapped already existing): %r", uri)
+                                    if logger.isEnabledFor(logging.DEBUG):
+                                        logger.trace("PROPFIND: shared collection skipped (backmapped already existing): %r", uri)
                             else:
                                 allowed_items.append((item, permission, raw_permissions, share['Conversion']))
                         shares[c_share] = share

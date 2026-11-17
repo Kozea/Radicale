@@ -29,6 +29,7 @@ Important: radicale user need access to /etc/shadow by e.g.
 """
 
 import grp
+import logging
 import os
 import pwd
 from typing import Tuple
@@ -86,7 +87,8 @@ class Auth(auth.BaseAuth):
         # Obtain supplementary groups
         members = []
         if (self._group_membership):
-            logger.trace("PAM required group membership for user %r: %r", login, self._group_membership)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("PAM required group membership for user %r: %r", login, self._group_membership)
             try:
                 members = grp.getgrnam(self._group_membership).gr_mem
             except KeyError:

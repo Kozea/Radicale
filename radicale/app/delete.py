@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import xml.etree.ElementTree as ET
 from http import client
 from typing import Optional, Union
@@ -48,12 +49,14 @@ def xml_delete(base_prefix: str, path: str, collection: storage.BaseCollection,
         # backmap; quote so the encoded href and raw share path compare
         mapped = quote(share['PathMapped'])
         token = quote(str(share['PathOrToken']))
-        logger.trace("DELETE/xml_delete: href=%r (orig)", href_element.text)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("DELETE/xml_delete: href=%r (orig)", href_element.text)
         if href_element.text.startswith(base_prefix + mapped):
             href_element.text = base_prefix + token + href_element.text.removeprefix(base_prefix + mapped)
             if not mapped.endswith('/') and href_element.text.endswith('/'):
                 href_element.text = href_element.text + mapped.rsplit('/', maxsplit=1)[1]
-        logger.trace("DELETE/xml_delete: href=%r (backmapped)", href_element.text)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("DELETE/xml_delete: href=%r (backmapped)", href_element.text)
     response.append(href_element)
 
     status = ET.Element(xmlutils.make_clark("D:status"))
