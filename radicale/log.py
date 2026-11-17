@@ -378,16 +378,16 @@ def log_conditional(name: str, condition: dict, value: dict) -> bool:
                 if not condition[token]["value"] == value[token]:
                     return False
             elif condition[token]["match"] in ["<"]:
-                if not condition[token]["value"] < value[token]:
+                if not value[token] < condition[token]["value"]:
                     return False
             elif condition[token]["match"] in ["<="]:
-                if not condition[token]["value"] <= value[token]:
+                if not value[token] <= condition[token]["value"]:
                     return False
             elif condition[token]["match"] in [">"]:
-                if not condition[token]["value"] > value[token]:
+                if not value[token] > condition[token]["value"]:
                     return False
             elif condition[token]["match"] in [">="]:
-                if not condition[token]["value"] >= value[token]:
+                if not value[token] >= condition[token]["value"]:
                     return False
             elif condition[token]["match"] in ["<>", "!="]:
                 if not condition[token]["value"] != value[token]:
