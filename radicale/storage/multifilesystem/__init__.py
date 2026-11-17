@@ -190,6 +190,7 @@ class Storage(
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
         logger.info("Storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
+        logger.info("Storage fsync after write: %s", self._filesystem_fsync)
         try:
             (precision, precision_unit, unit) = self._analyse_mtime()
             if precision >= 100000000:

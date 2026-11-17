@@ -279,6 +279,9 @@ type = none
 # Note: conversion is done on access, bulk conversion can be done offline using storage verification option: radicale --verify-storage
 #use_mtime_and_size_for_item_cache = False
 
+# Sync file system after each write
+#filesystem_fsync = True
+
 # Use configured umask for folder creation (not applicable for OS Windows)
 # Useful value: 0077 | 0027 | 0007 | 0022
 #folder_umask = (system default, usual 0022)

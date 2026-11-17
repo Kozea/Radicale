@@ -74,7 +74,7 @@ class BaseTest:
         self.configure({
             "storage": {"filesystem_folder": self.colpath,
                         # Disable syncing to disk for better performance
-                        "_filesystem_fsync": "False"},
+                        "filesystem_fsync": "False"},
             # Set incorrect authentication delay to a short duration
             "auth": {"delay": "0.001"}})
         radicale.log.logger.setLevel(level)

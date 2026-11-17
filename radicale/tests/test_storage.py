@@ -59,7 +59,7 @@ class TestMultiFileSystem(BaseTest):
 
     def test_fsync(self) -> None:
         """Create a directory and file with syncing enabled."""
-        self.configure({"storage": {"_filesystem_fsync": "True"}})
+        self.configure({"storage": {"filesystem_fsync": "True"}})
         self.mkcalendar("/calendar.ics/")
 
     def test_hook(self) -> None:
