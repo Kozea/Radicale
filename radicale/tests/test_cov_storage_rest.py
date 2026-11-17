@@ -30,7 +30,7 @@ from radicale.storage.multifilesystem import meta as storage_meta
 def _configuration(folder):
     configuration = config.load()
     configuration.update({
-        "storage": {"filesystem_folder": str(folder), "_filesystem_fsync": False},
+        "storage": {"filesystem_folder": str(folder), "filesystem_fsync": False},
     }, "test", privileged=True)
     return configuration
 

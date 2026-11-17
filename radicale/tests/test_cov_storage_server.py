@@ -108,7 +108,7 @@ def _silence_traces(monkeypatch):
 def _configuration(folder, updates=None):
     configuration = config.load()
     configuration.update({
-        "storage": {"filesystem_folder": str(folder), "_filesystem_fsync": False},
+        "storage": {"filesystem_folder": str(folder), "filesystem_fsync": False},
         "auth": {"delay": "0.001"},
     }, "test", privileged=True)
     if updates:

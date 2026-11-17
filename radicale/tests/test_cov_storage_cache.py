@@ -44,7 +44,7 @@ def _storage(folder):
     configuration.update({
         "storage": {
             "filesystem_folder": str(folder),
-            "_filesystem_fsync": False,
+            "filesystem_fsync": False,
         },
     }, "test", privileged=True)
     return storage.load(configuration)
