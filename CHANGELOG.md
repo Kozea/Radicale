@@ -1,6 +1,9 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
+* Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
+* Fix: [logging] `*_on_notice_condition` with `host` match `excluded` raised an error (undefined variable)
 * Add: [hook] itip_owner_map: ordered full-string username regex rules with brace-style capture replacements; escape metacharacters in existing literal keys
 * Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
 
