@@ -49,9 +49,11 @@ class InputStream(Protocol):
 
 @runtime_checkable
 class ErrorStream(Protocol):
-    def flush(self) -> object: ...
+    def flush(self) -> object:
+        ...
 
-    def write(self, s: str) -> object: ...
+    def write(self, s: str) -> object:
+        ...
 
 
 from radicale import item, storage  # noqa:E402 isort:skip

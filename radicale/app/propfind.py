@@ -164,9 +164,8 @@ def xml_propfind_response(
         share_bday_automap = True
 
     if share:
-        # backmap
-        if uri.startswith(share['PathMapped']):
-            uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
+        # The share was selected because uri starts with PathMapped.
+        uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
         if share_bday_automap and uri.endswith(".vcf"):
             uri = uri.removesuffix(".vcf") + ".ics"
 
@@ -325,8 +324,6 @@ def xml_propfind_response(
                     # backmap
                     child_element.text = xmlutils.make_href(
                         base_prefix, "/%s/" % share['User'])
-                    if share_bday_automap and child_element.text.endswith(".vcf"):
-                        child_element.text = child_element.text.removesuffix(".vcf") + ".ics"
                 else:
                     child_element.text = xmlutils.make_href(
                         base_prefix, "/%s/" % user)
@@ -488,7 +485,7 @@ def xml_propfind_response(
                         child_element = ET.Element(
                             xmlutils.make_clark("C:calendar"))
                         element.append(child_element)
-                    elif collection.tag == "VSUBSCRIBED":
+                    else:
                         child_element = ET.Element(
                             xmlutils.make_clark("CS:subscribed"))
                         element.append(child_element)
@@ -593,8 +590,6 @@ def xml_propfind_response(
         responses[404 if is404 else 200].append(element)
 
     for status_code, children in responses.items():
-        if not children:
-            continue
         propstat = ET.Element(xmlutils.make_clark("D:propstat"))
         response.append(propstat)
         prop = ET.Element(xmlutils.make_clark("D:prop"))
@@ -704,15 +699,12 @@ class ApplicationPartPropfind(ApplicationBase):
                 return httputils.NOT_FOUND
             if (isinstance(item, storage.BaseCollection) and
                     item.tag == "VCALENDAR"):
-                if freebusy_only:
-                    if not access.allows_freebusy(item):
-                        return httputils.NOT_ALLOWED
-                elif not access.check("r", item):
+                if not freebusy_only and not access.check("r", item):
                     return httputils.NOT_ALLOWED
             elif read_allowed:
                 if not access.check("r", item):
                     return httputils.NOT_ALLOWED
-            elif not access.allows_freebusy(item):
+            else:
                 return httputils.NOT_ALLOWED
             # put item back
             items_iter = itertools.chain([item], items_iter)
@@ -793,8 +785,7 @@ class ApplicationPartPropfind(ApplicationBase):
                                         logger.trace("PROPFIND: shared collection skipped (source existing): %r", uri)
                                     continue
                                 # backmap
-                                if uri.startswith(share['PathMapped']):
-                                    uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
+                                uri = str(share['PathOrToken']) + uri.removeprefix(share['PathMapped'])
                                 if share['Conversion'] == "bday" and uri.endswith(".vcf"):
                                     uri = uri.removesuffix(".vcf") + ".ics"
                                 if uri not in collection_uris:
