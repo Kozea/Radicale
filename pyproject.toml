@@ -3,7 +3,7 @@ name = "Radicale"
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
 readme = "README.md"
-version = "3.9.2"
+version = "3.9.3.dev"
 authors = [{name = "Guillaume Ayoub", email = "guillaume.ayoub@kozea.fr"}, {name = "Unrud", email = "unrud@outlook.com"}, {name = "Peter Bieringer", email = "pb@bieringer.de"}]
 license = {text = "GNU GPL v3"}
 description = "CalDAV and CardDAV Server"
@@ -76,12 +76,13 @@ envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_
 [tool.tox.env.py_coverage]
 description = "Server: run 'pytest' (incl. coverage report)"
 extras = ["test"]
+setenv = { PYTEST_RADICALE_LOGLEVEL = "trace" }
 deps = [
     "pytest",
     "pytest-cov",
     "python-ldap",
 ]
-commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
+commands = [["pytest", "-r", "s", "--log-level", "5", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
 
 [tool.tox.env.py]
 description = "Server: run 'pytest'"
