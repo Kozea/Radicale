@@ -898,7 +898,70 @@ class TestLdapGaps(BaseTest):
             ldap_auth.Auth._ldap_attributes = []
         assert ldap3 is not None
 
-    def test_ldap3_swallows_generic_starttls_error_then_bind_false(self, caplog):
+    def _configure_ldap3_reader(self):
+        from radicale.tests.test_auth_servers import _MockLdap
+
+        self.configure({"auth": {
+            "type": "ldap",
+            "delay": "0",
+            "ldap_uri": "ldap://ldap.example",
+            "ldap_base": "ou=people,dc=example,dc=com",
+            "ldap_reader_dn": _MockLdap.reader_dn,
+            "ldap_secret": _MockLdap.reader_password,
+            "ldap_filter": "(uid={0})",
+            "ldap_security": "starttls",
+        }})
+
+    def test_ldap3_starttls_socket_error_does_not_bind_the_reader(self):
+        """A socket error during reader StartTLS is an unreachable server.
+
+        A generic StartTLS failure is already "StartTLS Error" and does not
+        bind. LDAPSocketOpenError is re-raised and reported as unreachable.
+        """
+        ldap3 = pytest.importorskip("ldap3")
+        from radicale.auth import ldap as ldap_auth
+        from radicale.tests.test_auth_servers import OWNER_DN, _MockLdap
+
+        directory = _MockLdap()
+        directory.add(OWNER_DN, uid="owner", userPassword="secret")
+        binds = []
+        ldap_auth.Auth._ldap_attributes = []
+        try:
+            with directory.patch():
+                inner = ldap3.Connection
+
+                def factory(*args, **kwargs):
+                    conn = inner(*args, **kwargs)
+
+                    def start_tls(*_args, **_kwargs):
+                        raise ldap3.core.exceptions.LDAPSocketOpenError("socket down")
+
+                    def bind(*_args, **_kwargs):
+                        binds.append(args[1] if len(args) > 1 else None)
+                        return True
+
+                    conn.start_tls = start_tls
+                    conn.bind = bind
+                    return conn
+
+                ldap3.Connection = factory
+                self._configure_ldap3_reader()
+                with pytest.raises(RuntimeError, match="Unable to reach LDAP server") as caught:
+                    self.application._auth._login_ext_with_groups("owner", "secret", None)
+                assert str(caught.value) == "Unable to reach LDAP server"
+                assert isinstance(caught.value.__context__, ldap3.core.exceptions.LDAPSocketOpenError)
+                assert str(caught.value.__context__) == "socket down"
+                assert binds == []
+        finally:
+            ldap_auth.Auth._ldap_attributes = []
+
+    def test_ldap3_reader_bind_false_is_unable_to_read(self, caplog):
+        """StartTLS succeeded and the reader bind returned False.
+
+        The mock raises on a bad reader password, so this is the only way to
+        reach the False return. The reader password was already sent: the
+        outcome is that the directory cannot be read.
+        """
         ldap3 = pytest.importorskip("ldap3")
         from radicale.auth import ldap as ldap_auth
         from radicale.tests.test_auth_servers import OWNER_DN, _MockLdap
@@ -915,7 +978,7 @@ class TestLdapGaps(BaseTest):
                     conn = inner(*args, **kwargs)
 
                     def start_tls(*_args, **_kwargs):
-                        raise Exception("tls boom")
+                        return True
 
                     conn.start_tls = start_tls
                     if len(args) > 1 and args[1] == _MockLdap.reader_dn:
@@ -923,19 +986,12 @@ class TestLdapGaps(BaseTest):
                     return conn
 
                 ldap3.Connection = factory
-                self.configure({"auth": {
-                    "type": "ldap",
-                    "delay": "0",
-                    "ldap_uri": "ldap://ldap.example",
-                    "ldap_base": "ou=people,dc=example,dc=com",
-                    "ldap_reader_dn": _MockLdap.reader_dn,
-                    "ldap_secret": _MockLdap.reader_password,
-                    "ldap_filter": "(uid={0})",
-                    "ldap_security": "starttls",
-                }})
-                with pytest.raises(RuntimeError, match="Unable to read") as caught:
+                self._configure_ldap3_reader()
+                caplog.clear()
+                with pytest.raises(RuntimeError, match="Unable to read from LDAP server") as caught:
                     self.application._auth._login_ext_with_groups("owner", "secret", None)
-                assert "tls boom" not in str(caught.value)
+                assert str(caught.value) == "Unable to read from LDAP server"
+                assert "cannot bind (reader)" in caplog.text
         finally:
             ldap_auth.Auth._ldap_attributes = []
 
