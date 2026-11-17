@@ -76,12 +76,13 @@ envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_
 [tool.tox.env.py_coverage]
 description = "Server: run 'pytest' (incl. coverage report)"
 extras = ["test"]
+setenv = { PYTEST_RADICALE_LOGLEVEL = "trace" }
 deps = [
     "pytest",
     "pytest-cov",
     "python-ldap",
 ]
-commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
+commands = [["pytest", "-r", "s", "--log-level", "5", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
 
 [tool.tox.env.py]
 description = "Server: run 'pytest'"
