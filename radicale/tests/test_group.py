@@ -476,10 +476,13 @@ permissions: r
 
         assert radicale.auth.pam.Auth.__name__ == "Auth"
         login = pwd.getpwuid(os.getuid()).pw_name
-        self.configure({
-            "auth": {"type": "pam"},
-            "group": {"type": "from_auth"},
-            "rights": {"type": "owner_only"}})
+        try:
+            self.configure({
+                "auth": {"type": "pam"},
+                "group": {"type": "from_auth"},
+                "rights": {"type": "owner_only"}})
+        except ModuleNotFoundError:
+            pytest.skip("PAM module not available")
         assert self.application._group.groups(login) == set()
         cast(Any, self.application._auth).pam_authenticate = lambda *args, **kwargs: True
         user, groups, auth_type = self.application._auth.login(
