@@ -29,6 +29,7 @@ import sys
 import time
 from typing import ClassVar, Iterator, Optional, Type
 
+import radicale.item as radicale_item
 from radicale import config, pathutils, utils
 from radicale.log import logger
 from radicale.storage.multifilesystem.base import CollectionBase, StorageBase
@@ -62,6 +63,28 @@ class Collection(
                  filesystem_path: Optional[str] = None) -> None:
         super().__init__(storage_, path, filesystem_path)
         self._etag_cache = None
+
+    def has_uid(self, uid: str) -> bool:
+        # Fast path: hrefs derived from the uid are deterministic (Radicale
+        # stores items as uid + suffix or etag of uid + suffix). Only scan
+        # all items if none of these candidates exists, e.g. when an item
+        # was uploaded to a custom href.
+        suffix = {"VCALENDAR": ".ics", "VADDRESSBOOK": ".vcf"}.get(
+            self.tag or "", "")
+        candidates = [uid + suffix,
+                      radicale_item.get_etag(uid).strip('"') + suffix]
+        for href in candidates:
+            if not pathutils.is_safe_filesystem_path_component(href):
+                continue
+            if not os.path.isfile(os.path.join(self._filesystem_path, href)):
+                continue
+            try:
+                item = self._get(href, verify_href=False)
+            except ValueError:
+                continue
+            if item is not None and item.uid == uid:
+                return True
+        return super().has_uid(uid)
 
     @property
     def path(self) -> str:
@@ -190,6 +213,7 @@ class Storage(
         logger.info("Storage cache subfolder usage for 'history': %s", self._use_cache_subfolder_for_history)
         logger.info("Storage cache subfolder usage for 'sync-token': %s", self._use_cache_subfolder_for_synctoken)
         logger.info("Storage cache use mtime and size for 'item': %s", self._use_mtime_and_size_for_item_cache)
+        logger.info("Storage fsync after write: %s", self._filesystem_fsync)
         try:
             (precision, precision_unit, unit) = self._analyse_mtime()
             if precision >= 100000000:

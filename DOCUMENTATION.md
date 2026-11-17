@@ -1762,6 +1762,12 @@ Notes:
 * conversion is done on access
 * bulk conversion can be done offline using the storage verification option `radicale --verify-storage`
 
+##### filesystem_fsync
+
+Sync file system after each write
+
+Default: `True`
+
 ##### folder_umask
 
 _(>= 3.3.2)_

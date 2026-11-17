@@ -90,7 +90,7 @@ class StorageBase(storage.BaseStorage):
         self._filesystem_folder = configuration.get(
             "storage", "filesystem_folder")
         self._filesystem_fsync = configuration.get(
-            "storage", "_filesystem_fsync")
+            "storage", "filesystem_fsync")
         self._filesystem_cache_folder = configuration.get(
             "storage", "filesystem_cache_folder")
         self._use_cache_subfolder_for_item = configuration.get(

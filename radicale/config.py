@@ -609,7 +609,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "strict preconditions check on PUT",
             "type": bool}),
-        ("_filesystem_fsync", {
+        ("filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
             "type": bool}),

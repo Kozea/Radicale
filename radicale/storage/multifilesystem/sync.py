@@ -21,6 +21,7 @@ import itertools
 import logging
 import os
 import pickle
+import re
 from hashlib import sha256
 from typing import BinaryIO, Iterable, Tuple, cast
 
@@ -40,9 +41,8 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
         def check_token_name(token_name: str) -> bool:
             if len(token_name) != 64:
                 return False
-            for c in token_name:
-                if c not in "0123456789abcdef":
-                    return False
+            if not re.search("^[0-9a-f]{64}$", token_name):
+                return False
             return True
 
         old_token_name = ""

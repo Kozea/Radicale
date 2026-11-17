@@ -24,7 +24,7 @@ import socket
 import sys
 import wsgiref.util
 from io import BytesIO
-from typing import Any, Optional, cast
+from typing import Any, Optional, Tuple, cast
 
 import pytest
 
@@ -305,7 +305,7 @@ class TestWebdavErrors(BaseTest):
         super().setup_method()
         _grant_write(self)
 
-    def _call(self, method, path, data=b"", content_length=None, content_type=None):
+    def _call(self, method, path, data=b"", content_length=None, content_type=None) -> Tuple[int, str]:
         environ: dict[str, Any] = {}
         wsgiref.util.setup_testing_defaults(environ)
         environ["REQUEST_METHOD"] = method
