@@ -1,5 +1,7 @@
 # Changelog
 
+## 3.9.3.dev
+
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0
 * Fix: [auth] keep the LDAP server hostname as SNI when a CA file is set
