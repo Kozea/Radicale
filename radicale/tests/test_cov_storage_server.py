@@ -1366,7 +1366,8 @@ def test_component_errors_and_collection_reads_without_debug(tmp_path, monkeypat
 
     calls = _capture_traces(monkeypatch)
     assert collection.has_uid("event1") is True
-    assert any(msg == "storage/has_uid" for msg in calls)
+    # event1.ics is the derived name, so the fast path does not scan.
+    assert "storage/has_uid" not in calls
 
     bare = _calendar(storage_, href="/user/empty/", props={"tag": ""})[0]
     assert list(bare.get_filtered(
@@ -1391,6 +1392,45 @@ def test_component_errors_and_collection_reads_without_debug(tmp_path, monkeypat
         _time_filters("20130901T000000Z", "20130902T000000Z")))
     assert {item.uid for item, _matched in traced} == {"event1", "other"}
     assert any(msg.startswith("storage/get_filtered") for msg in calls)
+
+
+def test_has_uid_fast_path_boundaries(tmp_path, monkeypatch):
+    """Derived names answer directly. Unsafe, foreign, and broken names scan."""
+    storage_ = _storage(tmp_path)
+    collection = _calendar(storage_, items=[
+        _event(uid="event1"),
+        _event(uid=".dot", summary="Dotted"),
+    ])[0]
+    dot_href = radicale_item.get_etag(".dot").strip('"') + ".ics"
+    names = set(os.listdir(collection._filesystem_path))
+    assert "event1.ics" in names
+    assert ".dot.ics" not in names
+    assert dot_href in names
+
+    calls = _capture_traces(monkeypatch)
+    assert collection.has_uid("event1") is True
+    assert "storage/has_uid" not in calls
+
+    calls = _capture_traces(monkeypatch)
+    assert collection.has_uid(".dot") is True
+    assert "storage/has_uid" not in calls
+
+    calls = _capture_traces(monkeypatch)
+    assert collection.has_uid("missing") is False
+    assert "storage/has_uid" in calls
+
+    foreign = os.path.join(collection._filesystem_path, "wanted.ics")
+    with open(foreign, "w", encoding="utf-8", newline="") as handle:
+        handle.write(_event(uid="other", summary="Other").serialize())
+    calls = _capture_traces(monkeypatch)
+    assert collection.has_uid("wanted") is False
+    assert "storage/has_uid" in calls
+    assert collection.has_uid("other") is True
+
+    broken = os.path.join(collection._filesystem_path, "broken.ics")
+    with open(broken, "w", encoding="utf-8") as handle:
+        handle.write("not a calendar\n")
+    assert collection.has_uid("broken") is False
 
 
 def test_serialize_description_timezones_and_addressbook_conversion(tmp_path, monkeypatch):
