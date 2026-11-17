@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import pickle
 import urllib
@@ -96,14 +97,16 @@ class Sharing(sharing.BaseSharing):
         """ retrieve sharing target and attributes by map """
         sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
-        logger.trace("sharing/%s/get: PathOrToken=%r User=%r OnlyEnabled=%s -> config=%r)", ShareType, PathOrToken, User, OnlyEnabled, sharing_config_file)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/get: PathOrToken=%r User=%r OnlyEnabled=%s -> config=%r)", ShareType, PathOrToken, User, OnlyEnabled, sharing_config_file)
 
         if not os.path.isfile(sharing_config_file):
             if ShareType != "map" or User is None:
                 return None
             else:
                 # check by group
-                logger.trace("sharing/%s/get: no direct share found, run through filtered list", ShareType)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/get: no direct share found, run through filtered list", ShareType)
                 for row in self.database_list_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=User):
                     if OnlyEnabled is True and row['EnabledByOwner'] is False:
                         continue
@@ -157,7 +160,8 @@ class Sharing(sharing.BaseSharing):
                 Conversion = row['Conversion']
             if 'Actions' in row:
                 Actions = row['Actions']
-            logger.trace("sharing/%s/get: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", ShareType, PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/%s/get: map %r to %r (Owner=%r User=%r Permissions=%r Hidden=%s Properties=%r)", ShareType, PathOrToken, PathMapped, Owner, UserShare, Permissions, Hidden, Properties)
             return {
                     "mapped": True,
                     "ShareType": ShareType,
@@ -191,7 +195,8 @@ class Sharing(sharing.BaseSharing):
         """ retrieve sharing """
         result: list[dict] = []
 
-        logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
 
         for _ShareType in sharing.SHARE_TYPES_V1:
             if ShareType is not None and _ShareType != ShareType:
@@ -205,7 +210,8 @@ class Sharing(sharing.BaseSharing):
                         if not entry.is_file():
                             continue
 
-                        logger.trace("sharing/%s/list: check file: %r", ShareType, entry.name)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("sharing/%s/list: check file: %r", ShareType, entry.name)
                         # read file
                         with open(entry, "rb") as fb:
                             (version, row) = pickle.load(fb)
@@ -214,7 +220,8 @@ class Sharing(sharing.BaseSharing):
                             # skip
                             continue
 
-                        logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
 
                         row_match = common.database_common_check_row_match(
                                                                     row=row,
@@ -252,8 +259,10 @@ class Sharing(sharing.BaseSharing):
 
         sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
-        logger.trace("sharing/%s/create: sharing_config_file=%r", ShareType, sharing_config_file)
-        logger.trace("sharing/%s/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", ShareType, PathOrToken, Owner, PathMapped, User, Permissions)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/create: sharing_config_file=%r", ShareType, sharing_config_file)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", ShareType, PathOrToken, Owner, PathMapped, User, Permissions)
         if os.path.isfile(sharing_config_file):
             return {"status": "conflict"}
 
@@ -278,11 +287,13 @@ class Sharing(sharing.BaseSharing):
 
         try:
             with self._storage.acquire_lock("w", Owner, path=sharing_config_file):
-                logger.trace("sharing/%s/create: store share-config: %r into file %r", ShareType, row, sharing_config_file)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/create: store share-config: %r into file %r", ShareType, row, sharing_config_file)
                 # write file
                 with open(sharing_config_file, "wb") as fb:
                     pickle.dump((version, row), fb)
-                logger.trace("sharing/*/create: share-config file stored: %r", sharing_config_file)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/*/create: share-config file stored: %r", sharing_config_file)
                 return {"status": "success"}
         except Exception as e:
             logger.error("sharing/%s/create: cannot store share-config: %r (%r)", ShareType, sharing_config_file, e)
@@ -305,7 +316,8 @@ class Sharing(sharing.BaseSharing):
                                 Actions: Union[dict, None] = None,
                                 ) -> dict:
         """ update sharing """
-        logger.trace("sharing/%s/update: PathOrToken=%r OwnerOrUser=%r User=%r Properties=%r", ShareType, PathOrToken, OwnerOrUser, User, Properties)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/update: PathOrToken=%r OwnerOrUser=%r User=%r Properties=%r", ShareType, PathOrToken, OwnerOrUser, User, Properties)
 
         sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 
@@ -321,7 +333,8 @@ class Sharing(sharing.BaseSharing):
             if version != DB_VERSION:
                 return {"status": "error"}
 
-            logger.trace("sharing/%s/update: orig row=%r", ShareType, row)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/%s/update: orig row=%r", ShareType, row)
 
             if PathMapped is not None:
                 row["PathMapped"] = PathMapped
@@ -346,13 +359,15 @@ class Sharing(sharing.BaseSharing):
             # update timestamp
             row["TimestampUpdated"] = Timestamp
 
-            logger.trace("sharing/%s/update: adj  row=%r", ShareType, row)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/%s/update: adj  row=%r", ShareType, row)
 
             try:
                 # write file
                 with open(sharing_config_file, "wb") as fb:
                     pickle.dump((version, row), fb)
-                logger.trace("sharing/%s/create: share-config file stored: %r", ShareType, sharing_config_file)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/create: share-config file stored: %r", ShareType, sharing_config_file)
                 return {"status": "success"}
             except Exception as e:
                 logger.error("sharing/%s/create: cannot store share-config: %r (%r)", ShareType, sharing_config_file, e)
@@ -363,7 +378,8 @@ class Sharing(sharing.BaseSharing):
                                 PathOrToken: str,
                                 User: str) -> dict:
         """ delete sharing """
-        logger.trace("sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
         sharing_config_file = os.path.join(self._sharing_database_path_ShareType[ShareType], self._encode_path(PathOrToken))
 

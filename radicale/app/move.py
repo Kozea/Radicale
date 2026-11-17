@@ -19,6 +19,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
+import logging
 import posixpath
 import re
 from http import client
@@ -66,7 +67,8 @@ class ApplicationPartMove(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                 else:
-                    logger.trace("MOVE/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("MOVE/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         if not access.check("w"):
             return httputils.NOT_ALLOWED

@@ -57,7 +57,8 @@ def _check_format(self: storage.BaseStorage,
     check_minimal = (validation_type == "minimal")
     check_unicode_letter = (validation_type == "unicode-letter")
     check_no_unicode = (validation_type == "no-unicode")
-    logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("_check_format investigate %r (validation_type=%r check_minimal=%s check_unicode_letter=%s check_no_unicode=%s)", string, validation_type, check_minimal, check_unicode_letter, check_no_unicode)
     if not self._supports_trailing_whitespace and string.endswith(' '):
         return False
     for c in string:
@@ -70,12 +71,14 @@ def _check_format(self: storage.BaseStorage,
             return False
         if check_minimal or not self._supports_problematic_chars:
             if c in blacklist_minimal:
-                logger.trace("_check_format found %r", c)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("_check_format found %r", c)
                 return False
         if check_unicode_letter:
             if c not in whitelist_unicode:
                 if unicodedata.category(c)[0] != "L":
-                    logger.trace("_check_format found %r (%r)", c, unicodedata.category(c)[0])
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("_check_format found %r (%r)", c, unicodedata.category(c)[0])
                     return False
         if check_no_unicode:
             if ord(c) > 255:
@@ -89,7 +92,8 @@ def _check_user_format(self: storage.BaseStorage,
                        urldecode_username: bool,
                        enforceUser: bool = True,
                        ) -> bool:
-    logger.trace("_check_user_format investigate %r (urldecode_username=%r)", user, urldecode_username)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("_check_user_format investigate %r (urldecode_username=%r)", user, urldecode_username)
     if urldecode_username:
         user = unquote(user)
     if (user.startswith(sharing.SHARING_SEPARATOR_GROUP) or user.startswith(sharing.SHARING_SEPARATOR_REALM)):
@@ -110,7 +114,8 @@ def _check_user_format(self: storage.BaseStorage,
         # strip 1st char
         user = user[1:]
         for user_group in user.split(','):
-            logger.trace("_check_user_format investigate group %r", user_group)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("_check_user_format investigate group %r", user_group)
             if validation_type == "strict":
                 if re.search(USER_PATTERN_STRICT_RE, user_group) is None:
                     return False

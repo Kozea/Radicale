@@ -19,6 +19,7 @@
 import enum
 import hashlib
 import json
+import logging
 import re
 import smtplib
 import ssl
@@ -874,7 +875,8 @@ class EmailConfig:
             # If mass emails are enabled, we send one email to all attendees
             if len(attendees) == 1:
                 # only one attendee
-                logger.trace("send_mass_emails=True but only 1 attendee, fallback to non-mass")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("send_mass_emails=True but only 1 attendee, fallback to non-mass")
                 body = template.build_message(event=event, from_email=self.from_email,
                                               mass_email=False, attendee=attendees[0])
                 subject = template.build_subject(event=event, from_email=self.from_email,
@@ -988,12 +990,12 @@ class EmailConfig:
             logger.debug("Email sent successfully to %s", to_addresses)
             server.quit()
         except smtplib.SMTPException as e:
-            logger.error(f"SMTP error occurred: {e}")
+            logger.error("SMTP error occurred: %s", e)
             return False
 
         if errors:
             for email, (code, error) in errors.items():
-                logger.error(f"Failed to send email to {email}: {str(error)} (Code: {code})")
+                logger.error("Failed to send email to %s: %s (Code: %s)", email, str(error), code)
             return False
 
         return True
@@ -1157,7 +1159,8 @@ class Hook(BaseHook):
             now = datetime.now(event_end.tzinfo) if event_end.tzinfo else datetime.now()
         else:
             now = date.today()
-        logger.trace("event_end=%r now=%r", event_end, now)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("event_end=%r now=%r", event_end, now)
         if event_end < (now - timedelta(minutes=1)):
             logger.warning("Event end time is in the past, skipping notification for event: %s",
                            event.uid)

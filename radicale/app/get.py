@@ -20,6 +20,7 @@
 
 import contextlib
 import datetime
+import logging
 import plistlib
 import posixpath
 import re
@@ -288,7 +289,8 @@ class ApplicationPartGet(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                 else:
-                    logger.trace("GET/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("GET/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         if share_forces_freebusy_view(share):
             query = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)

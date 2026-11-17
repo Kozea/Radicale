@@ -20,6 +20,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
+import logging
 import re
 import socket
 import xml.etree.ElementTree as ET
@@ -65,14 +66,16 @@ def xml_proppatch(base_prefix: str, path: str,
     props_with_remove = xmlutils.props_from_request(xml_request)
     if share and share_overlay:
         # PROPPATCH overlay adjustment
-        logger.trace("PROPPATCH/xml_proppatch: share+share_overlay is active: %r", share)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("PROPPATCH/xml_proppatch: share+share_overlay is active: %r", share)
         if share['Properties'] is not None:
             all_props_with_remove = cast(Dict[str, Optional[str]], radicale_item.check_and_sanitize_props(share['Properties']))
         else:
             all_props_with_remove = {}
         all_props_with_remove.update(props_with_remove)
         all_props = radicale_item.check_and_sanitize_props(all_props_with_remove)
-        logger.trace("PROPPATCH/xml_proppatch: share+share_overlay result: %r", all_props)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("PROPPATCH/xml_proppatch: share+share_overlay result: %r", all_props)
     else:
         if collection is not None:
             # always the case, but makes mypy happy
@@ -115,7 +118,8 @@ class ApplicationPartProppatch(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                 else:
-                    logger.trace("PROPPATCH/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PROPPATCH/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         raw_permissions = self._rights.authorization(user, user_groups, path)
         if "l" in raw_permissions:
@@ -125,10 +129,12 @@ class ApplicationPartProppatch(ApplicationBase):
                 logger.notice("PROPPATCH request on %r: write-access disabled by permission 'l'", path)
             return httputils.NOT_ALLOWED
         if not access.check("w"):
-            logger.trace("PROPPATCH/xml_proppatch: no native write-access: %r", path)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("PROPPATCH/xml_proppatch: no native write-access: %r", path)
             if share:
                 # priority share->rights->global
-                logger.trace("PROPPATCH/share: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s enforce_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay, self._sharing.enforce_properties_overlay)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("PROPPATCH/share: raw_permissions=%r share[Permissions]=%r permit_properties_overlay=%s enforce_properties_overlay=%s", raw_permissions, share['Permissions'], self._sharing.permit_properties_overlay, self._sharing.enforce_properties_overlay)
                 if ("P" in share['Permissions'] or
                         ("P" in raw_permissions and "p" not in share['Permissions']) or
                         (self._sharing.permit_properties_overlay and "p" not in raw_permissions and "p" not in share['Permissions'])
@@ -149,7 +155,8 @@ class ApplicationPartProppatch(ApplicationBase):
             else:
                 return httputils.NOT_ALLOWED
         else:
-            logger.trace("PROPPATCH/xml_proppatch: write-access: %r", path)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("PROPPATCH/xml_proppatch: write-access: %r", path)
             if share:
                 if "p" in share['Permissions']:
                     logger.notice("PROPPATCH request on shared %r: write-permissions, but disabled by share permission 'p'", path_orig)
@@ -158,7 +165,8 @@ class ApplicationPartProppatch(ApplicationBase):
                     logger.notice("PROPPATCH request on shared %r: write-permissions, but disabled by rights permission 'p'", path_orig)
                     return httputils.NOT_ALLOWED
                 # write access -> check for enforced properties overlay
-                logger.trace("PROPPATCH/xml_proppatch: write-access/sharing: %r", path_orig)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("PROPPATCH/xml_proppatch: write-access/sharing: %r", path_orig)
                 if self._sharing.enforce_properties_overlay:
                     if permissions_filter is not None and "e" in permissions_filter:
                         logger.notice("PROPPATCH request on shared %r: write-permissions, overlay enforced, but disabled by share permission 'e'", path_orig)

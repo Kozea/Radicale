@@ -196,7 +196,8 @@ class ApplicationPartPut(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                 else:
-                    logger.trace("PUT/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PUT/shares: skip overlap mapping: path=%r", path)
 
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         if not access.check("w"):

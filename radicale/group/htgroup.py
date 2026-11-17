@@ -20,6 +20,7 @@ Backend that retrieves groups of a user from htgroups file.
 Apache's htgroup format (https://httpd.apache.org/docs/2.4/mod/mod_authz_groupfile.html)
 """
 
+import logging
 import os
 import threading
 import time
@@ -142,7 +143,8 @@ class Group(group.BaseGroup):
         Optional: the content of the file is cached and live updates will be detected by
         comparing mtime_ns and size
         """
-        logger.trace("Group memberships (htgroup) lookup for user %r", login)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("Group memberships (htgroup) lookup for user %r", login)
         group_ok = False
         groups: Set[str]
         if self._htgroup_cache is True:

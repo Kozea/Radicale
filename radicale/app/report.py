@@ -25,6 +25,7 @@
 import contextlib
 import copy
 import datetime
+import logging
 import posixpath
 import socket
 import uuid
@@ -321,12 +322,14 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
     Read rfc3253-3.6 for info.
 
     """
-    logger.trace("REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("REPORT/xml_report: base_prefix=%r path=%r", base_prefix, path)
 
     share_bday_automap = False
     if share and share['Conversion'] == "bday":
         share_bday_automap = True
-    logger.trace("REPORT/xml_report(1): share=%r", share)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("REPORT/xml_report(1): share=%r", share)
 
     multistatus = ET.Element(xmlutils.make_clark("D:multistatus"))
     if xml_request is None:
@@ -411,7 +414,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         filter_copy = copy.deepcopy(filter_)
 
         if expand is not None:
-            logger.trace("REPORT/xml_report: expand")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("REPORT/xml_report: expand")
             for comp_filter in filter_copy.findall(".//" + xmlutils.make_clark("C:comp-filter")):
                 if comp_filter.get("name", "").upper() == "VCALENDAR":
                     continue
@@ -440,9 +444,11 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
             item_ics.href = item.href
             retrieved_items_vcf_to_ics.append((item_ics, flag))
         retrieved_items = retrieved_items_vcf_to_ics
-        logger.trace("REPORT/retrieved_items: %r", retrieved_items)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("REPORT/retrieved_items: %r", retrieved_items)
 
-    logger.trace("REPORT/xml_report(2): share=%r", share)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("REPORT/xml_report(2): share=%r", share)
 
     n_vevents = 0
     while retrieved_items:
@@ -518,13 +524,16 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
                     n_vevents += n_vev
                     if prop.tag == xmlutils.make_clark("D:getetag"):
                         if n_vev > 0:
-                            logger.trace("REPORT/xml_report: getetag/expanded element")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("REPORT/xml_report: getetag/expanded element")
                             element.text = item.etag
                             found_props.append(element)
                         else:
-                            logger.trace("REPORT/xml_report: getetag/no expanded element")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("REPORT/xml_report: getetag/no expanded element")
                     else:
-                        logger.trace("REPORT/xml_report: default")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("REPORT/xml_report: default")
                         found_props.append(expanded_element)
                 else:
                     if prop.tag == xmlutils.make_clark("D:getetag"):
@@ -567,8 +576,10 @@ def _expand(
 ) -> Tuple[ET.Element, int]:
     vevent_component: vobject.base.Component = copy.copy(item.vobject_item)
     logger.debug("Expanding event %s", item.href)
-    logger.trace(f"Expand range: {start} to {end}")
-    logger.trace(f"Time range: {time_range_start} to {time_range_end}")
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("Expand range: %s to %s", start, end)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("Time range: %s to %s", time_range_start, time_range_end)
 
     # Split the vevents included in the component into one that contains the
     # recurrence information and others that contain a recurrence id to
@@ -908,7 +919,8 @@ def xml_item_response(base_prefix: str, href: str,
 
     response = ET.Element(xmlutils.make_clark("D:response"))
 
-    logger.trace("REPORT/xml_item_response: found=%s share=%r", found_item, share)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("REPORT/xml_item_response: found=%s share=%r", found_item, share)
 
     share_bday_automap = False
     if share and share['Conversion'] == "bday":
@@ -916,7 +928,8 @@ def xml_item_response(base_prefix: str, href: str,
 
     href_element = ET.Element(xmlutils.make_clark("D:href"))
     href_element.text = xmlutils.make_href(base_prefix, href)
-    logger.trace("REPORT/xml_report: href=%r base_prefix=%r", href_element.text, base_prefix)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("REPORT/xml_report: href=%r base_prefix=%r", href_element.text, base_prefix)
     if share:
         # backmap; quote so the encoded href and raw share path compare
         mapped = quote(share['PathMapped'])
@@ -925,7 +938,8 @@ def xml_item_response(base_prefix: str, href: str,
             href_element.text = base_prefix + token + href_element.text.removeprefix(base_prefix + mapped)
         if share_bday_automap and href_element.text.endswith(".vcf"):
             href_element.text = href_element.text.removesuffix(".vcf") + ".ics"
-        logger.trace("REPORT/xml_report: href=%r (backmapped)", href_element.text)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("REPORT/xml_report: href=%r (backmapped)", href_element.text)
     response.append(href_element)
 
     if found_item:
@@ -964,7 +978,8 @@ def retrieve_items(
            gets set to ``True``."""
         nonlocal collection_requested
         for hreference in hreferences:
-            logger.trace("REPORT/xml_report: hreference=%r", hreference)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("REPORT/xml_report: hreference=%r", hreference)
             if share:
                 # map back to owner
                 if hreference.startswith(share['PathOrToken']):
@@ -972,7 +987,8 @@ def retrieve_items(
                 if share['Conversion'] == "bday":
                     if hreference.endswith(".ics"):
                         hreference = hreference.removesuffix(".ics") + ".vcf"
-                logger.trace("REPORT/xml_report: hreference=%r (backmapped)", hreference)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("REPORT/xml_report: hreference=%r (backmapped)", hreference)
             try:
                 name = pathutils.name_from_path(hreference, collection)
             except ValueError as e:
@@ -997,7 +1013,8 @@ def retrieve_items(
         else:
             yield item, False
     if collection_requested:
-        logger.trace("REPORT/retrieve_items: get_filtered")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("REPORT/retrieve_items: get_filtered")
         yield from collection.get_filtered(filters)
 
 
@@ -1048,7 +1065,8 @@ class ApplicationPartReport(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                 else:
-                    logger.trace("REPORT/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("REPORT/shares: skip overlap mapping: path=%r", path)
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         read_allowed = access.check("r")
         if not read_allowed and not access.allows_freebusy():

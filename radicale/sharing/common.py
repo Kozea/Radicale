@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from typing import Union
 
 from radicale import rights, sharing
@@ -72,7 +73,8 @@ def database_common_check_row_match(
     if User is not None:
         user = User
 
-    logger.trace("sharing/common/check_row_match: initial checks passed, group_check=%s user=%r User=%r", group_check, user, User)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("sharing/common/check_row_match: initial checks passed, group_check=%s user=%r User=%r", group_check, user, User)
 
     if user is not None:
         user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
@@ -84,7 +86,8 @@ def database_common_check_row_match(
                 return None  # user has no group
             groups_of_user = user.split(sharing.SHARING_SEPARATOR_GROUP)[1].split(',')
             Groups = row['User'].removeprefix(sharing.SHARING_SEPARATOR_GROUP).split(',')
-            logger.trace("sharing/common/check_row_match/groups: groups_of_user=%r Groups=%r", groups_of_user, Groups)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/common/check_row_match/groups: groups_of_user=%r Groups=%r", groups_of_user, Groups)
             found = False
             for group in groups_of_user:
                 if group in Groups:
@@ -125,16 +128,20 @@ def database_common_filter_resolved_duplicate_shares(rows_unfiltered: list[dict]
 
     for row in rows_unfiltered:
         if row["PathOrToken"] not in rows:
-            logger.trace("sharing/common/filter/row: add : %r", row)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/common/filter/row: add : %r", row)
             rows[row["PathOrToken"]] = row
         else:
-            logger.trace("sharing/common/filter/row: chk : %r", rows[row["PathOrToken"]])
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/common/filter/row: chk : %r", rows[row["PathOrToken"]])
             if "U" in rows[row["PathOrToken"]]["Permissions"]:
                 # replace resolved group share by more specific
                 rows[row["PathOrToken"]] = row
-                logger.trace("sharing/common/filter/row: repl: %r", row)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/common/filter/row: repl: %r", row)
             else:
-                logger.trace("sharing/common/filter/row: skip: %r", row)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/common/filter/row: skip: %r", row)
 
     for key in rows:
         result.append(rows[key])

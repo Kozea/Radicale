@@ -19,6 +19,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 import base64
+import logging
 import os
 import posixpath
 from typing import Callable, ContextManager, Iterator, Optional, Set, cast
@@ -43,7 +44,8 @@ class StoragePartDiscover(StorageBase):
             Callable[[str, Optional[str]], ContextManager[None]]] = None,
             user_groups: Set[str] = set([])
             ) -> Iterator[types.CollectionOrItem]:
-        logger.trace("storage/discover: path=%r depth=%r", path, depth)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/discover: path=%r depth=%r", path, depth)
         # assert isinstance(self, multifilesystem.Storage)
         if child_context_manager is None:
             child_context_manager = _null_child_context_manager
@@ -124,23 +126,29 @@ class StoragePartDiscover(StorageBase):
                         cast(multifilesystem.Storage, self), child_path)
         if len(user_groups) > 0:
             if self._group_collections_folder is None or len(self._group_collections_folder) == 0:
-                logger.trace("searching for collection by user group skipped because base folder is not defined")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("searching for collection by user group skipped because base folder is not defined")
             else:
-                logger.trace("searching for collection by user group in folder: %r", self._group_collections_folder)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("searching for collection by user group in folder: %r", self._group_collections_folder)
                 if os.path.isdir(pathutils.path_to_filesystem(folder, self._group_collections_folder, self._is_collision_free)):
                     for group in user_groups:
                         href = base64.b64encode(group.encode('utf-8')).decode('ascii')
                         sane_child_path = os.path.join(self._group_collections_folder, href)
                         logger.debug("searching for collection by user group=%r path=%r", group, sane_child_path)
                         if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
-                            logger.trace("searching for collection by user group=%r path=%r is not existing (skip)", group, sane_child_path)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("searching for collection by user group=%r path=%r is not existing (skip)", group, sane_child_path)
                             continue
                         child_path = "/" + self._group_collections_folder + "/" + href + "/"
-                        logger.trace("searching for collection by user group with child_path: %r", child_path)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("searching for collection by user group with child_path: %r", child_path)
                         with child_context_manager(sane_child_path, None):
                             yield self._collection_class(
                                 cast(multifilesystem.Storage, self), child_path)
                 else:
-                    logger.trace("searching for collection by user group skipped because base folder is not existing: %r", self._group_collections_folder)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("searching for collection by user group skipped because base folder is not existing: %r", self._group_collections_folder)
         else:
-            logger.trace("searching for collection by user group not required as user has no groups")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("searching for collection by user group not required as user has no groups")

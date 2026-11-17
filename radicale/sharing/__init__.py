@@ -18,6 +18,7 @@
 import base64
 import io
 import json
+import logging
 import re
 import socket
 import uuid
@@ -158,7 +159,8 @@ def check_template(data: Any) -> str:
         placeholder_mapping["{" + placeholder + "}"] = '!' + placeholder + '!'
 
     result = item.replace_placeholders(data, placeholder_mapping)
-    logger.trace("replace placeholders result: %r -> %r", data, result)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("replace placeholders result: %r -> %r", data, result)
     pattern = re.compile('.*{.*}.*')
     if pattern.search(result):
         raise ValueError("template contains unsupported placeholder {..}: %r" % result)
@@ -488,7 +490,8 @@ class BaseSharing:
         sharing_collection_list = []
 
         if not self.sharing_collection_by_map:
-            logger.trace("sharing/map: not active")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/map: not active")
         else:
             user_lookup = User
             if User and user_groups is not None and len(user_groups) > 0:
@@ -511,7 +514,8 @@ class BaseSharing:
     # resolves a path to a share
     def sharing_collection_resolver(self, path: str, user: str, user_groups: set) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if not found"""
-        logger.trace("sharing/resolver: lookup path=%r user=%r", path, user)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/resolver: lookup path=%r user=%r", path, user)
         share = None
 
         if path == "/":
@@ -524,7 +528,8 @@ class BaseSharing:
                 if share is not None and 'error' in share:
                     return None
         else:
-            logger.trace("sharing/token: not active")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/token: not active")
 
         if self.sharing_collection_by_map:
             if share is None:
@@ -532,7 +537,8 @@ class BaseSharing:
                 if share is not None and 'error' in share:
                     return None
         else:
-            logger.trace("sharing/map: not active")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/map: not active")
 
         if share is not None:
             if share['Conversion'] == "bday":
@@ -612,7 +618,8 @@ class BaseSharing:
             if prop in OVERLAY_PROPERTIES_WHITELIST_ICS or prop in OVERLAY_PROPERTIES_WHITELIST_VCF:
                 properties_filtered[prop] = Properties[prop]
             else:
-                logger.trace("sharing/collection_update: silent discard unsupported property: %r", prop)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/collection_update: silent discard unsupported property: %r", prop)
 
         self.database_update_sharing(ShareType=ShareType,
                                      PathOrToken=PathOrToken,
@@ -627,7 +634,8 @@ class BaseSharing:
     def sharing_collection_by_token_resolver(self, path) -> Union[dict, None]:
         """ returning dict with PathMapped, Owner, Permissions or None if invalid"""
         if self.sharing_collection_by_token:
-            logger.trace("sharing/token/resolver: check path: %r", path)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/token/resolver: check path: %r", path)
             if path.startswith("/.token/"):
                 pattern = re.compile('^(/\\.token/' + TOKEN_PATTERN_V1 + '/)')
                 match = pattern.match(path)
@@ -636,14 +644,16 @@ class BaseSharing:
                     return {'error': 'token-not-supported'}
                 else:
                     # TODO add token validity checks
-                    logger.trace("sharing/token/resolver: supported token: %r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/token/resolver: supported token: %r", path)
                     result = self.database_get_sharing(
                             ShareType="token",
                             OnlyEnabled=False,
                             PathOrToken=match[1])
 
                     if result is None:
-                        logger.trace("sharing/token/resolver: supported token not found: %r", path)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("sharing/token/resolver: supported token not found: %r", path)
                         return {'error': 'token-not-found'}
 
                     if result['EnabledByOwner'] is not True:
@@ -657,10 +667,12 @@ class BaseSharing:
                     logger.info("sharing/%s: resolved %r->%r, User=%r, Permissions=%r Conversion=%r", "token", path, result['PathMapped'], result['Owner'], result['Permissions'], result['Conversion'])
                     return result
             else:
-                logger.trace("sharing/token/resolver: no supported prefix found in path: %r", path)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/token/resolver: no supported prefix found in path: %r", path)
                 return None
         else:
-            logger.trace("sharing/token: not active")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/token: not active")
             return None
 
     # resolves a map "path" to a share
@@ -669,7 +681,8 @@ class BaseSharing:
         if self.sharing_collection_by_map:
             if user_groups is not None and len(user_groups) > 0:
                 user += SHARING_SEPARATOR_GROUP + ','.join(user_groups)
-            logger.trace("sharing/map/resolver: check path=%r user=%r", path, user)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/map/resolver: check path=%r user=%r", path, user)
             # check collection path
             result = self.database_get_sharing(
                 ShareType="map",
@@ -680,7 +693,8 @@ class BaseSharing:
             if not result:
                 # assume item path, fallback to parent path
                 parent_path = pathutils.parent_path(path)
-                logger.trace("sharing/map/resolver: check parent path: %r", parent_path)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/map/resolver: check parent path: %r", parent_path)
                 result = self.database_get_sharing(
                         ShareType="map",
                         PathOrToken=parent_path,
@@ -690,12 +704,14 @@ class BaseSharing:
                     if result['Conversion'] == "bday" and not path.endswith(".ics"):
                         return None
                     result['PathMapped'] = path.replace(parent_path, result['PathMapped'])
-                    logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by parent_path=%r", result['PathMapped'], result['Permissions'], parent_path)
 
             if not result and not path.endswith("/"):
                 # assume collection path with missing trailing /
                 path_with_trailing_slash = path + "/"
-                logger.trace("sharing/map/resolver: check path having '/' appended: %r", path_with_trailing_slash)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/map/resolver: check path having '/' appended: %r", path_with_trailing_slash)
                 result = self.database_get_sharing(
                         ShareType="map",
                         PathOrToken=path_with_trailing_slash,
@@ -703,7 +719,8 @@ class BaseSharing:
                         User=user)
                 if result:
                     path = path_with_trailing_slash
-                    logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by path_with_trailing_slash=%r", result['PathMapped'], result['Permissions'], path_with_trailing_slash)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/map/resolver: PathMapped=%r Permissions=%r by path_with_trailing_slash=%r", result['PathMapped'], result['Permissions'], path_with_trailing_slash)
 
             if result:
                 if result['EnabledByOwner'] is not True:
@@ -721,10 +738,12 @@ class BaseSharing:
                 logger.info("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r", "map", result['PathOrToken'], result['PathMapped'], user, result['Owner'], result['Permissions'], result['Conversion'])
                 return result
 
-            logger.trace("sharing/map/resolver: not found")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/map/resolver: not found")
             return None
         else:
-            logger.trace("sharing/map: not active")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/map: not active")
             return None
 
     def map_create_level(self, permissions: str) -> str:
@@ -798,7 +817,7 @@ class BaseSharing:
 
         if not self._enabled:
             # API is not enabled
-            logger.warning(api_info + ": API is not enabled")
+            logger.warning("%s: API is not enabled", api_info)
             return httputils.NOT_FOUND
 
         if user == "":
@@ -807,14 +826,15 @@ class BaseSharing:
 
         # supported API version check
         if not path.startswith("/.sharing/v1/"):
-            logger.warning(api_info + ": leading part of path not matching supported API version")
+            logger.warning("%s: leading part of path not matching supported API version", api_info)
             return httputils.NOT_FOUND
 
         # split into ShareType and action
         ShareType_action = path.removeprefix("/.sharing/v1/")
         match = re.search('([a-z]+)/([a-z]+)$', ShareType_action)
         if not match:
-            logger.trace("sharing/API: ShareType/action not extractable: %r", ShareType_action)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/API: ShareType/action not extractable: %r", ShareType_action)
             return httputils.NOT_FOUND
         else:
             ShareType = match.group(1)
@@ -826,29 +846,32 @@ class BaseSharing:
         # check for valid ShareTypes
         if ShareType:
             if ShareType not in SHARE_TYPES:
-                logger.trace("sharing/API: ShareType not whitelisted: %r", ShareType)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/API: ShareType not whitelisted: %r", ShareType)
                 return httputils.NOT_FOUND
 
         # check for enabled ShareTypes
         if not self.sharing_collection_by_token and ShareType == "token":
             # API "token" is not enabled
-            logger.warning(api_info + ": not enabled by config (collection_by_token)")
+            logger.warning("%s: not enabled by config (collection_by_token)", api_info)
             return httputils.NOT_FOUND
 
         if not self.sharing_collection_by_map and ShareType == "map":
             # API "map" is not enabled
-            logger.warning(api_info + ": not enabled by config (collection_by_map)")
+            logger.warning("%s: not enabled by config (collection_by_map)", api_info)
             return httputils.NOT_FOUND
 
         # check for valid API hooks
         if action not in API_HOOKS_V1:
-            logger.trace("sharing/API: action not whitelisted: %r", action)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/API: action not whitelisted: %r", action)
             return httputils.NOT_FOUND
 
         # append action
         api_info = api_info + "/" + action
 
-        logger.trace("sharing/API: called by authenticated user: %r", user)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/API: called by authenticated user: %r", user)
         # read POST data
         try:
             request_body = httputils.read_request_body(self.configuration, environ, request_info)
@@ -872,9 +895,10 @@ class BaseSharing:
                 # convert JSON boolean
                 if key in request_data:
                     if type(request_data[key]) is not bool:
-                        logger.warning(api_info + ": unsupported (non-boolean) " + key + ": " + request_data[key])
+                        logger.warning("%s: unsupported (non-boolean) %s: %s", api_info, key, request_data[key])
                         return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_data[key])
-            logger.trace(api_info + " (json): %r", f"{request_data}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s (json): %r", api_info, str(request_data))
         elif 'application/x-www-form-urlencoded' in content_type:
             input_format = "form"
             output_format = "plain"  # default
@@ -886,7 +910,8 @@ class BaseSharing:
                     # Properties key value parser
                     properties_dict: dict = {}
                     for entry in request_parsed[key]:
-                        logger.trace("sharing/API: parse property %r", entry)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("sharing/API: parse property %r", entry)
                         if entry == "":
                             continue
                         m = re.search('^([^=]+)=([^=]+)$', entry)
@@ -895,7 +920,8 @@ class BaseSharing:
                         token = m.group(1).lstrip('"\'').rstrip('"\'')
                         value = m.group(2).lstrip('"\'').rstrip('"\'')
                         properties_dict[token] = value
-                    logger.trace("sharing/API: converted Properties from form into dict: %r", properties_dict)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/API: converted Properties from form into dict: %r", properties_dict)
                     request_data[key] = properties_dict
                     if len(request_data[key]) == 0:
                         # empty
@@ -904,13 +930,15 @@ class BaseSharing:
                     try:
                         request_data[key] = config._convert_to_bool(request_parsed[key][0])
                     except ValueError:
-                        logger.warning(api_info + ": unsupported (non-boolean) " + key + ": " + request_parsed[key][0])
+                        logger.warning("%s: unsupported (non-boolean) %s: %s", api_info, key, request_parsed[key][0])
                         return httputils.bad_request("Invalid non-boolean value for " + key + ": " + request_parsed[key][0])
                 else:
                     request_data[key] = request_parsed[key][0]
-            logger.trace("" + api_info + " (form): %r", f"{request_data}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s (form): %r", api_info, str(request_data))
         else:
-            logger.trace("" + api_info + ": no supported content data")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s: no supported content data", api_info)
             return httputils.bad_request("Content-type not supported")
 
         # check for requested output type
@@ -962,7 +990,7 @@ class BaseSharing:
             elif key == "PathOrToken":
                 if ShareType == "token":
                     if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
-                        logger.warning(api_info + ": unsupported " + key)
+                        logger.warning("%s: unsupported %s", api_info, key)
                         return httputils.bad_request("Invalid value for PathOrToken")
                 else:
                     if not app_base._check_path_format(self._storage, request_data[key], self._validate_path_value):
@@ -986,7 +1014,7 @@ class BaseSharing:
             # used by create or list(filter)
             if base_prefix:
                 PathMapped = request_data['PathMapped'].removeprefix(base_prefix)
-                logger.debug(api_info + ": remove base_prefix PathMapped=%r->%r", request_data['PathMapped'], PathMapped)
+                logger.debug("%s: remove base_prefix PathMapped=%r->%r", api_info, request_data['PathMapped'], PathMapped)
             else:
                 PathMapped = request_data['PathMapped']
 
@@ -995,7 +1023,7 @@ class BaseSharing:
                 # ignored
                 pass
             elif action not in ['list', 'create']:
-                logger.warning(api_info + ": missing PathOrToken")
+                logger.warning("%s: missing PathOrToken", api_info)
                 return httputils.bad_request("Missing PathOrToken")
             else:
                 # PathOrToken is optional
@@ -1003,7 +1031,7 @@ class BaseSharing:
         else:
             if action == "create" and ShareType == "token":
                 # not supported
-                logger.warning(api_info + ": PathOrToken found but not supported")
+                logger.warning("%s: PathOrToken found but not supported", api_info)
                 return httputils.bad_request("PathOrToken not supported")
             PathOrToken = request_data['PathOrToken']
 
@@ -1075,7 +1103,7 @@ class BaseSharing:
         if not self.sharing_collection_by_map and not self.sharing_collection_by_token:
             if not action == 'info':
                 # API is not enabled
-                logger.warning(api_info + ": API is not enabled")
+                logger.warning("%s: API is not enabled", api_info)
                 return httputils.NOT_FOUND
 
         user_lookup = user
@@ -1089,10 +1117,12 @@ class BaseSharing:
 
         # action: list
         if action == "list":
-            logger.trace("" + api_info + ": start")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s: start", api_info)
 
             if PathOrToken is not None:
-                logger.trace("" + api_info + ": filter: %r", PathOrToken)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("%s: filter: %r", api_info, PathOrToken)
 
             if ShareType != "all":
                 result_array = self.database_list_sharing(
@@ -1117,20 +1147,21 @@ class BaseSharing:
                 answer['Status'] = "success"
             answer['Content'] = result_array
 
-            logger.info(api_info + ": " + answer['Status'])
+            logger.info("%s: %s", api_info, answer['Status'])
 
         # action: create
         elif action == "create":
-            logger.trace("" + api_info + ": start")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s: start", api_info)
 
             if PathMapped is None:
-                logger.warning(api_info + ": missing PathMapped")
+                logger.warning("%s: missing PathMapped", api_info)
                 return httputils.bad_request("Missing PathMapped")
 
             # check access Permissions
             access = Access(self._rights, user, user_groups, PathMapped, None)
             if not access.check("r"):
-                logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r", PathMapped, user)
+                logger.warning("%s: access to PathMapped=%r not allowed for owner %r", api_info, PathMapped, user)
                 return httputils.NOT_ALLOWED
 
             if Conversion is None:
@@ -1141,10 +1172,10 @@ class BaseSharing:
             with self._storage.acquire_lock("r", user, path=PathMapped):
                 item = next(iter(self._storage.discover(PathMapped)), None)
                 if not item:
-                    logger.warning(api_info + ": cannot find PathMapped=%r", PathMapped)
+                    logger.warning("%s: cannot find PathMapped=%r", api_info, PathMapped)
                     return httputils.NOT_FOUND
                 if not isinstance(item, storage.BaseCollection):
-                    logger.warning(api_info + ": PathMapped=%r is not a collection", PathMapped)
+                    logger.warning("%s: PathMapped=%r is not a collection", api_info, PathMapped)
                     return httputils.bad_request("PathMapped is not a collection")
                 if item.tag == "VADDRESSBOOK":
                     property_whitelist = "vcf"
@@ -1152,7 +1183,7 @@ class BaseSharing:
                     property_whitelist = "ics"
                 if Conversion == "bday":
                     if item.tag != "VADDRESSBOOK":
-                        logger.warning(api_info + ": PathMapped=%r is not a VADDRESSBOOK collection (mandatory for Conversion=%r)", PathMapped, Conversion)
+                        logger.warning("%s: PathMapped=%r is not a VADDRESSBOOK collection (mandatory for Conversion=%r)", api_info, PathMapped, Conversion)
                         return httputils.bad_request("Conversion is not supported for collection type")
                     property_whitelist = "ics"
 
@@ -1175,7 +1206,7 @@ class BaseSharing:
                 if Conversion == "bday":
                     # bday is read-only and not supporting "Ee"
                     if rights.intersect(Permissions, "Eew"):
-                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
+                        logger.warning("%s: PathMapped=%r Permissions=%r not supported for Conversion=%r", api_info, PathMapped, Permissions, Conversion)
                         return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
 
             if Enabled is None:
@@ -1196,11 +1227,11 @@ class BaseSharing:
             if ShareType == "token":
                 if self.permit_create_token is False:
                     if "T" not in access.permissions:
-                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=False and missing permission 'T')", PathMapped, user)
+                        logger.warning("%s: access to PathMapped=%r not allowed for owner %r (permit=False and missing permission 'T')", api_info, PathMapped, user)
                         return httputils.NOT_ALLOWED
                 else:
                     if "t" in access.permissions:
-                        logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (permit=True but explicit denied by permission 't')", PathMapped, user)
+                        logger.warning("%s: access to PathMapped=%r not allowed for owner %r (permit=True but explicit denied by permission 't')", api_info, PathMapped, user)
                         return httputils.NOT_ALLOWED
 
                 if User is not None:
@@ -1212,7 +1243,8 @@ class BaseSharing:
                 # v1: create uuid token with 2x 16 bytes + separator = 264 bit with base64 encoding resulting in 56 chars without '=' padding
                 token = "/.token/v1/" + str(base64.urlsafe_b64encode(uuid.uuid4().bytes + b"\0" + uuid.uuid4().bytes), 'utf-8') + "/"
 
-                logger.trace("" + api_info + ": %r (Permissions=%r token=%r)", PathMapped, Permissions, token)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("%s: %r (Permissions=%r token=%r)", api_info, PathMapped, Permissions, token)
 
                 result = self.database_create_sharing(
                         ShareType=ShareType,
@@ -1231,7 +1263,8 @@ class BaseSharing:
                         Actions=Actions,
                         )
 
-                logger.trace("" + api_info + ": result=%r", result)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("%s: result=%r", api_info, result)
 
             elif ShareType == "map":
                 # check preconditions
@@ -1243,7 +1276,7 @@ class BaseSharing:
                 # retrieve existing share
                 share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
                 if share is not None:
-                    logger.warning(api_info + ": share already exists PathOrToken=%r", PathOrToken)
+                    logger.warning("%s: share already exists PathOrToken=%r", api_info, PathOrToken)
                     return httputils.CONFLICT
 
                 if User is None:
@@ -1254,11 +1287,11 @@ class BaseSharing:
                 # lookup existing shares with requested PathMapped for same User and same Conversion
                 shares = self.database_list_sharing(ShareType=ShareType, PathMapped=PathMapped, User=User, Conversion=Conversion)
                 if len(shares) > 0:
-                    logger.warning(api_info + ": share already exists with PathMapped=%r User=%r Conversion=%r", PathMapped, User, Conversion)
+                    logger.warning("%s: share already exists with PathMapped=%r User=%r Conversion=%r", api_info, PathMapped, User, Conversion)
                     return httputils.CONFLICT
 
                 if not self._map_create_permitted(access.permissions, user, User, PathOrToken):
-                    logger.warning(api_info + ": access to PathMapped=%r not allowed for owner %r (level=%s permissions=%r User=%r)", PathMapped, user, self.map_create_level(access.permissions), access.permissions, User)
+                    logger.warning("%s: access to PathMapped=%r not allowed for owner %r (level=%s permissions=%r User=%r)", api_info, PathMapped, user, self.map_create_level(access.permissions), access.permissions, User)
                     return httputils.NOT_ALLOWED
 
                 if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
@@ -1266,16 +1299,16 @@ class BaseSharing:
                         # placeholder exists
                         pass
                     else:
-                        logger.warning(api_info + ": PathOrToken=%r has to start with placeholder for 'user' using group User=%r", PathOrToken, User)
+                        logger.warning("%s: PathOrToken=%r has to start with placeholder for 'user' using group User=%r", api_info, PathOrToken, User)
                         return httputils.NOT_ALLOWED
                 else:
                     if PathOrToken.startswith("/{user}/"):
                         # placeholder exists
-                        logger.warning(api_info + ": PathOrToken=%r starts with placeholder for 'user' without group User=%r", PathOrToken, User)
+                        logger.warning("%s: PathOrToken=%r starts with placeholder for 'user' without group User=%r", api_info, PathOrToken, User)
                         return httputils.NOT_ALLOWED
                     access = Access(self._rights, User, user_groups, PathOrToken)
                     if not access.check("r"):
-                        logger.warning(api_info + ": access to PathOrToken=%r not allowed for User=%r", PathOrToken, User)
+                        logger.warning("%s: access to PathOrToken=%r not allowed for User=%r", api_info, PathOrToken, User)
                         return httputils.NOT_ALLOWED
 
                 # check whether share is already existing as real collection
@@ -1284,7 +1317,7 @@ class BaseSharing:
                     if not item:
                         pass
                     else:
-                        logger.warning(api_info + ": PathOrToken=%r already exists as real collection for User=%r", PathOrToken, User)
+                        logger.warning("%s: PathOrToken=%r already exists as real collection for User=%r", api_info, PathOrToken, User)
                         return httputils.CONFLICT
 
                 if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
@@ -1292,11 +1325,12 @@ class BaseSharing:
                     HiddenByUser = False
                     EnabledByUser = True
                     if rights.intersect(Permissions, "EP"):
-                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
+                        logger.warning("%s: PathMapped=%r Permissions=%r not supported for share-by-group/realm", api_info, PathMapped, Permissions)
                         return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
                     Permissions = rights.add(Permissions, "epu")  # enforce permissions for group including flag
 
-                logger.trace("" + api_info + ": %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", PathMapped, Permissions, PathOrToken, user, User)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("%s: %r (Permissions=%r PathOrToken=%r Owner=%r User=%r)", api_info, PathMapped, Permissions, PathOrToken, user, User)
 
                 result = self.database_create_sharing(
                         ShareType=ShareType,
@@ -1316,9 +1350,10 @@ class BaseSharing:
                         )
 
             else:
-                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
-            logger.trace("" + api_info + ": result=%r", result)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s: result=%r", api_info, result)
             # result handling
             if result['status'] == "conflict":
                 return httputils.CONFLICT
@@ -1327,7 +1362,7 @@ class BaseSharing:
             elif result['status'] == "success":
                 answer['Status'] = "success"
             else:
-                logger.warning(api_info + ": %r by user %r not successful", PathMapped, request_data['User'])
+                logger.warning("%s: %r by user %r not successful", api_info, PathMapped, request_data['User'])
                 return httputils.bad_request("Internal Error")
 
             if ShareType == "token":
@@ -1337,14 +1372,15 @@ class BaseSharing:
                 else:
                     answer['PathOrToken'] = token
 
-            logger.notice(api_info + " success: PathMapped=%r Permissions=%r PathOrToken=%r", PathMapped, Permissions, PathOrToken)
+            logger.notice("%s success: PathMapped=%r Permissions=%r PathOrToken=%r", api_info, PathMapped, Permissions, PathOrToken)
 
         # action: update
         elif action == "update":
-            logger.trace("" + api_info + ": start")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s: start", api_info)
 
             if ShareType not in SHARE_TYPES_V1:
-                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
 
             if PathOrToken is None:
@@ -1357,13 +1393,14 @@ class BaseSharing:
             if share is None:
                 if user_with_group_or_realm:
                     # retry with user (resolving share-by-group/realm)
-                    logger.trace(api_info + ": no share found, retry with user to resolve shared-by-group/realm")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("%s: no share found, retry with user to resolve shared-by-group/realm", api_info)
                     share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=user_lookup, OnlyEnabled=False)
                     if share is None:
                         return httputils.NOT_FOUND
                     else:
                         # update not supported on shared-by-group/realm
-                        logger.warning(api_info + ": %r by user %r not supported for shared-by-group/realm", PathOrToken, user_lookup)
+                        logger.warning("%s: %r by user %r not supported for shared-by-group/realm", api_info, PathOrToken, user_lookup)
                         return httputils.NOT_ALLOWED
                 else:
                     return httputils.NOT_FOUND
@@ -1375,10 +1412,10 @@ class BaseSharing:
             with self._storage.acquire_lock("r", user, path=share['PathMapped']):
                 item = next(iter(self._storage.discover(share['PathMapped'])), None)
                 if not item:
-                    logger.warning(api_info + ": cannot find PathMapped=%r", share['PathMapped'])
+                    logger.warning("%s: cannot find PathMapped=%r", api_info, share['PathMapped'])
                     return httputils.NOT_FOUND
                 if not isinstance(item, storage.BaseCollection):
-                    logger.warning(api_info + ": PathMapped=%r is not a collection", share['PathMapped'])
+                    logger.warning("%s: PathMapped=%r is not a collection", api_info, share['PathMapped'])
                     return httputils.bad_request("PathMapped is not a collection")
                 if item.tag == "VADDRESSBOOK":
                     property_whitelist = "vcf"
@@ -1402,14 +1439,17 @@ class BaseSharing:
                 elif share['Properties'] is not None:
                     # replace properties
                     for prop in share['Properties']:
-                        logger.trace("" + api_info + ": check for existing property %r", prop)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("%s: check for existing property %r", api_info, prop)
                         if prop not in Properties:
                             # overtake
-                            logger.trace("" + api_info + ": overtake property %r", prop)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("%s: overtake property %r", api_info, prop)
                             Properties[prop] = share['Properties'][prop]
                         elif Properties[prop] == '':
                             # unset, do nothing
-                            logger.trace("" + api_info + ": clear property %r", prop)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("%s: clear property %r", api_info, prop)
                             del Properties[prop]
 
             if 'Actions' in request_data:
@@ -1425,16 +1465,20 @@ class BaseSharing:
                         if level1 not in Actions:
                             Actions[level1] = {}  # initialize level1
                         for level2 in share['Actions'][level1]:
-                            logger.trace("" + api_info + ": check for existing Actions entry %r->%r", level1, level2)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("%s: check for existing Actions entry %r->%r", api_info, level1, level2)
                             if level2 not in Actions[level1]:
-                                logger.trace("" + api_info + ": overtake Actions entry %r->%r", level1, level2)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.trace("%s: overtake Actions entry %r->%r", api_info, level1, level2)
                                 Actions[level1][level2] = share['Actions'][level1][level2]
                             elif Actions[level1][level2] == SHARING_ACTIONS_DELETE_VALUE:
                                 # unset, do nothing
-                                logger.trace("" + api_info + ": delete Actions entry %r->%r", level1, level2)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.trace("%s: delete Actions entry %r->%r", api_info, level1, level2)
                                 del Actions[level1][level2]
                         if len(Actions[level1]) == 0:
-                            logger.trace("" + api_info + ": delete Actions entry %r", level1)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("%s: delete Actions entry %r", api_info, level1)
                             # unset level1
                             del Actions[level1]
 
@@ -1443,19 +1487,19 @@ class BaseSharing:
                 if share['Conversion'] == "bday":
                     # bday is read-only and not supporting "Ee"
                     if rights.intersect(Permissions, "Eew"):
-                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for Conversion=%r", PathMapped, Permissions, Conversion)
+                        logger.warning("%s: PathMapped=%r Permissions=%r not supported for Conversion=%r", api_info, PathMapped, Permissions, Conversion)
                         return httputils.bad_request("Permissions are not supported for conversion: %r" % Permissions)
 
             if Conversion is not None and share['Conversion'] is not None:
                 if Conversion != share['Conversion']:
-                    logger.warning(api_info + ": PathMapped=%r change of Conversion %r -> %r is not supported", PathMapped, share['Conversion'], Conversion)
+                    logger.warning("%s: PathMapped=%r change of Conversion %r -> %r is not supported", api_info, PathMapped, share['Conversion'], Conversion)
                     return httputils.bad_request("Change of conversion is not supported")
 
             if (User is not None and (User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM))) or (share['User'].startswith(SHARING_SEPARATOR_GROUP) or share['User'].startswith(SHARING_SEPARATOR_REALM)):
                 # enforce user permissions for groups
                 if Permissions is not None:
                     if rights.intersect(Permissions, "EP"):
-                        logger.warning(api_info + ": PathMapped=%r Permissions=%r not supported for share-by-group/realm", PathMapped, Permissions)
+                        logger.warning("%s: PathMapped=%r Permissions=%r not supported for share-by-group/realm", api_info, PathMapped, Permissions)
                         return httputils.bad_request("Permissions are not supported for share-by-group/realm: %r" % Permissions)
                     Permissions = rights.add(Permissions, "epu")  # enforce permissions for group
 
@@ -1464,7 +1508,7 @@ class BaseSharing:
                     # check access Permissions
                     access = Access(self._rights, user, user_groups, str(PathMapped), None)
                     if not access.check("r") and "i" not in access.permissions:
-                        logger.warning(api_info + ": access to %r not allowed for user %r", PathMapped, user)
+                        logger.warning("%s: access to %r not allowed for user %r", api_info, PathMapped, user)
                         return httputils.NOT_ALLOWED
 
                 if ShareType == "map" and ((User is not None and User != share['User']) or
@@ -1474,7 +1518,7 @@ class BaseSharing:
                     new_path_mapped = share['PathMapped'] if PathMapped is None else str(PathMapped)
                     access = Access(self._rights, user, user_groups, new_path_mapped, None)
                     if not self._map_create_permitted(access.permissions, user, new_user, PathOrToken):
-                        logger.warning(api_info + ": change to PathMapped=%r User=%r not allowed for owner %r (level=%s permissions=%r)", new_path_mapped, new_user, user, self.map_create_level(access.permissions), access.permissions)
+                        logger.warning("%s: change to PathMapped=%r User=%r not allowed for owner %r (level=%s permissions=%r)", api_info, new_path_mapped, new_user, user, self.map_create_level(access.permissions), access.permissions)
                         return httputils.NOT_ALLOWED
 
                 if user == share['User']:
@@ -1514,21 +1558,22 @@ class BaseSharing:
             elif user == share['User']:
                 # User is only allowed to update Properties
                 if PathMapped is not None or Permissions is not None or User is not None:
-                    logger.warning(api_info + ": access to %r not allowed for user %r to adjust anything beside: %s", PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
+                    logger.warning("%s: access to %r not allowed for user %r to adjust anything beside: %s", api_info, PathOrToken, user, " ".join(DB_FIELDS_V1_USER_PERMITTED))
                     return httputils.NOT_ALLOWED
                 if 'Properties' in request_data:
-                    logger.trace("sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/API/update: permit_properties_overlay=%s Permissions=%r", self.permit_properties_overlay, share['Permissions'])
                     if self.permit_properties_overlay:
                         if share['Permissions'] is not None and "p" in str(share['Permissions']):
-                            logger.warning(api_info + ": %r properties overlay permitted by option, but denied by permission 'p'", PathOrToken)
+                            logger.warning("%s: %r properties overlay permitted by option, but denied by permission 'p'", api_info, PathOrToken)
                             return httputils.NOT_ALLOWED
                         else:
-                            logger.info(api_info + ": %r properties overlay permitted by option", PathOrToken)
+                            logger.info("%s: %r properties overlay permitted by option", api_info, PathOrToken)
                     else:
                         if share['Permissions'] is not None and "P" in str(share['Permissions']):
-                            logger.info(api_info + ": %r properties overlay denied by option, but granted by permission 'P'", PathOrToken)
+                            logger.info("%s: %r properties overlay denied by option, but granted by permission 'P'", api_info, PathOrToken)
                         else:
-                            logger.warning(api_info + ": %r properties overlay denied by option", PathOrToken)
+                            logger.warning("%s: %r properties overlay denied by option", api_info, PathOrToken)
                             return httputils.NOT_ALLOWED
                         return httputils.NOT_ALLOWED
 
@@ -1543,7 +1588,7 @@ class BaseSharing:
 
             else:
                 # neither owner nor user matches
-                logger.warning(api_info + ": sharing of %r not permitted for user %r", PathOrToken, user)
+                logger.warning("%s: sharing of %r not permitted for user %r", api_info, PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             # result handling
@@ -1555,17 +1600,18 @@ class BaseSharing:
                 answer['Status'] = "success"
                 pass
             else:
-                logger.warning(api_info + ": %r not successful", request_data['PathOrToken'])
+                logger.warning("%s: %r not successful", api_info, request_data['PathOrToken'])
                 return httputils.bad_request("Internal Error")
 
-            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
+            logger.notice("%s success: PathMapped=%r PathOrToken=%r", api_info, PathMapped, PathOrToken)
 
         # action: delete
         elif action == "delete":
-            logger.trace("" + api_info + ": start")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("%s: start", api_info)
 
             if ShareType not in SHARE_TYPES_V1:
-                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
 
             if PathOrToken is None:
@@ -1585,7 +1631,7 @@ class BaseSharing:
                        User=share['Owner']) # verification above that it is not None
             else:
                 # only owner is permitted to delete a share
-                logger.warning(api_info + ": %r not permitted for user %r", PathOrToken, user)
+                logger.warning("%s: %r not permitted for user %r", api_info, PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             # result handling
@@ -1597,14 +1643,14 @@ class BaseSharing:
                 answer['Status'] = "success"
                 pass
             else:
-                logger.warning(api_info + ": %r by user %r not successful", request_data['PathOrToken'], request_data['User'])
+                logger.warning("%s: %r by user %r not successful", api_info, request_data['PathOrToken'], request_data['User'])
                 return httputils.bad_request("Internal Error")
 
-            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
+            logger.notice("%s success: PathMapped=%r PathOrToken=%r", api_info, PathMapped, PathOrToken)
 
         # action: info
         elif action == "info":
-            logger.info(api_info + ": success")
+            logger.info("%s: success", api_info)
             answer['Status'] = "success"
             if ShareType in ["all", "map"]:
                 answer['FeatureEnabledCollectionByMap'] = self.sharing_collection_by_map
@@ -1621,10 +1667,11 @@ class BaseSharing:
 
         # action: TOGGLE
         elif action in API_SHARE_TOGGLES_V1:
-            logger.trace(api_info)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace(api_info)
 
             if ShareType not in SHARE_TYPES_V1:
-                logger.warning(api_info + ": unsupported for ShareType=%r", ShareType)
+                logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
 
             if PathOrToken is None:
@@ -1636,13 +1683,14 @@ class BaseSharing:
             if share is None:
                 if user_with_group_or_realm:
                     # retry with user (resolving share-by-group/realm)
-                    logger.trace(api_info + ": no share found, retry with user to resolve shared-by-group/realm")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("%s: no share found, retry with user to resolve shared-by-group/realm", api_info)
                     share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=user_lookup, OnlyEnabled=False)
                     if share is None:
                         return httputils.NOT_FOUND
                     else:
                         # update not supported on shared-by-group/realm
-                        logger.warning(api_info + ": %r by user %r not supported for shared-by-group/realm", PathOrToken, user_lookup)
+                        logger.warning("%s: %r by user %r not supported for shared-by-group/realm", api_info, PathOrToken, user_lookup)
                         return httputils.NOT_ALLOWED
                 else:
                     return httputils.NOT_FOUND
@@ -1688,7 +1736,7 @@ class BaseSharing:
 
             else:
                 # neither owner nor user matches
-                logger.warning(api_info + ": %r by user %r not permitted", PathOrToken, user)
+                logger.warning("%s: %r by user %r not permitted", api_info, PathOrToken, user)
                 return httputils.NOT_ALLOWED
 
             if result:
@@ -1700,19 +1748,21 @@ class BaseSharing:
                     answer['Status'] = "success"
                     pass
             else:
-                logger.warning(api_info + ": %r by user %s not successful", request_data['PathOrToken'], user)
+                logger.warning("%s: %r by user %s not successful", api_info, request_data['PathOrToken'], user)
                 return httputils.bad_request("Internal Error")
 
-            logger.notice(api_info + " success: PathMapped=%r PathOrToken=%r", PathMapped, PathOrToken)
+            logger.notice("%s success: PathMapped=%r PathOrToken=%r", api_info, PathMapped, PathOrToken)
 
         else:
             # default
-            logger.warning(api_info + ": unsupported action=%r", action)
+            logger.warning("%s: unsupported action=%r", api_info, action)
             return httputils.bad_request("Invalid action")
 
         # output handler
-        logger.trace("sharing/API/POST output format: %r", output_format)
-        logger.trace("sharing/API/POST answer: %r", answer)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/API/POST output format: %r", output_format)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/API/POST answer: %r", answer)
         if output_format == "csv" or output_format == "plain":
             answer_array = []
             if output_format == "plain":

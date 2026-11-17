@@ -7,6 +7,8 @@
 * Fix: [auth]: add server hostname as SNI option (ldap3+tls) for proper validation did not strip non-standard port
 * Fix: propfind: honor [storage] skip_broken_item=True (uncatched after changes in 3.9.1)
 * Fix: report: use [reporting] max_expand_occurrence also for unbounded RRULE enumeration
+* Performance: remove not required `_clean_history` in upload
+* Performance: guard trace logging with isEnabledFor and use lazy formatting for logger calls
 
 ## 3.9.1
 * Add: [sharing] permit_create_map = self: permit map-based sharing to self only (e.g. birthday calendar) without sharing with other users

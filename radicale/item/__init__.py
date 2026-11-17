@@ -27,6 +27,7 @@ Module for address books and calendar entries (see ``Item``).
 import binascii
 import contextlib
 import datetime
+import logging
 import math
 import os
 import re
@@ -202,17 +203,21 @@ def check_and_sanitize_items(
                     for i, date in enumerate(dates.value):
                         if type(ref_date) is datetime.datetime and type(date) is datetime.datetime:
                             if hasattr(ref_date, 'tzinfo') and ref_date.tzinfo is not None:
-                                logger.trace("ITEM/check_and_sanitize_item: dtstart has tzinfo: '%s'", ref_date)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.trace("ITEM/check_and_sanitize_item: dtstart has tzinfo: '%s'", ref_date)
                                 if hasattr(date, 'tzinfo') and date.tzinfo is None:
                                     # Ensure that datetime.datetime object has timezone set if dtstart has
                                     dates.value[i] = dates.value[i].replace(tzinfo=ref_date.tzinfo)
-                                    logger.trace("ITEM/check_and_sanitize_item: overtake missing tzinfo from dtstart: '%s' -> '%s'", date, dates.value[i])
+                                    if logger.isEnabledFor(logging.DEBUG):
+                                        logger.trace("ITEM/check_and_sanitize_item: overtake missing tzinfo from dtstart: '%s' -> '%s'", date, dates.value[i])
                             elif (hasattr(ref_date, 'tzinfo') and ref_date.tzinfo is None) or not hasattr(ref_date, 'tzinfo'):
-                                logger.trace("ITEM/check_and_sanitize_item: dtstart has no tzinfo: '%s'", ref_date)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.trace("ITEM/check_and_sanitize_item: dtstart has no tzinfo: '%s'", ref_date)
                                 if hasattr(date, 'tzinfo') and date.tzinfo is not None:
                                     # Ensure that datetime.datetime object has no timezone set if dtstart has none
                                     dates.value[i] = dates.value[i].replace(tzinfo=None)
-                                    logger.trace("ITEM/check_and_sanitize_item: remove existing tzinfo (dtstart has none): '%s' -> '%s'", date, dates.value[i])
+                                    if logger.isEnabledFor(logging.DEBUG):
+                                        logger.trace("ITEM/check_and_sanitize_item: remove existing tzinfo (dtstart has none): '%s' -> '%s'", date, dates.value[i])
                     if all(type(d) is type(ref_date) for d in dates.value):
                         continue
                     if dates.params.get("VALUE") == ["PERIOD"]:
@@ -230,9 +235,11 @@ def check_and_sanitize_items(
                                 if (date[0] > date[1]):
                                     raise ValueError("invalid PERIOD (end before start) in object %r" % component_uid)
                                 # skip explicit tzinfo check for now, no buggy client known
-                                logger.trace("ITEM/check_and_sanitize_item: PERIOD/start-stop found: '%s'", date)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.trace("ITEM/check_and_sanitize_item: PERIOD/start-stop found: '%s'", date)
                             elif type(date[0]) is datetime.datetime and type(date[1]) is datetime.timedelta:
-                                logger.trace("ITEM/check_and_sanitize_item: PERIOD/start-duration found: '%s'", date)
+                                if logger.isEnabledFor(logging.DEBUG):
+                                    logger.trace("ITEM/check_and_sanitize_item: PERIOD/start-duration found: '%s'", date)
                             else:
                                 raise ValueError("invalid PERIOD (element types not matching) in object %r" % component_uid)
                         continue
@@ -246,7 +253,8 @@ def check_and_sanitize_items(
             # vobject interprets recurrence rules on demand
             if hasattr(component, "rrule"):
                 # workaround for vobject < 1.0.0 as it has no limiter in "getrruleset"
-                logger.trace("Recurrence rule found in %s in object %r: %r", component.name, component_uid, component.rrule.value)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("Recurrence rule found in %s in object %r: %r", component.name, component_uid, component.rrule.value)
                 if not hasattr(component, "dtstart"):
                     # e.g. VTODO
                     rrule = vobject.icalendar.rrule.rrulestr(component.rrule.value)
@@ -259,7 +267,8 @@ def check_and_sanitize_items(
                     rrule = vobject.icalendar.rrule.rrulestr(component.rrule.value, ignoretz=ignoretz)
                 # early check of maximum of COUNT to avoid DoS (workaround)
                 if hasattr(rrule, "_count") and rrule._count is not None:
-                    logger.trace("Recurrence rule %r in %s in object %r contains: COUNT=%d", component.rrule.value, component.name, component_uid, rrule._count)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("Recurrence rule %r in %s in object %r contains: COUNT=%d", component.rrule.value, component.name, component_uid, rrule._count)
                     if max_vevent_rrule_occurrence > 0 and rrule._count > max_vevent_rrule_occurrence:
                         logger.error("Recurrence rule %r count in %s in object %r: %d (REJECTED/limit: %d)", component.rrule.value, component.name, component_uid, rrule._count, max_vevent_rrule_occurrence)
                         raise ValueError("Too many recurrence rule entries in %s in object %r: %d (limit: %d)"
@@ -267,7 +276,8 @@ def check_and_sanitize_items(
                     else:
                         logger.debug("Recurrence rule count in %s in object %r: %d (PASSED/limit: %d)" % (component.name, component_uid, rrule._count, max_vevent_rrule_occurrence))
                 else:
-                    logger.trace("Recurrence rule %r in %s in object %r doesn't contain: COUNT", component.rrule.value, component.name, component_uid)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("Recurrence rule %r in %s in object %r doesn't contain: COUNT", component.rrule.value, component.name, component_uid)
                 # early check of maximum of (UNTIL-DTSTART)/interval(FREQ) to avoid DoS (ugly workaround with some guessing)
                 if hasattr(rrule, "_freq") and rrule._freq is not None and hasattr(rrule, "_until") and rrule._until is not None and hasattr(component, "dtstart"):
                     if vobject.icalendar.FREQUENCIES[rrule._freq] not in RRULE_FREQUENCIES_TO_INTERVAL:
@@ -294,7 +304,8 @@ def check_and_sanitize_items(
                     else:
                         logger.debug("Recurrence rule %r entries in %s in object %r: %d (estimated/PASSED/limit: %d)" % (component.rrule.value, component.name, component_uid, rrule_entries, max_vevent_rrule_occurrence))
                 else:
-                    logger.trace("Recurrence rule %r in %s in object %r doesn't contain: FREQ+UNTIL", component.rrule.value, component.name, component_uid)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("Recurrence rule %r in %s in object %r doesn't contain: FREQ+UNTIL", component.rrule.value, component.name, component_uid)
                 # generic check by vobject
                 try:
                     rruleset = component.rruleset
@@ -519,7 +530,8 @@ def verify(file: str, encoding: str, max_vevent_rrule_occurrence: int):
 
 
 def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
-    logger.trace("item/convert_vcf_to_ics: resolve placeholders: %r", text)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("item/convert_vcf_to_ics: resolve placeholders: %r", text)
 
     for placeholder in placeholder_mapping:
         # logger.trace("item/convert_vcf_to_ics: placeholder=%r -> placeholder_mapping=%r", placeholder, placeholder_mapping[placeholder])
@@ -527,7 +539,8 @@ def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
             placeholder_mapping[placeholder] = ','.join(placeholder_mapping[placeholder])
         text = text.replace(placeholder, placeholder_mapping[placeholder])
 
-    logger.trace("item/convert_vcf_to_ics: resolve [..|..] in  : %r", text)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("item/convert_vcf_to_ics: resolve [..|..] in  : %r", text)
 
     # resolve [..|..] recursive
     pattern = re.compile('(.*)(\\[)([^|]+)\\|([^\\]]*)(\\])(.*)')
@@ -537,7 +550,8 @@ def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
             # nothing more todo
             break
         else:
-            logger.trace("item/convert_vcf_to_ics: resolve match       : %r", match[0])
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: resolve match       : %r", match[0])
             # check for still unresolved placeholders
             unresolved = False
             for placeholder in VCF_TO_ICS_SUPPORTED_PLACEHOLDERS:
@@ -549,15 +563,18 @@ def replace_placeholders(text: str, placeholder_mapping: dict) -> str:
                 if '|' in match[4]:
                     # further recursion required
                     text = match[1] + match[2] + match[4] + match[5] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve continue    : %r", text)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("item/convert_vcf_to_ics: resolve continue    : %r", text)
                 else:
                     text = match[1] + match[4] + match[6]
-                    logger.trace("item/convert_vcf_to_ics: resolve final result: %r", text)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("item/convert_vcf_to_ics: resolve final result: %r", text)
                     break
             else:
                 # resolved variable
                 text = match[1] + match[3] + match[6]
-                logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace(resolved) result: %r", text)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("item/convert_vcf_to_ics: resolve [..|..] match/replace(resolved) result: %r", text)
     return text
 
 
@@ -733,35 +750,45 @@ class Item:
         self._vobject_item = orig_vobject_item
 
     def convert_vcf_to_ics(self, ShareActions: dict = {}) -> Union["Item", None]:
-        logger.trace("item/convert_vcf_to_ics: ShareActions: %r", ShareActions)
-        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
-        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("item/convert_vcf_to_ics: ShareActions: %r", ShareActions)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (href): %r", self.href)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (vobject): %r", self.vobject_item)
         if self.vobject_item.name != "VCARD":
-            logger.trace("item/convert_vcf_to_ics: item is not a VCARD (skip): %r", self.href)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: item is not a VCARD (skip): %r", self.href)
             return None
         else:
-            logger.trace("item/convert_vcf_to_ics: item is a VCARD (ok): %r", self.href)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: item is a VCARD (ok): %r", self.href)
         if not hasattr(self.vobject_item, "bday"):
-            logger.trace("item/convert_vcf_to_ics: miss bday (skip): %r", self.href)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: miss bday (skip): %r", self.href)
             return None
         else:
             pass
 
         # convert last_modified (format: 'Wed, 30 Sep 2026 05:58:48 GMT') into dtstamp
-        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (last_modified): %r", self.last_modified)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (last_modified): %r", self.last_modified)
         if self.last_modified is not None:
             dtstamp = vobject.icalendar.dateTimeToString(datetime.datetime.strptime(self.last_modified, "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=datetime.timezone.utc), convertToUTC=True)
         else:
             dtstamp = "19700101T000000Z"  # default
-        logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (dtstamp): %r", dtstamp)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("item/convert_vcf_to_ics: convert VCF to ICS (dtstamp): %r", dtstamp)
 
         bday = self.vobject_item.bday
-        logger.trace("item/convert_vcf_to_ics: has bday (ok): %r -> %r", self.href, bday.value)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("item/convert_vcf_to_ics: has bday (ok): %r -> %r", self.href, bday.value)
 
         pattern = re.compile('^([0-9]{4})-?([0-9]{2})-?([0-9]{2})$')
         match = pattern.match(bday.value)
         if not match:
-            logger.trace("item/convert_vcf_to_ics: has unsupported bday: %r -> %r", self.href, bday.value)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: has unsupported bday: %r -> %r", self.href, bday.value)
             return None
         else:
             pass
@@ -770,7 +797,8 @@ class Item:
         vcard_age_exceed_max = False  # default
 
         if str(match[1]) in VCF_TO_ICS_BDAY_NO_YEAR:
-            logger.trace("item/convert_vcf_to_ics: has 'no year' bday: %r -> %r", self.href, bday.value)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: has 'no year' bday: %r -> %r", self.href, bday.value)
             vcard_has_year = False
 
         placeholder_mapping: dict = {}
@@ -795,7 +823,8 @@ class Item:
         elif hasattr(self.vobject_item, "nickname"):
             name = self.vobject_item.nickname.value
         else:
-            logger.trace("item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("item/convert_vcf_to_ics: has bday but neither FN or N or NICKNAME (skip): %r", self.href)
             return None
 
         if hasattr(self.vobject_item, "nickname") and self.vobject_item.nickname.value != "":
@@ -879,7 +908,8 @@ class Item:
             currentDateTime = datetime.datetime.now()
             date = currentDateTime.date()
             if bdayY + age_max < date.year:
-                logger.trace("item/convert_vcf_to_ics: bdayY=%d + age_max=%d < current year %d -> disable age support", bdayY, age_max, date.year)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("item/convert_vcf_to_ics: bdayY=%d + age_max=%d < current year %d -> disable age support", bdayY, age_max, date.year)
                 vcard_age_exceed_max = True
                 age_max = 0
             else:
@@ -956,7 +986,8 @@ class Item:
             if alarm_trigger is not None and alarm_trigger != "":
                 for entry in alarm_trigger.split('$'):
                     (trigger, alarm_description) = entry.split(';')
-                    logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, alarm_description)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("item/convert_vcf_to_ics: alarm trigger entry: %r (trigger=%r description=%r)", entry, trigger, alarm_description)
                     td = trigger_to_timedelta(trigger)
                     if td is not None:
                         valarm = vevent.add('valarm')
@@ -1005,8 +1036,11 @@ class Item:
 
         if logger.isEnabledFor(LOG_LEVEL_TRACE):
             logger.trace("storage: item generated/vobject: %r", item_ics.serialize())
-        logger.trace("storage: item orig     /etag   : %r", self.etag)
-        logger.trace("storage: item generated/etag   : %r", item_new.etag)
-        logger.trace("storage: item generated/href   : %r", item_new.href)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage: item orig     /etag   : %r", self.etag)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage: item generated/etag   : %r", item_new.etag)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage: item generated/href   : %r", item_new.href)
 
         return item_new
