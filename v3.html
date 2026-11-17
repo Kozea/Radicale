@@ -134,6 +134,7 @@ Radicale
 <h2>Contents</h2>
 <ul>
 <li class="level2"><a href="#translations-of-this-page" id="toc-translations-of-this-page">Translations of this page</a></li>
+<li class="level2"><a href="#developer-documentation" id="toc-developer-documentation">Developer documentation</a></li>
 <li class="level2"><a href="#getting-started" id="toc-getting-started">Getting
 started</a>
 <ul>
@@ -286,6 +287,11 @@ Choices</a></li>
 <ul>
 <li><a href="https://github.com/Kozea/Radicale/blob/master/docs/translations/DOCUMENTATION.te.md">Telugu</a></li>
 </ul>
+</section>
+<section class="level2" id="developer-documentation">
+<h2>Developer documentation <a class="headerlink" href="#developer-documentation">&para;</a></h2>
+<p>This file is the operator manual. The source layout, the on-disk
+data, the packages, CI, and the release steps are in <a href="docs/README.md">docs/README.md</a>.</p>
 </section>
 <section class="level2" id="getting-started">
 <h2>Getting started <a class="headerlink" href="#getting-started">&para;</a></h2>
@@ -1244,6 +1250,9 @@ Use local PAM to authenticate users by relaying credentials from client
 and handle result.</p>
 <p>User groups are supported <em>(&gt;= 3.8.0)</em></p></li>
 </ul>
+<p>When using the web UI with authentication handled by the browser or
+reverse proxy (e.g. header-based auth, OIDC redirects), set <a href="#prefer_browser_login"><code>prefer_browser_login</code></a> to
+<code>True</code> to skip the login page.</p>
 <p>Default: <code>none</code> <em>(&lt; 3.5.0)</em> /
 <code>denyall</code> <em>(&gt;= 3.5.0)</em></p>
 </section>
@@ -1898,10 +1907,10 @@ Allows creation and management of address books and calendars.</p></li>
 <section class="level5" id="prefer_browser_login">
 <h5>prefer_browser_login <a class="headerlink" href="#prefer_browser_login">&para;</a></h5>
 <p><em>(&gt;= 3.7.4)</em></p>
-<p>Try to use browser based login rather than the built in login in the
-web UI. This can be helpful if the login system you are using uses
-redirects, such as in an OIDC setup. For this to work properly, you will
-also have to make sure CORS headers are configured correctly.s</p>
+<p>Includes browser credentials in the web UI's initial authentication
+probe, skipping the login page if the server accepts them. Useful when
+authentication involves redirects (e.g. OIDC) or header-based auth set
+by a reverse proxy.</p>
 <p>Default: <code>False</code></p>
 </section>
 </section>
