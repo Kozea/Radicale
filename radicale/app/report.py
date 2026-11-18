@@ -557,7 +557,8 @@ def xml_report(base_prefix: str, path: str, xml_request: Optional[ET.Element],
         uri = pathutils.unstrip_path(
             posixpath.join(collection.path, item.href))
 
-        if found_props or not_found_props:
+        # A match with no DAV:prop is still a response. The href is the result.
+        if found_props or not_found_props or len(props) == 0:
             multistatus.append(xml_item_response(
                 base_prefix, uri, found_props=found_props,
                 not_found_props=not_found_props, found_item=True, share=share))
