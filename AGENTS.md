@@ -58,6 +58,8 @@ Put a test next to the case it extends. Server tests are usually a `BaseTest` su
 
 An assertion that stays green when the branch it names is removed does not cover that branch. A bugfix commit includes the test that failed before the fix.
 
+When adding tests finds an existing product bug, report that bug. Do not encode the defective result as the successful expected outcome. An either-status assertion, a comment that calls a reachable failure unreachable, or an assertion of the wrong contract is that encoding. The test that asserts the correct outcome belongs in the bugfix commit.
+
 Optional dependencies are extras, and the import name is not always the extra name. `ldap` provides `ldap3` (the backend then tries `ldap` from the `python_ldap` extra), `pam` provides `pam`, `bcrypt` provides `bcrypt`, `argon2` provides `argon2`, `h2` provides `hypercorn`, `cheroot` provides `cheroot`, `rabbitmq` provides `pika`, and `oauth2` provides `requests`. Skip a test when that imported module is missing. Do not skip on the extra name. Do not import `radicale.auth.pam` at module level. That module imports `pwd` and `grp` at import time. Those modules are missing on Windows, so a test module that imports it there fails during collection. Import it inside the test that needs it, and mark that test with `skipif(sys.platform == "win32", reason="Not supported on Windows")`. pytest errors on `skipif` when `reason` is omitted. `radicale/auth/pam.py` imports the `pam` package inside `Auth.__init__`.
 
 ### Errors and logging
