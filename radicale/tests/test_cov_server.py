@@ -303,6 +303,11 @@ def _bind_server(folder, port, **options):
     return _configuration(folder, {"server": server_options})
 
 
+def _is_server_source(filename):
+    """True for ``radicale/server.py`` when the path uses either separator."""
+    return str(filename).replace("\\", "/").endswith("radicale/server.py")
+
+
 def _thread_result(target):
     holder = {}
 
@@ -313,6 +318,8 @@ def _thread_result(target):
             holder["exc"] = exc
 
     thread = threading.Thread(target=run)
+    # A server that never observes its stop signal must not pin the process.
+    thread.daemon = True
     thread.start()
     return thread, holder
 
@@ -699,7 +706,7 @@ def test_hypercorn_warns_on_protocol_and_runs_until_released(tmp_path, monkeypat
     def event_factory(*args, **kwargs):
         for frame in __import__("traceback").extract_stack():
             if (getattr(frame, "name", None) == "run_forever" and
-                    str(getattr(frame, "filename", "")).endswith("radicale/server.py")):
+                    _is_server_source(getattr(frame, "filename", ""))):
                 return _Gate()
         return real_event(*args, **kwargs)
 
@@ -921,7 +928,7 @@ def test_builtin_serve_returns_without_closing_a_cleared_shutdown_socket(tmp_pat
     def trace(frame, event, arg):
         if (event == "line" and frame.f_lineno == 517 and
                 frame.f_code.co_name == "serve" and
-                frame.f_code.co_filename.endswith("radicale/server.py")):
+                _is_server_source(frame.f_code.co_filename)):
             frame.f_locals["shutdown_socket"] = None
         if previous is None:
             return trace
