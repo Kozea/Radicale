@@ -68,3 +68,18 @@ class StoragePartMove(StorageBase):
         to_collection._clean_history()
         if item.collection._filesystem_path != to_collection._filesystem_path:
             item.collection._clean_history()
+
+    def move_collection(self, collection: storage.BaseCollection,
+                        to_path: str) -> None:
+        assert isinstance(collection, multifilesystem.Collection)
+        move_from = collection._filesystem_path
+        move_to = pathutils.path_to_filesystem(
+            self._get_collection_root_folder(), pathutils.strip_path(to_path),
+            self._is_collision_free)
+        try:
+            os.rename(move_from, move_to)
+        except OSError as e:
+            raise ValueError("Failed to move collection %r => %r %s" %
+                             (move_from, move_to, e)) from e
+        self._sync_directory(os.path.dirname(move_to))
+        self._sync_directory(os.path.dirname(move_from))

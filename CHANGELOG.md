@@ -6,6 +6,7 @@
 * Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
 * Fix: [logging] `*_on_notice_condition` with `host` match `excluded` raised an error (undefined variable)
 * Add: [hook] itip_owner_map: ordered full-string username regex rules with brace-style capture replacements; escape metacharacters in existing literal keys
+* Add: support `MOVE` of calendar and addressbook collections (rename, or move below another principal)
 * Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
 * Adjust: [storage] filesystem_fsync option documented and renamed from `_filesystem_fsync` (internal use only so far)
 * Performance: storage: add fast path for has_uid in multifilesystem

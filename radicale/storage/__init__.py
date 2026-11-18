@@ -367,6 +367,15 @@ class BaseStorage:
         """
         raise NotImplementedError
 
+    def move_collection(self, collection: BaseCollection,
+                        to_path: str) -> None:
+        """Move a collection to ``to_path``, which must not exist.
+
+        Raises ``ValueError`` on failure.
+
+        """
+        raise NotImplementedError
+
     def create_collection(
             self, href: str,
             items: Optional[Iterable["radicale_item.Item"]] = None,
