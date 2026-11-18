@@ -24,6 +24,7 @@ like that platform for one reload.
 import contextlib
 import ctypes
 import ctypes.wintypes
+import errno
 import importlib
 import importlib.abc
 import io
@@ -88,6 +89,8 @@ def _windows_pathutils(pointer_bytes: int):
     saved_handle = ctypes.wintypes.HANDLE
     had_windll = hasattr(ctypes, "WinDLL")
     had_winerror = hasattr(ctypes, "WinError")
+    saved_windll = getattr(ctypes, "WinDLL", None)
+    saved_winerror = getattr(ctypes, "WinError", None)
     sys.modules["msvcrt"] = msvcrt
     sys.platform = "win32"
     ctypes.sizeof = sizeof  # type: ignore[assignment]
@@ -106,10 +109,12 @@ def _windows_pathutils(pointer_bytes: int):
         ctypes.sizeof = real_sizeof  # type: ignore[assignment]
         ctypes.wintypes.HANDLE = saved_handle
         if had_windll:
-            pass
+            ctypes.WinDLL = saved_windll  # type: ignore[attr-defined]
         else:
             del ctypes.WinDLL  # type: ignore[attr-defined]
-        if not had_winerror:
+        if had_winerror:
+            ctypes.WinError = saved_winerror  # type: ignore[attr-defined]
+        else:
             del ctypes.WinError  # type: ignore[attr-defined]
         if saved_msvcrt is None:
             sys.modules.pop("msvcrt", None)
@@ -192,13 +197,28 @@ def test_darwin_full_fsync_keeps_the_written_bytes(tmp_path):
     try:
         os.write(fd, b"BEGIN:VCALENDAR")
         saved = sys.platform
+        saved_fcntl = sys.modules.get("fcntl")
         sys.platform = "darwin"
         try:
+            if saved_fcntl is None:
+                # Windows has no fcntl module. A missing full-fsync command
+                # is the EINVAL that sends fsync to os.fsync.
+                fake = types.ModuleType("fcntl")
+
+                def _no_full(_fd, _cmd):
+                    raise OSError(errno.EINVAL, "no fullfsync")
+
+                fake.fcntl = _no_full  # type: ignore[attr-defined]
+                sys.modules["fcntl"] = fake
             importlib.reload(pathutils)
             assert pathutils.F_FULLFSYNC == 51
             pathutils.fsync(fd)
         finally:
             sys.platform = saved
+            if saved_fcntl is None:
+                sys.modules.pop("fcntl", None)
+            else:
+                sys.modules["fcntl"] = saved_fcntl
             importlib.reload(pathutils)
         os.lseek(fd, 0, os.SEEK_SET)
         assert os.read(fd, 100) == b"BEGIN:VCALENDAR"
@@ -300,8 +320,12 @@ def test_windows_identity_string_does_not_use_the_passwd_database(monkeypatch):
         importlib.reload(utils)
     identity = utils.user_groups_as_string()
     assert identity.startswith("user=")
-    assert "groups=" in identity
-    assert "cov-user" not in identity
+    if sys.platform == "win32":
+        assert identity == "user=cov-user"
+        assert "groups=" not in identity
+    else:
+        assert "groups=" in identity
+        assert "cov-user" not in identity
 
 
 def test_windows_break_signal_exits_and_hangup_stays_untouched(monkeypatch):
@@ -310,13 +334,16 @@ def test_windows_break_signal_exits_and_hangup_stays_untouched(monkeypatch):
     ``SIGHUP`` is not in that set. ``--version`` still prints the version and
     exits 0 after the handlers are installed.
     """
-    monkeypatch.setattr(signal, "SIGBREAK", signal.SIGUSR1, raising=False)
+    on_windows = sys.platform == "win32"
+    if not on_windows:
+        # This process has no SIGBREAK. Point that name at a real signal so
+        # the Windows handler can be installed here.
+        monkeypatch.setattr(signal, "SIGBREAK", signal.SIGUSR1, raising=False)
     monkeypatch.setattr(sys, "platform", "win32")
-    saved_signals = {
-        number: signal.getsignal(number)
-        for number in (
-            signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT, signal.SIGUSR1)
-    }
+    watched = [signal.SIGTERM, signal.SIGINT, signal.SIGBREAK]
+    if not on_windows:
+        watched.append(signal.SIGHUP)
+    saved_signals = {number: signal.getsignal(number) for number in watched}
     saved_factory = logging.getLogRecordFactory()
     saved_level = logger.level
     saved_filters = list(logger.filters)
@@ -333,11 +360,12 @@ def test_windows_break_signal_exits_and_hangup_stays_untouched(monkeypatch):
                 code = 0
         assert code == 0
         assert VERSION in stdout.getvalue()
-        assert signal.getsignal(signal.SIGHUP) is saved_signals[signal.SIGHUP]
-        handler = signal.getsignal(signal.SIGUSR1)
+        if not on_windows:
+            assert signal.getsignal(signal.SIGHUP) is saved_signals[signal.SIGHUP]
+        handler = signal.getsignal(signal.SIGBREAK)
         assert callable(handler)
         with pytest.raises(SystemExit) as caught:
-            handler(signal.SIGUSR1, None)
+            handler(signal.SIGBREAK, None)
         assert caught.value.code == 1
     finally:
         sys.argv = saved_argv
