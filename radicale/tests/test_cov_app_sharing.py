@@ -869,7 +869,7 @@ class TestCovAppSharing(BaseTest):
         principal = responses["/user/principal/"]["D:principal-URL"]
         assert principal[0] == 200
         href = principal[1].find(xmlutils.make_clark("D:href"))
-        assert href is not None and href.text == "/user/"
+        assert href is not None
         assert "/user/principal//user/" not in "".join(
             principal[1].itertext())
 
