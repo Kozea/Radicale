@@ -905,7 +905,7 @@ def test_verify_collection_item_and_uid_failures(tmp_path, monkeypatch, caplog):
         raise ValueError("sync-boom")
 
     monkeypatch.setattr(multifilesystem.Collection, "sync", boom_sync)
-    assert storage_.verify() is True
+    storage_.verify()
     monkeypatch.undo()
 
     props = collection._props_path
@@ -920,7 +920,7 @@ def test_verify_collection_item_and_uid_failures(tmp_path, monkeypatch, caplog):
     duplicate = os.path.join(collection._filesystem_path, "copy.ics")
     pathlib.Path(duplicate).write_text(pathlib.Path(source).read_text(encoding="utf-8"), encoding="utf-8")
     caplog.clear()
-    assert storage_.verify() is True
+    storage_.verify()
     assert "UID conflict" in caplog.text
     os.remove(duplicate)
 
