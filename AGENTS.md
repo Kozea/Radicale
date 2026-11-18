@@ -78,4 +78,10 @@ A new Python file copies the GPL header from an existing file in the same area a
 
 ### Pull requests
 
-Review the diff and run the local test suite before marking the pull request ready. `CONTRIBUTING.md` requires that local run. When an assistant wrote part of the change, a person reviews it and the pull request says so. The style of the new code matches the file around it. Maintainers merge a pull request after the whole test suite passes.
+Review the diff and pass the full local set before pushing. `CONTRIBUTING.md` requires that local run. The development wiki names the set:
+
+```
+tox -c pyproject.toml --fail-fast -m all
+```
+
+That includes the filesystem label, which needs sudo (`tox -c pyproject.toml --fail-fast -m fs` is that part). Do not push a change when this run fails. When an assistant wrote part of the change, a person reviews it and the pull request says so. The style of the new code matches the file around it. Maintainers merge a pull request after the whole test suite passes.
