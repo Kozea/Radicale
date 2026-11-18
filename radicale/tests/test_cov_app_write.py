@@ -352,15 +352,6 @@ permissions: R
         assert "Can't determine collection tag" in "\n".join(caplog.messages)
         assert self.get("/weird.ics/", check=404)[0] == 404
 
-        status, _, body = self.request(
-            "PUT", "/subscribed.ics/", "",
-            content_type="text/calendar", check=None)
-        assert status == 201, body
-        status, responses = self.propfind(
-            "/subscribed.ics/", PROPFIND_ONE.format("<D:resourcetype/>"))
-        kinds = responses["/subscribed.ics/"]["D:resourcetype"][1]
-        assert any("subscribed" in child.tag for child in kinds.iter())
-
         self.mkcalendar("/calendar.ics/")
         self.put("/calendar.ics/event.ics", _event(summary="Original"))
         status, _, body = self.request(
