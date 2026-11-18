@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""JSON null in a sharing update is a client error, not HTTP 500."""
+"""JSON null in a sharing update is a client error or a clear, not HTTP 500."""
 
 import json
 import os
@@ -39,29 +39,68 @@ class TestSharingJsonNull(BaseTest):
                         "permit_create_map": "true"},
         })
 
-    def _post(self, payload):
+    def _post(self, path, payload):
         return self.request(
-            "POST", "/.sharing/v1/map/update", json.dumps(payload),
+            "POST", path, json.dumps(payload),
             login="owner:ownerpw", content_type="application/json",
             accept="application/json", check=None)
 
-    def test_null_path_is_rejected_and_null_fields_do_not_crash(self):
+    def _share_row(self, path):
         status, _, answer = self._post(
+            "/.sharing/v1/map/list", {"PathOrToken": path})
+        assert status == 200, answer
+        body = json.loads(answer)
+        assert body["Status"] == "success"
+        assert body["Lines"] == 1
+        return body["Content"][0]
+
+    def test_null_path_is_rejected_and_null_fields_clear_an_existing_share(self):
+        status, _, answer = self._post(
+            "/.sharing/v1/map/update",
             {"PathOrToken": None, "Hidden": True})
         assert status == 400
         assert "Invalid value for PathOrToken" in answer
         assert "server error" not in answer.lower()
 
-        status, _, answer = self._post({
-            "PathOrToken": "/user/quiet-null.ics/",
+        mapped = "/owner/calendar.ics/"
+        shared = "/user/quiet-null.ics/"
+        self.mkcalendar(mapped, login="owner:ownerpw")
+        status, _, answer = self._post("/.sharing/v1/map/create", {
+            "User": "user",
+            "PathMapped": mapped,
+            "PathOrToken": shared,
+            "Permissions": "rw",
+            "Enabled": True,
+        })
+        assert status == 200, answer
+        assert json.loads(answer)["Status"] == "success"
+
+        status, _, answer = self._post("/.sharing/v1/map/update", {
+            "PathOrToken": shared,
+            "Properties": {"D:displayname": "Quiet"},
+            "Actions": {"config": {"view": "freebusy"}},
+        })
+        assert status == 200, answer
+        row = self._share_row(shared)
+        assert row["Properties"]["D:displayname"] == "Quiet"
+        assert row["Actions"]["config"]["view"] == "freebusy"
+
+        status, _, answer = self._post("/.sharing/v1/map/update", {
+            "PathOrToken": shared,
             "Properties": None,
         })
-        assert status == 404
+        assert status == 200, answer
         assert "server error" not in answer.lower()
+        row = self._share_row(shared)
+        assert row["Properties"] == {}
+        assert row["Actions"]["config"]["view"] == "freebusy"
 
-        status, _, answer = self._post({
-            "PathOrToken": "/user/quiet-null.ics/",
+        status, _, answer = self._post("/.sharing/v1/map/update", {
+            "PathOrToken": shared,
             "Actions": None,
         })
-        assert status == 404
+        assert status == 200, answer
         assert "server error" not in answer.lower()
+        row = self._share_row(shared)
+        assert row["Properties"] == {}
+        assert row["Actions"] == {}
