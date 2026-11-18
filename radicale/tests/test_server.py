@@ -407,66 +407,46 @@ class TestBaseServerRequests(BaseTest):
             raise
 
     def test_client_certificate_and_handshake_failure(self) -> None:
-        # needs the openssl binary: "-copy_extensions" requires OpenSSL >= 3.0
-        try:
-            version = subprocess.run(
-                ["openssl", "version"], capture_output=True, text=True,
-                check=True).stdout.split()
-        except (OSError, subprocess.CalledProcessError):
-            pytest.skip("openssl binary not available")
-        if (version[0] != "OpenSSL" or
-                int(version[1].split(".")[0]) < 3):
-            pytest.skip("OpenSSL >= 3.0 binary required: %s" % " ".join(version))
-        ca_key = os.path.join(self.colpath, "ca.key")
-        ca_pem = os.path.join(self.colpath, "ca.pem")
-        server_key = os.path.join(self.colpath, "server.key")
-        server_csr = os.path.join(self.colpath, "server.csr")
-        server_pem = os.path.join(self.colpath, "server.pem")
-        client_key = os.path.join(self.colpath, "client.key")
-        client_csr = os.path.join(self.colpath, "client.csr")
-        client_pem = os.path.join(self.colpath, "client.pem")
-        subprocess.check_call([
-            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
-            "-keyout", ca_key, "-out", ca_pem, "-days", "2",
-            "-subj", "/CN=RadicaleTestCA",
-            "-addext", "basicConstraints=critical,CA:TRUE",
-            "-addext", "keyUsage=critical,keyCertSign,cRLSign"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.check_call([
-            "openssl", "req", "-newkey", "rsa:2048", "-nodes",
-            "-keyout", server_key, "-out", server_csr,
-            "-subj", "/CN=127.0.0.1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.check_call([
-            "openssl", "x509", "-req", "-in", server_csr,
-            "-CA", ca_pem, "-CAkey", ca_key, "-CAcreateserial",
-            "-out", server_pem, "-days", "2"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.check_call([
-            "openssl", "req", "-newkey", "rsa:2048", "-nodes",
-            "-keyout", client_key, "-out", client_csr,
-            "-subj", "/CN=radicale-client",
-            "-addext", "extendedKeyUsage=clientAuth"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.check_call([
-            "openssl", "x509", "-req", "-in", client_csr,
-            "-CA", ca_pem, "-CAkey", ca_key, "-CAcreateserial",
-            "-out", client_pem, "-days", "2",
-            "-copy_extensions", "copy"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Pregenerated chains: Root CA -> Sub CA Client -> client certificate,
+        # Root CA -> Sub CA Server -> server certificate
+        def static(name: str) -> str:
+            return get_file_path("Radicale_Test_%s" % name)
+
+        def concat(target: str, *sources: str) -> str:
+            with open(target, "wb") as out:
+                for source in sources:
+                    with open(source, "rb") as handle:
+                        out.write(handle.read())
+            return target
+
+        # the server needs the sub CA to build the chain of the client
+        # certificate, each side sends its own sub CA with its certificate
+        ca_pem = concat(os.path.join(self.colpath, "ca.pem"),
+                        static("Root_CA_2_EC.crt"),
+                        static("Sub_CA_Client_2_EC.crt"))
+        client_pem = concat(os.path.join(self.colpath, "client.pem"),
+                            static("Client_2_EC.crt"),
+                            static("Sub_CA_Client_2_EC.crt"))
+        server_pem = concat(os.path.join(self.colpath, "server.pem"),
+                            static("Server_2_EC.crt"),
+                            static("Sub_CA_Server_2_EC.crt"))
+        server_key = static("Server_2_EC.pem")
+        client_key = static("Client_2_EC.pem")
         self.configure({
             "server": {"ssl": "True",
                        "certificate": server_pem,
                        "key": server_key,
                        "certificate_authority": ca_pem}})
         self.thread.start()
-        client_context = ssl.create_default_context()
-        client_context.check_hostname = False
-        client_context.verify_mode = ssl.CERT_NONE
+        # verifies the server certificate, including the 127.0.0.1 SAN
+        # the client verifies the server certificate, including its
+        # 127.0.0.1 SAN
+        client_context = ssl.create_default_context(cafile=static("Root_CA_2_EC.crt"))
         client_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.load_cert_chain(client_pem, client_key)
         status, _body = self._https_exchange(client_context)
         assert status == 302
-        anonymous = ssl.create_default_context()
-        anonymous.check_hostname = False
-        anonymous.verify_mode = ssl.CERT_NONE
+        anonymous = ssl.create_default_context(cafile=static("Root_CA_2_EC.crt"))
         anonymous.minimum_version = ssl.TLSVersion.TLSv1_2
         with pytest.raises((URLError, ssl.SSLError, ConnectionError)):
             self._https_exchange(anonymous)
