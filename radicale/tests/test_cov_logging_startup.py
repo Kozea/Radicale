@@ -213,6 +213,12 @@ class _Node:
 
 
 def test_user_groups_unknown_names_and_win32_string(monkeypatch):
+    if sys.platform == "win32":
+        # pwd and grp are not imported on Windows. The live path is getlogin.
+        monkeypatch.setattr(utils.os, "getlogin", lambda: "covuser")
+        assert utils.user_groups_as_string() == "user=covuser"
+        return
+
     def no_user(_uid):
         raise KeyError("user")
 
@@ -437,8 +443,13 @@ def test_ident_factory_thread_edges_and_journal_stream(monkeypatch, tmp_path, ca
     record = logging.LogRecord("radicale", logging.ERROR, __file__, 1, "j", (), None)
     assert handler._try_emit_journal(record) is False
     assert handler._journal_socket is None
-    assert "socket exploded" in caplog.text
-    assert "Failed to connect to systemd journal" in caplog.text
+    if hasattr(log.socket, "AF_UNIX"):
+        assert "socket exploded" in caplog.text
+        assert "Failed to connect to systemd journal" in caplog.text
+    else:
+        # No unix socket, so the handler returns before connect and logs nothing.
+        assert "socket exploded" not in caplog.text
+        assert "Failed to connect to systemd journal" not in caplog.text
 
 
 def test_set_level_skips_repeated_backtrace_messages_and_disabled_trace(caplog):
@@ -631,9 +642,19 @@ def test_wsgi_application_warns_when_only_the_default_config_is_active(monkeypat
     assert "only default config is active" in caplog.text or "only default config is active" in errors.getvalue()
 
 
+def _exit_signals():
+    """Signals ``radicale.__main__`` installs. Windows has no SIGHUP or SIGQUIT."""
+    numbers = [signal.SIGTERM, signal.SIGINT]
+    if sys.platform == "win32":
+        numbers.append(signal.SIGBREAK)
+    else:
+        numbers.extend((signal.SIGHUP, signal.SIGQUIT))
+    return numbers
+
+
 def _run_cli(args):
     from radicale import __main__ as main
-    saved = {number: signal.getsignal(number) for number in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT)}
+    saved = {number: signal.getsignal(number) for number in _exit_signals()}
     saved_argv = sys.argv
     sys.argv = ["radicale", *args]
     try:
