@@ -46,7 +46,7 @@ def _capture_overloads(paths):
     captured = []
 
     def capturing(func):
-        filename = func.__code__.co_filename
+        filename = func.__code__.co_filename.replace("\\", "/")
         if filename.endswith("storage/__init__.py") or filename.endswith(
                 "multifilesystem/meta.py"):
             captured.append(func)

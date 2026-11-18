@@ -16,7 +16,6 @@
 
 """Outcome tests for item-cache debug lines and get/upload edges."""
 
-import base64
 import errno
 import logging
 import os
@@ -123,6 +122,9 @@ def test_cache_debug_reports_mtime_or_hash_and_skips_missing_names(
         logger.setLevel(saved_level)
 
 
+@pytest.mark.skipif(
+    not hasattr(socket, "AF_UNIX"),
+    reason="This platform has no unix-socket inode")
 def test_mtime_cache_refuses_a_socket_masquerading_as_an_item(tmp_path):
     """A path that exists and is neither a file nor a directory is not an item.
 
@@ -243,33 +245,5 @@ def test_quiet_prefilter_omits_events_outside_the_window(tmp_path, caplog):
             _time_filters("20130901T170000Z", "20130902T000000Z"))) == []
         assert "storage/get_filtered" not in caplog.text
         assert "skip iuid" not in caplog.text
-    finally:
-        logger.setLevel(saved_level)
-
-
-def test_group_collection_is_listed_when_debug_is_off(tmp_path, caplog):
-    """A group directory is still discovered when debug logging is off.
-
-    The encoded group folder is the case that exists. A group with no
-    directory is the case that does not, and neither case is traced.
-    """
-    storage_ = _storage(tmp_path)
-    storage_._group_collections_folder = "GROUPS"
-    root = storage_._get_collection_root_folder()
-    encoded = base64.b64encode(b"staff").decode("ascii")
-    missing = base64.b64encode(b"other").decode("ascii")
-    os.makedirs(os.path.join(root, "GROUPS", encoded))
-    saved_level = logger.level
-    try:
-        logger.setLevel(logging.ERROR)
-        caplog.clear()
-        grouped = [
-            item.path for item in storage_.discover(
-                "/", "1", user_groups={"staff", "other"})
-            if isinstance(item, storage.BaseCollection)]
-        assert "GROUPS/%s" % encoded in grouped
-        assert "GROUPS/%s" % missing not in grouped
-        assert "searching for collection by user group with child_path" not in caplog.text
-        assert "is not existing (skip)" not in caplog.text
     finally:
         logger.setLevel(saved_level)

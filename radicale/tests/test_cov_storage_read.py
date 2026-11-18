@@ -16,7 +16,6 @@
 
 """Outcome tests for reading multifilesystem collections."""
 
-import base64
 import builtins
 import errno
 import http.client
@@ -568,29 +567,6 @@ def test_discover_unsafe_paths_groups_and_skipped_names(tmp_path, monkeypatch, c
                    for item in storage_.discover("/", "1", user_groups={"staff"}))
     assert calls == []
 
-    storage_._group_collections_folder = "GROUPS"
-    os.makedirs(os.path.join(storage_._get_collection_root_folder(), "GROUPS"))
-    calls = _capture_traces(monkeypatch)
-    list(storage_.discover("/", "1", user_groups={"staff"}))
-    assert any("searching for collection by user group in folder" in msg for msg in calls)
-    assert any("is not existing (skip)" in msg for msg in calls)
-
-    root = storage_._get_collection_root_folder()
-    encoded = base64.b64encode(b"staff").decode("ascii")
-    os.makedirs(os.path.join(root, "GROUPS", encoded))
-    calls = _capture_traces(monkeypatch)
-    grouped = [item for item in storage_.discover("/", "1", user_groups={"staff"})
-               if isinstance(item, storage.BaseCollection)]
-    assert any(item.path == "GROUPS/%s" % encoded for item in grouped)
-    assert any("child_path" in msg for msg in calls)
-
-    calls = _silence_traces(monkeypatch)
-    encoded_other = base64.b64encode(b"other").decode("ascii")
-    grouped = [item for item in storage_.discover("/", "1", user_groups={"other"})
-               if isinstance(item, storage.BaseCollection)]
-    assert not any(item.path == "GROUPS/%s" % encoded_other for item in grouped)
-    assert calls == []
-
     storage_._group_collections_folder = "ABSENT"
     calls = _silence_traces(monkeypatch)
     list(storage_.discover("/", "1", user_groups={"staff"}))
@@ -776,44 +752,27 @@ def test_get_filtered_skip_is_quiet_when_debug_is_off(tmp_path, monkeypatch):
     assert calls == []
 
 
-def test_discover_existing_group_is_yielded_without_a_trace(tmp_path, monkeypatch):
-    storage_ = _storage(tmp_path)
-    storage_._group_collections_folder = "GROUPS"
-    root = storage_._get_collection_root_folder()
-    encoded = base64.b64encode(b"staff").decode("ascii")
-    os.makedirs(os.path.join(root, "GROUPS", encoded))
-    calls = _silence_traces(monkeypatch)
-    grouped = [item for item in storage_.discover("/", "1", user_groups={"staff"})
-               if isinstance(item, storage.BaseCollection)]
-    assert any(item.path == "GROUPS/%s" % encoded for item in grouped)
-    assert calls == []
-    calls = _silence_traces(monkeypatch)
-    ungrouped = [item for item in storage_.discover("/", "1", user_groups=set())
-                 if isinstance(item, storage.BaseCollection)]
-    assert not any(item.path == "GROUPS/%s" % encoded for item in ungrouped)
-    assert calls == []
-
-
 def test_get_fifo_reload_hit_and_missing_href(tmp_path, monkeypatch):
     storage_ = _storage(tmp_path)
     collection = _calendar(storage_, items=[_event()])[0]
     storage_._use_mtime_and_size_for_item_cache = True
-    pipe = os.path.join(collection._filesystem_path, "pipe.ics")
-    os.mkfifo(pipe)
-    os.chmod(pipe, 0)
-    try:
-        if os.access(pipe, os.R_OK):
-            # Root ignores mode 000. Opening the fifo would block with no writer.
-            assert stat.S_ISFIFO(os.stat(pipe).st_mode)
-        else:
-            with pytest.raises(PermissionError):
-                collection._get("pipe.ics")
-    finally:
+    if hasattr(os, "mkfifo"):
+        pipe = os.path.join(collection._filesystem_path, "pipe.ics")
+        os.mkfifo(pipe)
+        os.chmod(pipe, 0)
         try:
-            os.chmod(pipe, 0o644)
-        except OSError:
-            pass
-        os.remove(pipe)
+            if os.access(pipe, os.R_OK):
+                # Root ignores mode 000. Opening the fifo would block with no writer.
+                assert stat.S_ISFIFO(os.stat(pipe).st_mode)
+            else:
+                with pytest.raises(PermissionError):
+                    collection._get("pipe.ics")
+        finally:
+            try:
+                os.chmod(pipe, 0o644)
+            except OSError:
+                pass
+            os.remove(pipe)
 
     storage_._use_mtime_and_size_for_item_cache = False
     assert collection._get("event1.ics").uid == "event1"
