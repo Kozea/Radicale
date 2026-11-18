@@ -38,9 +38,14 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
             nonlocal item_errors, collection_errors
             try:
                 yield
-            except ValueError:
+            except ValueError as e:
                 if href is not None:
                     item_errors += 1
+                else:
+                    collection_errors += 1
+                    logger.error(
+                        "Invalid collection %r: %s", sane_path, e,
+                        exc_info=True)
             except Exception as e:
                 if href is not None:
                     item_errors += 1
