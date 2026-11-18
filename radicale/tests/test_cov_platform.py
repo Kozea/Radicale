@@ -26,7 +26,6 @@ import ctypes
 import ctypes.wintypes
 import importlib
 import importlib.abc
-import importlib.resources.abc
 import io
 import json
 import logging
@@ -256,7 +255,9 @@ def test_python312_traversable_alias_still_serves_stylesheet():
     shipped tree. The alias is the 3.12 union, not the 3.13 one.
     """
     if not hasattr(importlib.abc, "Traversable"):
-        importlib.abc.Traversable = importlib.resources.abc.Traversable  # type: ignore[attr-defined]
+        # Python 3.13 moved the name. 3.9 and 3.10 have no resources.abc package.
+        import importlib.resources.abc as resources_abc
+        importlib.abc.Traversable = resources_abc.Traversable  # type: ignore[attr-defined]
         remove_alias = True
     else:
         remove_alias = False
