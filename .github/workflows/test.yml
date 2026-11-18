@@ -20,6 +20,7 @@ on:
       - '.github/workflows/generate-documentation.yml'
       - '.github/workflows/pypi-publish.yml'
       - '.github/workflows/codeql.yml'
+      - '.github/workflows/dependency-audit.yml'
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -38,6 +39,7 @@ on:
       - '.github/workflows/generate-documentation.yml'
       - '.github/workflows/pypi-publish.yml'
       - '.github/workflows/codeql.yml'
+      - '.github/workflows/dependency-audit.yml'
 
 jobs:
 

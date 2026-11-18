@@ -1,0 +1,32 @@
+name: Dependency audit
+
+# Fail when an installed dependency has a known vulnerability, including on
+# days when nobody pushes. This is the Python equivalent of bundle audit
+# and mix hex.audit: audit the dependency set, and surface a new advisory
+# without waiting for the next code change.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: '30 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Audit installed Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit
+          python -m pip install '.[bcrypt,argon2,ldap,oauth2,rabbitmq,cheroot,h2]'
+          pip-audit
