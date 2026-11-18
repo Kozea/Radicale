@@ -47,6 +47,10 @@ from radicale.tests.helpers import get_file_content
 
 EVENT_ICS = get_file_content("event1.ics")
 CONTACT_VCF = get_file_content("contact1.vcf")
+# Unsupported protocol version. CPython and PyPy both raise ValueError,
+# which these loaders already treat as a damaged file. An unknown opcode
+# is UnpicklingError on CPython and KeyError on PyPy.
+_DAMAGED_PICKLE = b"\x80\xff"
 
 
 def _suite_log_level():
@@ -462,7 +466,7 @@ def test_item_cache_expiry_hash_and_corrupt_entries(tmp_path, monkeypatch, caplo
     assert collection._load_item_cache("empty.ics", "") is None
     corrupt = os.path.join(cache_folder, "corrupt.ics")
     with open(corrupt, "wb") as handle:
-        handle.write(b"not pickle")
+        handle.write(_DAMAGED_PICKLE)
     assert collection._load_item_cache("corrupt.ics", cache_hash) is None
     assert "Failed to load item cache entry" in caplog.text
 
@@ -547,7 +551,7 @@ def test_history_corrupt_entry_and_unsafe_deleted_name(tmp_path, caplog):
     assert "bad~" not in hrefs
     corrupt = os.path.join(history_folder, "event1.ics")
     with open(corrupt, "wb") as handle:
-        handle.write(b"not pickle")
+        handle.write(_DAMAGED_PICKLE)
     with storage_.acquire_lock("w"):
         token, changes = collection.sync()
     assert token.startswith("http://radicale.org/ns/sync/")
@@ -765,7 +769,7 @@ def test_sync_token_shapes_damage_permission_and_deletions(tmp_path, caplog):
         assert "later.ics" in changed
         assert "event1.ics" not in changed
         with open(token_path, "wb") as handle:
-            handle.write(b"not pickle")
+            handle.write(_DAMAGED_PICKLE)
         with pytest.raises(ValueError, match="Token not found"):
             collection.sync(token)
         assert not os.path.exists(token_path)
