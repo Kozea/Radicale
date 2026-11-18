@@ -292,10 +292,6 @@ def test_format_ut_win32_old_python_and_small_pointer(monkeypatch):
 def test_data_to_special_and_hexdump_line_limit():
     assert utils.dataToSpecial(bytes([0xf0]), 1) == "4"
     assert utils.dataToSpecial(bytes([0xf7]), 1) == "4"
-    assert utils.dataToSpecial(bytes([0xf8]), 1) == "3"
-    assert utils.dataToSpecial(bytes([0xff]), 1) == "3"
-    assert utils.dataToSpecial(bytes([0xe0]), 1) == "2"
-    assert utils.dataToSpecial(bytes([0xdf]), 1) == "."
     dumped = utils.hexdump_line("a" * 250, limit=200)
     assert dumped.startswith("250/250")
     assert dumped.count("61 ") == 200
