@@ -276,7 +276,9 @@ def xml_propfind_response(
                     child_element.text = "mailto:" + address
                     element.append(child_element)
             child_element = ET.Element(xmlutils.make_clark("D:href"))
-            child_element.text = xmlutils.make_href(base_prefix, path)
+            # This response's resource, not the PROPFIND request path.
+            # Depth 1 would otherwise report the parent for every child.
+            child_element.text = xmlutils.make_href(base_prefix, uri)
             if share:
                 # backmap
                 if child_element.text.startswith(base_prefix + share['PathMapped']):
