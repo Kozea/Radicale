@@ -143,6 +143,23 @@ def _second_profiler_is_blocked():
         holder.disable()
 
 
+def _release_method_profilers(application):
+    """Drop method profilers before the interpreter shuts down.
+
+    They are stored on the Application class. Finalizing them at process
+    exit killed the 32-bit job with signal 11 after the suite had passed.
+    """
+    application._profiling_per_request_method = False
+    profilers = application.profiler_per_request_method
+    for profiler in list(profilers.values()):
+        try:
+            profiler.disable()
+        except ValueError:
+            pass
+    profilers.clear()
+    application.profiler_per_request_method_counter.clear()
+
+
 class Hook:
     """Recording hook loaded as radicale.tests.test_cov_app."""
 
@@ -478,29 +495,32 @@ class TestCovApp(BaseTest):
                 "profiling_per_request_method_interval": "1",
                 "profiling_top_x_functions": "1",
             }})
-        self.application.profiler_per_request_method_logtime = (
-            datetime.datetime.now() - datetime.timedelta(seconds=30))
-        caplog.clear()
-        status, _, body = self.request("GET", "/calendar.ics/", check=None)
-        assert status == 200 and "BEGIN:VCALENDAR" in body
-        self.application._profiler_per_request_method(False)
-        self.application._profiler_per_request_method(True)
-        self.application.__del__()
-        text = "\n".join(caplog.messages)
-        assert "Profiling data per request method GET" in text
-        assert "no request seen so far" in text
-        assert "**Profiling statistics BEGIN**" in text
-
-        outer = cProfile.Profile()
-        outer.enable()
         try:
+            self.application.profiler_per_request_method_logtime = (
+                datetime.datetime.now() - datetime.timedelta(seconds=30))
             caplog.clear()
-            status, headers, body = self.request(
-                "OPTIONS", "/calendar.ics/", check=None)
+            status, _, body = self.request("GET", "/calendar.ics/", check=None)
+            assert status == 200 and "BEGIN:VCALENDAR" in body
+            self.application._profiler_per_request_method(False)
+            self.application._profiler_per_request_method(True)
+            self.application.__del__()
+            text = "\n".join(caplog.messages)
+            assert "Profiling data per request method GET" in text
+            assert "no request seen so far" in text
+            assert "**Profiling statistics BEGIN**" in text
+
+            outer = cProfile.Profile()
+            outer.enable()
+            try:
+                caplog.clear()
+                status, headers, body = self.request(
+                    "OPTIONS", "/calendar.ics/", check=None)
+            finally:
+                outer.disable()
+            assert status == 200 and body == ""
+            assert headers.get("DAV")
         finally:
-            outer.disable()
-        assert status == 200 and body == ""
-        assert headers.get("DAV")
+            _release_method_profilers(self.application)
 
     def test_random_auth_and_response_delays(self, caplog):
         saved = os.environ.pop("PYTEST_VERSION", None)
