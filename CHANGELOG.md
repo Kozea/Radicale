@@ -9,6 +9,8 @@
 * Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
 * Adjust: [storage] filesystem_fsync option documented and renamed from `_filesystem_fsync` (internal use only so far)
 * Performance: storage: add fast path for has_uid in multifilesystem
+* Fix: hook: notify on a whole-collection PUT. The prepared items were consumed while the collection was stored, so the hook never saw them
+* Fix: hook: a whole-collection PUT reports a replaced item's previous body as old_content and the uploaded body as content. The filename written for each item was discarded, so every item was reported as new
 
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0
