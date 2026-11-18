@@ -227,7 +227,8 @@ class TestCovAppSharing(BaseTest):
 
     def _retarget(self, old_token, new_token):
         path = os.path.join(self.colpath, "collection-db", "sharing.csv")
-        text = open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
         assert old_token in text
         text = text.replace(old_token, new_token)
         with open(path, "w", encoding="utf-8") as handle:
@@ -649,7 +650,8 @@ class TestCovAppSharing(BaseTest):
                  login="user:userpw")
         self._map("/owner/cal.ics/", "/user/item/", permissions="r")
         path = os.path.join(self.colpath, "collection-db", "sharing.csv")
-        text = open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
         assert "/owner/cal.ics/" in text
         text = text.replace("/owner/cal.ics/", "/owner/cal.ics/event.ics", 1)
         with open(path, "w", encoding="utf-8") as handle:
@@ -684,7 +686,8 @@ class TestCovAppSharing(BaseTest):
                  login="owner:ownerpw")
         self._map("/owner/listed.ics/", "/user/fresh/", permissions="r")
         path = os.path.join(self.colpath, "collection-db", "sharing.csv")
-        text = open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
         assert "/user/fresh/" in text
         text = text.replace("/user/fresh/", "/user/mine.ics/")
         with open(path, "w", encoding="utf-8") as handle:

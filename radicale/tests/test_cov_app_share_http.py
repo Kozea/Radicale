@@ -201,7 +201,8 @@ class TestCovAppRestSharing(BaseTest):
 
     def _retarget(self, old_token, new_token):
         path = os.path.join(self.colpath, "collection-db", "sharing.csv")
-        text = open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
         assert old_token in text
         text = text.replace(old_token, new_token)
         with open(path, "w", encoding="utf-8") as handle:
