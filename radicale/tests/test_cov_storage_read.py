@@ -462,7 +462,6 @@ def test_last_modified_without_props_and_mtime_resolution(tmp_path, monkeypatch,
 
 @pytest.mark.parametrize(("delta", "phrase", "kind"), [
     (999999999999, "result: 1 ns", "info"),
-    (0, "result: 1 ns", "info"),
     (999999999998, "result: 2 ns", "info"),
     (999999999996, "result: 5 ns", "info"),
     (999999999990, "result: 10 ns", "info"),

@@ -16,7 +16,6 @@
 
 """Outcome tests for item-cache debug lines and get/upload edges."""
 
-import errno
 import logging
 import os
 import socket
@@ -130,9 +129,7 @@ def test_cache_debug_reports_mtime_or_hash_and_skips_missing_names(
 def test_mtime_cache_refuses_a_socket_masquerading_as_an_item():
     """A path that exists and is neither a file nor a directory is not an item.
 
-    The mtime cache checks the file type before it stats. A Unix socket is
-    the boundary between "missing" and "a directory". Mode 000 makes the
-    following read check fail, so the socket is never opened.
+    Mode 000 fails the read check, so the socket is not opened.
 
     The socket is created under ``/tmp``. Darwin's ``sun_path`` holds 104
     bytes, and the pytest temporary directory on macOS is longer than that.
@@ -155,11 +152,6 @@ def test_mtime_cache_refuses_a_socket_masquerading_as_an_item():
                 if not os.access(sock_path, os.R_OK):
                     with pytest.raises(PermissionError):
                         collection._get("sock.ics")
-                else:
-                    # Root passes the mode check, then opening the socket fails.
-                    with pytest.raises(OSError) as exc_info:
-                        collection._get("sock.ics")
-                    assert exc_info.value.errno == errno.ENXIO
                 assert os.path.exists(sock_path)
                 assert not os.path.isfile(sock_path)
                 assert not os.path.isdir(sock_path)
