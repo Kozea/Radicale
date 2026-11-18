@@ -20,6 +20,8 @@ import errno
 import logging
 import os
 import socket
+import sys
+import tempfile
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -125,37 +127,48 @@ def test_cache_debug_reports_mtime_or_hash_and_skips_missing_names(
 @pytest.mark.skipif(
     not hasattr(socket, "AF_UNIX"),
     reason="This platform has no unix-socket inode")
-def test_mtime_cache_refuses_a_socket_masquerading_as_an_item(tmp_path):
+def test_mtime_cache_refuses_a_socket_masquerading_as_an_item():
     """A path that exists and is neither a file nor a directory is not an item.
 
     The mtime cache checks the file type before it stats. A Unix socket is
     the boundary between "missing" and "a directory". Mode 000 makes the
     following read check fail, so the socket is never opened.
+
+    The socket is created under ``/tmp``. Darwin's ``sun_path`` holds 104
+    bytes, and the pytest temporary directory on macOS is longer than that.
     """
-    storage_ = _storage(tmp_path)
-    with storage_.acquire_lock("w"):
-        collection = storage_.create_collection(
-            "/user/cal/", props={"tag": "VCALENDAR"})[0]
-        storage_._use_mtime_and_size_for_item_cache = True
-        sock_path = os.path.join(collection._filesystem_path, "sock.ics")
-        sock = socket.socket(socket.AF_UNIX)
-        try:
-            sock.bind(sock_path)
-            os.chmod(sock_path, 0)
-            if not os.access(sock_path, os.R_OK):
-                with pytest.raises(PermissionError):
-                    collection._get("sock.ics")
-            else:
-                # Root passes the mode check, then opening the socket inode fails.
-                with pytest.raises(OSError) as exc_info:
-                    collection._get("sock.ics")
-                assert exc_info.value.errno == errno.ENXIO
-            assert os.path.exists(sock_path)
-            assert not os.path.isfile(sock_path)
-            assert not os.path.isdir(sock_path)
-        finally:
-            sock.close()
-            os.chmod(sock_path, 0o600)
+    # ``dir="/tmp"`` stays short. The default temp directory on macOS does not.
+    with tempfile.TemporaryDirectory(prefix="rc", dir="/tmp") as folder:
+        storage_ = _storage(folder)
+        with storage_.acquire_lock("w"):
+            collection = storage_.create_collection(
+                "/user/cal/", props={"tag": "VCALENDAR"})[0]
+            storage_._use_mtime_and_size_for_item_cache = True
+            sock_path = os.path.join(collection._filesystem_path, "sock.ics")
+            # ``sun_path`` includes the terminating NUL.
+            sun_path_max = 104 if sys.platform == "darwin" else 108
+            assert len(os.fsencode(sock_path)) < sun_path_max
+            sock = socket.socket(socket.AF_UNIX)
+            try:
+                sock.bind(sock_path)
+                os.chmod(sock_path, 0)
+                if not os.access(sock_path, os.R_OK):
+                    with pytest.raises(PermissionError):
+                        collection._get("sock.ics")
+                else:
+                    # Root passes the mode check, then opening the socket fails.
+                    with pytest.raises(OSError) as exc_info:
+                        collection._get("sock.ics")
+                    assert exc_info.value.errno == errno.ENXIO
+                assert os.path.exists(sock_path)
+                assert not os.path.isfile(sock_path)
+                assert not os.path.isdir(sock_path)
+            finally:
+                sock.close()
+                # A failed bind leaves no inode. Restoring the mode then
+                # would hide the bind error.
+                if os.path.exists(sock_path):
+                    os.chmod(sock_path, 0o600)
 
 
 def test_read_lock_recheck_uses_a_cache_entry_that_appears(
