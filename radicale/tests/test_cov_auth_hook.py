@@ -214,8 +214,16 @@ class TestAuthLoadAndCache(BaseTest):
             handle.write("tmp:two\n")
         # Same length, so a coarse mtime (VFAT is about 2s) would keep the
         # cached hash. Move the stamp so every filesystem reports a change.
+        # NTFS refuses an explicit stamp. A rewrite there already moves mtime;
+        # if it did not, a second entry changes the size and the cache reloads.
         stamped = os.stat(path)
-        os.utime(path, ns=(stamped.st_atime_ns, stamped.st_mtime_ns + 2_000_000_000))
+        previous_ns = stamped.st_mtime_ns
+        try:
+            os.utime(path, ns=(stamped.st_atime_ns, previous_ns + 2_000_000_000))
+        except OSError:
+            if os.stat(path).st_mtime_ns == previous_ns:
+                with open(path, "a", encoding="utf-8") as handle:
+                    handle.write("other:unused\n")
         assert self._login("tmp", "one")[2] == "htpasswd/cached"
         clock["ns"] += 10 * 10 ** 9
         assert self._login("tmp", "one")[0] == ""
