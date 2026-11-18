@@ -31,6 +31,7 @@ import pathlib
 import pickle
 import signal
 import socket
+import stat
 import ssl
 import subprocess
 import sys
@@ -274,8 +275,13 @@ def test_from_file_missing_unreadable_and_runtime_errors(tmp_path, monkeypatch, 
     os.chmod(unreadable, 0)
     try:
         configuration.update({"rights": {"file": str(unreadable)}}, "test")
-        with pytest.raises(RuntimeError, match="Failed to load rights file"):
-            rights.load(configuration)
+        if os.access(unreadable, os.R_OK):
+            # Root reads mode 000. The file still grants R.
+            backend = rights.load(configuration)
+            assert backend.authorization("user", set(), "/user/") == "R"
+        else:
+            with pytest.raises(RuntimeError, match="Failed to load rights file"):
+                rights.load(configuration)
     finally:
         os.chmod(unreadable, 0o644)
 
@@ -829,6 +835,9 @@ def test_format_ut_win32_old_python_and_small_pointer(monkeypatch):
     assert utils.format_ut(0) == "0"
     assert utils.format_ut(1_700_000_000) == "1700000000"
     monkeypatch.setattr(utils.sys, "platform", "linux")
+    # A 32-bit process already has maxsize <= 2**32, so the old-Python arm
+    # is unreachable until the pointer size is forced wide.
+    monkeypatch.setattr(utils.sys, "maxsize", 2 ** 33)
 
     class _DateTime:
         def __new__(cls, *args, **kwargs):
@@ -1892,11 +1901,16 @@ def test_get_boundaries_cache_reload_and_size(tmp_path, monkeypatch, caplog):
     item_path = os.path.join(collection._filesystem_path, "event1.ics")
     os.chmod(item_path, 0)
     try:
-        with pytest.raises(PermissionError):
-            collection._get("event1.ics")
-        monkeypatch.setattr(storage_get.sys, "platform", "win32")
-        with pytest.raises(PermissionError):
-            collection._get("event1.ics")
+        if os.access(item_path, os.R_OK):
+            assert collection._get("event1.ics").uid == "event1"
+            monkeypatch.setattr(storage_get.sys, "platform", "win32")
+            assert collection._get("event1.ics").uid == "event1"
+        else:
+            with pytest.raises(PermissionError):
+                collection._get("event1.ics")
+            monkeypatch.setattr(storage_get.sys, "platform", "win32")
+            with pytest.raises(PermissionError):
+                collection._get("event1.ics")
     finally:
         os.chmod(item_path, 0o644)
 
@@ -3173,10 +3187,17 @@ def test_get_fifo_reload_hit_and_missing_href(tmp_path, monkeypatch):
     os.mkfifo(pipe)
     os.chmod(pipe, 0)
     try:
-        with pytest.raises(PermissionError):
-            collection._get("pipe.ics")
+        if os.access(pipe, os.R_OK):
+            # Root ignores mode 000. Opening the fifo would block with no writer.
+            assert stat.S_ISFIFO(os.stat(pipe).st_mode)
+        else:
+            with pytest.raises(PermissionError):
+                collection._get("pipe.ics")
     finally:
-        os.chmod(pipe, 0o644)
+        try:
+            os.chmod(pipe, 0o644)
+        except OSError:
+            pass
         os.remove(pipe)
 
     storage_._use_mtime_and_size_for_item_cache = False

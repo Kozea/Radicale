@@ -212,6 +212,10 @@ class TestAuthLoadAndCache(BaseTest):
         clock["ns"] += 1 * 10 ** 9
         with open(path, "w", encoding="utf-8") as handle:
             handle.write("tmp:two\n")
+        # Same length, so a coarse mtime (VFAT is about 2s) would keep the
+        # cached hash. Move the stamp so every filesystem reports a change.
+        stamped = os.stat(path)
+        os.utime(path, ns=(stamped.st_atime_ns, stamped.st_mtime_ns + 2_000_000_000))
         assert self._login("tmp", "one")[2] == "htpasswd/cached"
         clock["ns"] += 10 * 10 ** 9
         assert self._login("tmp", "one")[0] == ""

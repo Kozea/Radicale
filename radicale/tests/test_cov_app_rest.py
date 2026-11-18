@@ -529,13 +529,18 @@ class TestCovAppRest(BaseTest):
             builtins.__import__ = real_import
             importlib.reload(app_module)
             self.application = app_module.Application(self.configuration)
-        import compression.zstd as zstd_mod
         status, headers, raw = self.request_raw(
             "GET", "/", HTTP_ACCEPT_ENCODING="zstd", check=None)
         assert status == 302
-        assert headers.get("Content-Encoding") == "zstd"
-        assert zstd_mod.ZstdDecompressor().decompress(raw).decode() == (
-            "Redirected to /.web")
+        if app_module.zstd is None:
+            # Python before 3.14 has no compression.zstd. The redirect stays plain.
+            assert headers.get("Content-Encoding") is None
+            assert raw == b"Redirected to /.web"
+        else:
+            import compression.zstd as zstd_mod
+            assert headers.get("Content-Encoding") == "zstd"
+            assert zstd_mod.ZstdDecompressor().decompress(raw).decode() == (
+                "Redirected to /.web")
 
     def test_nested_collection_without_item_write_is_refused(self, caplog):
         self.mkcalendar("/cal.ics/")

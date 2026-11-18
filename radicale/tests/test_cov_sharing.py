@@ -42,6 +42,42 @@ TRACE = 5
 _OMIT = object()
 
 
+def _restore_mode(path, mode):
+    try:
+        os.chmod(path, mode)
+    except OSError:
+        return False
+    return True
+
+
+def _writes_blocked(path):
+    """True when this user cannot create or append on path."""
+    if os.path.isdir(path):
+        probe = os.path.join(path, ".cov-write-probe")
+        try:
+            fd = os.open(probe, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except OSError:
+            return True
+        os.close(fd)
+        os.remove(probe)
+        return False
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_APPEND)
+    except OSError:
+        return True
+    os.close(fd)
+    return False
+
+
+def _restrict_writes(path, mode):
+    """Apply mode. True only when a later write by this user fails."""
+    try:
+        os.chmod(path, mode)
+    except OSError:
+        return False
+    return _writes_blocked(path)
+
+
 class _TimeoutStream:
     def read(self, size=-1):
         raise socket.timeout("timed out")
@@ -752,47 +788,60 @@ class TestSharingCoverage(BaseTest):
         assert "not-a-share" not in paths
 
         token_dir = backend._sharing_database_path_ShareType["token"]
-        os.chmod(token_dir, 0o555)
+        token_blocked = _restrict_writes(token_dir, 0o555)
+        token_path = "/.token/v1/" + ("c" * 44) + "/"
         try:
             failed = backend.database_create_sharing(
-                ShareType="token", PathOrToken="/.token/v1/" + ("c" * 44) + "/",
+                ShareType="token", PathOrToken=token_path,
                 PathMapped="/owner/covcal.ics/", Conversion="none",
                 Owner="owner", User="owner", Permissions="r",
                 EnabledByOwner=True, EnabledByUser=True,
                 HiddenByOwner=False, HiddenByUser=False, Timestamp=1,
                 Properties={}, Actions={},
             )
-            assert failed["status"] == "error"
-            assert "cannot store share-config" in caplog.text
+            if token_blocked:
+                assert failed["status"] == "error"
+                assert "cannot store share-config" in caplog.text
+            else:
+                assert failed["status"] == "success"
+                stored = backend.database_get_sharing(
+                    "token", token_path, OnlyEnabled=False, User="owner")
+                assert stored["PathMapped"] == "/owner/covcal.ics/"
         finally:
-            os.chmod(token_dir, 0o755)
+            _restore_mode(token_dir, 0o755)
 
         target = self._store_files_row(_entry(
             PathOrToken="/user/locked.ics/", User="user", Permissions="r",
             EnabledByOwner=True, EnabledByUser=True))
-        os.chmod(target, 0o444)
+        file_blocked = _restrict_writes(target, 0o444)
         try:
             caplog.clear()
             failed = backend.database_update_sharing(
                 "map", "/user/locked.ics/", Permissions="rw", Timestamp=8)
-            assert failed["status"] == "error"
-            assert "cannot store share-config" in caplog.text
+            if file_blocked:
+                assert failed["status"] == "error"
+                assert "cannot store share-config" in caplog.text
+            else:
+                assert failed["status"] == "success"
         finally:
-            os.chmod(target, 0o644)
+            _restore_mode(target, 0o644)
         with open(target, "rb") as handle:
             _, row = pickle.load(handle)
-        assert row["Permissions"] == "r"
+        assert row["Permissions"] == ("r" if file_blocked else "rw")
 
-        os.chmod(map_dir, 0o555)
+        dir_blocked = _restrict_writes(map_dir, 0o555)
         try:
             caplog.clear()
             failed = backend.database_delete_sharing(
                 "map", "/user/locked.ics/", "user")
-            assert failed["status"] == "error"
-            assert "cannot remove share-config" in caplog.text
+            if dir_blocked:
+                assert failed["status"] == "error"
+                assert "cannot remove share-config" in caplog.text
+            else:
+                assert failed["status"] == "success"
         finally:
-            os.chmod(map_dir, 0o755)
-        assert os.path.isfile(target)
+            _restore_mode(map_dir, 0o755)
+        assert os.path.isfile(target) is dir_blocked
 
         with caplog.at_level(logging.INFO, logger="radicale"):
             assert backend.database_get_sharing(
@@ -814,26 +863,38 @@ class TestSharingCoverage(BaseTest):
 
         parent = os.path.join(self.colpath, "ro-parent")
         os.mkdir(parent, 0o555)
+        parent_blocked = _writes_blocked(parent)
         try:
             caplog.clear()
             self._enable("files", database_path=os.path.join(parent, "filesdb"))
-            assert self.application._sharing._enabled is False
-            self._api("all", "info", {}, check=404)
-            assert "sharing database path cannot be created" in caplog.text
+            if parent_blocked:
+                assert self.application._sharing._enabled is False
+                self._api("all", "info", {}, check=404)
+                assert "sharing database path cannot be created" in caplog.text
+            else:
+                assert self.application._sharing._enabled is True
+                info = json.loads(self._api("all", "info", {})[2])
+                assert info["Status"] == "success"
         finally:
-            os.chmod(parent, 0o755)
+            _restore_mode(parent, 0o755)
 
         database = os.path.join(self.colpath, "ro-db")
         os.mkdir(database, 0o555)
+        database_blocked = _writes_blocked(database)
         try:
             caplog.clear()
             self._enable("files", database_path=database)
-            assert self.application._sharing._enabled is False
-            self._api("all", "info", {}, check=404)
-            assert "cannot be created" in caplog.text
-            assert "token" in caplog.text
+            if database_blocked:
+                assert self.application._sharing._enabled is False
+                self._api("all", "info", {}, check=404)
+                assert "cannot be created" in caplog.text
+                assert "token" in caplog.text
+            else:
+                assert self.application._sharing._enabled is True
+                info = json.loads(self._api("all", "info", {})[2])
+                assert info["Status"] == "success"
         finally:
-            os.chmod(database, 0o755)
+            _restore_mode(database, 0o755)
 
     def test_api_rejects_malformed_requests(self, caplog):
         self._enable("csv")
@@ -1010,16 +1071,22 @@ class TestSharingCoverage(BaseTest):
                 self.colpath, "collection-root", "owner", "covcal.ics")):
             self.mkcalendar(collection, login="owner:ownerpw")
         token_dir = self.application._sharing._sharing_database_path_ShareType["token"]
-        os.chmod(token_dir, 0o555)
+        token_blocked = _restrict_writes(token_dir, 0o555)
         try:
             caplog.clear()
-            self._api("token", "create", {
+            payload = {
                 "PathMapped": collection, "User": "owner",
                 "Enabled": True, "Hidden": False,
-            }, check=500)
-            assert "cannot store share-config" in caplog.text
+            }
+            if token_blocked:
+                self._api("token", "create", payload, check=500)
+                assert "cannot store share-config" in caplog.text
+            else:
+                created = json.loads(self._api("token", "create", payload)[2])
+                assert created["Status"] == "success"
+                assert created["PathOrToken"]
         finally:
-            os.chmod(token_dir, 0o755)
+            _restore_mode(token_dir, 0o755)
 
         def weird(**kwargs):
             return {"status": "weird"}
@@ -1095,28 +1162,36 @@ class TestSharingCoverage(BaseTest):
         target = os.path.join(
             self.application._sharing._sharing_database_path_ShareType["map"],
             self.application._sharing._encode_path("/user/fileshare.ics/"))
-        os.chmod(target, 0o444)
+        file_blocked = _restrict_writes(target, 0o444)
         try:
             caplog.clear()
-            _, _, answer = self._api("map", "update", {
+            payload = {
                 "PathOrToken": "/user/fileshare.ics/", "Hidden": True,
                 "User": "owner",
-            }, check=400)
-            assert "Internal Error" in answer
-            assert "cannot store share-config" in caplog.text
+            }
+            if file_blocked:
+                _, _, answer = self._api("map", "update", payload, check=400)
+                assert "Internal Error" in answer
+                assert "cannot store share-config" in caplog.text
+            else:
+                updated = json.loads(self._api("map", "update", payload)[2])
+                assert updated["Status"] == "success"
         finally:
-            os.chmod(target, 0o644)
-        os.chmod(os.path.dirname(target), 0o555)
+            _restore_mode(target, 0o644)
+        dir_blocked = _restrict_writes(os.path.dirname(target), 0o555)
         try:
             caplog.clear()
-            _, _, answer = self._api("map", "delete", {
-                "PathOrToken": "/user/fileshare.ics/", "User": "owner",
-            }, check=400)
-            assert "Internal Error" in answer
-            assert "cannot remove share-config" in caplog.text
+            payload = {"PathOrToken": "/user/fileshare.ics/", "User": "owner"}
+            if dir_blocked:
+                _, _, answer = self._api("map", "delete", payload, check=400)
+                assert "Internal Error" in answer
+                assert "cannot remove share-config" in caplog.text
+            else:
+                deleted = json.loads(self._api("map", "delete", payload)[2])
+                assert deleted["Status"] == "success"
         finally:
-            os.chmod(os.path.dirname(target), 0o755)
-        assert os.path.isfile(target)
+            _restore_mode(os.path.dirname(target), 0o755)
+        assert os.path.isfile(target) is dir_blocked
 
         def status_of(status):
             def inner(*args, **kwargs):

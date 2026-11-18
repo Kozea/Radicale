@@ -251,14 +251,19 @@ class TestCovApp(BaseTest):
         assert status == 400 and body == BAD_REQUEST
         status, _, body = self.request("MKCALENDAR", "/plain.ics/", check=None)
         assert status == 201 and "BEGIN:VCALENDAR" in self.get("/plain.ics/")[1]
-        self.application._storage._supports_trailing_whitespace = True
-        self.application._storage._supports_problematic_chars = True
-        status, _, body = self.request("MKCALENDAR", "/kept ", check=None)
-        assert status == 201, body
-        assert "BEGIN:VCALENDAR" in self.get("/kept ")[1]
-        status, _, body = self.request("MKCALENDAR", "/star2*.ics/", check=None)
-        assert status == 201, body
-        assert "BEGIN:VCALENDAR" in self.get("/star2*.ics/")[1]
+        # VFAT rejects the name at rename time. Only claim the allow outcome
+        # where a probe shows the filesystem keeps the character.
+        if pathutils.path_supports_trailing_whitespace(self.colpath):
+            self.application._storage._supports_trailing_whitespace = True
+            status, _, body = self.request("MKCALENDAR", "/kept ", check=None)
+            assert status == 201, body
+            assert "BEGIN:VCALENDAR" in self.get("/kept ")[1]
+        if pathutils.path_supports_problematic_chars(self.colpath):
+            self.application._storage._supports_problematic_chars = True
+            status, _, body = self.request(
+                "MKCALENDAR", "/star2*.ics/", check=None)
+            assert status == 201, body
+            assert "BEGIN:VCALENDAR" in self.get("/star2*.ics/")[1]
         with _Level(logging.INFO):
             status, _, body = self.request(
                 "MKCALENDAR", "/a\u200bb.ics/", check=None)
