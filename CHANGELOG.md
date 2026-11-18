@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: sharing update rejects a JSON `null` path with `400` and treats JSON `null` properties or actions as a clear. Those values used to crash the request with HTTP 500
 * Fix: proppatch: setting `resourcetype` (e.g. `CS:subscribed`) stored the change but answered `400 Bad Request`
 * Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
 * Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
