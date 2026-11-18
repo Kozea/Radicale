@@ -275,6 +275,14 @@ class TestAuthLoadAndCache(BaseTest):
         assert "Login failed cache for user cleared" in caplog.text
 
 
+def _ensure_unix_family(monkeypatch):
+    """Let the default Dovecot family construct where ``AF_UNIX`` is absent."""
+    import socket
+
+    if not hasattr(socket, "AF_UNIX"):
+        monkeypatch.setattr(socket, "AF_UNIX", 1, raising=False)
+
+
 class TestDovecotGaps(BaseTest):
     """Clear-text families, empty credentials, and version 1.3 handshake."""
 
@@ -330,6 +338,7 @@ class TestDovecotGaps(BaseTest):
 
     def test_empty_credentials_do_not_open_a_socket(self, monkeypatch, caplog):
         caplog.set_level(logging.WARNING)
+        _ensure_unix_family(monkeypatch)
 
         def boom(*args, **kwargs):
             raise AssertionError("socket opened")
@@ -344,6 +353,8 @@ class TestDovecotGaps(BaseTest):
         assert "requires non-empty password" in caplog.text
 
     def test_version_1_3_sends_version_once_and_returns_the_user(self, monkeypatch):
+        _ensure_unix_family(monkeypatch)
+
         class ScriptedSocket:
             def __init__(self, family, sock_type):
                 self.sent = []
