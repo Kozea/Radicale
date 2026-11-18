@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: sharing hide, unhide, enable, and disable report a failed update as `400 Internal Error`. The same failure on update and delete was already `400`, and these actions used to answer `200`
 * Fix: proppatch: setting `resourcetype` (e.g. `CS:subscribed`) stored the change but answered `400 Bad Request`
 * Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
 * Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
