@@ -55,7 +55,8 @@ def _capture_overloads(paths):
     typing.overload = capturing
     try:
         for path in paths:
-            source = open(path, encoding="utf-8").read()
+            with open(path, encoding="utf-8") as handle:
+                source = handle.read()
             exec(compile(source, path, "exec"), {
                 "__name__": "overload_probe",
                 "__file__": path,
