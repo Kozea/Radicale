@@ -564,10 +564,13 @@ def test_rwlock_invalid_mode_flock_failure_and_broken_guarantee(tmp_path, monkey
             pass
     assert lock.locked == ""
 
-    def fail_flock(*_args):
-        raise OSError(errno.EIO, "flock failed")
+    def fail_lock(*_args):
+        raise OSError(errno.EIO, "lock failed")
 
-    monkeypatch.setattr(pathutils.fcntl, "flock", fail_flock)
+    if sys.platform == "win32":
+        monkeypatch.setattr(pathutils, "lock_file_ex", fail_lock)
+    else:
+        monkeypatch.setattr(pathutils.fcntl, "flock", fail_lock)
     with pytest.raises(RuntimeError, match="Locking the storage failed"):
         with lock.acquire("w"):
             pass
@@ -591,32 +594,49 @@ def test_rename_exchange_success_inval_and_other_errno(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="Invalid arguments"):
         pathutils.rename_exchange("", "no-base")
 
-    def forbid_fallback(*_args, **_kwargs):
-        raise AssertionError("fallback used")
+    if sys.platform == "linux" and getattr(pathutils, "renameat2", None):
+        def forbid_fallback(*_args, **_kwargs):
+            raise AssertionError("fallback used")
 
-    monkeypatch.setattr(pathutils, "TemporaryDirectory", forbid_fallback)
-    pathutils.rename_exchange(str(src), str(dst))
-    assert src.read_text(encoding="utf-8") == "dest"
-    assert dst.read_text(encoding="utf-8") == "source"
-    monkeypatch.undo()
-
-    def reject(*_args):
-        return -1
-
-    monkeypatch.setattr(pathutils, "renameat2", reject)
-    monkeypatch.setattr(pathutils.ctypes, "get_errno", lambda: errno.EPERM)
-    with pytest.raises(OSError) as exc_info:
+        monkeypatch.setattr(pathutils, "TemporaryDirectory", forbid_fallback)
         pathutils.rename_exchange(str(src), str(dst))
-    assert exc_info.value.errno == errno.EPERM
-    assert src.read_text(encoding="utf-8") == "dest"
+        assert src.read_text(encoding="utf-8") == "dest"
+        assert dst.read_text(encoding="utf-8") == "source"
+        monkeypatch.undo()
 
-    monkeypatch.setattr(pathutils.ctypes, "get_errno", lambda: errno.EINVAL)
-    pathutils.rename_exchange(str(src), str(dst))
-    assert src.read_text(encoding="utf-8") == "source"
-    assert dst.read_text(encoding="utf-8") == "dest"
+        def reject(*_args):
+            return -1
+
+        monkeypatch.setattr(pathutils, "renameat2", reject)
+        monkeypatch.setattr(pathutils.ctypes, "get_errno", lambda: errno.EPERM)
+        with pytest.raises(OSError) as exc_info:
+            pathutils.rename_exchange(str(src), str(dst))
+        assert exc_info.value.errno == errno.EPERM
+        assert src.read_text(encoding="utf-8") == "dest"
+
+        monkeypatch.setattr(pathutils.ctypes, "get_errno", lambda: errno.EINVAL)
+        pathutils.rename_exchange(str(src), str(dst))
+        assert src.read_text(encoding="utf-8") == "source"
+        assert dst.read_text(encoding="utf-8") == "dest"
+    else:
+        # Windows and macOS exchange by copying through a temporary directory.
+        pathutils.rename_exchange(str(src), str(dst))
+        assert src.read_text(encoding="utf-8") == "dest"
+        assert dst.read_text(encoding="utf-8") == "source"
 
 
 def test_renameat2_attributeerror_uses_the_copy_fallback(tmp_path):
+    src = tmp_path / "a"
+    dst = tmp_path / "b"
+    src.write_text("A", encoding="utf-8")
+    dst.write_text("B", encoding="utf-8")
+    if sys.platform != "linux":
+        assert not hasattr(pathutils, "renameat2")
+        pathutils.rename_exchange(str(src), str(dst))
+        assert src.read_text(encoding="utf-8") == "B"
+        assert dst.read_text(encoding="utf-8") == "A"
+        return
+
     real_cdll = ctypes.CDLL
 
     class _MissingRename:
@@ -627,10 +647,6 @@ def test_renameat2_attributeerror_uses_the_copy_fallback(tmp_path):
         ctypes.CDLL = lambda *_args, **_kwargs: _MissingRename()  # type: ignore[assignment]
         importlib.reload(pathutils)
         assert pathutils.renameat2 is None
-        src = tmp_path / "a"
-        dst = tmp_path / "b"
-        src.write_text("A", encoding="utf-8")
-        dst.write_text("B", encoding="utf-8")
         pathutils.rename_exchange(str(src), str(dst))
         assert src.read_text(encoding="utf-8") == "B"
         assert dst.read_text(encoding="utf-8") == "A"
@@ -654,7 +670,10 @@ def test_fsync_darwin_fullfsync_einval_and_other_errno(tmp_path, monkeypatch):
     def no_fsync(_fd):
         raise AssertionError("os.fsync")
 
-    monkeypatch.setattr(pathutils.fcntl, "fcntl", full)
+    if not hasattr(pathutils, "fcntl"):
+        monkeypatch.setattr(pathutils, "fcntl", SimpleNamespace(fcntl=full), raising=False)
+    else:
+        monkeypatch.setattr(pathutils.fcntl, "fcntl", full)
     monkeypatch.setattr(pathutils.os, "fsync", no_fsync)
     assert pathutils.fsync(fd) is None
     assert seen["cmd"] == 51
