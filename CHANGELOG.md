@@ -9,6 +9,7 @@
 * Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
 * Adjust: [storage] filesystem_fsync option documented and renamed from `_filesystem_fsync` (internal use only so far)
 * Performance: storage: add fast path for has_uid in multifilesystem
+* Fix: [storage] ignore a damaged item, history, or sync-token cache when unpickling raises KeyError
 
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0
