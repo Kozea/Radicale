@@ -351,16 +351,20 @@ def test_cache_folders_fsync_and_makedirs_failures(tmp_path, monkeypatch, caplog
     handle.name = "item.ics"
     with pytest.raises(RuntimeError, match="Fsync'ing file"):
         storage_._fsync(handle)
-    with pytest.raises(RuntimeError, match="Fsync'ing directory"):
-        storage_._sync_directory(str(tmp_path))
-
-    monkeypatch.setattr(storage_base.sys, "platform", "win32")
 
     def opened(*_args, **_kwargs):
         raise AssertionError("directory was opened")
 
-    monkeypatch.setattr(storage_base.os, "open", opened)
-    storage_._sync_directory(str(tmp_path))
+    # Directory fsync is POSIX-only. Windows returns before os.open.
+    if sys.platform == "win32":
+        monkeypatch.setattr(storage_base.os, "open", opened)
+        storage_._sync_directory(str(tmp_path))
+    else:
+        with pytest.raises(RuntimeError, match="Fsync'ing directory"):
+            storage_._sync_directory(str(tmp_path))
+        monkeypatch.setattr(storage_base.sys, "platform", "win32")
+        monkeypatch.setattr(storage_base.os, "open", opened)
+        storage_._sync_directory(str(tmp_path))
 
     monkeypatch.undo()
     storage_._filesystem_fsync = False
@@ -556,8 +560,14 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     logger.setLevel(logging.DEBUG)
     from radicale.storage.multifilesystem import lock as storage_lock
     marker = tmp_path / "hook.txt"
-    storage_ = _storage(tmp_path / "ok", {"storage": {
-        "hook": "echo hook-out; echo hook-out > %s; echo hook-err >&2" % marker}})
+    # The hook runs with shell=True. cmd.exe separates commands with "&".
+    if sys.platform == "win32":
+        hook = "echo hook-out& echo hook-out> %s& echo hook-err>&2" % marker
+        failing_hook = "echo ran& exit 3"
+    else:
+        hook = "echo hook-out; echo hook-out > %s; echo hook-err >&2" % marker
+        failing_hook = "echo ran; exit 3"
+    storage_ = _storage(tmp_path / "ok", {"storage": {"hook": hook}})
     _calendar(storage_, items=[_event()])
     assert marker.read_text(encoding="utf-8").strip() == "hook-out"
     assert "Captured stdout from storage hook" in caplog.text
@@ -566,7 +576,7 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     assert "hook-err" in caplog.text
 
     caplog.clear()
-    failing = _storage(tmp_path / "fail", {"storage": {"hook": "echo ran; exit 3"}})
+    failing = _storage(tmp_path / "fail", {"storage": {"hook": failing_hook}})
     _calendar(failing, href="/user/cal/", items=[_event()])
     assert "exit status 3" in caplog.text
     assert any(getattr(item, "uid", None) == "event1" for item in failing.discover("/user/cal/", "1"))
@@ -626,7 +636,7 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     def killpg(*_args, **_kwargs):
         raise AssertionError("killpg called")
 
-    monkeypatch.setattr(storage_lock.os, "killpg", killpg)
+    monkeypatch.setattr(storage_lock.os, "killpg", killpg, raising=False)
     win_marker = tmp_path / "win.txt"
     windows = _storage(tmp_path / "win", {"storage": {"hook": "echo win-hook > %s" % win_marker}})
     _calendar(windows, href="/user/cal/", items=[_event()])
@@ -640,10 +650,14 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     def setpgrp():
         group_marker.write_text("yes", encoding="utf-8")
 
-    monkeypatch.setattr(storage_lock.os, "setpgrp", setpgrp)
+    monkeypatch.setattr(storage_lock.os, "setpgrp", setpgrp, raising=False)
     old = _storage(tmp_path / "py39", {"storage": {"hook": "echo old-python"}})
     _calendar(old, href="/user/cal/", items=[_event()])
-    assert group_marker.read_text(encoding="utf-8") == "yes"
+    # win32 selects creationflags before the Python 3.9 preexec_fn branch.
+    if sys.platform == "win32":
+        assert not group_marker.exists()
+    else:
+        assert group_marker.read_text(encoding="utf-8") == "yes"
 
 
 def test_meta_cache_lock_invalid_json_and_write_failure(tmp_path, caplog):
@@ -793,7 +807,9 @@ def test_upload_nonce_names_errno_and_cache_logs(tmp_path, monkeypatch, caplog):
         if name.endswith(".ics") and "w" in str(mode) and ".Radicale.cache" not in name:
             state["n"] += 1
             if state["n"] == 1:
-                raise OSError(errno.EINVAL, "bad name")
+                # Linux retries EINVAL. Windows retries ERROR_INVALID_NAME (123).
+                bad = 123 if sys.platform == "win32" else errno.EINVAL
+                raise OSError(bad, "bad name")
         return real_open(path, mode, *args, **kwargs)
 
     monkeypatch.setattr(storage_upload, "open", flaky_open, raising=False)
@@ -821,8 +837,13 @@ def test_upload_nonce_names_errno_and_cache_logs(tmp_path, monkeypatch, caplog):
 
     monkeypatch.setattr(storage_upload, "open", inval_open, raising=False)
     with storage_.acquire_lock("w"):
-        with pytest.raises(RuntimeError, match="No href found"):
-            fresh._upload_all_nonatomic([_event(uid="none")], ".ics")
+        if sys.platform == "win32":
+            with pytest.raises(OSError) as exc_info:
+                fresh._upload_all_nonatomic([_event(uid="none")], ".ics")
+            assert exc_info.value.errno == errno.EINVAL
+        else:
+            with pytest.raises(RuntimeError, match="No href found"):
+                fresh._upload_all_nonatomic([_event(uid="none")], ".ics")
 
     state["n"] = 0
     monkeypatch.setattr(storage_upload, "sys", SimpleNamespace(platform="win32"))
@@ -851,6 +872,16 @@ def test_upload_nonce_names_errno_and_cache_logs(tmp_path, monkeypatch, caplog):
         with pytest.raises(OSError) as exc_info:
             fresh._upload_all_nonatomic([_event(uid="winother")], ".ics")
     assert exc_info.value.errno == errno.EINVAL
+
+    def win_exhausted(path, mode="r", *args, **kwargs):
+        if str(path).endswith(".ics") and "w" in str(mode) and ".Radicale.cache" not in str(path):
+            raise OSError(123, "bad win name")
+        return real_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(storage_upload, "open", win_exhausted, raising=False)
+    with storage_.acquire_lock("w"):
+        with pytest.raises(RuntimeError, match="No href found"):
+            fresh._upload_all_nonatomic([_event(uid="winnone")], ".ics")
     monkeypatch.undo()
 
     mtime_storage = _storage(tmp_path / "mtime", {"storage": {
