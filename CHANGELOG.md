@@ -1,8 +1,10 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: a calendar component that is only a recurrence override is reported once
 * Fix: proppatch: setting `resourcetype` (e.g. `CS:subscribed`) stored the change but answered `400 Bad Request`
 * Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
+* Fix: [auth] ldap3: an unexpected error while opening the reader connection raises "Unable to read" instead of crashing with an undefined connection
 * Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
 * Fix: [logging] `*_on_notice_condition` with `host` match `excluded` raised an error (undefined variable)
 * Add: [hook] itip_owner_map: ordered full-string username regex rules with brace-style capture replacements; escape metacharacters in existing literal keys
