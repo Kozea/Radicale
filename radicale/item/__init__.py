@@ -136,7 +136,7 @@ def check_and_sanitize_items(
             raise RuntimeError("VCALENDAR collection contains %d "
                                "components" % len(vobject_items))
         if not vobject_items:
-            raise ValueError("VCALENDAR collection contains no component")
+            raise ValueError("VCALENDAR collection contains no components")
         vobject_item = vobject_items[0]
         if vobject_item.name != "VCALENDAR":
             raise ValueError("Item type %r not supported in %r "
