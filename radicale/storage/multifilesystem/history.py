@@ -51,8 +51,9 @@ class CollectionPartHistory(CollectionBase):
         try:
             with open(os.path.join(history_folder, href), "rb") as f:
                 cache_etag, history_etag = pickle.load(f)
-        except (FileNotFoundError, pickle.UnpicklingError, ValueError) as e:
-            if isinstance(e, (pickle.UnpicklingError, ValueError)):
+        except (FileNotFoundError, pickle.UnpicklingError, ValueError,
+                KeyError) as e:
+            if isinstance(e, (pickle.UnpicklingError, ValueError, KeyError)):
                 logger.warning(
                     "Failed to load history cache entry %r in %r: %s",
                     href, self.path, e, exc_info=True)

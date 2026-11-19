@@ -435,6 +435,9 @@ def serve(configuration: config.Configuration,
         serve_cheroot(configuration, shutdown_socket)
         return
 
+    logger.warning(
+        "The built-in server is meant for local testing, not for production: "
+        "set [server] type = cheroot or hypercorn, or run Radicale behind a WSGI server")
     use_ssl: bool = configuration.get("server", "ssl")
     server_class = ParallelHTTPSServer if use_ssl else ParallelHTTPServer
     application = Application(configuration)
