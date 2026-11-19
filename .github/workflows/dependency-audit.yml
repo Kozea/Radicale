@@ -3,12 +3,12 @@ name: Dependency audit
 # Fail when an installed dependency has a known vulnerability, including on
 # days when nobody pushes. This is the Python equivalent of bundle audit
 # and mix hex.audit: audit the dependency set, and surface a new advisory
-# without waiting for the next code change.
+# without waiting for the next code change. A daily run is enough; pull
+# requests do not need their own audit.
 
 on:
   push:
     branches: [master]
-  pull_request:
   schedule:
     - cron: '30 6 * * *'
 

@@ -57,7 +57,7 @@ Coveralls upload (`coveralls-test` and `coveralls-finish`) runs only when `githu
 
 ## Dependency audit
 
-`.github/workflows/dependency-audit.yml` runs `pip-audit` on push and pull request, and every day at 06:30 UTC. It installs Radicale with the `bcrypt`, `argon2`, `ldap`, `oauth2`, `rabbitmq`, `cheroot`, and `h2` extras, then audits that environment. A known vulnerability fails the job, so a new advisory shows up without a code change. The Test workflow does not run for this file alone.
+`.github/workflows/dependency-audit.yml` runs `pip-audit` on push to `master`, and every day at 06:30 UTC. Pull requests do not run it. It installs Radicale with the `bcrypt`, `argon2`, `ldap`, `oauth2`, `rabbitmq`, `cheroot`, and `h2` extras, then audits that environment. A known vulnerability fails the job, so a new advisory shows up without a code change. The Test workflow does not run for this file alone.
 
 ## Documentation site
 
