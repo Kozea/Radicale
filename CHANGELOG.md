@@ -2,14 +2,23 @@
 
 ## 3.9.3.dev
 * Add: GitHub Actions dependency audit on pushes, pull requests, and a daily schedule
+* Adjustment: the built-in server logs a warning at startup that it is meant for local testing, not for production (use `[server] type = cheroot` or `hypercorn`)
+* Fix: PROPFIND reports a shared principal's own URL, including from its parent
+* Fix: a calendar component that is only a recurrence override is reported once
 * Fix: proppatch: setting `resourcetype` (e.g. `CS:subscribed`) stored the change but answered `400 Bad Request`
 * Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
+* Fix: [auth] ldap3: an unexpected error while opening the reader connection raises "Unable to read" instead of crashing with an undefined connection
 * Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
 * Fix: [logging] `*_on_notice_condition` with `host` match `excluded` raised an error (undefined variable)
 * Add: [hook] itip_owner_map: ordered full-string username regex rules with brace-style capture replacements; escape metacharacters in existing literal keys
 * Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
 * Adjust: [storage] filesystem_fsync option documented and renamed from `_filesystem_fsync` (internal use only so far)
 * Performance: storage: add fast path for has_uid in multifilesystem
+* Fix: [storage] ignore a damaged item, history, or sync-token cache when unpickling raises KeyError
+* Fix: [storage] discover group collections with a posix path so a Windows separator is not rejected as an unsafe name
+* Fix: hook: a CANCEL for an event with no SEQUENCE is sent with SEQUENCE:1. Building that message used to fail
+* Fix: hook: notify on a whole-collection PUT. The prepared items were consumed while the collection was stored, so the hook never saw them
+* Fix: hook: a whole-collection PUT reports a replaced item's previous body as old_content and the uploaded body as content. The filename written for each item was discarded, so every item was reported as new
 
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0
