@@ -508,11 +508,11 @@ def dataToSpecial(data, count):
                 result += 'C'
             elif char == '\n':
                 result += 'L'
-            elif (ord(char) & 0xf8) == 0xf0:  # assuming UTF-8
+            elif (ord(char) & 0xf8) == 0xf0:  # 11110xxx, 4-byte UTF-8 lead
                 result += '4'
-            elif (ord(char) & 0xf0) == 0xf0:  # assuming UTF-8
+            elif (ord(char) & 0xf0) == 0xe0:  # 1110xxxx, 3-byte UTF-8 lead
                 result += '3'
-            elif (ord(char) & 0xe0) == 0xe0:  # assuming UTF-8
+            elif (ord(char) & 0xe0) == 0xc0:  # 110xxxxx, 2-byte UTF-8 lead
                 result += '2'
             else:
                 result += '.'
