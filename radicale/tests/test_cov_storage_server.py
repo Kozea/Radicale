@@ -1515,7 +1515,7 @@ def test_last_modified_without_props_and_mtime_resolution(tmp_path, monkeypatch,
 
 @pytest.mark.parametrize(("delta", "phrase", "kind"), [
     (999999999999, "result: 1 ns", "info"),
-    (0, "result: 1 ns", "info"),
+    (0, "not successful", "failed"),
     (999999999998, "result: 2 ns", "info"),
     (999999999996, "result: 5 ns", "info"),
     (999999999990, "result: 10 ns", "info"),
@@ -1537,6 +1537,10 @@ def test_storage_reports_mtime_precision(tmp_path, monkeypatch, caplog, delta, p
     elif kind == "risky":
         assert "RISKY ON PRODUCTION SYSTEMS" in caplog.text
         assert "VERY RISKY" not in caplog.text
+    elif kind == "failed":
+        assert "result: 1 ns" not in caplog.text
+        assert "may be an option" not in caplog.text
+        assert "RISKY" not in caplog.text
     else:
         assert "RISKY" not in caplog.text
         assert "may be an option" in caplog.text
