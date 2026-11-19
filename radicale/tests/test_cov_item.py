@@ -944,7 +944,7 @@ def test_valarm_filter_requires_the_component_and_ignores_a_missing_trigger():
 
 
 def test_recurrence_sets_require_one_master_and_ignore_its_first_override():
-    """Overrides do not replace the master, and an infinite rule skips them."""
+    """A lone override is the event. An infinite rule still skips its overrides."""
     def _visit(body, range_fn, infinity_fn):
         item = _calendar_item(body)
         visit_time_ranges(
@@ -961,9 +961,8 @@ def test_recurrence_sets_require_one_master_and_ignore_its_first_override():
         return False
 
     _visit(only, _collect, lambda _start: False)
-    assert [call[2] for call in seen] == [True, False]
+    assert [call[2] for call in seen] == [False]
     assert seen[0][0].hour == 1
-    assert seen[1][0] == seen[0][0]
 
     two = (
         "BEGIN:VEVENT\r\nUID:a\r\nRECURRENCE-ID:20130102T000000Z\r\n"
