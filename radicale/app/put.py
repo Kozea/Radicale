@@ -332,7 +332,7 @@ class ApplicationPartPut(ApplicationBase):
                                 hook_notification_item = HookNotificationItem(
                                     notification_item_type=HookNotificationItemTypes.UPSERT,
                                     path=access.path,
-                                    content=existing_item.serialize(),
+                                    content=item.serialize(),
                                     content_type=item.name,
                                     uid=None,
                                     old_content=existing_item.serialize(),
