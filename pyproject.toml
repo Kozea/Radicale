@@ -73,6 +73,19 @@ build-backend = "setuptools.build_meta"
 min_version = "4.0"
 envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "caldav_compat_test", "html5validator"]
 
+[tool.tox.labels]
+extra = ["py_coverage", "py_filesystem_vfat", "py_filesystem_vfat_utf8", "py_filesystem_hfsplus", "py_filesystem_ntfs", "js"]
+web = ["js", "html5validator", "integ_test"]
+caldav = ["caldav_compat_test"]
+fs = ["py", "py_filesystem_vfat", "py_filesystem_vfat_utf8", "py_filesystem_hfsplus", "py_filesystem_ntfs"]
+all = [
+       "flake8", "isort", "mypy",
+       "py", "py_coverage",
+       "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace",
+       "py_filesystem_vfat", "py_filesystem_vfat_utf8", "py_filesystem_hfsplus", "py_filesystem_ntfs",
+       "js", "html5validator", "integ_test",
+      ]
+
 [tool.tox.env.py_coverage]
 description = "Server: run 'pytest' (incl. coverage report)"
 extras = ["test"]
