@@ -11,6 +11,7 @@
 * Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
 * Adjust: [storage] filesystem_fsync option documented and renamed from `_filesystem_fsync` (internal use only so far)
 * Performance: storage: add fast path for has_uid in multifilesystem
+* Fix: [storage] ignore a damaged item, history, or sync-token cache when unpickling raises KeyError
 * Fix: [storage] discover group collections with a posix path so a Windows separator is not rejected as an unsafe name
 * Fix: hook: a CANCEL for an event with no SEQUENCE is sent with SEQUENCE:1. Building that message used to fail
 * Fix: hook: notify on a whole-collection PUT. The prepared items were consumed while the collection was stored, so the hook never saw them
