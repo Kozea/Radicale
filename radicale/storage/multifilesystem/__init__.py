@@ -137,6 +137,11 @@ class Storage(
         logger.debug("Storage item mtime resoultion test set: %d ns", MTIME_NS_TEST)
         mtime_ns = os.stat(path).st_mtime_ns - mtime_ns
         logger.debug("Storage item mtime resoultion test get: %d ns", mtime_ns)
+        # A readback of the original timestamp is not 1 ns precision.
+        # The filesystem ignored the probe, so the cache must not be recommended.
+        if mtime_ns <= 0:
+            os.remove(path)
+            raise ValueError("mtime resolution probe observed no change")
         # start analysis
         precision = 1
         mtime_ns_test = MTIME_NS_TEST
