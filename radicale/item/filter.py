@@ -345,6 +345,7 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
         main = None
         rec_main = None
         recurrences = []
+        recurrence_components = []
         for comp in components:
             if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
                 recurrences.append(comp.recurrence_id.value)
@@ -355,15 +356,20 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                         # Prevent possible infinite loop
                         raise ValueError("Overwritten recurrence with RRULESET")
                 rec_main = comp
-                yield comp, True, []
+                recurrence_components.append(comp)
             else:
                 if main is not None:
                     raise ValueError("Multiple main components. Got comp: {}".format(comp))
                 main = comp
         if main is None and len(recurrences) == 1:
+            # A lone override is the event. Do not also visit it as a
+            # recurrence of a master that is not in the item.
             main = rec_main
+            recurrence_components = []
         if main is None:
             raise ValueError("Main component missing")
+        for comp in recurrence_components:
+            yield comp, True, []
         yield main, False, recurrences
 
     # Comments give the lines in the tables of the specification

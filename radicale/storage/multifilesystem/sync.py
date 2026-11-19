@@ -81,8 +81,9 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
                 with open(old_token_path, "rb") as f:
                     old_state = pickle.load(f)
             except (FileNotFoundError, pickle.UnpicklingError,
-                    ValueError) as e:
-                if isinstance(e, (pickle.UnpicklingError, ValueError)):
+                    ValueError, KeyError) as e:
+                if isinstance(e, (pickle.UnpicklingError, ValueError,
+                                  KeyError)):
                     logger.warning(
                         "Failed to load stored sync token %r in %r: %s",
                         old_token_name, self.path, e, exc_info=True)
