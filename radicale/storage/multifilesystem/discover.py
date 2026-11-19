@@ -134,7 +134,7 @@ class StoragePartDiscover(StorageBase):
                 if os.path.isdir(pathutils.path_to_filesystem(folder, self._group_collections_folder, self._is_collision_free)):
                     for group in user_groups:
                         href = base64.b64encode(group.encode('utf-8')).decode('ascii')
-                        sane_child_path = os.path.join(self._group_collections_folder, href)
+                        sane_child_path = posixpath.join(self._group_collections_folder, href)
                         logger.debug("searching for collection by user group=%r path=%r", group, sane_child_path)
                         if not os.path.isdir(pathutils.path_to_filesystem(folder, sane_child_path, self._is_collision_free)):
                             if logger.isEnabledFor(logging.DEBUG):
