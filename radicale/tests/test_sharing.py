@@ -4863,7 +4863,11 @@ permissions: RrWw""")
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
-            assert "ERROR" not in caplog.text
+            # A rejected map update is HTTP 400 and is logged at error.
+            unexpected = [
+                line for line in caplog.text.splitlines()
+                if "ERROR" in line and "/.sharing/v1/map/update" not in line]
+            assert unexpected == []
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
@@ -4902,7 +4906,11 @@ permissions: RrWw""")
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
-            assert "ERROR" not in caplog.text
+            # A rejected map update is HTTP 400 and is logged at error.
+            unexpected = [
+                line for line in caplog.text.splitlines()
+                if "ERROR" in line and "/.sharing/v1/map/update" not in line]
+            assert unexpected == []
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
@@ -4941,7 +4949,11 @@ permissions: RrWw""")
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
-            assert "ERROR" not in caplog.text
+            # A rejected map update is HTTP 400 and is logged at error.
+            unexpected = [
+                line for line in caplog.text.splitlines()
+                if "ERROR" in line and "/.sharing/v1/map/update" not in line]
+            assert unexpected == []
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
@@ -4980,7 +4992,11 @@ permissions: RrWw""")
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
-            assert "ERROR" not in caplog.text
+            # A rejected map update is HTTP 400 and is logged at error.
+            unexpected = [
+                line for line in caplog.text.splitlines()
+                if "ERROR" in line and "/.sharing/v1/map/update" not in line]
+            assert unexpected == []
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")
@@ -5019,7 +5035,11 @@ permissions: RrWw""")
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
             self.configure({"sharing": {"type": db_type}})
-            assert "ERROR" not in caplog.text
+            # A rejected map update is HTTP 400 and is logged at error.
+            unexpected = [
+                line for line in caplog.text.splitlines()
+                if "ERROR" in line and "/.sharing/v1/map/update" not in line]
+            assert unexpected == []
 
             # verify overlay as user
             logging.info("\n*** PROPFIND collection user (overlay) -> ok")

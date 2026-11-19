@@ -410,7 +410,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger_method = logger.info  # default
             if status == 401 or status == 404 or status == 412 or status == 409 or request_method in ["PROPPATCH", "MKCALENDAR", "MKCOL"]:
                 logger_method = logger.notice
-            elif status >= 500 and status < 500:
+            elif status >= 400 and status < 500:
                 logger_method = logger.error
             elif status >= 500:
                 logger_method = logger.critical
@@ -419,29 +419,26 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             # Profiling end
             if self._profiling_per_request:
                 if profiler_active is True:
-                    if profiler is not None:
-                        # Profiling per request
-                        if time_delta_seconds < self._profiling_per_request_min_duration:
-                            logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
-                        else:
-                            s = io.StringIO()
-                            s.write("**Profiling statistics BEGIN**\n")
-                            stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
-                            stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
-                            s.write("**Profiling statistics END**\n")
-                            if self._profiling_per_request_header:
-                                s.write("**Profiling request header BEGIN**\n")
-                                s.write(pprint.pformat(self._scrub_headers(environ)))
-                                s.write("\n**Profiling request header END**")
-                            if self._profiling_per_request_xml:
-                                if xml_request is not None:
-                                    s.write("\n**Profiling request content (XML) BEGIN**\n")
-                                    if xml_request is not None:
-                                        s.write(xml_request)
-                                    s.write("**Profiling request content (XML) END**")
-                            logger.info("Profiling data per request %s for %r%s:\n%s", request_method, unsafe_path, depthinfo, utils.textwrap_str(s.getvalue(), -1))
+                    assert profiler is not None
+                    # Profiling per request
+                    if time_delta_seconds < self._profiling_per_request_min_duration:
+                        logger.debug("Profiling data per request %s for %r%s: (suppressed because duration below minimum %.3f < %.3f)", request_method, unsafe_path, depthinfo, time_delta_seconds, self._profiling_per_request_min_duration)
                     else:
-                        logger.debug("Profiling data per request %s for %r%s: (suppressed because of no data)", request_method, unsafe_path, depthinfo)
+                        s = io.StringIO()
+                        s.write("**Profiling statistics BEGIN**\n")
+                        stats = pstats.Stats(profiler, stream=s).sort_stats('cumulative')
+                        stats.print_stats(self._profiling_top_x_functions)  # Print top X functions
+                        s.write("**Profiling statistics END**\n")
+                        if self._profiling_per_request_header:
+                            s.write("**Profiling request header BEGIN**\n")
+                            s.write(pprint.pformat(self._scrub_headers(environ)))
+                            s.write("\n**Profiling request header END**")
+                        if self._profiling_per_request_xml:
+                            if xml_request is not None:
+                                s.write("\n**Profiling request content (XML) BEGIN**\n")
+                                s.write(xml_request)
+                                s.write("**Profiling request content (XML) END**")
+                        logger.info("Profiling data per request %s for %r%s:\n%s", request_method, unsafe_path, depthinfo, utils.textwrap_str(s.getvalue(), -1))
                 else:
                     logger.info("Profiling data per request %s for %r%s: (not available because of concurrent running profiling request)", request_method, unsafe_path, depthinfo)
             elif self._profiling_per_request_method:
@@ -702,9 +699,9 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
 
             # Profiling
             if self._profiling_per_request:
-                if profiler is not None:
-                    if profiler_active is True:
-                        profiler.disable()
+                if profiler_active is True:
+                    assert profiler is not None
+                    profiler.disable()
             elif self._profiling_per_request_method:
                 if profiler_active is True:
                     self.profiler_per_request_method[request_method].disable()

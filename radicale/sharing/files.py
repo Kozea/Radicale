@@ -178,8 +178,6 @@ class Sharing(sharing.BaseSharing):
                     "Actions": Actions,
                     }
 
-        return None
-
     def database_list_sharing(self,
                               OwnerOrUser: Union[str, None] = None,
                               ShareType: Union[str, None] = None,
