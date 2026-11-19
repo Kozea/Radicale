@@ -723,12 +723,6 @@ class ApplicationPartPropfind(ApplicationBase):
                 writable = "w" in access.permissions
                 filtered_items = []
                 for entry, entry_permission, entry_permissions in item_list:
-                    if (isinstance(entry, storage.BaseCollection) and
-                            not entry.tag and access.check("r", entry)):
-                        # R still reads an untagged collection. f must not drop it.
-                        filtered_items.append(
-                            (entry, entry_permission, entry_permissions))
-                        continue
                     if (not isinstance(entry, storage.BaseCollection) or
                             entry.tag != "VCALENDAR"):
                         continue

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Permission f does not hide a collection that R already allows."""
+"""Free-busy PROPFIND stays on calendar collections."""
 
 import os
 
@@ -24,6 +24,8 @@ PROPFIND_ONE = """<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:">
   <D:prop><D:displayname/></D:prop>
 </D:propfind>"""
+
+_LOGIN = "alice:secret"
 
 
 def _set_rights(test, text):
@@ -37,13 +39,55 @@ def _set_rights(test, text):
     })
 
 
+def _text(body):
+    if isinstance(body, bytes):
+        return body.decode()
+    return body
+
+
 class TestFreeBusyKeepsCollectionRead(BaseTest):
 
     def test_propfind_root_with_read_and_freebusy(self):
+        """R with f does not name the storage root in a free-busy PROPFIND."""
         _set_rights(self, "[all]\nuser: .*\ncollection: .*\npermissions: Rf\n")
         status, _, body = self.request(
             "PROPFIND", "/", PROPFIND_ONE,
-            HTTP_DEPTH="0", login="alice:secret", check=None)
+            HTTP_DEPTH="0", login=_LOGIN, check=None)
         assert status == 207
-        assert "response" in body
-        assert "multistatus" in body
+        text = _text(body)
+        assert "multistatus" in text
+        assert "response" not in text
+
+    def test_freebusy_propfind_lists_calendars_only(self):
+        """A calendar answers; an address book and a plain collection do not."""
+        # w creates a calendar or address book. W creates a plain collection.
+        # Lowercase r is absent, so the request stays free-busy only.
+        _set_rights(
+            self, "[all]\nuser: .*\ncollection: .*\npermissions: RfwW\n")
+        self.mkcalendar("/cal/", login=_LOGIN)
+        self.create_addressbook("/book/", login=_LOGIN)
+        self.mkcol("/plain/", login=_LOGIN)
+
+        status, _, body = self.request(
+            "PROPFIND", "/cal/", PROPFIND_ONE,
+            HTTP_DEPTH="0", login=_LOGIN, check=None)
+        assert status == 207
+        assert "/cal/" in _text(body)
+
+        status, _, body = self.request(
+            "PROPFIND", "/book/", PROPFIND_ONE,
+            HTTP_DEPTH="0", login=_LOGIN, check=None)
+        assert status == 403
+        assert "/book/" not in _text(body)
+
+        status, _, body = self.request(
+            "PROPFIND", "/plain/", PROPFIND_ONE,
+            HTTP_DEPTH="0", login=_LOGIN, check=None)
+        assert status == 207
+        assert "response" not in _text(body)
+        assert "/plain/" not in _text(body)
+
+        status, _, _ = self.request(
+            "PROPFIND", "/cal/", PROPFIND_ONE,
+            HTTP_DEPTH="1", login=_LOGIN, check=None)
+        assert status == 403
