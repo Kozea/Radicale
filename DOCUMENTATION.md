@@ -836,7 +836,10 @@ _(>= 3.9.0)_
 
 The server to run: `builtin` (the default), `hypercorn` or `cheroot`.
 
-The built-in server answers HTTP/1.0 and closes after each request. `hypercorn`
+The built-in server is meant for **local testing, not for production**: it
+answers HTTP/1.0 and closes after each request, and logs a warning at startup
+saying so. For production use `cheroot` or `hypercorn` (or a WSGI server, see
+[WSGI](#wsgi-server)). `hypercorn`
 keeps connections alive and also serves **HTTP/2 over cleartext (H2C)** on the
 same socket, which is what a reverse proxy in front of Radicale needs to speak
 HTTP/2 without terminating TLS itself; it is an optional dependency, installed

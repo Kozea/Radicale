@@ -142,6 +142,14 @@ class TestBaseServerRequests(BaseTest):
         self.thread.start()
         self.get("/", check=302)
 
+    def test_production_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Only the built-in server warns that it is not meant for production."""
+        with caplog.at_level(logging.WARNING, logger="radicale"):
+            self.thread.start()
+            self.request("GET", "/", check=302)
+        warned = "not for production" in caplog.text
+        assert warned == (self.server_type == "builtin")
+
     def test_ssl(self) -> None:
         self.configure({"server": {"ssl": "True",
                                    "certificate": get_file_path("cert.pem"),
