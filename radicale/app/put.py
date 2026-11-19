@@ -161,8 +161,9 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
 
         if write_whole_collection:
             props = {}
-            if tag:
-                props["tag"] = tag
+            # prepare() already rejected an empty tag for a whole collection.
+            assert tag
+            props["tag"] = tag
             if tag == "VCALENDAR" and vobject_items:
                 if hasattr(vobject_items[0], "x_wr_calname"):
                     calname = vobject_items[0].x_wr_calname.value
@@ -321,13 +322,16 @@ class ApplicationPartPut(ApplicationBase):
 
             if write_whole_collection:
                 try:
+                    # create_collection consumes its items iterator. Keep the
+                    # prepared items so the hook can still report each one.
+                    stored_items = tuple(prepared_items)
                     col, replaced_items, new_item_hrefs = self._storage.create_collection(
                         href=path,
-                        items=prepared_items,
+                        items=stored_items,
                         props=props)
                     # Only run the hook if the hook is enabled
                     if self._hook.enabled:
-                        for item in prepared_items:
+                        for item in stored_items:
                             # Try to grab the previously-existing item by href
                             existing_item = replaced_items.get(item.href, None)  # type: ignore
                             if existing_item:
