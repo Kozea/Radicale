@@ -315,8 +315,9 @@ class Auth(auth.BaseAuth):
         except RuntimeError:
             raise
         except Exception as e:
+            # conn is still unset. Continuing into bind raised NameError.
             logger.debug("_login3 error 1 %s (reader)", e)
-            pass
+            raise RuntimeError("Unable to read from LDAP server") from e
         if not conn.bind(read_server_info=False):
             logger.debug("_login3 cannot bind (reader)")
             raise RuntimeError("Unable to read from LDAP server")
