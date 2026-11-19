@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: PROPFIND reports a shared principal's own URL, including from its parent
 * Fix: a calendar component that is only a recurrence override is reported once
 * Fix: proppatch: setting `resourcetype` (e.g. `CS:subscribed`) stored the change but answered `400 Bad Request`
 * Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
