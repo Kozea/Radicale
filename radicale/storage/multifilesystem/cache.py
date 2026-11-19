@@ -118,7 +118,7 @@ class CollectionPartCache(CollectionBase):
             if self._storage._debug_cache_actions is True:
                 logger.debug("Item cache not found : %r with hash %r", path, cache_hash)
             pass
-        except (pickle.UnpicklingError, ValueError) as e:
+        except (pickle.UnpicklingError, ValueError, KeyError) as e:
             logger.warning("Failed to load item cache entry %r in %r: %s",
                            href, self.path, e, exc_info=True)
         return None
