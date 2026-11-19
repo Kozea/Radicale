@@ -994,12 +994,14 @@ standalone mode; they are ignored, when Radicale runs on WSGI.</p>
 <p><em>(&gt;= 3.9.0)</em></p>
 <p>The server to run: <code>builtin</code> (the default),
 <code>hypercorn</code> or <code>cheroot</code>.</p>
-<p>The built-in server answers HTTP/1.0 and closes after each request.
-<code>hypercorn</code> keeps connections alive and also serves
-<strong>HTTP/2 over cleartext (H2C)</strong> on the same socket, which
-is what a reverse proxy in front of Radicale needs to speak HTTP/2
-without terminating TLS itself; it is an optional dependency, installed
-with the <code>h2</code> extra using
+<p>The built-in server is meant for <strong>local testing, not for
+production</strong>: it answers HTTP/1.0 and closes after each request,
+and logs a warning at startup saying so. For production use
+<code>cheroot</code> or <code>hypercorn</code> (or a WSGI server, see <a href="#wsgi-server">WSGI</a>). <code>hypercorn</code> keeps connections
+alive and also serves <strong>HTTP/2 over cleartext (H2C)</strong> on
+the same socket, which is what a reverse proxy in front of Radicale
+needs to speak HTTP/2 without terminating TLS itself; it is an optional
+dependency, installed with the <code>h2</code> extra using
 <code>pip install radicale[h2]</code> or by underlying OS (package name:
 'python3-hypercorn'), supported version: hypercorn&gt;=0.17. Asking for
 it when it is not installed fails with an error naming the extra instead
