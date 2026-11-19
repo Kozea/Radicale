@@ -118,6 +118,9 @@ class CollectionPartUpload(CollectionPartGet, CollectionPartCache,
                 raise ValueError(
                     "Failed to store item %r in temporary collection %r: %s" %
                     (uid, self.path, e)) from e
+            # prepare() leaves href empty. Replacements are matched by the
+            # filename that was actually written, which is not always uid+suffix.
+            item.href = href
 
             # store cache file
             if self._storage._use_mtime_and_size_for_item_cache is True:
