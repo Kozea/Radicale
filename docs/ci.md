@@ -11,7 +11,7 @@ Workflows live in `.github/workflows/`. Versions of actions and runners below ar
 * `radicale/web/README.md` and `radicale/web/internal_data/css/icons/credits.md`
 * `Dockerfile`, `Dockerfile.dev`, `config`, `rights`, `contrib/**`, `compose.yaml`
 * `setup.py.legacy`
-* the Docker, documentation, PyPI, and CodeQL workflow files
+* the Docker, documentation, PyPI, CodeQL, and dependency-audit workflow files
 
 A change to Python under `radicale/` runs the workflow. A documentation-only change does not.
 
@@ -54,6 +54,10 @@ Coveralls upload (`coveralls-test` and `coveralls-finish`) runs only when `githu
 ## CodeQL
 
 `.github/workflows/codeql.yml` runs on push and pull request to `master`, and on a weekly schedule (`19 5 * * 5`). Languages are `actions`, `javascript-typescript`, and `python`, all with `build-mode: none`.
+
+## Dependency audit
+
+`.github/workflows/dependency-audit.yml` runs `pip-audit` on push to `master`, and every day at 06:30 UTC. Pull requests do not run it. It installs Radicale with the `bcrypt`, `argon2`, `ldap`, `oauth2`, `rabbitmq`, `cheroot`, and `h2` extras, then audits that environment. A known vulnerability fails the job, so a new advisory shows up without a code change. The Test workflow does not run for this file alone.
 
 ## Documentation site
 
