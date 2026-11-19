@@ -487,7 +487,7 @@ def xml_propfind_response(
                         child_element = ET.Element(
                             xmlutils.make_clark("C:calendar"))
                         element.append(child_element)
-                    else:
+                    elif collection.tag == "VSUBSCRIBED":
                         child_element = ET.Element(
                             xmlutils.make_clark("CS:subscribed"))
                         element.append(child_element)
