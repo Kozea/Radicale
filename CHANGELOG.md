@@ -2,6 +2,7 @@
 
 ## 3.9.3.dev
 * Add: GitHub Actions dependency audit on pushes to master and a daily schedule
+* Fix: hexdump marks a UTF-8 lead byte with its real length. `0xE0` is 3 bytes and `0xC0`–`0xDF` are 2 bytes; bytes from `0xF8` up are not a 3-byte lead
 * Adjustment: the built-in server logs a warning at startup that it is meant for local testing, not for production (use `[server] type = cheroot` or `hypercorn`)
 * Fix: PROPFIND reports a shared principal's own URL, including from its parent
 * Fix: a calendar component that is only a recurrence override is reported once

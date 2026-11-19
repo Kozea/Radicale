@@ -96,7 +96,7 @@ class TestUtilsOutcomes:
         dumped = utils.hexdump_str("A\r\nü").splitlines()
         assert dumped[0].startswith("Hexdump of string:")
         assert dumped[1].startswith("00000000  41 0d 0a c3 bc ")
-        assert dumped[1].endswith("|A....           |.CL..           |")
+        assert dumped[1].endswith("|A....           |.CL2.           |")
         lines = utils.hexdump_lines("A\r\nB").splitlines()
         assert lines[0].startswith("Hexdump of lines:")
         assert lines[1] == "   0    3/  3: 41 0d 0a |A..|.CL|"
