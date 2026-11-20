@@ -4862,6 +4862,7 @@ permissions: RrWw""")
 
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
+            caplog.clear()
             self.configure({"sharing": {"type": db_type}})
             assert "ERROR" not in caplog.text
 
