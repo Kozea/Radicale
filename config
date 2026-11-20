@@ -209,6 +209,10 @@
 # Convert username to lowercase, must be true for case-insensitive auth providers
 #lc_username = False
 
+# Convert username to uppercase, recommended for case-insensitive auth providers
+# (mutually exclusive with lc_username)
+#uc_username = False
+
 # Strip domain name from username
 #strip_domain = False
 
@@ -229,7 +233,7 @@ type = none
 #htgroup_cache = False
 
 # Folder under *collection_root_folder* containing collections of base64 encoded group names
-# group_collections_folder = "GROUPS"
+#group_collections_folder = GROUPS
 
 
 [rights]
@@ -391,14 +395,14 @@ type = none
 #default_permissions_create_map = r
 
 # Global template for summary of conversion "bday"
-#conversion_bday_summary_template = [{n:f} {n:g} |{fn}|{nickname}] ({year}) (BDAY)
+#conversion_bday_summary_template = [{n:f} {n:g}|{fn}|{nickname}] ({year}) (BDAY)
 
 # Global template for description of conversion "bday"
 #conversion_bday_description_template = BDAY={year}-{month}-{day}
 
 # Global template of alarm trigger of conversion "bday"
-#  Example: "-15H;BDAY tomorrow$9H;BDAY today"
-#conversion_bday_alarm_trigger_template = ""
+#  Example: -15H;BDAY tomorrow$9H;BDAY today
+#conversion_bday_alarm_trigger_template =
 
 # Global categories of conversion "bday"
 #conversion_bday_categories = Birthday
@@ -428,7 +432,7 @@ type = none
 #limit_content = 3000
 
 # filter debug messages starting with '<TOKEN>'
-#trace_filter = ""
+#trace_filter =
 
 # Don't include passwords in logs
 #mask_passwords = True
