@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: sharing hide, unhide, enable, and disable report a failed update as `400 Internal Error`. The same failure on update and delete was already `400`, and these actions used to answer `200`
 * Fix: a `calendar-query` `REPORT` that matches an item lists that item even when the request has no `DAV:prop`
 * Fix: storage skips a socket or other non-file stored under an item name. Opening it used to raise `ENXIO` and the request became HTTP 500
 * Fix: `radicale --verify-storage` fails when synchronizing a collection raises `ValueError`. That error used to be ignored, so the check exited 0

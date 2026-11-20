@@ -1742,11 +1742,13 @@ class BaseSharing:
             if result:
                 if result['status'] == "not-found":
                     return httputils.NOT_FOUND
-                if result['status'] == "permission-denied":
+                elif result['status'] == "permission-denied":
                     return httputils.NOT_ALLOWED
                 elif result['status'] == "success":
                     answer['Status'] = "success"
-                    pass
+                else:
+                    logger.warning("%s: %r by user %s not successful", api_info, request_data['PathOrToken'], user)
+                    return httputils.bad_request("Internal Error")
             else:
                 logger.warning("%s: %r by user %s not successful", api_info, request_data['PathOrToken'], user)
                 return httputils.bad_request("Internal Error")
