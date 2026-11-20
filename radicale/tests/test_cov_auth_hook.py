@@ -337,7 +337,13 @@ class TestDovecotGaps(BaseTest):
             raise AssertionError("socket opened")
 
         monkeypatch.setattr("radicale.auth.dovecot.socket.socket", boom)
-        self.configure({"auth": {"type": "dovecot", "delay": "0"}})
+        # AF_INET never reads socket.AF_UNIX. Some Windows builds have no
+        # AF_UNIX attribute, and the default family is AF_UNIX.
+        self.configure({"auth": {
+            "type": "dovecot",
+            "dovecot_connection_type": "AF_INET",
+            "delay": "0",
+        }})
         backend = self.application._auth
         assert backend._login_ext("", "secret", AuthContext()) == ""
         assert "requires non-empty user" in caplog.text
@@ -376,7 +382,11 @@ class TestDovecotGaps(BaseTest):
                 return b"OK\t1\n"
 
         monkeypatch.setattr("radicale.auth.dovecot.socket.socket", ScriptedSocket)
-        self.configure({"auth": {"type": "dovecot", "delay": "0"}})
+        self.configure({"auth": {
+            "type": "dovecot",
+            "dovecot_connection_type": "AF_INET",
+            "delay": "0",
+        }})
         user, _groups, kind = self.application._auth.login("a", "b", AuthContext())
         assert (user, kind) == ("a", "dovecot")
 

@@ -574,15 +574,17 @@ def test_rwlock_invalid_mode_flock_failure_and_broken_guarantee(tmp_path, monkey
             pass
     assert lock.locked == ""
 
-    def fail_flock(*_args):
-        raise OSError(errno.EIO, "flock failed")
+    # Windows locks with LockFileEx. flock is the POSIX path.
+    if sys.platform != "win32":
+        def fail_flock(*_args):
+            raise OSError(errno.EIO, "flock failed")
 
-    monkeypatch.setattr(pathutils.fcntl, "flock", fail_flock)
-    with pytest.raises(RuntimeError, match="Locking the storage failed"):
-        with lock.acquire("w"):
-            pass
+        monkeypatch.setattr(pathutils.fcntl, "flock", fail_flock)
+        with pytest.raises(RuntimeError, match="Locking the storage failed"):
+            with lock.acquire("w"):
+                pass
+        monkeypatch.undo()
 
-    monkeypatch.undo()
     lock = pathutils.RwLock(str(lock_path))
     lock._readers = 1
     with pytest.raises(RuntimeError, match="Guarantees failed"):
@@ -656,6 +658,9 @@ def test_renameat2_attributeerror_uses_the_copy_fallback(tmp_path):
         importlib.reload(pathutils)
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Darwin fsync uses fcntl, which Windows does not provide")
 def test_fsync_darwin_fullfsync_einval_and_other_errno(tmp_path, monkeypatch):
     path = tmp_path / "data"
     path.write_text("x", encoding="utf-8")
@@ -801,6 +806,9 @@ def test_filesystem_feature_probes_report_failures(tmp_path, monkeypatch):
     assert pathutils.path_supports_problematic_chars(str(tmp_path)) is False
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="pwd and grp are not imported on Windows")
 def test_user_groups_unknown_names_and_win32_string(monkeypatch):
     def no_user(_uid):
         raise KeyError("user")
@@ -1026,8 +1034,15 @@ def test_ident_factory_thread_edges_and_journal_stream(monkeypatch, tmp_path, ca
     record = logging.LogRecord("radicale", logging.ERROR, __file__, 1, "j", (), None)
     assert handler._try_emit_journal(record) is False
     assert handler._journal_socket is None
-    assert "socket exploded" in caplog.text
-    assert "Failed to connect to systemd journal" in caplog.text
+    # Without AF_UNIX the handler returns before socket(). The connect
+    # error is only logged when that attribute exists.
+    if hasattr(socket, "AF_UNIX"):
+        assert "socket exploded" in caplog.text
+        assert "Failed to connect to systemd journal" in caplog.text
+    else:
+        assert "socket exploded" not in caplog.text
+        assert "Failed to connect to systemd journal" not in caplog.text
+        assert handler._journal_socket_failed is False
 
 
 def test_set_level_skips_repeated_backtrace_messages_and_disabled_trace(caplog):
@@ -1222,7 +1237,12 @@ def test_wsgi_application_warns_when_only_the_default_config_is_active(monkeypat
 
 def _run_cli(args):
     from radicale import __main__ as main
-    saved = {number: signal.getsignal(number) for number in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT)}
+    numbers = [signal.SIGTERM, signal.SIGINT]
+    if sys.platform == "win32":
+        numbers.append(signal.SIGBREAK)
+    else:
+        numbers.extend((signal.SIGHUP, signal.SIGQUIT))
+    saved = {number: signal.getsignal(number) for number in numbers}
     saved_argv = sys.argv
     sys.argv = ["radicale", *args]
     try:
@@ -1652,8 +1672,12 @@ def test_cache_folders_fsync_and_makedirs_failures(tmp_path, monkeypatch, caplog
     handle.name = "item.ics"
     with pytest.raises(RuntimeError, match="Fsync'ing file"):
         storage_._fsync(handle)
-    with pytest.raises(RuntimeError, match="Fsync'ing directory"):
+    # Directory fsync is POSIX-only. Windows returns without opening the path.
+    if sys.platform == "win32":
         storage_._sync_directory(str(tmp_path))
+    else:
+        with pytest.raises(RuntimeError, match="Fsync'ing directory"):
+            storage_._sync_directory(str(tmp_path))
 
     monkeypatch.setattr(storage_base.sys, "platform", "win32")
 
@@ -2027,8 +2051,11 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     logger.setLevel(logging.DEBUG)
     from radicale.storage.multifilesystem import lock as storage_lock
     marker = tmp_path / "hook.txt"
-    storage_ = _storage(tmp_path / "ok", {"storage": {
-        "hook": "echo hook-out; echo hook-out > %s; echo hook-err >&2" % marker}})
+    if sys.platform == "win32":
+        hook = 'echo hook-out& echo hook-out>"%s"& echo hook-err 1>&2' % marker
+    else:
+        hook = "echo hook-out; echo hook-out > %s; echo hook-err >&2" % marker
+    storage_ = _storage(tmp_path / "ok", {"storage": {"hook": hook}})
     _calendar(storage_, items=[_event()])
     assert marker.read_text(encoding="utf-8").strip() == "hook-out"
     assert "Captured stdout from storage hook" in caplog.text
@@ -2037,7 +2064,11 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     assert "hook-err" in caplog.text
 
     caplog.clear()
-    failing = _storage(tmp_path / "fail", {"storage": {"hook": "echo ran; exit 3"}})
+    if sys.platform == "win32":
+        fail_hook = "echo ran& exit 3"
+    else:
+        fail_hook = "echo ran; exit 3"
+    failing = _storage(tmp_path / "fail", {"storage": {"hook": fail_hook}})
     _calendar(failing, href="/user/cal/", items=[_event()])
     assert "exit status 3" in caplog.text
     assert any(getattr(item, "uid", None) == "event1" for item in failing.discover("/user/cal/", "1"))
@@ -2105,16 +2136,19 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     assert win_marker.read_text(encoding="utf-8").strip() == "win-hook"
     monkeypatch.undo()
 
-    group_marker = tmp_path / "pgrp"
-    monkeypatch.setattr(storage_lock.sys, "version_info", (3, 9, 0))
+    # preexec_fn is how Python 3.9 puts the hook in its own process group.
+    # Windows rejects preexec_fn, and the real Windows path is creationflags.
+    if sys.platform != "win32":
+        group_marker = tmp_path / "pgrp"
+        monkeypatch.setattr(storage_lock.sys, "version_info", (3, 9, 0))
 
-    def setpgrp():
-        group_marker.write_text("yes", encoding="utf-8")
+        def setpgrp():
+            group_marker.write_text("yes", encoding="utf-8")
 
-    monkeypatch.setattr(storage_lock.os, "setpgrp", setpgrp)
-    old = _storage(tmp_path / "py39", {"storage": {"hook": "echo old-python"}})
-    _calendar(old, href="/user/cal/", items=[_event()])
-    assert group_marker.read_text(encoding="utf-8") == "yes"
+        monkeypatch.setattr(storage_lock.os, "setpgrp", setpgrp)
+        old = _storage(tmp_path / "py39", {"storage": {"hook": "echo old-python"}})
+        _calendar(old, href="/user/cal/", items=[_event()])
+        assert group_marker.read_text(encoding="utf-8") == "yes"
 
 
 def test_meta_cache_lock_invalid_json_and_write_failure(tmp_path, caplog):
@@ -2258,13 +2292,15 @@ def test_upload_nonce_names_errno_and_cache_logs(tmp_path, monkeypatch, caplog):
 
     state = {"n": 0}
     real_open = builtins.open
+    # Windows reports an invalid filename as errno 123, not EINVAL.
+    invalid_name = 123 if sys.platform == "win32" else errno.EINVAL
 
     def flaky_open(path, mode="r", *args, **kwargs):
         name = str(path)
         if name.endswith(".ics") and "w" in str(mode) and ".Radicale.cache" not in name:
             state["n"] += 1
             if state["n"] == 1:
-                raise OSError(errno.EINVAL, "bad name")
+                raise OSError(invalid_name, "bad name")
         return real_open(path, mode, *args, **kwargs)
 
     monkeypatch.setattr(storage_upload, "open", flaky_open, raising=False)
@@ -2287,7 +2323,7 @@ def test_upload_nonce_names_errno_and_cache_logs(tmp_path, monkeypatch, caplog):
 
     def inval_open(path, mode="r", *args, **kwargs):
         if str(path).endswith(".ics") and "w" in str(mode) and ".Radicale.cache" not in str(path):
-            raise OSError(errno.EINVAL, "bad name")
+            raise OSError(invalid_name, "bad name")
         return real_open(path, mode, *args, **kwargs)
 
     monkeypatch.setattr(storage_upload, "open", inval_open, raising=False)
@@ -2866,8 +2902,9 @@ def test_hypercorn_warns_on_protocol_and_runs_until_released(tmp_path, monkeypat
 
     def event_factory(*args, **kwargs):
         for frame in __import__("traceback").extract_stack():
+            filename = str(getattr(frame, "filename", "")).replace("\\", "/")
             if (getattr(frame, "name", None) == "run_forever" and
-                    str(getattr(frame, "filename", "")).endswith("radicale/server.py")):
+                    filename.endswith("radicale/server.py")):
                 return _Gate()
         return real_event(*args, **kwargs)
 
@@ -3203,22 +3240,23 @@ def test_get_fifo_reload_hit_and_missing_href(tmp_path, monkeypatch):
     storage_ = _storage(tmp_path)
     collection = _calendar(storage_, items=[_event()])[0]
     storage_._use_mtime_and_size_for_item_cache = True
-    pipe = os.path.join(collection._filesystem_path, "pipe.ics")
-    os.mkfifo(pipe)
-    os.chmod(pipe, 0)
-    try:
-        if os.access(pipe, os.R_OK):
-            # Root ignores mode 000. Opening the fifo would block with no writer.
-            assert stat.S_ISFIFO(os.stat(pipe).st_mode)
-        else:
-            with pytest.raises(PermissionError):
-                collection._get("pipe.ics")
-    finally:
+    if hasattr(os, "mkfifo"):
+        pipe = os.path.join(collection._filesystem_path, "pipe.ics")
+        os.mkfifo(pipe)
+        os.chmod(pipe, 0)
         try:
-            os.chmod(pipe, 0o644)
-        except OSError:
-            pass
-        os.remove(pipe)
+            if os.access(pipe, os.R_OK):
+                # Root ignores mode 000. Opening the fifo would block with no writer.
+                assert stat.S_ISFIFO(os.stat(pipe).st_mode)
+            else:
+                with pytest.raises(PermissionError):
+                    collection._get("pipe.ics")
+        finally:
+            try:
+                os.chmod(pipe, 0o644)
+            except OSError:
+                pass
+            os.remove(pipe)
 
     storage_._use_mtime_and_size_for_item_cache = False
     assert collection._get("event1.ics").uid == "event1"
@@ -3311,9 +3349,10 @@ def test_builtin_serve_returns_without_closing_a_cleared_shutdown_socket(tmp_pat
     previous = threading.gettrace()
 
     def trace(frame, event, arg):
+        filename = frame.f_code.co_filename.replace("\\", "/")
         if (event == "line" and frame.f_lineno == 517 and
                 frame.f_code.co_name == "serve" and
-                frame.f_code.co_filename.endswith("radicale/server.py")):
+                filename.endswith("radicale/server.py")):
             frame.f_locals["shutdown_socket"] = None
         if previous is None:
             return trace

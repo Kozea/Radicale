@@ -181,6 +181,9 @@ def test_windows_file_lock_reports_shared_exclusive_and_failure(tmp_path):
         assert restored.locked == "r"
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Reloading pathutils as Darwin imports fcntl, which Windows lacks")
 def test_darwin_full_fsync_keeps_the_written_bytes(tmp_path):
     """macOS asks for a full fsync and still leaves the written bytes in place.
 
@@ -300,10 +303,16 @@ def test_windows_identity_string_does_not_use_the_passwd_database(monkeypatch):
         importlib.reload(utils)
     identity = utils.user_groups_as_string()
     assert identity.startswith("user=")
-    assert "groups=" in identity
-    assert "cov-user" not in identity
+    # A Unix reload imports pwd and grp again. Windows stays a login name,
+    # and the getlogin stub is still the os function that reload sees.
+    if sys.platform != "win32":
+        assert "groups=" in identity
+        assert "cov-user" not in identity
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="SIGUSR1 stands in for SIGBREAK, and SIGHUP is Unix-only")
 def test_windows_break_signal_exits_and_hangup_stays_untouched(monkeypatch):
     """``SIGBREAK`` is the Windows shutdown signal and requests process exit.
 
