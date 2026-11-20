@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: storage skips a socket or other non-file stored under an item name. Opening it used to raise `ENXIO` and the request became HTTP 500
 * Fix: `radicale --verify-storage` fails when synchronizing a collection raises `ValueError`. That error used to be ignored, so the check exited 0
 * Fix: `radicale --verify-storage` fails when two items in one collection share a UID. It used to log the conflict and still exit 0
 * Fix: an empty `PUT` with `Content-Type: text/calendar` is rejected. It used to create a subscribed collection because that tag shares the same media type
