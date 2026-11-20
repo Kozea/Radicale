@@ -2175,7 +2175,7 @@ _(>= 3.2.0)_
 
 RabbitMQ queue type for the topic.
 
-Default: `classic`
+Default: (unset)
 
 ##### smtp_server
 
