@@ -2380,7 +2380,7 @@ def test_nolock_waits_and_write_lock_skips_cache_lock(tmp_path):
     with lock.acquire("r"):
         with lock.acquire("r"):
             pass
-        thread = threading.Thread(target=writer)
+        thread = threading.Thread(target=writer, daemon=True)
         thread.start()
         time.sleep(0.2)
         assert not writer_entered.is_set()
@@ -2396,7 +2396,8 @@ def test_nolock_waits_and_write_lock_skips_cache_lock(tmp_path):
             entered[name].set()
             assert release[name].wait(3)
 
-    threads = [threading.Thread(target=holder, args=(name,)) for name in ("a", "b", "c")]
+    threads = [threading.Thread(target=holder, args=(name,), daemon=True)
+               for name in ("a", "b", "c")]
     threads[0].start()
     assert entered["a"].wait(2)
     threads[1].start()
@@ -2424,7 +2425,7 @@ def test_nolock_waits_and_write_lock_skips_cache_lock(tmp_path):
             with collection._acquire_cache_lock("item"):
                 other_entered.set()
 
-        worker = threading.Thread(target=other)
+        worker = threading.Thread(target=other, daemon=True)
         with collection._acquire_cache_lock("item"):
             worker.start()
             assert other_entered.wait(1)
@@ -2463,6 +2464,14 @@ def _bind_server(folder, port, **options):
 
 
 def _thread_result(target):
+    # The first name lookup has to happen on this thread. A server thread
+    # that makes that first call can sit in getaddrinfo, and the process
+    # then never exits.
+    try:
+        socket.getaddrinfo(
+            "127.0.0.1", 9, socket.AF_INET, socket.SOCK_STREAM)
+    except OSError:
+        pass
     holder = {}
 
     def run():
@@ -2471,7 +2480,7 @@ def _thread_result(target):
         except BaseException as exc:  # noqa: BLE001 - the server thread must report
             holder["exc"] = exc
 
-    thread = threading.Thread(target=run)
+    thread = threading.Thread(target=run, daemon=True)
     thread.start()
     return thread, holder
 
@@ -2595,13 +2604,13 @@ def test_builtin_unlimited_and_single_connection_limit(tmp_path, monkeypatch):
         results.append(_http_get(port))
 
     try:
-        first = threading.Thread(target=client)
+        first = threading.Thread(target=client, daemon=True)
         first.start()
         deadline = time.monotonic() + 5
         while len(entered) < 1:
             assert time.monotonic() < deadline
             time.sleep(0.02)
-        second = threading.Thread(target=client)
+        second = threading.Thread(target=client, daemon=True)
         second.start()
         time.sleep(0.3)
         assert len(entered) == 1
@@ -2682,7 +2691,7 @@ def test_builtin_waits_for_workers_and_uses_windows_select_timeout(tmp_path, mon
 
     thread, holder = _thread_result(
         lambda: server.serve(_bind_server(tmp_path / "workers", port), right))
-    client_thread = threading.Thread(target=client)
+    client_thread = threading.Thread(target=client, daemon=True)
     try:
         client_thread.start()
         assert started.wait(5)

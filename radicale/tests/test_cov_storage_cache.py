@@ -22,6 +22,7 @@ import logging
 import os
 import shutil
 import socket
+import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
@@ -125,6 +126,9 @@ def test_cache_debug_reports_mtime_or_hash_and_skips_missing_names(
         logger.setLevel(saved_level)
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Opening an AF_UNIX path can block on Windows")
 def test_mtime_cache_refuses_a_socket_masquerading_as_an_item(tmp_path):
     """A path that exists and is neither a file nor a directory is not an item.
 
