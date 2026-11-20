@@ -2128,7 +2128,9 @@ def test_storage_hook_placeholders_failures_and_platform_flags(tmp_path, monkeyp
     def killpg(*_args, **_kwargs):
         raise AssertionError("killpg called")
 
-    monkeypatch.setattr(storage_lock.os, "killpg", killpg)
+    # Windows has no os.killpg. Create the stand-in so a mistaken call
+    # still fails this test.
+    monkeypatch.setattr(storage_lock.os, "killpg", killpg, raising=False)
     win_marker = tmp_path / "win.txt"
     windows = _storage(tmp_path / "win", {"storage": {"hook": "echo win-hook > %s" % win_marker}})
     _calendar(windows, href="/user/cal/", items=[_event()])
