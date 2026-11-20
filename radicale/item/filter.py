@@ -159,7 +159,7 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0,
         components = [item.vobject_item]
     elif level == 1:
         components = list(getattr(item.vobject_item, "%s_list" % tag.lower()))
-    else:
+    elif level == 2:
         components = list(getattr(item.vobject_item, "%s_list" % tag.lower()))
         for comp in components:
             subcomp = getattr(comp, name.lower(), None)
@@ -429,6 +429,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                     if range_fn(dtstart, dtend, is_recurrence):
                         return
                 elif duration is not None:
+                    if original_duration is None:
+                        original_duration = duration.total_seconds()
                     if duration.total_seconds() > 0:
                         # Line 2
                         if range_fn(dtstart, dtstart + duration, is_recurrence):

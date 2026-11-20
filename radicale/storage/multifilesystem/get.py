@@ -83,10 +83,17 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         raise IsADirectoryError(path)
                 if not os.access(path, os.R_OK):
                     raise PermissionError(path)
+                if not os.path.isfile(path):
+                    # A socket or fifo is not an item. Opening it raises
+                    # ENXIO, which the request turns into HTTP 500.
+                    return None
                 # Single stat() reused below for both the cache hash and
                 # last_modified, instead of stat-ing the same path 3 times.
                 item_stat = os.stat(path)
             else:
+                if (os.path.exists(path) and not os.path.isfile(path) and
+                        not os.path.isdir(path)):
+                    return None
                 with open(path, "rb") as f:
                     # early read of the content
                     if self._storage._debug_cache_actions is True:

@@ -523,9 +523,10 @@ class BaseSharing:
             return None
 
         if self.sharing_collection_by_token:
-            share = self.sharing_collection_by_token_resolver(path)
-            if share is not None and 'error' in share:
-                return None
+            if share is None:
+                share = self.sharing_collection_by_token_resolver(path)
+                if share is not None and 'error' in share:
+                    return None
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.trace("sharing/token: not active")
@@ -553,55 +554,56 @@ class BaseSharing:
                                 },
                              }
                 else:
-                    if 'conversion_bday_summary_template' in share['Actions']['config']:
-                        # nothing to do
-                        pass
-                    else:
-                        if 'config_default' not in share['Actions']:
-                            share['Actions'].update({'config_default': {}})
-                        share['Actions']['config_default'].update(
-                            {'conversion_bday_summary_template': self.conversion_bday_summary_template}
-                            )
+                    if 'config' in share['Actions']:
+                        if 'conversion_bday_summary_template' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_summary_template': self.conversion_bday_summary_template}
+                                )
 
-                    if 'conversion_bday_description_template' in share['Actions']['config']:
-                        # nothing to do
-                        pass
-                    else:
-                        if 'config_default' not in share['Actions']:
-                            share['Actions'].update({'config_default': {}})
-                        share['Actions']['config_default'].update(
-                            {'conversion_bday_description_template': self.conversion_bday_description_template}
-                            )
+                        if 'conversion_bday_description_template' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_description_template': self.conversion_bday_description_template}
+                                )
 
-                    if 'conversion_bday_alarm_trigger_template' in share['Actions']['config']:
-                        # nothing to do
-                        pass
-                    else:
-                        if 'config_default' not in share['Actions']:
-                            share['Actions'].update({'config_default': {}})
-                        share['Actions']['config_default'].update(
-                            {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
-                            )
+                        if 'conversion_bday_alarm_trigger_template' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_alarm_trigger_template': self.conversion_bday_alarm_trigger_template}
+                                )
 
-                    if 'conversion_bday_categories' in share['Actions']['config']:
-                        # nothing to do
-                        pass
-                    else:
-                        if 'config_default' not in share['Actions']:
-                            share['Actions'].update({'config_default': {}})
-                        share['Actions']['config_default'].update(
-                            {'conversion_bday_categories': self.conversion_bday_categories}
-                            )
+                        if 'conversion_bday_categories' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_categories': self.conversion_bday_categories}
+                                )
 
-                    if 'conversion_bday_age_max' in share['Actions']['config']:
-                        # nothing to do
-                        pass
-                    else:
-                        if 'config_default' not in share['Actions']:
-                            share['Actions'].update({'config_default': {}})
-                        share['Actions']['config_default'].update(
-                            {'conversion_bday_age_max': self.conversion_bday_age_max}
-                            )
+                        if 'conversion_bday_age_max' in share['Actions']['config']:
+                            # nothing to do
+                            pass
+                        else:
+                            if 'config_default' not in share['Actions']:
+                                share['Actions'].update({'config_default': {}})
+                            share['Actions']['config_default'].update(
+                                {'conversion_bday_age_max': self.conversion_bday_age_max}
+                                )
 
                 logger.debug("sharing/%s: resolved path %r->%r, user %r->%r, Permissions=%r Conversion=%r Actions=%r", share['ShareType'], share['PathOrToken'], share['PathMapped'], user, share['Owner'], share['Permissions'], share['Conversion'], share['Actions'])
 
@@ -842,10 +844,11 @@ class BaseSharing:
         api_info = api_info + "/" + ShareType
 
         # check for valid ShareTypes
-        if ShareType not in SHARE_TYPES:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.trace("sharing/API: ShareType not whitelisted: %r", ShareType)
-            return httputils.NOT_FOUND
+        if ShareType:
+            if ShareType not in SHARE_TYPES:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/API: ShareType not whitelisted: %r", ShareType)
+                return httputils.NOT_FOUND
 
         # check for enabled ShareTypes
         if not self.sharing_collection_by_token and ShareType == "token":
@@ -950,11 +953,15 @@ class BaseSharing:
             # default from input type
             pass
 
-        # json and plain are accepted for every action. csv is list-only.
-        # Anything else cannot be selected: Accept and the content type
-        # only assign those three formats.
-        if output_format == "csv" and action != "list":
-            return httputils.bad_request("CSV output format is only allowed for list action")
+        if output_format == "csv":
+            if not action == "list":
+                return httputils.bad_request("CSV output format is only allowed for list action")
+        elif output_format == "json":
+            pass
+        elif output_format == "plain":
+            pass
+        else:
+            return httputils.bad_request("Output format not supported")
 
         # extend log prefix
         api_info = api_info + "(" + input_format + "->" + output_format + ")"
@@ -981,6 +988,9 @@ class BaseSharing:
                 if "e" in request_data[key] and "E" in request_data[key]:
                     return httputils.bad_request("Invalid combination of Permissions (E+e)")
             elif key == "PathOrToken":
+                if not isinstance(request_data[key], str):
+                    logger.warning("%s: invalid %r: %r", api_info, key, request_data[key])
+                    return httputils.bad_request("Invalid value for PathOrToken")
                 if ShareType == "token":
                     if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
                         logger.warning("%s: unsupported %s", api_info, key)
@@ -1031,7 +1041,9 @@ class BaseSharing:
         if 'Permissions' in request_data:
             Permissions = request_data['Permissions']
 
-        if 'Properties' in request_data:
+        if 'Properties' in request_data and request_data['Properties'] is not None:
+            if not isinstance(request_data['Properties'], dict):
+                return httputils.bad_request("Invalid value for Properties")
             # verify against whitelist
             for entry in request_data['Properties']:
                 if entry not in OVERLAY_PROPERTIES_WHITELIST_ICS and entry not in OVERLAY_PROPERTIES_WHITELIST_VCF:
@@ -1044,7 +1056,9 @@ class BaseSharing:
             if Conversion not in CONVERSIONS_WHITELIST:
                 return httputils.bad_request("Conversion is not supported: %r" % Conversion)
 
-        if 'Actions' in request_data:
+        if 'Actions' in request_data and request_data['Actions'] is not None:
+            if not isinstance(request_data['Actions'], dict):
+                return httputils.bad_request("Invalid value for Actions")
             valid = True  # default
             hint = ""
             for level1 in request_data['Actions']:
@@ -1376,8 +1390,10 @@ class BaseSharing:
                 logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
 
-            assert PathOrToken is not None
-            PathOrToken = str(PathOrToken)
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+            else:
+                PathOrToken = str(PathOrToken)
 
             # retrieve existing share
             share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
@@ -1421,9 +1437,10 @@ class BaseSharing:
                     for entry in Properties:
                         if entry not in OVERLAY_PROPERTIES_WHITELIST[property_whitelist]:
                             return httputils.bad_request("Property not supported to overlay for %r: %r" % (property_whitelist, entry))
-                # JSON null fails in the earlier whitelist loop, before this.
-                assert Properties is not None
-                if Properties == {}:
+                if Properties is None:
+                    # clear properties
+                    Properties = {}
+                elif Properties == {}:
                     # empty, nothing to do
                     pass
                 elif share['Properties'] is not None:
@@ -1443,9 +1460,10 @@ class BaseSharing:
                             del Properties[prop]
 
             if 'Actions' in request_data:
-                # JSON null fails in the earlier whitelist loop, before this.
-                assert Actions is not None
-                if Actions == {}:
+                if Actions is None:
+                    # clear actions
+                    Actions = {}
+                elif Actions == {}:
                     # empty, nothing to do
                     pass
                 elif share['Actions'] is not None:
@@ -1603,8 +1621,10 @@ class BaseSharing:
                 logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
 
-            assert PathOrToken is not None
-            PathOrToken = str(PathOrToken)
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+            else:
+                PathOrToken = str(PathOrToken)
 
             # check whether share exists
             share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
@@ -1646,15 +1666,14 @@ class BaseSharing:
             if ShareType in ["all", "token"]:
                 answer['FeatureEnabledCollectionByToken'] = self.sharing_collection_by_token
                 answer['PermittedCreateCollectionByToken'] = self.permit_create_token
-            answer['SupportedConversions'] = CONVERSIONS_WHITELIST
-            answer['PermittedPropertiesOverlay'] = self.permit_properties_overlay
-            answer['SupportedPropertiesOverlay'] = list(OVERLAY_PROPERTIES_WHITELIST_VCF) + list(OVERLAY_PROPERTIES_WHITELIST_ICS)
-            answer['SupportedActions'] = ACTIONS_WHITELIST_INFO
+            if ShareType in SHARE_TYPES:
+                answer['SupportedConversions'] = CONVERSIONS_WHITELIST
+                answer['PermittedPropertiesOverlay'] = self.permit_properties_overlay
+                answer['SupportedPropertiesOverlay'] = list(OVERLAY_PROPERTIES_WHITELIST_VCF) + list(OVERLAY_PROPERTIES_WHITELIST_ICS)
+                answer['SupportedActions'] = ACTIONS_WHITELIST_INFO
 
-        else:
-            # list, create, update, delete, and info returned above.
-            # The remaining whitelisted actions are the toggles.
-            assert action in API_SHARE_TOGGLES_V1
+        # action: TOGGLE
+        elif action in API_SHARE_TOGGLES_V1:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.trace(api_info)
 
@@ -1662,8 +1681,10 @@ class BaseSharing:
                 logger.warning("%s: unsupported for ShareType=%r", api_info, ShareType)
                 return httputils.bad_request("Invalid share type")
 
-            assert PathOrToken is not None
-            PathOrToken = str(PathOrToken)
+            if PathOrToken is None:
+                return httputils.bad_request("Missing PathOrToken")
+            else:
+                PathOrToken = str(PathOrToken)
 
             share = self.database_get_sharing(ShareType=ShareType, PathOrToken=PathOrToken, OnlyEnabled=False)
             if share is None:
@@ -1690,7 +1711,7 @@ class BaseSharing:
                 Enabled = True
             elif action == "hide":
                 Hidden = True
-            else:
+            elif action == "unhide":
                 Hidden = False
 
             if user == share['Owner']:
@@ -1728,16 +1749,23 @@ class BaseSharing:
             if result:
                 if result['status'] == "not-found":
                     return httputils.NOT_FOUND
-                if result['status'] == "permission-denied":
+                elif result['status'] == "permission-denied":
                     return httputils.NOT_ALLOWED
                 elif result['status'] == "success":
                     answer['Status'] = "success"
-                    pass
+                else:
+                    logger.warning("%s: %r by user %s not successful", api_info, request_data['PathOrToken'], user)
+                    return httputils.bad_request("Internal Error")
             else:
                 logger.warning("%s: %r by user %s not successful", api_info, request_data['PathOrToken'], user)
                 return httputils.bad_request("Internal Error")
 
             logger.notice("%s success: PathMapped=%r PathOrToken=%r", api_info, PathMapped, PathOrToken)
+
+        else:
+            # default
+            logger.warning("%s: unsupported action=%r", api_info, action)
+            return httputils.bad_request("Invalid action")
 
         # output handler
         if logger.isEnabledFor(logging.DEBUG):
@@ -1758,7 +1786,10 @@ class BaseSharing:
             if 'Content' in answer and answer['Content'] is not None:
                 csv = io.StringIO()
                 writer = DictWriter(csv, fieldnames=DB_FIELDS_V1, delimiter=';')
-                writer.writeheader()
+                if output_format == "csv":
+                    writer.writeheader()
+                elif output_format == "plain":
+                    writer.writeheader()
                 for entry in answer['Content']:
                     # TODO: Argument 1 to "writerow" of "DictWriter" has incompatible type "str"; expected "Mapping[str, Any]"  [arg-type]
                     writer.writerow(entry)  # type: ignore[arg-type]
@@ -1777,9 +1808,14 @@ class BaseSharing:
                 "Content-Type": "text/csv"
             }
             return client.OK, headers, "\n".join(answer_array), None
-        else:
+        elif output_format == "json":
             answer_raw = json.dumps(answer)
             headers = {
                 "Content-Type": "text/json"
             }
             return client.OK, headers, answer_raw, None
+        else:
+            # should not be reached
+            return httputils.bad_request("Invalid output format")
+
+        return httputils.METHOD_NOT_ALLOWED

@@ -1,6 +1,13 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: sharing update rejects a JSON `null` path with `400` and treats JSON `null` properties or actions as a clear. Those values used to crash the request with HTTP 500
+* Fix: sharing hide, unhide, enable, and disable report a failed update as `400 Internal Error`. The same failure on update and delete was already `400`, and these actions used to answer `200`
+* Fix: a `calendar-query` `REPORT` that matches an item lists that item even when the request has no `DAV:prop`
+* Fix: storage skips a socket or other non-file stored under an item name. Opening it used to raise `ENXIO` and the request became HTTP 500
+* Fix: `radicale --verify-storage` fails when synchronizing a collection raises `ValueError`. That error used to be ignored, so the check exited 0
+* Fix: `radicale --verify-storage` fails when two items in one collection share a UID. It used to log the conflict and still exit 0
+* Fix: an empty `PUT` with `Content-Type: text/calendar` is rejected. It used to create a subscribed collection because that tag shares the same media type
 * Fix: storage startup does not report 1 ns mtime precision, or recommend the mtime cache, when the probe timestamp does not change
 * Fix: hexdump marks a UTF-8 lead byte with its real length. `0xE0` is 3 bytes and `0xC0`–`0xDF` are 2 bytes; bytes from `0xF8` up are not a 3-byte lead
 * Adjustment: the built-in server logs a warning at startup that it is meant for local testing, not for production (use `[server] type = cheroot` or `hypercorn`)
@@ -20,6 +27,7 @@
 * Fix: hook: a CANCEL for an event with no SEQUENCE is sent with SEQUENCE:1. Building that message used to fail
 * Fix: hook: notify on a whole-collection PUT. The prepared items were consumed while the collection was stored, so the hook never saw them
 * Fix: hook: a whole-collection PUT reports a replaced item's previous body as old_content and the uploaded body as content. The filename written for each item was discarded, so every item was reported as new
+* Fix: log an HTTP 4xx response at error, except the statuses and methods already logged at notice
 
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0

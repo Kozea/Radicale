@@ -38,9 +38,14 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
             nonlocal item_errors, collection_errors
             try:
                 yield
-            except ValueError:
+            except ValueError as e:
                 if href is not None:
                     item_errors += 1
+                else:
+                    collection_errors += 1
+                    logger.error(
+                        "Invalid collection %r: %s", sane_path, e,
+                        exc_info=True)
             except Exception as e:
                 if href is not None:
                     item_errors += 1
@@ -75,6 +80,7 @@ class StoragePartVerify(StoragePartDiscover, StorageBase):
                         has_child_collections = True
                         remaining_sane_paths.append(item.path)
                     elif item.uid in uids:
+                        item_errors += 1
                         logger.error("Invalid item %r in %r: UID conflict %r",
                                      item.href, sane_path, item.uid)
                     else:

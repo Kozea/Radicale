@@ -105,8 +105,12 @@ def database_common_check_row_match(
     row_copy = row.copy()
 
     if group_check and user is not None:
-        # group_check means User starts with the realm or group prefix.
-        user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+        if row['User'].startswith(sharing.SHARING_SEPARATOR_REALM):
+            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+        elif row['User'].startswith(sharing.SHARING_SEPARATOR_GROUP):
+            user_without_group = user.split(sharing.SHARING_SEPARATOR_GROUP)[0]
+        else:
+            user_without_group = user
         row_copy['PathOrToken'] = row['PathOrToken'].replace("{user}", user_without_group)  # replace placeholder
         row_copy['User'] = user_without_group  # replace with real user
         row_copy['Permissions'] = rights.add(rights.remove(row_copy['Permissions'], "u"), "U")  # replace flag for resolved group

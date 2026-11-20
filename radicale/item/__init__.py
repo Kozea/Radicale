@@ -135,6 +135,8 @@ def check_and_sanitize_items(
         if len(vobject_items) > 1:
             raise RuntimeError("VCALENDAR collection contains %d "
                                "components" % len(vobject_items))
+        if not vobject_items:
+            raise ValueError("VCALENDAR collection contains no components")
         vobject_item = vobject_items[0]
         if vobject_item.name != "VCALENDAR":
             raise ValueError("Item type %r not supported in %r "
@@ -210,7 +212,7 @@ def check_and_sanitize_items(
                                     dates.value[i] = dates.value[i].replace(tzinfo=ref_date.tzinfo)
                                     if logger.isEnabledFor(logging.DEBUG):
                                         logger.trace("ITEM/check_and_sanitize_item: overtake missing tzinfo from dtstart: '%s' -> '%s'", date, dates.value[i])
-                            else:
+                            elif (hasattr(ref_date, 'tzinfo') and ref_date.tzinfo is None) or not hasattr(ref_date, 'tzinfo'):
                                 if logger.isEnabledFor(logging.DEBUG):
                                     logger.trace("ITEM/check_and_sanitize_item: dtstart has no tzinfo: '%s'", ref_date)
                                 if hasattr(date, 'tzinfo') and date.tzinfo is not None:
@@ -287,8 +289,8 @@ def check_and_sanitize_items(
                     # TZ code taken from vobject/icalendar.py/getrruleset
                     if rrule._until.tzinfo is None:
                         rrule._until = rrule._until.replace(tzinfo=dtstart.tzinfo)
-                    # date_to_datetime has already given dtstart a timezone.
-                    rrule._until = rrule._until.astimezone(dtstart.tzinfo)
+                    if dtstart.tzinfo is not None:
+                        rrule._until = rrule._until.astimezone(dtstart.tzinfo)
                     delta = rrule._until - dtstart
                     seconds = delta.total_seconds()
                     if seconds < 0:
@@ -601,7 +603,7 @@ def trigger_to_timedelta(trigger) -> Union[datetime.timedelta, None]:
         td = datetime.timedelta(minutes=value)
     elif match[3] == "H":
         td = datetime.timedelta(hours=value)
-    else:
+    elif match[3] == "W":
         td = datetime.timedelta(weeks=value)
 
     return td
