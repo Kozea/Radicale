@@ -209,6 +209,10 @@
 # Convert username to lowercase, must be true for case-insensitive auth providers
 #lc_username = False
 
+# Convert username to uppercase, recommended for case-insensitive auth providers
+# (mutually exclusive with lc_username)
+#uc_username = False
+
 # Strip domain name from username
 #strip_domain = False
 
