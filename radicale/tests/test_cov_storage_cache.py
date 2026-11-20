@@ -17,7 +17,6 @@
 """Outcome tests for item-cache debug lines and get/upload edges."""
 
 import base64
-import errno
 import logging
 import os
 import shutil
@@ -173,10 +172,9 @@ def test_mtime_cache_refuses_a_socket_masquerading_as_an_item(tmp_path):
                     with pytest.raises(PermissionError):
                         collection._get("sock.ics")
                 else:
-                    # Root passes the mode check, then opening the socket inode fails.
-                    with pytest.raises(OSError) as exc_info:
-                        collection._get("sock.ics")
-                    assert exc_info.value.errno == errno.ENXIO
+                    # Root ignores mode 000. A socket is not a file, so the
+                    # read returns no item and does not open it.
+                    assert collection._get("sock.ics") is None
                 assert os.path.exists(sock_path)
                 assert not os.path.isfile(sock_path)
                 assert not os.path.isdir(sock_path)
