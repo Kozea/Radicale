@@ -988,6 +988,9 @@ class BaseSharing:
                 if "e" in request_data[key] and "E" in request_data[key]:
                     return httputils.bad_request("Invalid combination of Permissions (E+e)")
             elif key == "PathOrToken":
+                if not isinstance(request_data[key], str):
+                    logger.warning("%s: invalid %r: %r", api_info, key, request_data[key])
+                    return httputils.bad_request("Invalid value for PathOrToken")
                 if ShareType == "token":
                     if not re.search('^/.token/' + TOKEN_PATTERN_V1 + '/$', request_data[key]):
                         logger.warning("%s: unsupported %s", api_info, key)
@@ -1038,7 +1041,9 @@ class BaseSharing:
         if 'Permissions' in request_data:
             Permissions = request_data['Permissions']
 
-        if 'Properties' in request_data:
+        if 'Properties' in request_data and request_data['Properties'] is not None:
+            if not isinstance(request_data['Properties'], dict):
+                return httputils.bad_request("Invalid value for Properties")
             # verify against whitelist
             for entry in request_data['Properties']:
                 if entry not in OVERLAY_PROPERTIES_WHITELIST_ICS and entry not in OVERLAY_PROPERTIES_WHITELIST_VCF:
@@ -1051,7 +1056,9 @@ class BaseSharing:
             if Conversion not in CONVERSIONS_WHITELIST:
                 return httputils.bad_request("Conversion is not supported: %r" % Conversion)
 
-        if 'Actions' in request_data:
+        if 'Actions' in request_data and request_data['Actions'] is not None:
+            if not isinstance(request_data['Actions'], dict):
+                return httputils.bad_request("Invalid value for Actions")
             valid = True  # default
             hint = ""
             for level1 in request_data['Actions']:
