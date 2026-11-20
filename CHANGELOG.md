@@ -2,6 +2,8 @@
 
 ## 3.9.3.dev
 * Fix: `radicale --verify-storage` fails when synchronizing a collection raises `ValueError`. That error used to be ignored, so the check exited 0
+* Fix: `radicale --verify-storage` fails when two items in one collection share a UID. It used to log the conflict and still exit 0
+* Fix: an empty `PUT` with `Content-Type: text/calendar` is rejected. It used to create a subscribed collection because that tag shares the same media type
 * Fix: storage startup does not report 1 ns mtime precision, or recommend the mtime cache, when the probe timestamp does not change
 * Fix: hexdump marks a UTF-8 lead byte with its real length. `0xE0` is 3 bytes and `0xC0`–`0xDF` are 2 bytes; bytes from `0xF8` up are not a 3-byte lead
 * Adjustment: the built-in server logs a warning at startup that it is meant for local testing, not for production (use `[server] type = cheroot` or `hypercorn`)
