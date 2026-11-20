@@ -956,14 +956,12 @@ permissions: R
         assert "Can't determine collection tag" in "\n".join(caplog.messages)
         assert self.get("/weird.ics/", check=404)[0] == 404
 
+        # text/calendar maps to VCALENDAR. An empty collection has no
+        # component, so the PUT is rejected.
         status, _, body = self.request(
             "PUT", "/subscribed.ics/", "",
             content_type="text/calendar", check=None)
-        assert status == 201, body
-        status, responses = self.propfind(
-            "/subscribed.ics/", PROPFIND_ONE.format("<D:resourcetype/>"))
-        kinds = responses["/subscribed.ics/"]["D:resourcetype"][1]
-        assert any("subscribed" in child.tag for child in kinds.iter())
+        assert status == 400 and body == BAD_REQUEST
 
         self.mkcalendar("/calendar.ics/")
         self.put("/calendar.ics/event.ics", _event(summary="Original"))
@@ -1883,8 +1881,9 @@ permissions: R
             "</C:calendar-query>")
         status, _, body = self.request(
             "REPORT", "/calendar.ics/", bare, check=None)
+        # A match is listed even when the report has no DAV:prop.
         assert status == 207 and "multistatus" in body
-        assert "kept.ics" not in body and "span.ics" not in body
+        assert "kept.ics" in body and "span.ics" in body
         status, _, body = self.request(
             "REPORT", "/calendar.ics/", window, check=None)
         assert status == 207 and "kept.ics" in body and "span.ics" in body

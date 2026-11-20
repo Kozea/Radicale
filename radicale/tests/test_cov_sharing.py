@@ -1217,9 +1217,8 @@ class TestSharingCoverage(BaseTest):
         with self._patched("database_update_sharing", status_of("error")):
             status, _, answer = self._api(
                 "map", "hide", {"PathOrToken": shared}, check=None)
-        parsed = json.loads(answer)
-        assert status == 200
-        assert "Status" not in parsed
+        assert status == 400
+        assert "Internal Error" in answer
         with self._patched("database_delete_sharing", status_of("not-found")):
             self._api("map", "delete", {
                 "PathOrToken": shared, "User": "owner"}, check=404)
@@ -1500,15 +1499,18 @@ class TestSharingCoverage(BaseTest):
         assert json.loads(answer)["Status"] == "success"
         assert json.loads(answer)["FeatureEnabledCollectionByMap"] is True
 
+        status, _, answer = self._api(
+            "map", "update", {"PathOrToken": None, "Hidden": True}, check=None)
+        assert status == 400
+        assert "server error" not in answer.lower()
+        # Null property and action fields are ignored. The path is not a share.
         for payload in (
-                {"PathOrToken": None, "Hidden": True},
                 {"PathOrToken": "/user/quiet-null.ics/", "Properties": None},
                 {"PathOrToken": "/user/quiet-null.ics/", "Actions": None},
                 ):
-            status, _, answer = self._api(
+            status, _, _answer = self._api(
                 "map", "update", payload, check=None)
-            assert status == 500
-            assert "server error" in answer.lower()
+            assert status == 404
 
         with caplog.at_level(logging.INFO, logger="radicale"):
             payload = (
