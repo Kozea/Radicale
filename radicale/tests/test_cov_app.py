@@ -448,12 +448,27 @@ class TestCovApp(BaseTest):
         outer = cProfile.Profile()
         outer.enable()
         try:
+            # Python 3.12 and later refuse a second profiler. Earlier
+            # versions let it start, so the request is profiled normally.
+            probe = cProfile.Profile()
+            try:
+                probe.enable()
+            except ValueError:
+                second_profiler_is_refused = True
+            else:
+                second_profiler_is_refused = False
+                probe.disable()
             caplog.clear()
             status, _, body = self.request("GET", "/calendar.ics/", check=None)
         finally:
             outer.disable()
         assert status == 200 and "BEGIN:VCALENDAR" in body
-        assert "concurrent running profiling request" in "\n".join(caplog.messages)
+        text = "\n".join(caplog.messages)
+        if second_profiler_is_refused:
+            assert "concurrent running profiling request" in text
+        else:
+            assert "**Profiling statistics BEGIN**" in text
+            assert "concurrent running profiling request" not in text
 
         self.configure({
             "logging": {

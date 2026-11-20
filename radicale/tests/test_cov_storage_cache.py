@@ -20,7 +20,9 @@ import base64
 import errno
 import logging
 import os
+import shutil
 import socket
+import tempfile
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -130,30 +132,57 @@ def test_mtime_cache_refuses_a_socket_masquerading_as_an_item(tmp_path):
     the boundary between "missing" and "a directory". Mode 000 makes the
     following read check fail, so the socket is never opened.
     """
-    storage_ = _storage(tmp_path)
-    with storage_.acquire_lock("w"):
-        collection = storage_.create_collection(
-            "/user/cal/", props={"tag": "VCALENDAR"})[0]
-        storage_._use_mtime_and_size_for_item_cache = True
-        sock_path = os.path.join(collection._filesystem_path, "sock.ics")
-        sock = socket.socket(socket.AF_UNIX)
-        try:
-            sock.bind(sock_path)
-            os.chmod(sock_path, 0)
-            if not os.access(sock_path, os.R_OK):
-                with pytest.raises(PermissionError):
-                    collection._get("sock.ics")
-            else:
-                # Root passes the mode check, then opening the socket inode fails.
-                with pytest.raises(OSError) as exc_info:
-                    collection._get("sock.ics")
-                assert exc_info.value.errno == errno.ENXIO
-            assert os.path.exists(sock_path)
-            assert not os.path.isfile(sock_path)
-            assert not os.path.isdir(sock_path)
-        finally:
-            sock.close()
-            os.chmod(sock_path, 0o600)
+    # macOS refuses an AF_UNIX path of 104 bytes or more. The pytest temp
+    # directory on that runner is already longer than that, and so is TMPDIR
+    # (/var/folders/...), so the socket has to live under /tmp.
+    folder = tmp_path
+    short = None
+    socket_name = os.path.join("collection-root", "user", "cal", "sock.ics")
+
+    def _socket_path_fits(candidate):
+        return len(os.fsencode(os.path.join(str(candidate), socket_name))) < 100
+
+    if not _socket_path_fits(folder):
+        for parent in ("/tmp", "/private/tmp"):
+            if not os.path.isdir(parent):
+                continue
+            candidate = tempfile.mkdtemp(prefix="rc", dir=parent)
+            if _socket_path_fits(candidate):
+                short = candidate
+                folder = short
+                break
+            shutil.rmtree(candidate, ignore_errors=True)
+        else:
+            pytest.skip("no directory short enough for an AF_UNIX socket")
+    try:
+        storage_ = _storage(folder)
+        with storage_.acquire_lock("w"):
+            collection = storage_.create_collection(
+                "/user/cal/", props={"tag": "VCALENDAR"})[0]
+            storage_._use_mtime_and_size_for_item_cache = True
+            sock_path = os.path.join(collection._filesystem_path, "sock.ics")
+            sock = socket.socket(socket.AF_UNIX)
+            try:
+                sock.bind(sock_path)
+                os.chmod(sock_path, 0)
+                if not os.access(sock_path, os.R_OK):
+                    with pytest.raises(PermissionError):
+                        collection._get("sock.ics")
+                else:
+                    # Root passes the mode check, then opening the socket inode fails.
+                    with pytest.raises(OSError) as exc_info:
+                        collection._get("sock.ics")
+                    assert exc_info.value.errno == errno.ENXIO
+                assert os.path.exists(sock_path)
+                assert not os.path.isfile(sock_path)
+                assert not os.path.isdir(sock_path)
+            finally:
+                sock.close()
+                if os.path.exists(sock_path):
+                    os.chmod(sock_path, 0o600)
+    finally:
+        if short is not None:
+            shutil.rmtree(short, ignore_errors=True)
 
 
 def test_read_lock_recheck_uses_a_cache_entry_that_appears(

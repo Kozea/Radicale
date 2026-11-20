@@ -601,13 +601,18 @@ def test_rename_exchange_success_inval_and_other_errno(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="Invalid arguments"):
         pathutils.rename_exchange("", "no-base")
 
-    def forbid_fallback(*_args, **_kwargs):
-        raise AssertionError("fallback used")
+    # renameat2 is Linux-only. Other platforms exchange by copying.
+    atomic = sys.platform == "linux" and pathutils.renameat2
+    if atomic:
+        def forbid_fallback(*_args, **_kwargs):
+            raise AssertionError("fallback used")
 
-    monkeypatch.setattr(pathutils, "TemporaryDirectory", forbid_fallback)
+        monkeypatch.setattr(pathutils, "TemporaryDirectory", forbid_fallback)
     pathutils.rename_exchange(str(src), str(dst))
     assert src.read_text(encoding="utf-8") == "dest"
     assert dst.read_text(encoding="utf-8") == "source"
+    if not atomic:
+        return
     monkeypatch.undo()
 
     def reject(*_args):
@@ -626,6 +631,8 @@ def test_rename_exchange_success_inval_and_other_errno(tmp_path, monkeypatch):
     assert dst.read_text(encoding="utf-8") == "dest"
 
 
+@pytest.mark.skipif(
+    sys.platform != "linux", reason="renameat2 exists only on Linux")
 def test_renameat2_attributeerror_uses_the_copy_fallback(tmp_path):
     real_cdll = ctypes.CDLL
 
@@ -3284,6 +3291,9 @@ def test_upload_logs_mtime_or_hash_and_batch_can_stay_quiet(tmp_path, monkeypatc
                for path in pathlib.Path(loud._filesystem_path).glob("*.ics"))
 
 
+@pytest.mark.skipif(
+    not hasattr(threading, "gettrace"),
+    reason="threading.gettrace exists on Python 3.10 and later")
 def test_builtin_serve_returns_without_closing_a_cleared_shutdown_socket(tmp_path, caplog):
     caplog.set_level(logging.INFO)
     logger.setLevel(logging.INFO)
