@@ -21,11 +21,13 @@ from unittest.mock import patch
 
 import pytest
 
+from radicale import log
 from radicale.tests import BaseTest
 
 
 class TestLdapReaderSetup(BaseTest):
 
+    @pytest.mark.skipif(log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
     def test_ldap3_reader_setup_error_is_unable_to_read(self, caplog):
         """Server or TLS setup failed before a reader connection existed."""
         ldap3 = pytest.importorskip("ldap3")
