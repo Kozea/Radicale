@@ -29,6 +29,7 @@
 * Fix: hook: a whole-collection PUT reports a replaced item's previous body as old_content and the uploaded body as content. The filename written for each item was discarded, so every item was reported as new
 * Fix: log an HTTP 4xx response at error, except the statuses and methods already logged at notice
 * Fix: sharing resolver-by-map skip for existing path
+* Feature: sharing: add new option permit_create_map_for_group (default: False) and permissions 'G' and 'g' for fine granular control of share-by-map for groups
 
 ## 3.9.2
 * Fix: [server] report an inactive SSL protocol before assigning version 0

@@ -429,6 +429,8 @@ Create a share by mapping a collection of an `Owner` to an `User`.
    * Global permitted by `permit_create_map = True` or `rights` permission `M`
    * Global denied by `permit_create_map = False` or `rights` permission `m`
    * To self only (`User` is the `Owner`, `PathOrToken` in the folder of the `Owner`) by `permit_create_map = self` or `rights` permission `S`
+   * Group share permitted by `permit_create_map_for_group = True` or `rights` permission `G`
+   * Group share denied by `permit_create_map_for_group = False` or `rights` permission `g`
 
  * Input
 

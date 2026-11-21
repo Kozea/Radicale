@@ -533,6 +533,7 @@ collection_by_map = true
 collection_by_token = false
 permit_create_token = false
 permit_create_map = true
+permit_create_map_for_group = true
 database_path = {tmp_path / 'sharing.csv'}
 """,
     )

@@ -4154,6 +4154,107 @@ permissions: RrWw""")
             self.configure({"sharing": {"permit_create_map": "False"}})
 
     @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
+    def test_sharing_api_permissions_map_group(self) -> None:
+        """sharing API usage tests related to permit_create_map_for_group."""
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("""\
+[default-collection]
+user: .+
+collection: {user}
+permissions: RrWw
+[owner1]
+user: owner1
+collection: {user}/abook-default-[^/]+(/.*)?
+permissions: RrWw
+[owner1-G]
+user: owner1
+collection: {user}/abook-G-[^/]+(/.*)?
+permissions: RrWwG
+[owner1-g]
+user: owner1
+collection: {user}/abook-g-[^/]+(/.*)?
+permissions: RrWwg
+""")
+
+        self.configure({"rights": {"file": rights_file_path}})
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "collection_by_map": "True"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "from_file"}})
+
+        json_dict: dict
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+
+            path_abook = "/owner1/abook-default-" + db_type + "/"
+            path_abook_G = "/owner1/abook-G-" + db_type + "/"
+            path_abook_g = "/owner1/abook-g-" + db_type + "/"
+            path_user = "/{user}/abook-default-" + db_type + "/"
+            path_user_G = "/{user}/abook-G-" + db_type + "/"
+            path_user_g = "/{user}/abook-g-" + db_type + "/"
+
+            logging.info("\n*** prepare")
+            for path in [path_abook, path_abook_G, path_abook_g]:
+                self.create_addressbook(path, login="owner1:owner1pw")
+
+            self.configure({"sharing": {"permit_create_map_for_group": "False"}})
+
+            logging.info("\n*** create map owner1/:group1 -> 403")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_abook
+            json_dict['PathOrToken'] = path_user
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map owner1/:group1 permitted by rights -> 200")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_abook_G
+            json_dict['PathOrToken'] = path_user_G
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map owner1/:group1 denied by rights -> 403")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_abook_g
+            json_dict['PathOrToken'] = path_user_g
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            self.configure({"sharing": {"permit_create_map_for_group": "True"}})
+            logging.info("\n*** create map owner1/:group1 -> 200")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_abook
+            json_dict['PathOrToken'] = path_user
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            logging.info("\n*** create map owner1/:group1 denied by rights -> 403")
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathMapped'] = path_abook_g
+            json_dict['PathOrToken'] = path_user_g
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+    @pytest.mark.skipif(not pathutils.path_is_collision_free_case_sensitive(tempfile.mkdtemp()), reason="TEMP is not case sensitive")
     def test_sharing_api_permissions_map_self(self) -> None:
         """sharing API usage tests related to permit_create_map = self."""
         rights_file_path = os.path.join(self.colpath, "rights")
@@ -8399,6 +8500,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -8643,6 +8745,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -8937,6 +9040,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9042,6 +9146,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9147,6 +9252,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9252,6 +9358,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9353,6 +9460,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9593,6 +9701,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9734,6 +9843,7 @@ permissions: RrWw""")
                         "sharing": {
                                     "type": "csv",
                                     "permit_create_map": "True",
+                                    "permit_create_map_for_group": "True",
                                     "permit_create_token": "False",
                                     "collection_by_map": "True",
                                     "collection_by_token": "False"},
@@ -9881,12 +9991,17 @@ permissions: RrWw""")
             json_dict = {}
             json_dict['User'] = ":group1"
             json_dict['PathOrToken'] = path_shared_ug
+            json_dict['PathMapped'] = path_mapped_o1
             json_dict['Permissions'] = "rw"
             json_dict['Enabled'] = True
             json_dict['Hidden'] = False
 
+            self.configure({"sharing": {"permit_create_map_for_group": "False"}})
+            logging.info("\n*** create map with placeholder but globally not allowed :group1/owner1 -> 403")
+            _, headers, answer = self._sharing_api_json("map", "create", check=403, login="owner1:owner1pw", json_dict=json_dict)
+
+            self.configure({"sharing": {"permit_create_map_for_group": "True"}})
             logging.info("\n*** create map with placeholder :group1/owner1 -> 200")
-            json_dict['PathMapped'] = path_mapped_o1
             _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
 
             # get item as user1 -> ok
