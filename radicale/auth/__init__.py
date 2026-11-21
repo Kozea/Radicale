@@ -167,7 +167,7 @@ class BaseAuth:
             # cache init
             self._cache_successful = dict()
             self._cache_failed = dict()
-            self._cache_failed_logins_salt_ns = time.time_ns()
+            self._cache_failed_logins_salt_ns = time.monotonic_ns()
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
@@ -235,7 +235,7 @@ class BaseAuth:
         # override this method instead of _login() if user_groups is supported
         return (self._login_ext(login, password, context), set([]))
 
-    def _sleep_for_constant_exec_time(self, time_ns_begin: int):
+    def _sleep_for_constant_exec_time(self, monotonic_ns_begin: int):
         """Sleep some time to reach a constant execution time for failed logins
 
         Independent of time required by external backend or used digest methods
@@ -245,7 +245,7 @@ class BaseAuth:
         See also issue 591
 
         """
-        time_delta = (time.time_ns() - time_ns_begin) / 10**9
+        time_delta = (time.monotonic_ns() - monotonic_ns_begin) / 10**9
         with self._lock:
             # avoid that another thread is changing global value at the same time
             failed_auth_delay = self._failed_auth_delay
@@ -271,7 +271,7 @@ class BaseAuth:
          - authentication type
          - ``user_groups`` (if supported by authentication type) or ``set([])`` if invalid or no groups are supplied
         """
-        time_ns_begin = time.time_ns()
+        monotonic_ns_begin = time.monotonic_ns()
         _type: str = self._type
         (result, groups) = NO_LOGIN_NO_GROUPS
         login_orig: str = login
@@ -288,13 +288,13 @@ class BaseAuth:
                 logger.warning("Login verification impossible as turned empty: %r -> %r", login_orig, login)
             else:
                 logger.warning("Login verification impossible as is empty: %r", login)
-            self._sleep_for_constant_exec_time(time_ns_begin)
+            self._sleep_for_constant_exec_time(monotonic_ns_begin)
             return (result, groups, _type)  # NO_LOGIN_NO_GROUPS
 
         if self._cache_logins is True:
             # time_ns is also used as salt
             digest = ""
-            time_ns = time.time_ns()
+            monotonic_ns = time.monotonic_ns()
             # cleanup failed login cache to avoid out-of-memory
             cache_failed_entries = len(self._cache_failed)
             if cache_failed_entries > 0:
@@ -320,18 +320,18 @@ class BaseAuth:
             cache_failed_entry = self._cache_failed.get(digest_failed)
             if cache_failed_entry:
                 # login+password found in cache "failed" -> shortcut return
-                (time_ns_cache, login_cache) = cache_failed_entry
-                age_failed = int((time_ns - time_ns_cache) / 10**9)
+                (monotonic_ns_cache, login_cache) = cache_failed_entry
+                age_failed = int((monotonic_ns - monotonic_ns_cache) / 10**9)
                 logger.debug("Login failed cache entry for user+password found: %r (age: %d sec)", login_cache, age_failed)
                 _type = _type + "/cached"
                 return (result, groups, _type)  # NO_LOGIN_NO_GROUPS
             cache_successful_entry = self._cache_successful.get(login)
             if cache_successful_entry:
                 # login found in cache "successful"
-                (digest_cache, time_ns_cache, groups) = cache_successful_entry
-                digest = self._cache_digest(login, password, str(time_ns_cache))
+                (digest_cache, monotonic_ns_cache, groups) = cache_successful_entry
+                digest = self._cache_digest(login, password, str(monotonic_ns_cache))
                 if digest == digest_cache:
-                    age_success = int((time_ns - time_ns_cache) / 10**9)
+                    age_success = int((monotonic_ns - monotonic_ns_cache) / 10**9)
                     if age_success > self._cache_successful_logins_expiry:
                         logger.debug("Login successful cache entry for user+password found but expired: %r (age: %d > %d sec)", login, age_success, self._cache_successful_logins_expiry)
                         # delete expired success from cache
@@ -348,7 +348,7 @@ class BaseAuth:
                     digest = ""
             else:
                 # login not found in cache, caculate always to avoid timing attacks
-                digest = self._cache_digest(login, password, str(time_ns))
+                digest = self._cache_digest(login, password, str(monotonic_ns))
             if result == "":
                 # verify login+password via configured backend
                 logger.debug("Login verification for user+password via backend %r: %r", _type, login)
@@ -357,10 +357,10 @@ class BaseAuth:
                     logger.debug("Login successful for user+password via backend %r: %r", _type, login)
                     if digest == "":
                         # successful login, but expired, digest must be recalculated
-                        digest = self._cache_digest(login, password, str(time_ns))
+                        digest = self._cache_digest(login, password, str(monotonic_ns))
                     # store successful login in cache
                     self._lock.acquire()
-                    self._cache_successful[login] = (digest, time_ns, groups)
+                    self._cache_successful[login] = (digest, monotonic_ns, groups)
                     self._lock.release()
                     logger.debug("Login successful cache for user set: %r", login)
                     self._lock.acquire()
@@ -370,7 +370,7 @@ class BaseAuth:
                 else:
                     logger.debug("Login failed for user+password via backend: %r", login)
                     self._lock.acquire()
-                    self._cache_failed[digest_failed] = (time_ns, login)
+                    self._cache_failed[digest_failed] = (monotonic_ns, login)
                     self._lock.release()
                     logger.debug("Login failed cache for user set: %r", login)
         else:
@@ -381,5 +381,5 @@ class BaseAuth:
                 logger.debug("Login successful for user+password via backend %r: %r", _type, login)
         # finally
         if result == "":
-            self._sleep_for_constant_exec_time(time_ns_begin)
+            self._sleep_for_constant_exec_time(monotonic_ns_begin)
         return (result, groups, _type)

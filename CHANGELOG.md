@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.9.3.dev
+* Fix: [auth] uses time.monotonic_ns instead of time.time_ns
+
 ## 3.9.2.dev
 * Fix: propfind CS:getctag: use the sync-token so the value never repeats
 
