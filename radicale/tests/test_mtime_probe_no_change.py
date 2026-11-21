@@ -19,7 +19,9 @@
 import logging
 from types import SimpleNamespace
 
-from radicale import config, storage
+import pytest
+
+from radicale import config, log, storage
 from radicale.storage import multifilesystem
 
 
@@ -40,6 +42,7 @@ def _patch_mtime_delta(monkeypatch, delta):
     monkeypatch.setattr(multifilesystem.os, "stat", fake_stat)
 
 
+@pytest.mark.skipif(log.logger.getEffectiveLevel() == logging.INFO, reason="requires loglevel DEBUG")
 def test_unchanged_mtime_probe_is_not_one_nanosecond(tmp_path, monkeypatch, caplog):
     caplog.set_level(logging.DEBUG)
     _patch_mtime_delta(monkeypatch, 0)
