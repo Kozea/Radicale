@@ -2659,6 +2659,17 @@ Default: `false`
 * If `True` or `self` it can be explicitly forbidden by *rights* permissions: `m`
 * If `True` or `False` it can be explicitly limited to self by *rights* permissions: `S` _(>= 3.9.1)_
 
+##### permit_create_map_for_group
+
+_(>= 3.9.3)_
+
+Permit create of map-based sharing for group
+
+Default: `false`
+
+* If `False` it can be explicitly granted by *rights* permissions: `G`
+* If `True` it can be explicitly forbidden by *rights* permissions: `g`
+
 ##### permit_properties_overlay
 
 _(>= 3.7.0)_

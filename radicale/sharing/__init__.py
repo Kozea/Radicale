@@ -280,6 +280,7 @@ class BaseSharing:
         self.sharing_collection_by_token = configuration.get("sharing", "collection_by_token")
         self.permit_create_token = configuration.get("sharing", "permit_create_token")
         self.permit_create_map = configuration.get("sharing", "permit_create_map")
+        self.permit_create_map_for_group: bool = configuration.get("sharing", "permit_create_map_for_group")
         self.default_permissions_create_token = configuration.get("sharing", "default_permissions_create_token")
         self.default_permissions_create_map = configuration.get("sharing", "default_permissions_create_map")
         self.permit_properties_overlay = configuration.get("sharing", "permit_properties_overlay")
@@ -1308,6 +1309,14 @@ class BaseSharing:
                     return httputils.NOT_ALLOWED
 
                 if User.startswith(SHARING_SEPARATOR_GROUP) or User.startswith(SHARING_SEPARATOR_REALM):
+                    if self.permit_create_map_for_group is False:
+                        if "G" not in access.permissions:
+                            logger.warning("%s: create share for group not allowed for owner %r (PathMapped=%r User=%r, permit=False and missing permission 'G')", api_info, user, PathOrToken, User)
+                            return httputils.NOT_ALLOWED
+                    else:
+                        if "g" in access.permissions:
+                            logger.warning("%s: create share for group not allowed for owner %r (PathMapped=%r User=%r, permit=True but explicit denied by permission 'g')", api_info, user, PathOrToken, User)
+                            return httputils.NOT_ALLOWED
                     if PathOrToken.startswith("/{user}/"):
                         # placeholder exists
                         pass

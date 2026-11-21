@@ -39,6 +39,8 @@ Permissions:
   - M: permit create of map-based sharing of collection in case permit_create_map=False or self (>= 3.7.0)
   - m: deny create of map-based sharing of collection in case permit_create_map=True or self (>= 3.7.0)
   - S: permit create of map-based sharing of collection to self only, whatever permit_create_map is (>= 3.9.1)
+  - G: permit create of map-based sharing of collection for group, whatever permit_create_map_for_group is (>= 3.9.3)
+  - g: deny create of map-based sharing of collection for group, whatever permit_create_map_for_group is (>= 3.9.3)
   - P: permit properties overlay in case permit_properties_overlay=False (>= 3.7.0)
   - p: deny properties overlay in case permit_properties_overlay=True (>= 3.7.0)
   - E: enable enforce properties overlay in case enforce_properties_overlay=False (>= 3.7.0)
