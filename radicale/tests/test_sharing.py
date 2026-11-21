@@ -9724,8 +9724,8 @@ permissions: RrWw""")
             assert "D:write" not in privileges_list
             assert "D:all" not in privileges_list
 
-    def test_sharing_api_map_colissions(self) -> None:
-        """share-by-map API usage tests related to colissions."""
+    def test_sharing_api_map_collisions(self) -> None:
+        """share-by-map API usage tests related to collisions."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
