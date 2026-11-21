@@ -13,7 +13,7 @@ HTTP methods. `Application` inherits one mixin per method file:
 | `head.py` | `HEAD` |
 | `mkcalendar.py` | `MKCALENDAR` |
 | `mkcol.py` | `MKCOL` |
-| `move.py` | `MOVE` |
+| `move.py` | `MOVE` of an item, or of a calendar or address book collection |
 | `options.py` | `OPTIONS` |
 | `post.py` | `POST` |
 | `propfind.py` | `PROPFIND` |

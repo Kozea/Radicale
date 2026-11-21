@@ -900,6 +900,39 @@ permissions: RrWw""")
         self.get(path1, check=404)
         self.get(path2)
 
+    def test_move_collection(self) -> None:
+        """Rename a calendar."""
+        self.mkcol("/user/")
+        self.mkcalendar("/user/calendar.ics/")
+        self.put("/user/calendar.ics/event1.ics", get_file_content("event1.ics"))
+        self.request("MOVE", "/user/calendar.ics/", check=201,
+                     HTTP_DESTINATION="http://127.0.0.1/user/renamed.ics/")
+        self.get("/user/calendar.ics/", check=404)
+        self.get("/user/renamed.ics/event1.ics")
+
+    def test_move_collection_rejected(self) -> None:
+        """Invalid collection moves."""
+        self.mkcol("/user/")
+        self.mkcalendar("/user/a.ics/")
+        self.mkcalendar("/user/b.ics/")
+        # destination exists
+        self.request("MOVE", "/user/a.ics/", check=412,
+                     HTTP_DESTINATION="http://127.0.0.1/user/b.ics/")
+        # destination parent missing
+        self.request("MOVE", "/user/a.ics/", check=409,
+                     HTTP_DESTINATION="http://127.0.0.1/nobody/a.ics/")
+        # destination inside a calendar
+        self.request("MOVE", "/user/a.ics/", check=403,
+                     HTTP_DESTINATION="http://127.0.0.1/user/b.ics/a.ics/")
+        self.get("/user/a.ics/")
+
+    def test_move_collection_forbidden_by_rights(self) -> None:
+        """Moving a collection needs the same permission as deleting it."""
+        self.mkcalendar("/test-forbid-delete/")
+        self.request("MOVE", "/test-forbid-delete/", check=401,
+                     HTTP_DESTINATION="http://127.0.0.1/test-moved/")
+        self.get("/test-forbid-delete/")
+
     def test_move_unicode(self) -> None:
         """Move a item."""
         self.mkcalendar("/calendar.ics/")
