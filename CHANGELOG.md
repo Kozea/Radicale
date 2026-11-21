@@ -1,6 +1,11 @@
 # Changelog
 
 ## 3.9.3.dev
+* Change: [auth] reimplement cache in class AuthCache using OrderedDict: consistent and more efficient eviction/pruning of expired entries upon each authentication call
+* Add: option [auth] cache_successful_logins_max_count/cache_failed_logins_max_count
+* Change: [auth] cache ttl/expiry clock now starts after the authentication call (not before)
+* Change: [auth] use process-lifetime random constant secrets.token_urlsafe() instead of time to salt cache digest
+* Fix: [auth] cache now honors user name set by LDAP if ldap_user_attribute is set
 * Fix: [auth] uses time.monotonic_ns instead of time.time_ns
 
 ## 3.9.2.dev

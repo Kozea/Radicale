@@ -99,6 +99,12 @@
 ## Expiration time of caching failed logins in seconds
 #cache_failed_logins_expiry = 90
 
+# Maximum number of cached successful logins
+#cache_successful_logins_max_count = 1000
+
+# Maximum number of cached failed logins (set to 0 to disable caching of failed logins)
+#cache_failed_logins_max_count = 1000
+
 # URI to the LDAP server
 #ldap_uri = ldap://localhost
 

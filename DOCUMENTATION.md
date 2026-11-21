@@ -1121,6 +1121,10 @@ overload of authentication backends.
 
 Default: `False`
 
+Note that certain options (e.g. setting both `cache_successful_logins_max_count` and
+`cache_failed_logins_max_count` to `0` or setting `[auth] type` to `remote_user`) will
+automatically disable the cache even when `cache_logins`  is set to `True`.
+
 ##### cache_successful_logins_expiry
 
 _(>= 3.4.0)_
@@ -1136,6 +1140,30 @@ _(>= 3.4.0)_
 Expiration time of caching failed logins in seconds
 
 Default: `90`
+
+##### cache_successful_logins_max_count
+
+_(>= 3.9.3)_
+
+Maximum number of successful logins that can be stored in the cache at the same time. When the cache
+reaches capacity and a new item needs to be stored, the oldest item will be evicted even if it is not
+yet expired. Setting this option to zero will deactivate caching of successful logins.
+
+Note that this options limits the number of cache entries, not directly the amount of memory. A size
+of <1kB per entry can usually be expected, but long usernames and membership in several groups can
+lead to higher memory consumption per entry.
+
+Default: `1000`
+
+##### cache_failed_logins_max_count
+
+_(>= 3.9.3)_
+
+Maximum number of failed logins that can be stored in the cache at the same time. When the cache
+reaches capacity and a new item needs to be stored, the oldest item will be evicted even if it is not
+yet expired. Setting this option to zero will deactivate caching of failed logins.
+
+Default: `1000`
 
 ##### htpasswd_filename
 
@@ -1272,6 +1300,10 @@ ldap_user_attribute = cn
 Even for simple filter setups, it is recommended to set it in order to get usernames exactly
 as they are stored in LDAP and to avoid inconsistencies in the upper-/lower-case spelling of the
 login names.
+
+Since 3.9.3, cached logins use the username returned by LDAP. In earlier versions, only backend
+authentication would return the mapped username while cached authentications would use the cached
+login name as provided by the client.
 
 Default: (unset, in which case the login name is directly used as the username)
 

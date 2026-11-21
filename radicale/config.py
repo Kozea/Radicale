@@ -364,6 +364,14 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "false",
             "help": "cache successful/failed logins for until expiration time",
             "type": bool}),
+        ("cache_successful_logins_max_count", {
+            "value": "1000",
+            "help": "maximum number of cached successful logins",
+            "type": int}),
+        ("cache_failed_logins_max_count", {
+            "value": "1000",
+            "help": "maximum number of cached failed logins (set to 0 to disable caching of failed logins)",
+            "type": int}),
         ("cache_successful_logins_expiry", {
             "value": "15",
             "help": "expiration time for caching successful logins in seconds",
