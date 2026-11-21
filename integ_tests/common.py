@@ -157,6 +157,7 @@ collection_by_map = true
 collection_by_token = true
 permit_create_token = true
 permit_create_map = true
+permit_create_map_for_group = true
 permit_properties_overlay = {str(config.permit_properties_overlay).lower()}
 database_path = {sharing_path}
 """
