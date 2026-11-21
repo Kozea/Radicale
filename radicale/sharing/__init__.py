@@ -533,6 +533,12 @@ class BaseSharing:
 
         if self.sharing_collection_by_map:
             if share is None:
+                with self._storage.acquire_lock("r", user, path=path):
+                    item = next(iter(self._storage.discover(path)), None)
+                if item is not None:
+                    logger.notice("sharing/resolver: lookup path=%r user=%r already exists (skip)", path, user)
+                    return None
+
                 share = self.sharing_collection_by_map_resolver(path, user, user_groups)
                 if share is not None and 'error' in share:
                     return None
