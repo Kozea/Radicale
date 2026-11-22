@@ -70,7 +70,7 @@ jobs:
         with:
           context: .
           build-args: |
-            DEPENDENCIES=bcrypt,argon2,ldap,pam
+            DEPENDENCIES=h2,cheroot,bcrypt,argon2,ldap,python_ldap,pam,rabbitmq,oauth2
             VERSION=${{ github.event.release.tag_name || github.ref_name }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

@@ -8,7 +8,7 @@ ARG VERSION=master
 # Optional dependencies (e.g. bcrypt or ldap)
 ARG DEPENDENCIES=bcrypt,h2
 
-RUN apk add --no-cache --virtual .build-deps gcc libffi-dev musl-dev rust cargo \
+RUN apk add --no-cache --virtual .build-deps gcc libffi-dev musl-dev rust cargo openldap-dev \
     && python -m venv /app/venv \
     && /app/venv/bin/pip install --no-cache-dir "Radicale[${DEPENDENCIES}] @ https://github.com/Kozea/Radicale/archive/${VERSION}.tar.gz"
 
