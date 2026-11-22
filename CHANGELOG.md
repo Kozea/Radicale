@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.9.3.dev
+* Fix: Docker images include the `oauth2` and `rabbitmq` extras again (`requests` and `pika` are no longer core dependencies since 3.9.1)
 * Fix: sharing update rejects a JSON `null` path with `400` and treats JSON `null` properties or actions as a clear. Those values used to crash the request with HTTP 500
 * Fix: sharing hide, unhide, enable, and disable report a failed update as `400 Internal Error`. The same failure on update and delete was already `400`, and these actions used to answer `200`
 * Fix: a `calendar-query` `REPORT` that matches an item lists that item even when the request has no `DAV:prop`

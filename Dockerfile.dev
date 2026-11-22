@@ -1,7 +1,7 @@
 FROM python:3-alpine AS builder
 
 # Optional dependencies (e.g. bcrypt or ldap)
-ARG DEPENDENCIES=bcrypt,h2
+ARG DEPENDENCIES=bcrypt,h2,oauth2,rabbitmq
 
 COPY . /app
 
