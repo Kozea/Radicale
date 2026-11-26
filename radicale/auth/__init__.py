@@ -483,8 +483,8 @@ class BaseAuth:
         """
         Returns the
          - ``login`` or ``""`` for invalid credentials
-         - authentication type
          - ``user_groups`` (if supported by authentication type) or ``set([])`` if invalid or no groups are supplied
+         - authentication type
         """
         monotonic_ns_begin = time.monotonic_ns()
         _type: str = self._type
