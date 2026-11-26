@@ -25,6 +25,7 @@ Take a look at the class ``BaseCollection`` if you want to implement your own.
 """
 
 import json
+import logging
 import xml.etree.ElementTree as ET
 from hashlib import sha256
 from typing import (Callable, ContextManager, Dict, Iterable, Iterator, List,
@@ -90,7 +91,8 @@ class BaseCollection:
     @property
     def etag(self) -> str:
         """Encoded as quoted-string (see RFC 2616)."""
-        logger.trace("storage/etag")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/etag")
         etag = sha256()
         for item in self.get_all():
             assert item.href
@@ -115,7 +117,8 @@ class BaseCollection:
 
         """
 
-        logger.trace("storage/sync")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/sync")
 
         def hrefs_iter() -> Iterator[str]:
             for item in self.get_all():
@@ -159,22 +162,28 @@ class BaseCollection:
             return
         tag, start, end, simple = radicale_filter.simplify_prefilters(
             filters, self.tag)
-        logger.trace("storage/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/get_filtered: prefilter tag=%s start=%s end=%s simple=%s", tag, format_ut(start), format_ut(end), simple)
         for item in self.get_all():
-            logger.trace("storage/get_filtered: component_name=%s tag=%s", item.component_name, tag)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("storage/get_filtered: component_name=%s tag=%s", item.component_name, tag)
             if tag is not None and tag != item.component_name:
                 continue
             istart, iend = item.time_range
-            logger.trace("storage/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("storage/get_filtered: istart=%s iend=%s", format_ut(istart), format_ut(iend))
             if istart >= end or iend <= start:
-                logger.trace("storage/get_filtered: skip iuid=%s", item.uid)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("storage/get_filtered: skip iuid=%s", item.uid)
                 continue
-            logger.trace("storage/get_filtered: add iuid=%s", item.uid)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("storage/get_filtered: add iuid=%s", item.uid)
             yield item, simple and (start <= istart or iend <= end)
 
     def has_uid(self, uid: str) -> bool:
         """Check if a UID exists in the collection."""
-        logger.trace("storage/has_uid")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/has_uid")
         for item in self.get_all():
             if item.uid == uid:
                 return True
@@ -229,7 +238,8 @@ class BaseCollection:
 
     def serialize(self, vcf_to_ics: bool = False, ShareActions: dict = {}) -> str:
         """Get the unicode string representing the whole collection."""
-        logger.trace("storage/serialize")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/serialize")
         if self.tag == "VCALENDAR":
             in_vcalendar = False
             vtimezones = ""
@@ -288,11 +298,13 @@ class BaseCollection:
                     template[template_insert_pos:])
         if self.tag == "VADDRESSBOOK":
             if vcf_to_ics:
-                logger.trace("storage: convert VCF to ICS")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("storage: convert VCF to ICS")
 
                 items = []
                 for item in self.get_all():
-                    logger.trace("storage/convert VCF to ICS: %r:", item)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("storage/convert VCF to ICS: %r:", item)
                     item_ics = item.convert_vcf_to_ics(ShareActions=ShareActions)
                     if item_ics is None:
                         continue

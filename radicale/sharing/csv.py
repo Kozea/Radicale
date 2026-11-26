@@ -17,6 +17,7 @@
 
 import ast
 import csv
+import logging
 import os
 from typing import Union
 
@@ -96,12 +97,14 @@ class Sharing(sharing.BaseSharing):
                              OnlyEnabled: bool = True,
                              User: Union[str, None] = None) -> Union[dict, None]:
         """ retrieve sharing target and attributes by map """
-        logger.trace("sharing/%s/get: PathOrToken=%r User=%r OnlyEnabled=%s", ShareType, PathOrToken, User, OnlyEnabled)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/get: PathOrToken=%r User=%r OnlyEnabled=%s", ShareType, PathOrToken, User, OnlyEnabled)
 
         found = False
         for row in self.database_list_sharing(ShareType=ShareType, PathOrToken=PathOrToken, User=User):
             # run through prefiltered list
-            logger.trace("sharing/get/check: %r", row)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/get/check: %r", row)
             if OnlyEnabled is True and row['EnabledByOwner'] is False:
                 continue
             elif OnlyEnabled is True and row['EnabledByUser'] is False:
@@ -111,7 +114,8 @@ class Sharing(sharing.BaseSharing):
                 break
 
         if found:
-            logger.trace("sharing/get/hit : %r", row)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/get/hit : %r", row)
             Hidden: bool = (row['HiddenByOwner'] or row['HiddenByUser'])
             Properties: Union[dict, None] = None
             Conversion: Union[str, None] = None
@@ -157,7 +161,8 @@ class Sharing(sharing.BaseSharing):
         result: list[dict] = []
 
         with self._storage.acquire_lock("r", path=self._sharing_db_file):
-            logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/%s/list: OwnerOrUser=%r User=%r PathOrToken=%r PathMapped=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s Conversion=%r", ShareType, OwnerOrUser, User, PathOrToken, PathMapped, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser, Conversion)
 
             for row in self._sharing_cache:
                 index += 1
@@ -165,7 +170,8 @@ class Sharing(sharing.BaseSharing):
                     # skip fieldnames
                     continue
 
-                logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/list/row: test: %r", ShareType, row)
 
                 row_match = common.database_common_check_row_match(
                                                             row=row,
@@ -201,9 +207,11 @@ class Sharing(sharing.BaseSharing):
         row: dict
 
         with self._storage.acquire_lock("w", path=self._sharing_db_file):
-            logger.trace("sharing: ShareType=%r", ShareType)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing: ShareType=%r", ShareType)
             if ShareType == "token":
-                logger.trace("sharing/token/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/token/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
                 # check for duplicate token entry
                 for row in self._sharing_cache:
                     if row['ShareType'] != "token":
@@ -213,7 +221,8 @@ class Sharing(sharing.BaseSharing):
                         logger.error("sharing/token/create: PathOrToken already exists: PathOrToken=%r", PathOrToken)
                         return {"status": "conflict"}
             elif ShareType == "map":
-                logger.trace("sharing/map/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/map/create: PathOrToken=%r Owner=%r PathMapped=%r User=%r Permissions=%r", PathOrToken, Owner, PathMapped, User, Permissions)
                 # check for duplicate map entry
                 for row in self._sharing_cache:
                     if row['ShareType'] != "map":
@@ -242,11 +251,13 @@ class Sharing(sharing.BaseSharing):
                    "Actions": Actions,
                    }
 
-            logger.trace("sharing/*/create: add row: %r", row)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("sharing/*/create: add row: %r", row)
             self._sharing_cache.append(row)
 
             if self._write_csv(self._sharing_db_file):
-                logger.trace("sharing/%s/create: write CSV done", ShareType)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/create: write CSV done", ShareType)
                 return {"status": "success"}
 
         logger.error("sharing/%s/create: cannot update CSV database", ShareType)
@@ -269,7 +280,8 @@ class Sharing(sharing.BaseSharing):
                                 Actions: Union[dict, None] = None,
                                 ) -> dict:
         """ update sharing """
-        logger.trace("sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/update: PathOrToken=%r OwnerOrUser=%r PathMapped=%r Properties=%r EnabledByOwner=%s EnabledByUser=%s HiddenByOwner=%s HiddenByUser=%s", ShareType, PathOrToken, OwnerOrUser, PathMapped, Properties, EnabledByOwner, EnabledByUser, HiddenByOwner, HiddenByUser)
 
         with self._storage.acquire_lock("w", path=self._sharing_db_file):
             # lookup token
@@ -289,7 +301,8 @@ class Sharing(sharing.BaseSharing):
                 index += 1
 
             if found:
-                logger.trace("sharing/%s/update: orig row[%d]=%r", ShareType, index, row)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/update: orig row[%d]=%r", ShareType, index, row)
 
                 # CSV: remove+adjust+readd
                 if PathMapped is not None:
@@ -315,10 +328,12 @@ class Sharing(sharing.BaseSharing):
                 # update timestamp
                 self._sharing_cache[index]["TimestampUpdated"] = Timestamp
 
-                logger.trace("sharing/%s/update: adj  row[%d]=%r", ShareType, index, self._sharing_cache[index])
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/update: adj  row[%d]=%r", ShareType, index, self._sharing_cache[index])
 
                 if self._write_csv(self._sharing_db_file):
-                    logger.trace("sharing/%s/update: write CSV done", ShareType)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/%s/update: write CSV done", ShareType)
                     return {"status": "success"}
 
                 logger.error("sharing/%s/update: cannot update CSV database", ShareType)
@@ -331,14 +346,16 @@ class Sharing(sharing.BaseSharing):
                                 PathOrToken: str,
                                 User: str) -> dict:
         """ delete sharing """
-        logger.trace("sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("sharing/%s/delete: PathOrToken=%r", ShareType, PathOrToken)
 
         with self._storage.acquire_lock("w", User, path=self._sharing_db_file):
             # lookup token
             found = False
             index = 0
             for row in self._sharing_cache:
-                logger.trace("sharing/%s/delete: check: %r", ShareType, row)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/delete: check: %r", ShareType, row)
                 if index == 0:
                     # skip fieldnames
                     pass
@@ -352,11 +369,13 @@ class Sharing(sharing.BaseSharing):
                 index += 1
 
             if found:
-                logger.trace("sharing/%s/delete: PathOrToken=%r Owner=%r index=%d", ShareType, PathOrToken, row['Owner'], index)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("sharing/%s/delete: PathOrToken=%r Owner=%r index=%d", ShareType, PathOrToken, row['Owner'], index)
                 self._sharing_cache.pop(index)
 
                 if self._write_csv(self._sharing_db_file):
-                    logger.trace("sharing/%s/delete: write CSV done", ShareType)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("sharing/%s/delete: write CSV done", ShareType)
                     return {"status": "success"}
 
                 logger.error("sharing/%s/delete: cannot update CSV database", ShareType)
@@ -391,7 +410,8 @@ class Sharing(sharing.BaseSharing):
                     # convert txt to bool or int
                     if self._lines > 0:
                         for fieldname in row:
-                            logger.trace("sharing/_load_csv: test fieldname=%r", fieldname)
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.trace("sharing/_load_csv: test fieldname=%r", fieldname)
                             if fieldname not in sharing.DB_TYPES_V1:
                                 logger.error("sharing database row error, unsupported fieldname found: %r", fieldname)
                                 return False

@@ -9,9 +9,45 @@
 * Change: [auth] use process-lifetime random constant secrets.token_urlsafe() instead of time to salt cache digest
 * Fix: [auth] cache now honors user name set by LDAP if ldap_user_attribute is set
 * Fix: [auth] uses time.monotonic_ns instead of time.time_ns
+* Fix: Docker images include the `oauth2` and `rabbitmq` extras again (`requests` and `pika` are no longer core dependencies since 3.9.1)
+* Fix: sharing update rejects a JSON `null` path with `400` and treats JSON `null` properties or actions as a clear. Those values used to crash the request with HTTP 500
+* Fix: sharing hide, unhide, enable, and disable report a failed update as `400 Internal Error`. The same failure on update and delete was already `400`, and these actions used to answer `200`
+* Fix: a `calendar-query` `REPORT` that matches an item lists that item even when the request has no `DAV:prop`
+* Fix: storage skips a socket or other non-file stored under an item name. Opening it used to raise `ENXIO` and the request became HTTP 500
+* Fix: `radicale --verify-storage` fails when synchronizing a collection raises `ValueError`. That error used to be ignored, so the check exited 0
+* Fix: `radicale --verify-storage` fails when two items in one collection share a UID. It used to log the conflict and still exit 0
+* Fix: an empty `PUT` with `Content-Type: text/calendar` is rejected. It used to create a subscribed collection because that tag shares the same media type
+* Fix: storage startup does not report 1 ns mtime precision, or recommend the mtime cache, when the probe timestamp does not change
+* Fix: hexdump marks a UTF-8 lead byte with its real length. `0xE0` is 3 bytes and `0xC0`–`0xDF` are 2 bytes; bytes from `0xF8` up are not a 3-byte lead
+* Adjustment: the built-in server logs a warning at startup that it is meant for local testing, not for production (use `[server] type = cheroot` or `hypercorn`)
+* Fix: PROPFIND reports a shared principal's own URL, including from its parent
+* Fix: a calendar component that is only a recurrence override is reported once
+* Fix: proppatch: setting `resourcetype` (e.g. `CS:subscribed`) stored the change but answered `400 Bad Request`
+* Fix: [auth] ldap3: do not bind the reader account without TLS if StartTLS fails or is refused by the server
+* Fix: [auth] ldap3: an unexpected error while opening the reader connection raises "Unable to read" instead of crashing with an undefined connection
+* Fix: [logging] `*_on_notice_condition` with `status`: compare `status OP value` (was `value OP status`, so `>=` behaved like `<=`)
+* Fix: [logging] `*_on_notice_condition` with `host` match `excluded` raised an error (undefined variable)
+* Add: [hook] itip_owner_map: ordered full-string username regex rules with brace-style capture replacements; escape metacharacters in existing literal keys
+* Add: [hook] itip_owner_reply_to: route ordinary replies to the authenticated actor's explicitly mapped address
+* Adjust: [storage] filesystem_fsync option documented and renamed from `_filesystem_fsync` (internal use only so far)
+* Performance: storage: add fast path for has_uid in multifilesystem
+* Fix: [storage] ignore a damaged item, history, or sync-token cache when unpickling raises KeyError
+* Fix: [storage] discover group collections with a posix path so a Windows separator is not rejected as an unsafe name
+* Fix: hook: a CANCEL for an event with no SEQUENCE is sent with SEQUENCE:1. Building that message used to fail
+* Fix: hook: notify on a whole-collection PUT. The prepared items were consumed while the collection was stored, so the hook never saw them
+* Fix: hook: a whole-collection PUT reports a replaced item's previous body as old_content and the uploaded body as content. The filename written for each item was discarded, so every item was reported as new
+* Fix: log an HTTP 4xx response at error, except the statuses and methods already logged at notice
+* Fix: sharing resolver-by-map skip for existing path
 
-## 3.9.2.dev
+## 3.9.2
+* Fix: [server] report an inactive SSL protocol before assigning version 0
+* Fix: [auth] keep the LDAP server hostname as SNI when a CA file is set
 * Fix: propfind CS:getctag: use the sync-token so the value never repeats
+* Fix: [auth]: add server hostname as SNI option (ldap3+tls) for proper validation did not strip non-standard port
+* Fix: propfind: honor [storage] skip_broken_item=True (uncatched after changes in 3.9.1)
+* Fix: report: use [reporting] max_expand_occurrence also for unbounded RRULE enumeration
+* Performance: remove not required `_clean_history` in upload
+* Performance: guard trace logging with isEnabledFor and use lazy formatting for logger calls
 
 ## 3.9.1
 * Add: [sharing] permit_create_map = self: permit map-based sharing to self only (e.g. birthday calendar) without sharing with other users

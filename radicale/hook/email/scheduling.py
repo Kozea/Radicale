@@ -32,13 +32,14 @@ loses the message, and a repeated save plans nothing.
 """
 
 import functools
+import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import vobject
 from dateutil.tz import tzutc
@@ -138,8 +139,6 @@ def parse_event(ics: Optional[str]) -> Optional[EventInfo]:
             vevents = [calendar.vevent]
         except Exception:
             return None
-    if not vevents:
-        return None
     event = None
     for candidate in vevents:
         if _first_value(candidate, "recurrence-id") is None:
@@ -202,34 +201,77 @@ class PlannedMessage:
     kind: str
 
 
-def parse_owner_map(text: Optional[str]) -> Dict[str, str]:
-    """Parse an actor-to-organizer-email map.
+def parse_owner_map(value: Optional[Union[str, Dict[str, Any]]]) -> Dict[str, str]:
+    """Parse and validate ordered username regex-to-email template rules."""
+    if value is None or value == "":
+        return {}
+    if isinstance(value, str):
+        def reject_duplicate_keys(pairs: List[Tuple[str, Any]]) -> Dict[str, Any]:
+            result: Dict[str, Any] = {}
+            for key, item in pairs:
+                if key in result:
+                    raise ValueError("duplicate key in itip_owner_map: %r" % key)
+                result[key] = item
+            return result
 
-    Format: ``actor=email, actor2=email2``. Actors and emails are
-    lower-cased. Raises ValueError on a malformed entry, an
-    email without ``@``, or a duplicate actor, so a bad map
-    fails at startup instead of being silently ignored.
-    """
+        try:
+            value = json.loads(value, object_pairs_hook=reject_duplicate_keys)
+        except (ValueError, TypeError) as e:
+            raise ValueError("itip_owner_map must be a valid JSON object") from e
+    if not isinstance(value, dict):
+        raise ValueError("itip_owner_map must be a JSON object")
     result: Dict[str, str] = {}
-    if not text:
-        return result
-    if not isinstance(text, str):
-        raise ValueError("itip_owner_map must be a string")
-    for entry in text.split(","):
-        entry = entry.strip()
-        if not entry:
-            continue
-        if entry.count("=") != 1:
-            raise ValueError("malformed itip_owner_map entry: %r" % entry)
-        actor, email = entry.split("=", 1)
-        actor = actor.strip().lower()
-        email = email.strip().lower()
-        if not actor or not email or "@" not in email:
-            raise ValueError("malformed itip_owner_map entry: %r" % entry)
-        if actor in result:
-            raise ValueError("duplicate actor in itip_owner_map: %r" % actor)
-        result[actor] = email
+    seen = set()
+    for actor, email in value.items():
+        if not isinstance(actor, str) or not isinstance(email, str):
+            raise ValueError("itip_owner_map keys and values must be strings")
+        normalized_actor = actor.strip()
+        normalized_email = email.strip().lower()
+        if not normalized_actor or not normalized_email:
+            raise ValueError("malformed itip_owner_map entry: %r" % actor)
+        if normalized_actor in seen:
+            raise ValueError("duplicate actor in itip_owner_map: %r" % normalized_actor)
+        seen.add(normalized_actor)
+        _owner_rule(normalized_actor, normalized_email)
+        result[normalized_actor] = normalized_email
     return result
+
+
+@functools.lru_cache(maxsize=256)
+def _owner_rule(pattern: str, template: str) -> re.Pattern:
+    """Compile a rule and validate its numeric brace substitutions."""
+    import string
+
+    try:
+        regex = re.compile(pattern, re.IGNORECASE)
+        has_fields = False
+        for _, field, spec, conversion in string.Formatter().parse(template):
+            has_fields = has_fields or field is not None
+            if field is not None and (
+                    not field.isascii() or not field.isdecimal() or
+                    int(field) > regex.groups or spec or conversion):
+                raise ValueError("expected {0} through {%d}" % regex.groups)
+        sample = template.format(*(["group"] * (regex.groups + 1)))
+        if not has_fields and not _USERNAME_EMAIL.fullmatch(sample):
+            raise ValueError("expected a single email address")
+    except (re.error, ValueError, IndexError, KeyError) as e:
+        raise ValueError("invalid itip_owner_map rule %r: %s" % (pattern, e)) from e
+    return regex
+
+
+def mapped_owner_email(actor: Optional[str],
+                       owner_map: Optional[Dict[str, str]]) -> Optional[str]:
+    """Expand the first full-string rule, failing closed on invalid output."""
+    if not actor:
+        return None
+    actor = actor.strip()
+    for pattern, template in (owner_map or {}).items():
+        match = _owner_rule(pattern, template).fullmatch(actor)
+        if match:
+            address = template.format(match.group(0), *(
+                group or "" for group in match.groups())).strip().lower()
+            return address if _USERNAME_EMAIL.fullmatch(address) else None
+    return None
 
 
 # One "@" with a non-empty local part and domain, no whitespace.
@@ -257,9 +299,9 @@ def resolve_owner_identities(actor: Optional[str],
     """
     if not actor:
         return []
-    actor = actor.strip().lower()
+    actor = actor.strip()
     identities: List[str] = []
-    mapped = (owner_map or {}).get(actor)
+    mapped = mapped_owner_email(actor, owner_map)
     if mapped:
         identities.append(mapped)
     if organizer_is_username:
@@ -468,7 +510,9 @@ def build_itip_ics(source_ics: str, method: str, recipient_email: str,
                 sequence_lines[0].value = target
             else:
                 try:
-                    event.add("sequence").value = target
+                    # A newly added line uses text behavior, which
+                    # serializes only a string. An int becomes "1".
+                    event.add("sequence").value = str(target)
                 except Exception:
                     pass
         # Strip server directives from the organizer line.
@@ -500,7 +544,8 @@ def build_itip_ics(source_ics: str, method: str, recipient_email: str,
 
 
 def build_itip_message(from_email: str, to_email: str, subject: str,
-                       body_text: str, itip_ics: str, method: str) -> str:
+                       body_text: str, itip_ics: str, method: str,
+                       reply_to_email: Optional[str] = None) -> str:
     """Build an iMIP message: plain text plus a text/calendar part.
 
     The calendar part carries ``method=REQUEST`` (or CANCEL) so a
@@ -511,6 +556,10 @@ def build_itip_message(from_email: str, to_email: str, subject: str,
     message["From"] = from_email
     message["To"] = to_email
     message["Subject"] = subject
+    if reply_to_email:
+        if "\r" in reply_to_email or "\n" in reply_to_email:
+            raise ValueError("Reply-To must not contain CR or LF")
+        message["Reply-To"] = reply_to_email
     message["Date"] = formatdate(localtime=True)
     message.attach(MIMEText(body_text, "plain"))
     calendar_part = MIMEText(itip_ics, "calendar", "utf-8")

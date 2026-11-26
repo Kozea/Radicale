@@ -48,6 +48,7 @@ Authentication backend that checks credentials with a LDAP server.
 
 """
 import ssl
+import urllib.parse
 from typing import Tuple
 
 from radicale import auth, config
@@ -174,7 +175,7 @@ class Auth(auth.BaseAuth):
     def _login2(self, login: str, password: str) -> Tuple[str, set]:
         try:
             """Bind as reader dn"""
-            logger.debug(f"_login2 {self._ldap_uri}, {self._ldap_reader_dn}")
+            logger.debug("_login2 %s, %s", self._ldap_uri, self._ldap_reader_dn)
             conn = self.ldap.initialize(self._ldap_uri)
             conn.protocol_version = self.ldap.VERSION3
             conn.set_option(self.ldap.OPT_REFERRALS, 0)
@@ -197,7 +198,7 @@ class Auth(auth.BaseAuth):
             conn.simple_bind_s(self._ldap_reader_dn, self._ldap_secret)
             """Search for the dn of user to authenticate"""
             escaped_login = self.ldap.filter.escape_filter_chars(login)
-            logger.debug(f"_login2 login escaped for LDAP filters: {escaped_login}")
+            logger.debug("_login2 login escaped for LDAP filters: %s", escaped_login)
             res = conn.search_s(
                 self._ldap_base,
                 self.ldap.SCOPE_SUBTREE,
@@ -206,11 +207,11 @@ class Auth(auth.BaseAuth):
             )
             if len(res) != 1:
                 """User could not be found unambiguously"""
-                logger.debug(f"_login2 no unique DN found for '{login}'")
+                logger.debug("_login2 no unique DN found for '%s'", login)
                 return auth.NO_LOGIN_NO_GROUPS
             user_entry = res[0]
             user_dn = user_entry[0]
-            logger.debug(f"_login2 found LDAP user DN {user_dn}")
+            logger.debug("_login2 found LDAP user DN %s", user_dn)
 
             """Let's collect the groups of the user."""
             groupDNs = []
@@ -246,7 +247,7 @@ class Auth(auth.BaseAuth):
                     login = user_entry[1][self._ldap_user_attr][0]
                     if isinstance(login, bytes):
                         login = login.decode('utf-8')
-                    logger.debug(f"_login2 user set to: '{login}'")
+                    logger.debug("_login2 user set to: '%s'", login)
 
             """Get RDNs of groups' DNs"""
             tmp = []
@@ -262,10 +263,10 @@ class Auth(auth.BaseAuth):
             logger.debug("_login2 LDAP groups of user: %s", ",".join(ldap_groups))
 
             conn.unbind()
-            logger.debug(f"_login2 {login} successfully authenticated")
+            logger.debug("_login2 %s successfully authenticated", login)
             return login, ldap_groups
         except Exception as e:
-            logger.error(f"_login2 LDAP bind for {login} failed: {e}")
+            logger.error("_login2 LDAP bind for %s failed: %s", login, e)
             return auth.NO_LOGIN_NO_GROUPS
 
     def _login3(self, login: str, password: str) -> Tuple[str, set]:
@@ -274,15 +275,18 @@ class Auth(auth.BaseAuth):
 
         """Connect the server"""
         try:
-            logger.debug(f"_login3 {self._ldap_uri}, {self._ldap_reader_dn}")
+            logger.debug("_login3 %s, %s", self._ldap_uri, self._ldap_reader_dn)
             if self._ldap_security in ("tls", "starttls"):
                 logger.debug("_login3 using encryption (reader)")
                 verifyMode = {"NONE": ssl.CERT_NONE,
                               "OPTIONAL": ssl.CERT_OPTIONAL,
                               "REQUIRED": ssl.CERT_REQUIRED}
-                tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], sni=self._ldap_uri.split("://")[1])
+                # SNI is the bare hostname of the URI (no port). It has to be
+                # passed to both constructors: the CA-file one replaces the first.
+                sni = urllib.parse.urlparse(self._ldap_uri).hostname
+                tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], sni=sni)
                 if self._ldap_ssl_ca_file != "":
-                    tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], ca_certs_file=self._ldap_ssl_ca_file)
+                    tls = self.ldap3.Tls(validate=verifyMode[self._ldap_ssl_verify_mode], ca_certs_file=self._ldap_ssl_ca_file, sni=sni)
                 if self._ldap_security == "tls":
                     logger.debug("_login3 using ssl (reader)")
                     server = self.ldap3.Server(self._ldap_uri, use_ssl=True, tls=tls)
@@ -291,25 +295,36 @@ class Auth(auth.BaseAuth):
             else:
                 logger.debug("_login3 not using encryption (reader)")
                 server = self.ldap3.Server(self._ldap_uri)
-            try:
-                conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret, auto_bind=False, raise_exceptions=True)
-                if self._ldap_security == "starttls":
-                    logger.debug("_login3 using starttls (reader)")
-                    conn.start_tls()
-            except self.ldap3.core.exceptions.LDAPStartTLSError as e:
-                raise RuntimeError(f"_login3 StartTLS Error: {e}")
+            conn = self.ldap3.Connection(server, self._ldap_reader_dn, password=self._ldap_secret, auto_bind=False, raise_exceptions=True)
+            if self._ldap_security == "starttls":
+                logger.debug("_login3 using starttls (reader)")
+                try:
+                    started = conn.start_tls()
+                except self.ldap3.core.exceptions.LDAPSocketOpenError:
+                    raise
+                except Exception as e:
+                    # Any failure (also a StartTLS refusal by the server,
+                    # which is not an LDAPStartTLSError) must not continue
+                    # into bind() without TLS: the reader password would
+                    # be sent in clear text.
+                    raise RuntimeError(f"_login3 StartTLS Error: {e}")
+                if not started:
+                    raise RuntimeError("_login3 StartTLS Error: TLS not started")
         except self.ldap3.core.exceptions.LDAPSocketOpenError:
             raise RuntimeError("Unable to reach LDAP server")
+        except RuntimeError:
+            raise
         except Exception as e:
-            logger.debug(f"_login3 error 1 {e} (reader)")
-            pass
+            # conn is still unset. Continuing into bind raised NameError.
+            logger.debug("_login3 error 1 %s (reader)", e)
+            raise RuntimeError("Unable to read from LDAP server") from e
         if not conn.bind(read_server_info=False):
             logger.debug("_login3 cannot bind (reader)")
             raise RuntimeError("Unable to read from LDAP server")
-        logger.debug(f"_login3 bind as {self._ldap_reader_dn}")
+        logger.debug("_login3 bind as %s", self._ldap_reader_dn)
         """Search the user dn"""
         escaped_login = self.ldap3.utils.conv.escape_filter_chars(login)
-        logger.debug(f"_login3 login escaped for LDAP filters: {escaped_login}")
+        logger.debug("_login3 login escaped for LDAP filters: %s", escaped_login)
         try:
             conn.search(
                 search_base=self._ldap_base,
@@ -318,16 +333,16 @@ class Auth(auth.BaseAuth):
                 attributes=self._ldap_attributes
             )
         except Exception as e:
-            logger.error(f"_login3 LDAP search for {login} failed: {e}")
+            logger.error("_login3 LDAP search for %s failed: %s", login, e)
             return auth.NO_LOGIN_NO_GROUPS
         if len(conn.entries) != 1:
             """User could not be found unambiguously"""
-            logger.debug(f"_login3 no unique DN found for '{login}'")
+            logger.debug("_login3 no unique DN found for '%s'", login)
             return auth.NO_LOGIN_NO_GROUPS
 
         user_entry = conn.response[0]
         user_dn = user_entry['dn']
-        logger.debug(f"_login3 found LDAP user DN {user_dn}")
+        logger.debug("_login3 found LDAP user DN %s", user_dn)
 
         """Let's collect the groups of the user."""
         groupDNs = []
@@ -352,7 +367,7 @@ class Auth(auth.BaseAuth):
                 )
             except Exception as e:
                 """LDAP search failed: consider it as non-fatal - only groups missing"""
-                logger.debug(f"_ldap3: LDAP group search failed: {e}")
+                logger.debug("_ldap3: LDAP group search failed: %s", e)
             else:
                 """Fill groupDNs with DNs of groups found"""
                 groupDNs = []
@@ -368,11 +383,12 @@ class Auth(auth.BaseAuth):
                 conn = self.ldap3.Connection(server, user_dn, password=password, auto_bind=False)
                 if self._ldap_security == "starttls":
                     logger.debug("_login3 using starttls (user)")
-                    conn.start_tls()
+                    if not conn.start_tls():
+                        raise RuntimeError("_login3 StartTLS Error: TLS not started")
             except self.ldap3.core.exceptions.LDAPStartTLSError as e:
                 raise RuntimeError(f"_login3 StartTLS Error: {e}")
             if not conn.bind(read_server_info=False):
-                logger.debug(f"_login3 user '{login}' cannot be found")
+                logger.debug("_login3 user '%s' cannot be found", login)
                 return auth.NO_LOGIN_NO_GROUPS
 
             """Get RDNs of groups' DNs"""
@@ -392,12 +408,12 @@ class Auth(auth.BaseAuth):
                         login = user_entry['attributes'][self._ldap_user_attr][0]
                     else:
                         login = user_entry['attributes'][self._ldap_user_attr]
-                    logger.debug(f"_login3 user set to: '{login}'")
+                    logger.debug("_login3 user set to: '%s'", login)
             conn.unbind()
-            logger.debug(f"_login3 {login} successfully authenticated")
+            logger.debug("_login3 %s successfully authenticated", login)
             return login, groups
         except Exception as e:
-            logger.debug(f"_login3 error 2 {e}")
+            logger.debug("_login3 error 2 %s", e)
             pass
         return auth.NO_LOGIN_NO_GROUPS
 

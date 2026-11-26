@@ -24,6 +24,7 @@ mode, so a regression in the hook wiring is caught as well.
 import base64
 import logging
 from datetime import datetime, timedelta
+from typing import List, Tuple
 
 from radicale.hook.email.scheduling import (build_itip_ics, build_itip_message,
                                             check_ownership, plan_messages)
@@ -208,6 +209,34 @@ class TestItipMessage:
             "".join(message.split("filename=\"event.ics\"")[1].split("--")[0].split())).decode()
         assert "METHOD:REQUEST" in decoded
 
+    def test_reply_to_is_optional_and_keeps_global_sender(self):
+        from email import message_from_string
+
+        event = _event([ALICE, CAROL])
+        itip = build_itip_ics(event, "REQUEST", "carol@example.com")
+        original = build_itip_message("calendar@example.com", "carol@example.com",
+                                      "Added", "Hello", itip, "REQUEST")
+        assert message_from_string(original).get_all("Reply-To") is None
+        with_reply = build_itip_message(
+            "calendar@example.com", "carol@example.com", "Added", "Hello",
+            itip, "REQUEST", reply_to_email="alice@example.com")
+        parsed = message_from_string(with_reply)
+        assert parsed.get_all("Reply-To") == ["alice@example.com"]
+        assert parsed["From"] == "calendar@example.com"
+        assert parsed["To"] == "carol@example.com"
+
+    def test_reply_to_rejects_newlines(self):
+        import pytest
+
+        event = _event([ALICE, CAROL])
+        itip = build_itip_ics(event, "REQUEST", "carol@example.com")
+        for unsafe in ("alice@example.com\rBcc:evil@example.com",
+                       "alice@example.com\nBcc:evil@example.com"):
+            with pytest.raises(ValueError, match="CR or LF"):
+                build_itip_message("calendar@example.com", "carol@example.com",
+                                   "Added", "Hello", itip, "REQUEST",
+                                   reply_to_email=unsafe)
+
     def test_cancel_increments_sequence_and_updates_dtstamp(self):
         old = _event([ALICE, BOB, CAROL], sequence=3)
         itip = build_itip_ics(old, "CANCEL", "carol@example.com")
@@ -252,7 +281,7 @@ class TestHookWiring(BaseTest):
             "hook": {"type": "email", "dryrun": "True",
                      "itip_enabled": "True",
                      "from_email": "jeff@example.com",
-                     "itip_owner_map": "jeff=jeff@example.com"}})
+                     "itip_owner_map": '{"jeff": "jeff@example.com"}'}})
 
     def _future_event(self, attendees, start):
         return _event(
@@ -278,6 +307,196 @@ class TestHookWiring(BaseTest):
             "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['bob@example.com']",
             "Hook 'email': DRY-RUN send_scheduling_email / to_addresses=['carol@example.com']",
         ]
+
+
+class TestReplyToEndToEnd(BaseTest):
+    """Exercise notification dispatch through serialization and SMTP envelope."""
+
+    def setup_method(self) -> None:
+        BaseTest.setup_method(self)
+        import os
+        rights_file_path = os.path.join(self.colpath, "rights")
+        with open(rights_file_path, "w") as f:
+            f.write("[allow all]\nuser: .*\ncollection: .*\npermissions: RrWw")
+        self.configure({"rights": {"file": rights_file_path, "type": "from_file"}})
+        self.configure({"auth": {"type": "none"}})
+        self.calls: List[Tuple[str, List[str], str]] = []
+
+    def _configure(self, *, enabled=True, owner_map='{"jeff": "jeff@example.com"}',
+                   username=False, itip=True):
+        options = {"type": "email", "dryrun": "False",
+                   "itip_enabled": str(itip), "itip_owner_map": owner_map,
+                   "itip_organizer_is_username": str(username),
+                   "from_email": "calendar@example.com", "smtp_security": "none"}
+        if enabled is not None:
+            options["itip_owner_reply_to"] = str(enabled)
+        self.configure({"hook": options})
+
+    def _install_smtp(self, monkeypatch):
+        import smtplib
+        calls = self.calls
+
+        class SMTP:
+            def sendmail(self, from_addr, to_addrs, msg):
+                calls.append((from_addr, to_addrs, msg))
+                return {}
+
+            def quit(self):
+                pass
+        monkeypatch.setattr(smtplib, "SMTP", lambda **kwargs: SMTP())
+
+    def _future_event(self, attendees, start, *, sequence=1):
+        return _event(attendees, dtstart=start.strftime("%Y%m%dT%H%M%SZ"),
+                      dtend=(start + timedelta(hours=2)).strftime("%Y%m%dT%H%M%SZ"),
+                      sequence=sequence)
+
+    def _event_for(self, attendees, organizer="jeff@example.com", sequence=1,
+                   start="20261113T200000Z"):
+        return _event(attendees, sequence=sequence, dtstart=start).replace(
+            "mailto:jeff@example.com", "mailto:%s" % organizer)
+
+    def _assert_call(self, index, *, reply_to, method, recipient, sequence):
+        from email import message_from_string, policy
+
+        from radicale.hook.email.scheduling import parse_event
+        sender, recipients, raw = self.calls[index]
+        msg = message_from_string(raw, policy=policy.default)
+        assert msg.get_all("Reply-To") == ([reply_to] if reply_to else None)
+        assert msg["From"] == "calendar@example.com"
+        assert sender == "calendar@example.com"
+        assert recipients == [recipient]
+        calendar = next(part for part in msg.walk()
+                        if part.get_content_type() == "text/calendar")
+        payload = calendar.get_payload(decode=True).decode()
+        assert calendar.get_param("method") == method
+        assert "METHOD:%s" % method in payload
+        parsed = parse_event(payload)
+        assert parsed is not None and parsed.sequence == sequence
+
+    def test_request_update_removed_cancel_and_delete_cancel(self, monkeypatch):
+        self._configure(owner_map='{"jeff": "jeff@reply.example"}')
+        self._install_smtp(monkeypatch)
+        self.mkcalendar("/calendar.ics/", login="jeff:password")
+        path = "/calendar.ics/event.ics"
+        start = datetime.now() + timedelta(days=2)
+
+        def event(attendees, seq=1):
+            return self._future_event(attendees, start, sequence=seq).replace(
+                "mailto:jeff@example.com", "mailto:jeff@reply.example")
+        self.put(path, event([ALICE, BOB]), login="jeff:password")
+        self._assert_call(0, reply_to="jeff@reply.example", method="REQUEST",
+                          recipient="alice@example.com", sequence=1)
+        self._assert_call(1, reply_to="jeff@reply.example", method="REQUEST",
+                          recipient="bob@example.com", sequence=1)
+        self.put(path, event([ALICE, BOB], 2).replace("LOCATION:Home", "LOCATION:Office"),
+                 check=204, login="jeff:password")
+        self._assert_call(2, reply_to="jeff@reply.example", method="REQUEST",
+                          recipient="alice@example.com", sequence=2)
+        self._assert_call(3, reply_to="jeff@reply.example", method="REQUEST",
+                          recipient="bob@example.com", sequence=2)
+        self.put(path, event([ALICE], 3).replace("LOCATION:Home", "LOCATION:Office"),
+                 check=204, login="jeff:password")
+        self._assert_call(4, reply_to="jeff@reply.example", method="CANCEL",
+                          recipient="bob@example.com", sequence=4)
+        self.delete(path, login="jeff:password")
+        self._assert_call(5, reply_to="jeff@reply.example", method="CANCEL",
+                          recipient="alice@example.com", sequence=4)
+
+    def test_omitted_and_false_flag_emit_no_reply_to(self, monkeypatch):
+        from email import message_from_string, policy
+
+        for enabled in (None, False):
+            self.calls = []
+            self._configure(enabled=enabled)
+            self._install_smtp(monkeypatch)
+            self.mkcalendar("/flag-%s.ics/" % enabled, login="jeff:password")
+            start = datetime.now() + timedelta(days=2)
+            self.put("/flag-%s.ics/event.ics" % enabled,
+                     self._future_event([ALICE], start), login="jeff:password")
+            assert len(self.calls) == 1
+            sender, recipients, raw = self.calls[0]
+            msg = message_from_string(raw, policy=policy.default)
+            assert msg.get_all("Reply-To") is None
+            assert msg["From"] == "calendar@example.com"
+            assert sender == "calendar@example.com"
+            assert recipients == ["alice@example.com"]
+
+    def test_missing_and_unmapped_username_authorization_omit_reply_to(self, monkeypatch):
+        self._configure(enabled=True, owner_map="", username=True)
+        self._install_smtp(monkeypatch)
+        self.mkcalendar("/calendar.ics/", login="jeff@example.com:password")
+        start = datetime.now() + timedelta(days=2)
+        self.put("/calendar.ics/event.ics", self._future_event([ALICE], start),
+                 login="jeff@example.com:password")
+        assert len(self.calls) == 1
+        self._assert_call(0, reply_to=None, method="REQUEST",
+                          recipient="alice@example.com", sequence=1)
+
+    def test_missing_unmapped_mismatch_and_attendee_copy_are_suppressed(self, monkeypatch):
+        self._configure(enabled=True, owner_map='{"jeff": "jeff@example.com"}')
+        self._install_smtp(monkeypatch)
+        start = datetime.now() + timedelta(days=2)
+        event = self._future_event([ALICE], start)
+        # Missing actor: anonymous PUT, with no map identity to authorize it.
+        self.mkcalendar("/anonymous.ics/")
+        self.put("/anonymous.ics/missing.ics", event)
+        # Unmapped authenticated actor in their own collection.
+        self.mkcalendar("/mallory.ics/", login="mallory:password")
+        self.put("/mallory.ics/unmapped.ics", event, login="mallory:password")
+        # Mapped actor but organizer mismatch.
+        self.mkcalendar("/jeff.ics/", login="jeff:password")
+        self.put("/jeff.ics/mismatch.ics", event.replace(
+            "mailto:jeff@example.com", "mailto:other@example.com"),
+            login="jeff:password")
+        # Attendee-copy organizer must not be authorized by the attendee.
+        self.mkcalendar("/alice.ics/", login="alice:password")
+        self.put("/alice.ics/copy.ics", event, login="alice:password")
+        assert self.calls == []
+
+    def test_legacy_reply_to_remains_global_with_flag_off_and_on(self, monkeypatch):
+        from email import message_from_string, policy
+
+        for enabled in (False, True):
+            self.calls = []
+            self._configure(enabled=enabled, itip=False)
+            self._install_smtp(monkeypatch)
+            self.mkcalendar("/legacy-%s.ics/" % enabled, login="jeff:password")
+            start = datetime.now() + timedelta(days=2)
+            self.put("/legacy-%s.ics/event.ics" % enabled,
+                     self._future_event([ALICE], start), login="jeff:password")
+            assert len(self.calls) == 1
+            sender, recipients, raw = self.calls[0]
+            msg = message_from_string(raw, policy=policy.default)
+            assert msg["From"] == "calendar@example.com"
+            assert msg.get_all("Reply-To") == ["calendar@example.com"]
+            assert sender == "calendar@example.com"
+            assert recipients == ["alice@example.com"]
+
+    def test_sequential_actors_do_not_leak_reply_address(self, monkeypatch):
+        self._configure(owner_map='{"jeff": "jeff@example.com", "bob": "bob@example.com", "unmapped": "unused@example.com"}',
+                        username=True)
+        self._install_smtp(monkeypatch)
+        start = datetime.now() + timedelta(days=2)
+        for actor, organizer, reply in (("jeff", "jeff@example.com", "jeff@example.com"),
+                                        ("bob", "bob@example.com", "bob@example.com")):
+            self.mkcalendar("/%s.ics/" % actor, login=actor + ":password")
+            actor_event = self._future_event([ALICE], start).replace(
+                "mailto:jeff@example.com", "mailto:%s" % organizer)
+            self.put("/%s.ics/event.ics" % actor, actor_event,
+                     login=actor + ":password")
+        # An authenticated email username owns the event, but is unmapped.
+        self.mkcalendar("/nobody@example.com.ics/", login="nobody@example.com:password")
+        unmapped_event = self._future_event([ALICE], start).replace(
+            "mailto:jeff@example.com", "mailto:nobody@example.com")
+        self.put("/nobody@example.com.ics/event.ics",
+                 unmapped_event, login="nobody@example.com:password")
+        assert len(self.calls) == 3
+        self._assert_call(0, reply_to="jeff@example.com", method="REQUEST",
+                          recipient="alice@example.com", sequence=1)
+        self._assert_call(1, reply_to="bob@example.com", method="REQUEST",
+                          recipient="alice@example.com", sequence=1)
+        self._assert_call(2, reply_to=None, method="REQUEST",
+                          recipient="alice@example.com", sequence=1)
 
 
 class TestHookWiringLegacy(BaseTest):
@@ -317,16 +536,97 @@ class TestOwnerMapAndRecurrence:
 
     def test_parse_owner_map_valid(self):
         from radicale.hook.email.scheduling import parse_owner_map
-        assert parse_owner_map("alice=alice@example.com, Bob=Bob@Example.com") == {
-            "alice": "alice@example.com", "bob": "bob@example.com"}
-        assert parse_owner_map("") == {}
+        assert parse_owner_map('{"alice": "alice@example.com", " Bob ": "Bob@Example.com"}') == {
+            "alice": "alice@example.com", "Bob": "bob@example.com"}
+        assert parse_owner_map("{}") == {}
         assert parse_owner_map(None) == {}
+        assert parse_owner_map({"Alice": "Alice@Example.com"}) == {
+            "Alice": "alice@example.com"}
+
+    def test_regex_owner_map_scenarios(self):
+        from radicale.hook.email.scheduling import (parse_owner_map,
+                                                    resolve_owner_identities)
+        cases = [
+            ({"(.+)@(.+)": "{1}@{2}"}, "User1@Domain.Example", "user1@domain.example"),
+            ({"(user1|user2|user3)@(.+)": "{1}@{2}"}, "user2@domain.example", "user2@domain.example"),
+            ({r"(user3|user4)@(otherdomain\.example)": "{1}@{2}"}, "user4@otherdomain.example", "user4@otherdomain.example"),
+            ({"(.+)": "{1}@domain.example"}, "user1", "user1@domain.example"),
+            ({"(user1|user2)": "{1}@domain.example", "(user3|user4)": "{1}@otherdomain.example"}, "user3", "user3@otherdomain.example"),
+            ({"(.+)@(.+)": "{0}"}, "user1@domain.example", "user1@domain.example"),
+            ({r"(\S+)": "{1}@domain.example"}, "user1", "user1@domain.example"),
+            ({r"(\s+)": "whitespace@example.com", r"(\S+)": "{1}@domain.example"}, "user1", "user1@domain.example"),
+        ]
+        for rules, actor, expected in cases:
+            assert resolve_owner_identities(actor, parse_owner_map(rules)) == [expected]
+
+    def test_regex_owner_map_unicode_case_insensitive(self):
+        from radicale.hook.email.scheduling import (mapped_owner_email,
+                                                    owner_addresses,
+                                                    resolve_owner_identities)
+
+        # Lowercasing U+0130 expands it into two code points, preventing
+        # fullmatch even though re.IGNORECASE matches it against "i".
+        rules = {"i": "owner@example.com"}
+        assert mapped_owner_email("İ", rules) == "owner@example.com"
+        assert resolve_owner_identities("İ", rules) == ["owner@example.com"]
+        assert owner_addresses("İ", '{"i": "owner@example.com"}') == ["owner@example.com"]
+
+    def test_regex_owner_map_fullmatch_and_selection(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        rules = {"user1|user2": "selected@example.com"}
+        for actor in ["prefixuser1", "user2suffix", "user3", "user1\nextra"]:
+            assert resolve_owner_identities(actor, rules) == []
+        assert resolve_owner_identities("user2", rules) == ["selected@example.com"]
+        domain_rules = {r"(user3|user4)@(otherdomain\.example)": "{1}@{2}"}
+        assert resolve_owner_identities("user3@otherdomainXexample", domain_rules) == []
+
+    def test_regex_owner_map_first_match_wins(self):
+        from radicale.hook.email.scheduling import resolve_owner_identities
+        rules = {"alice": "special@example.com", "(.+)": "{1}@example.com"}
+        assert resolve_owner_identities("alice", rules) == ["special@example.com"]
+        assert resolve_owner_identities("bob", rules) == ["bob@example.com"]
+
+    def test_regex_owner_map_invalid_rules(self):
+        import pytest
+
+        from radicale.hook.email.scheduling import parse_owner_map
+        for pattern, template in [
+                ("(", "a@example.com"), ("a", "{1}@example.com"),
+                ("(a)", "{2}@example.com"), ("a", "{name}@example.com"),
+                ("a", "{0.__class__}@example.com"), ("a", "{0!r}@example.com"),
+                ("a", "{0:>10}@example.com"), ("a", "{0@example.com")]:
+            with pytest.raises(ValueError, match="invalid itip_owner_map rule"):
+                parse_owner_map({pattern: template})
+
+    def test_regex_owner_map_invalid_address_fails_closed(self):
+        from radicale.hook.email.scheduling import (parse_owner_map,
+                                                    resolve_owner_identities)
+        rules = parse_owner_map({"(.+)": "{1}@example.com"})
+        for actor in ["a@b", "a b", "a\rb", "a\nb"]:
+            assert resolve_owner_identities(actor, rules) == []
+        # An invalid first match must not fall through to a broader rule.
+        rules = {"(.+)": "{1}@bad@example.com", "alice": "safe@example.com"}
+        assert resolve_owner_identities("alice", rules) == []
+
+    def test_regex_owner_map_shared_by_principal_and_reply_to(self):
+        from types import SimpleNamespace
+
+        from radicale.hook.email import Hook
+        from radicale.hook.email.scheduling import (owner_addresses,
+                                                    parse_owner_map)
+        rules = '{"(alice|bob)": "{1}@example.com"}'
+        hook = object.__new__(Hook)
+        hook.email_config = SimpleNamespace(itip_owner_reply_to=True)
+        hook.owner_map = parse_owner_map(rules)
+        assert owner_addresses("Alice", rules) == ["alice@example.com"]
+        assert hook._owner_reply_to(SimpleNamespace(actor="Alice")) == "alice@example.com"
+        assert hook._owner_reply_to(SimpleNamespace(actor="mallory")) is None
 
     def test_parse_owner_map_malformed(self):
         import pytest
 
         from radicale.hook.email.scheduling import parse_owner_map
-        for bad in ["alice", "alice=no-at-sign", "a=a@x.com, a=b@x.com", " =a@x.com"]:
+        for bad in ["{bad", "[]", "null", '{"alice": 3}', '{"alice": "no-at-sign"}', '{"": "a@x.com"}', '{"a": "a@x.com", " a ": "b@x.com"}', '{"a": "a@x.com", "a": "b@x.com"}']:
             with pytest.raises(ValueError):
                 parse_owner_map(bad)
 
@@ -413,7 +713,7 @@ class TestOwnerMapAndRecurrence:
                           new_or_added_to_event_template=MessageTemplate(subject="x", body="y"),
                           deleted_or_removed_from_event_template=MessageTemplate(subject="x", body="y"),
                           updated_event_template=MessageTemplate(subject="x", body="y"),
-                          itip_enabled=True, itip_owner_map="jeff=jeff@example.com")
+                          itip_enabled=True, itip_owner_map='{"jeff": "jeff@example.com"}')
         with pytest.raises(ValueError):
             cfg.validate_itip_config()
 
@@ -489,8 +789,11 @@ class TestMandatoryMapAndMasterParsing:
                           itip_enabled=True, itip_owner_map="")
         with pytest.raises(ValueError):
             cfg.validate_itip_config()
-        cfg.itip_owner_map = "jeff=jeff@example.com"
+        cfg.itip_owner_map = '{"jeff": "jeff@example.com"}'
         cfg.validate_itip_config()  # no error with an explicit map
+        cfg.itip_owner_map = "{}"
+        cfg.itip_organizer_is_username = True
+        cfg.validate_itip_config()  # an empty JSON object is valid with username ownership
 
     def test_itip_disabled_without_map_is_allowed(self):
         from radicale.hook.email import EmailConfig, MessageTemplate
@@ -546,6 +849,69 @@ def _email_config(**kwargs):
     return EmailConfig(**options)
 
 
+class TestOwnerReplyToWiring:
+    def test_actor_lookup_is_normalized_and_isolated(self):
+        from types import SimpleNamespace
+
+        from radicale.hook.email import Hook
+
+        hook = Hook.__new__(Hook)
+        hook.email_config = _email_config(
+            itip_owner_reply_to=True,
+            itip_owner_map='{"alice": "alice@example.com", "bob": "bob@example.com"}')
+        hook.owner_map = {"alice": "alice@example.com", "bob": "bob@example.com"}
+        assert hook._owner_reply_to(SimpleNamespace(actor=" Alice ")) == "alice@example.com"
+        assert hook._owner_reply_to(SimpleNamespace(actor="bob")) == "bob@example.com"
+        assert hook._owner_reply_to(SimpleNamespace(actor="nobody")) is None
+        hook.email_config.itip_owner_reply_to = False
+        assert hook._owner_reply_to(SimpleNamespace(actor="alice")) is None
+
+    def test_unsafe_reply_to_is_contained_before_smtp(self, monkeypatch):
+        from radicale.hook.email.scheduling import PlannedMessage
+
+        config = _email_config(dryrun=False)
+        event_text = _event([ALICE, CAROL])
+        event = __import__("radicale.hook.email", fromlist=["_read_event"])._read_event(event_text)
+        sends = []
+        monkeypatch.setattr(config, "_smtp_send", lambda **kwargs: sends.append(kwargs) or True)
+        planned = PlannedMessage("REQUEST", "carol@example.com", "Carol", "created")
+        assert not config.send_scheduling_email(
+            planned, event, event_text, reply_to_email="alice@example.com\nBcc:evil@example.com")
+        assert sends == []
+
+    def test_scheduling_email_preserves_envelope_and_serialized_headers(self, monkeypatch):
+        import smtplib
+        from email import message_from_string
+
+        from radicale.hook.email import _read_event
+        from radicale.hook.email.scheduling import PlannedMessage
+
+        config = _email_config(dryrun=False, security="none", from_email="calendar@example.com")
+        event_text = _event([ALICE, CAROL])
+        event = _read_event(event_text)
+        calls = []
+
+        class SMTP:
+            def sendmail(self, from_addr, to_addrs, msg):
+                calls.append((from_addr, to_addrs, msg))
+                return {}
+
+            def quit(self):
+                pass
+
+        monkeypatch.setattr(smtplib, "SMTP", lambda **kwargs: SMTP())
+        planned = PlannedMessage("REQUEST", "carol@example.com", "Carol", "created")
+        assert config.send_scheduling_email(
+            planned, event, event_text, reply_to_email="alice@example.com")
+        assert len(calls) == 1
+        from_addr, to_addrs, raw = calls[0]
+        parsed = message_from_string(raw)
+        assert parsed.get_all("Reply-To") == ["alice@example.com"]
+        assert parsed["From"] == "calendar@example.com"
+        assert from_addr == "calendar@example.com"
+        assert to_addrs == ["carol@example.com"]
+
+
 class TestOrganizerIsUsername:
     """itip_organizer_is_username: a username that is an email owns it."""
 
@@ -559,7 +925,7 @@ class TestOrganizerIsUsername:
 
     def test_owner_addresses(self):
         from radicale.hook.email.scheduling import owner_addresses
-        owner_map = "jeff@example.com=jeff@calendar.example.com"
+        owner_map = '{"jeff@example.com": "jeff@calendar.example.com"}'
         assert owner_addresses("jeff@example.com", owner_map, True) == [
             "jeff@calendar.example.com", "jeff@example.com"]
         assert owner_addresses("Jeff@Example.com", owner_map, False) == [
@@ -689,7 +1055,7 @@ class TestCalendarUserAddressSet(BaseTest):
 
     def _enable(self, enabled=True, owner_map=None):
         if owner_map is None:
-            owner_map = "" if enabled else "jeff=jeff@example.com"
+            owner_map = "" if enabled else '{"jeff": "jeff@example.com"}'
         self.configure({
             "hook": {"type": "email", "dryrun": "True",
                      "itip_enabled": "True",
@@ -717,22 +1083,22 @@ class TestCalendarUserAddressSet(BaseTest):
             "/jeff%40example.com/"]
 
     def test_mapped_address_listed_first(self):
-        self._enable(owner_map="jeff@example.com=jeff@calendar.example.com")
+        self._enable(owner_map='{"jeff@example.com": "jeff@calendar.example.com"}')
         assert self._hrefs("/jeff@example.com/", "jeff@example.com") == [
             "mailto:jeff@calendar.example.com", "mailto:jeff@example.com",
             "/jeff%40example.com/"]
 
     def test_mapped_address_without_option(self):
-        self._enable(False, owner_map="jeff=jeff@example.com")
+        self._enable(False, owner_map='{"jeff": "jeff@example.com"}')
         assert self._hrefs("/jeff/", "jeff") == [
             "mailto:jeff@example.com", "/jeff/"]
 
     def test_unmapped_user_gets_path_only(self):
-        self._enable(False, owner_map="bob=bob@example.com")
+        self._enable(False, owner_map='{"bob": "bob@example.com"}')
         assert self._hrefs("/jeff/", "jeff") == ["/jeff/"]
 
     def test_other_users_mapped_address_not_listed(self):
-        self._enable(False, owner_map="bob=bob@example.com")
+        self._enable(False, owner_map='{"bob": "bob@example.com"}')
         # Create Bob's principal, then look at it as Jeff.
         self._hrefs("/bob/", "bob")
         assert self._hrefs("/bob/", "jeff") == ["/bob/"]

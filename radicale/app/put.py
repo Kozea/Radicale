@@ -28,7 +28,8 @@ import socket
 import sys
 from http import client
 from types import TracebackType
-from typing import Iterator, List, Mapping, MutableMapping, Optional, Tuple
+from typing import (Dict, Iterator, List, Mapping, MutableMapping, Optional,
+                    Tuple)
 
 import vobject
 
@@ -39,8 +40,13 @@ from radicale.app.base import Access, ApplicationBase
 from radicale.hook import HookNotificationItem, HookNotificationItemTypes
 from radicale.log import logger
 
-MIMETYPE_TAGS: Mapping[str, str] = {value: key for key, value in
-                                    xmlutils.MIMETYPES.items()}
+# VCALENDAR and VSUBSCRIBED both use text/calendar. The first tag wins
+# so an empty body creates a calendar. A subscribed collection is MKCOL.
+_mimetype_tags: Dict[str, str] = {}
+for _tag, _mimetype in xmlutils.MIMETYPES.items():
+    if _mimetype not in _mimetype_tags:
+        _mimetype_tags[_mimetype] = _tag
+MIMETYPE_TAGS: Mapping[str, str] = _mimetype_tags
 
 PRODID = u"-//Radicale//NONSGML Version " + utils.package_version("radicale") + "//EN"
 
@@ -155,8 +161,9 @@ def prepare(vobject_items: List[vobject.base.Component], path: str,
 
         if write_whole_collection:
             props = {}
-            if tag:
-                props["tag"] = tag
+            # prepare() already rejected an empty tag for a whole collection.
+            assert tag
+            props["tag"] = tag
             if tag == "VCALENDAR" and vobject_items:
                 if hasattr(vobject_items[0], "x_wr_calname"):
                     calname = vobject_items[0].x_wr_calname.value
@@ -196,7 +203,8 @@ class ApplicationPartPut(ApplicationBase):
                     user = share['Owner']
                     permissions_filter = share['Permissions']
                 else:
-                    logger.trace("PUT/shares: skip overlap mapping: path=%r", path)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.trace("PUT/shares: skip overlap mapping: path=%r", path)
 
         access = Access(self._rights, user, user_groups, path, permissions_filter)
         if not access.check("w"):
@@ -314,20 +322,23 @@ class ApplicationPartPut(ApplicationBase):
 
             if write_whole_collection:
                 try:
+                    # create_collection consumes its items iterator. Keep the
+                    # prepared items so the hook can still report each one.
+                    stored_items = tuple(prepared_items)
                     col, replaced_items, new_item_hrefs = self._storage.create_collection(
                         href=path,
-                        items=prepared_items,
+                        items=stored_items,
                         props=props)
                     # Only run the hook if the hook is enabled
                     if self._hook.enabled:
-                        for item in prepared_items:
+                        for item in stored_items:
                             # Try to grab the previously-existing item by href
                             existing_item = replaced_items.get(item.href, None)  # type: ignore
                             if existing_item:
                                 hook_notification_item = HookNotificationItem(
                                     notification_item_type=HookNotificationItemTypes.UPSERT,
                                     path=access.path,
-                                    content=existing_item.serialize(),
+                                    content=item.serialize(),
                                     content_type=item.name,
                                     uid=None,
                                     old_content=existing_item.serialize(),

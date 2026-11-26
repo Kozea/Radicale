@@ -3,7 +3,7 @@ name = "Radicale"
 # When the version is updated, a new section in the CHANGELOG.md file must be
 # added too.
 readme = "README.md"
-version = "3.9.2.dev"
+version = "3.9.3.dev"
 authors = [{name = "Guillaume Ayoub", email = "guillaume.ayoub@kozea.fr"}, {name = "Unrud", email = "unrud@outlook.com"}, {name = "Peter Bieringer", email = "pb@bieringer.de"}]
 license = {text = "GNU GPL v3"}
 description = "CalDAV and CardDAV Server"
@@ -73,15 +73,29 @@ build-backend = "setuptools.build_meta"
 min_version = "4.0"
 envlist = ["flake8", "isort", "mypy", "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace", "py", "integ_test", "caldav_compat_test", "html5validator"]
 
+[tool.tox.labels]
+extra = ["py_coverage", "py_filesystem_vfat", "py_filesystem_vfat_utf8", "py_filesystem_hfsplus", "py_filesystem_ntfs", "js"]
+web = ["js", "html5validator", "integ_test"]
+caldav = ["caldav_compat_test"]
+fs = ["py", "py_filesystem_vfat", "py_filesystem_vfat_utf8", "py_filesystem_hfsplus", "py_filesystem_ntfs"]
+all = [
+       "flake8", "isort", "mypy",
+       "py", "py_coverage",
+       "py_loglevel_info", "py_radicale_loglevel_info", "py_radicale_loglevel_trace",
+       "py_filesystem_vfat", "py_filesystem_vfat_utf8", "py_filesystem_hfsplus", "py_filesystem_ntfs",
+       "js", "html5validator", "integ_test",
+      ]
+
 [tool.tox.env.py_coverage]
 description = "Server: run 'pytest' (incl. coverage report)"
 extras = ["test"]
+setenv = { PYTEST_RADICALE_LOGLEVEL = "trace" }
 deps = [
     "pytest",
     "pytest-cov",
     "python-ldap",
 ]
-commands = [["pytest", "-r", "s", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
+commands = [["pytest", "-r", "s", "--log-level", "5", "--cov", "--cov-report=term", "--cov-report=xml", "."]]
 
 [tool.tox.env.py]
 description = "Server: run 'pytest'"
@@ -135,7 +149,9 @@ commands_pre = [
     ["sudo", "/usr/bin/mount", "-o", "loop,umask=000,utf8=no", "/tmp/vfat.img", "/tmp/vfat"],
 ]
 setenv = { TEMP = "/tmp/vfat" }
-commands = [["pytest", "-r", "s", "."]]
+# pytest refuses a base temporary directory it does not own. This mount
+# reports one uid, so keep pytest's own tmp off it. Storage still uses TEMP.
+commands = [["pytest", "-r", "s", "--basetemp=/tmp/pytest-basetemp-vfat", "."]]
 commands_post = [
     # umount image
     ["sudo", "/usr/bin/umount", "-d", "/tmp/vfat"],
@@ -163,7 +179,9 @@ commands_pre = [
     ["sudo", "/usr/bin/mount", "-o", "loop,umask=000,utf8", "/tmp/vfat-utf8.img", "/tmp/vfat-utf8"],
 ]
 setenv = { TEMP = "/tmp/vfat-utf8" }
-commands = [["pytest", "-r", "s", "."]]
+# pytest refuses a base temporary directory it does not own. This mount
+# reports one uid, so keep pytest's own tmp off it. Storage still uses TEMP.
+commands = [["pytest", "-r", "s", "--basetemp=/tmp/pytest-basetemp-vfat-utf8", "."]]
 commands_post = [
     # umount image
     ["sudo", "/usr/bin/umount", "-d", "/tmp/vfat-utf8"],
@@ -220,7 +238,9 @@ commands_pre = [
     ["sudo", "/usr/bin/mount", "-o", "loop,umask=0000", "/tmp/ntfs.img", "/tmp/ntfs"],
 ]
 setenv = { TEMP = "/tmp/ntfs" }
-commands = [["pytest", "-r", "s", "."]]
+# pytest refuses a base temporary directory it does not own. This mount
+# reports one uid, so keep pytest's own tmp off it. Storage still uses TEMP.
+commands = [["pytest", "-r", "s", "--basetemp=/tmp/pytest-basetemp-ntfs", "."]]
 commands_post = [
     # umount image
     ["sudo", "/usr/bin/umount", "-d", "/tmp/ntfs"],

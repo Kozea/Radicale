@@ -20,6 +20,7 @@
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 import math
 import sys
 import xml.etree.ElementTree as ET
@@ -85,7 +86,31 @@ def time_range_timestamps(time_filter: ET.Element) -> Tuple[int, int]:
     return (math.floor(start.timestamp()), math.ceil(end.timestamp()))
 
 
-def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
+def _capped_iter(iterable: Iterable[date], limit: int) -> Iterator[date]:
+    """Yield at most ``limit`` items from ``iterable``.
+
+    This bounds the work spent enumerating occurrences of a recurrence
+    rule: an infinite rule with a fine frequency (e.g. SECONDLY) and a
+    DTSTART far before the queried time range would otherwise force the
+    server to enumerate every occurrence from DTSTART on. ``limit`` <= 0
+    means no cap.
+    """
+    if limit <= 0:
+        yield from iterable
+        return
+    count = 0
+    for value in iterable:
+        count += 1
+        if count > limit:
+            logger.warning(
+                "item/filter: occurrence limit of %d hit, stopping "
+                "enumeration of recurrence rule", limit)
+            return
+        yield value
+
+
+def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0,
+               max_occurrences: int = 0) -> bool:
     """Check whether the ``item`` matches the comp ``filter_``.
 
     If ``level`` is ``0``, the filter is applied on the
@@ -99,7 +124,8 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
     # HACK: the filters are tested separately against all components
 
     name = filter_.get("name", "").upper()
-    logger.trace("ITEM/FILTER/comp_match: name=%s level=%d", name, level)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("ITEM/FILTER/comp_match: name=%s level=%d", name, level)
 
     if level == 0:
         tag = item.name
@@ -144,25 +170,28 @@ def comp_match(item: "item.Item", filter_: ET.Element, level: int = 0) -> bool:
                 trigger = subcomp.trigger.value
     for child in filter_:
         if child.tag == xmlutils.make_clark("C:prop-filter"):
-            logger.trace("ITEM/FILTER/comp_match: prop-filter level=%d", level)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("ITEM/FILTER/comp_match: prop-filter level=%d", level)
             if not any(prop_match(comp, child, "C")
                        for comp in components):
                 return False
         elif child.tag == xmlutils.make_clark("C:time-range"):
-            logger.trace("ITEM/FILTER/comp_match: time-range level=%d tag=%s", level, tag)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("ITEM/FILTER/comp_match: time-range level=%d tag=%s", level, tag)
             if (level == 0) and (name == "VCALENDAR"):
                 for name_try in ("VTODO", "VEVENT", "VJOURNAL"):
                     try:
-                        if time_range_match(item.vobject_item, filter_[0], name_try, trigger):
+                        if time_range_match(item.vobject_item, filter_[0], name_try, trigger, max_occurrences):
                             return True
                     except Exception:
                         continue
                 return False
-            if not time_range_match(item.vobject_item, filter_[0], tag, trigger):
+            if not time_range_match(item.vobject_item, filter_[0], tag, trigger, max_occurrences):
                 return False
         elif child.tag == xmlutils.make_clark("C:comp-filter"):
-            logger.trace("ITEM/FILTER/comp_match: comp-filter level=%d", level)
-            if not comp_match(item, child, level=level + 1):
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("ITEM/FILTER/comp_match: comp-filter level=%d", level)
+            if not comp_match(item, child, level=level + 1, max_occurrences=max_occurrences):
                 return False
         else:
             raise ValueError("Unexpected %r in comp-filter" % child.tag)
@@ -205,7 +234,8 @@ def prop_match(vobject_item: vobject.base.Component,
 
 
 def time_range_match(vobject_item: vobject.base.Component,
-                     filter_: ET.Element, child_name: str, trigger: TRIGGER) -> bool:
+                     filter_: ET.Element, child_name: str, trigger: TRIGGER,
+                     max_occurrences: int = 0) -> bool:
     """Check whether the component/property ``child_name`` of
        ``vobject_item`` matches the time-range ``filter_``."""
     # supporting since 3.5.4 now optional trigger (either absolute or relative offset)
@@ -248,44 +278,18 @@ def time_range_match(vobject_item: vobject.base.Component,
     def infinity_fn(start: datetime) -> bool:
         return False
 
-    logger.trace("ITEM/FILTER/time_range_match: start=(%s) end=(%s) child_name=%s", start, end, child_name)
-    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("ITEM/FILTER/time_range_match: start=(%s) end=(%s) child_name=%s", start, end, child_name)
+    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn,
+                      max_occurrences=max_occurrences)
     return matched
-
-
-def time_range_fill(vobject_item: vobject.base.Component,
-                    filter_: ET.Element, child_name: str, n: int = 1
-                    ) -> List[Tuple[datetime, datetime]]:
-    """Create a list of ``n`` occurances from the component/property ``child_name``
-       of ``vobject_item``."""
-    if not filter_.get("start") and not filter_.get("end"):
-        return []
-
-    start, end = parse_time_range(filter_)
-    ranges: List[Tuple[datetime, datetime]] = []
-
-    def range_fn(range_start: datetime, range_end: datetime,
-                 is_recurrence: bool) -> bool:
-        nonlocal ranges
-        if start < range_end and range_start < end:
-            ranges.append((range_start, range_end))
-            if n > 0 and len(ranges) >= n:
-                return True
-        if end < range_start and not is_recurrence:
-            return True
-        return False
-
-    def infinity_fn(range_start: datetime) -> bool:
-        return False
-
-    visit_time_ranges(vobject_item, child_name, range_fn, infinity_fn)
-    return ranges
 
 
 def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                       range_fn: Callable[[datetime, datetime, bool], bool],
                       infinity_fn: Callable[[datetime], bool],
-                      component_fn: Optional[Callable[[vobject.base.Component], Optional[bool]]] = None) -> None:
+                      component_fn: Optional[Callable[[vobject.base.Component], Optional[bool]]] = None,
+                      max_occurrences: int = 0) -> None:
     """Visit all time ranges in the component/property ``child_name`` of
     `vobject_item`` with visitors ``range_fn`` and ``infinity_fn``.
 
@@ -300,6 +304,11 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     ``component_fn``, if given, is called for each VEVENT before its
     occurrences are visited. If it returns False, that VEVENT is skipped.
 
+    ``max_occurrences`` bounds how many occurrences of a single recurrence
+    rule are enumerated (``0`` means no bound). This keeps one query from
+    doing unbounded work on an infinite rule whose DTSTART is far before
+    the queried range.
+
     See rfc4791-9.9.
 
     """
@@ -309,7 +318,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
     # recurrences too. This is not respected and client don't seem to bother
     # either.
 
-    logger.trace("ITEM/FILTER/visit_time_ranges: child_name=%s", child_name)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("ITEM/FILTER/visit_time_ranges: child_name=%s", child_name)
 
     def getrruleset(child: vobject.base.Component, ignore: Sequence[date]
                     ) -> Tuple[Iterable[date], bool]:
@@ -326,14 +336,16 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                 if infinity_fn(date_to_datetime(dtstart)):
                     return (), True
                 break
-        return filter(lambda dtstart: dtstart not in ignore,
-                      child.getrruleset(addRDate=True)), False
+        return _capped_iter(filter(lambda dtstart: dtstart not in ignore,
+                                   child.getrruleset(addRDate=True)),
+                            max_occurrences), False
 
     def get_children(components: Iterable[vobject.base.Component]) -> Iterator[
                          Tuple[vobject.base.Component, bool, List[date]]]:
         main = None
         rec_main = None
         recurrences = []
+        recurrence_components = []
         for comp in components:
             if hasattr(comp, "recurrence_id") and comp.recurrence_id.value:
                 recurrences.append(comp.recurrence_id.value)
@@ -344,15 +356,20 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                         # Prevent possible infinite loop
                         raise ValueError("Overwritten recurrence with RRULESET")
                 rec_main = comp
-                yield comp, True, []
+                recurrence_components.append(comp)
             else:
                 if main is not None:
                     raise ValueError("Multiple main components. Got comp: {}".format(comp))
                 main = comp
         if main is None and len(recurrences) == 1:
+            # A lone override is the event. Do not also visit it as a
+            # recurrence of a master that is not in the item.
             main = rec_main
+            recurrence_components = []
         if main is None:
             raise ValueError("Main component missing")
+        for comp in recurrence_components:
+            yield comp, True, []
         yield main, False, recurrences
 
     # Comments give the lines in the tables of the specification
@@ -387,11 +404,13 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
                     if dtstart.tzinfo is None and dtend.tzinfo is not None:
                         dtstart_orig = dtstart
                         dtstart = date_to_datetime(dtstart, dtend.astimezone().tzinfo)
-                        logger.trace("ITEM/FILTER/get_children: overtake missing tzinfo on dtstart from dtend: '%s' -> '%s'", dtstart_orig, dtstart)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("ITEM/FILTER/get_children: overtake missing tzinfo on dtstart from dtend: '%s' -> '%s'", dtstart_orig, dtstart)
                     elif dtstart.tzinfo is not None and dtend.tzinfo is None:
                         dtend_orig = dtend
                         dtend = date_to_datetime(dtend, dtstart.astimezone().tzinfo)
-                        logger.trace("ITEM/FILTER/get_children: overtake missing tzinfo on dtend from dtstart: '%s' -> '%s'", dtend_orig, dtend)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.trace("ITEM/FILTER/get_children: overtake missing tzinfo on dtend from dtstart: '%s' -> '%s'", dtend_orig, dtend)
 
                 original_duration = (dtend - dtstart).total_seconds()
                 dtend = date_to_datetime(dtend)
@@ -550,7 +569,8 @@ def visit_time_ranges(vobject_item: vobject.base.Component, child_name: str,
 
     else:
         # Match a property
-        logger.trace("ITEM/FILTER/get_children: child_name=%s property match", child_name)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("ITEM/FILTER/get_children: child_name=%s property match", child_name)
         child = getattr(vobject_item, child_name.lower())
         if isinstance(child.value, date):
             child_is_datetime = isinstance(child.value, datetime)
@@ -651,7 +671,8 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
     """
     flat_filters = list(chain.from_iterable(filters))
     simple = len(flat_filters) <= 1
-    logger.trace("ITEM/FILTER/simplify_prefilters: collection_tag=%s", collection_tag)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.trace("ITEM/FILTER/simplify_prefilters: collection_tag=%s", collection_tag)
     for col_filter in flat_filters:
         if collection_tag != "VCALENDAR":
             simple = False
@@ -662,14 +683,17 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
             continue
         simple &= len(col_filter) <= 1
         for comp_filter in col_filter:
-            logger.trace("ITEM/FILTER/simplify_prefilters: filter.tag=%s simple=%s", comp_filter.tag, simple)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("ITEM/FILTER/simplify_prefilters: filter.tag=%s simple=%s", comp_filter.tag, simple)
             if comp_filter.tag == xmlutils.make_clark("C:time-range") and simple is True:
                 # time-filter found on level 0
                 start, end = time_range_timestamps(comp_filter)
-                logger.trace("ITEM/FILTER/simplify_prefilters: found time-filter on level 0 start=%r(%d) end=%r(%d) simple=%s", format_ut(start), start, format_ut(end), end, simple)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("ITEM/FILTER/simplify_prefilters: found time-filter on level 0 start=%r(%d) end=%r(%d) simple=%s", format_ut(start), start, format_ut(end), end, simple)
                 return None, start, end, simple
             if comp_filter.tag != xmlutils.make_clark("C:comp-filter"):
-                logger.trace("ITEM/FILTER/simplify_prefilters: no comp-filter on level 0")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("ITEM/FILTER/simplify_prefilters: no comp-filter on level 0")
                 simple = False
                 continue
             tag = comp_filter.get("name", "").upper()
@@ -686,7 +710,8 @@ def simplify_prefilters(filters: Iterable[ET.Element], collection_tag: str
                     simple = False
                     continue
                 start, end = time_range_timestamps(time_filter)
-                logger.trace("ITEM/FILTER/simplify_prefilters: found time-filter on level 1 tag=%s start=%d end=%d simple=%s", tag, start, end, simple)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("ITEM/FILTER/simplify_prefilters: found time-filter on level 1 tag=%s start=%d end=%d simple=%s", tag, start, end, simple)
                 return tag, start, end, simple
             return tag, TIMESTAMP_MIN, TIMESTAMP_MAX, simple
     return None, TIMESTAMP_MIN, TIMESTAMP_MAX, simple

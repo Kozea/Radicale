@@ -637,7 +637,7 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "False",
             "help": "strict preconditions check on PUT",
             "type": bool}),
-        ("_filesystem_fsync", {
+        ("filesystem_fsync", {
             "value": "True",
             "help": "sync all changes to filesystem during requests",
             "type": bool}),
@@ -780,10 +780,12 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
                     "must be deliberate. Set to False for the legacy behaviour.",
             "type": bool}),
         ("itip_owner_map", {
-            "value": "",
-            "help": "Explicit actor-to-organizer-email map for iTIP, as "
-                    "actor=email pairs separated by commas, e.g. "
-                    "alice=alice@example.com. Required when "
+            "value": "{}",
+            "help": "Ordered username-regex-to-email map for iTIP, as a JSON "
+                    "object with full-string, case-insensitive patterns and "
+                    "numeric brace replacements ({1}, {2}; {0} is the whole "
+                    "username). First matching rule wins, e.g. "
+                    '{"(alice|bob)": "{1}@example.com"}. Required when '
                     "itip_enabled is True. When set, only the mapped email "
                     "for the authenticated actor counts as organizer "
                     "ownership; unmapped actors send nothing, and an empty "
@@ -793,6 +795,13 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
                     "The user's own principal lists the mapped address "
                     "first in calendar-user-address-set.",
             "type": str}),
+        ("itip_owner_reply_to", {
+            "value": "False",
+            "help": "For iTIP messages only, set Reply-To from the authenticated "
+                    "actor's explicit itip_owner_map entry. If no entry exists, "
+                    "omit Reply-To; do not fall back to the username. The global "
+                    "from_email remains the From and SMTP sender.",
+            "type": bool}),
         ("itip_organizer_is_username", {
             "value": "False",
             "help": "For iTIP, an actor whose username is an email "

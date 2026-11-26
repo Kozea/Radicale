@@ -42,36 +42,42 @@ on:
 jobs:
 
   test-ubuntu-python-newest:
-    name: Test Python:3.15 Ubuntu:26
+    name: Test (Py:3.15 Ub:26)
     needs: lint
-    strategy:
-      matrix:
-        os: [ubuntu-26.04]
-        python-version: ['3.15']
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.15'
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu
         run: tox -c pyproject.toml -e py
 
-  test-ubuntu-python-newest-with-passlib:
-    name: Test passlib Python:3.15 Ubuntu:26
-    needs: [lint, test-ubuntu-python-newest]
-    strategy:
-      matrix:
-        os: [ubuntu-26.04]
-        python-version: ['3.15']
-    runs-on: ${{ matrix.os }}
+  test-ubuntu-python-newest-loglevel:
+    name: Test loglevel variants (Py:3.15 Ub:26)
+    needs: test-ubuntu-python-newest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.15'
+      - name: Install Test dependencies
+        run: pip install tox
+      - name: Test with newest Python on latest Ubuntu with loglevel variants
+        run: tox --fail-fast -c pyproject.toml -e py_radicale_loglevel_info,py_radicale_loglevel_info,py_radicale_loglevel_trace
+
+  test-ubuntu-python-newest-with-passlib:
+    name: Test passlib (Py:3.15 Ub:26)
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-loglevel]
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.15'
       - name: Install Test dependencies
         run: pip install tox
       - name: Switch back to passlib
@@ -80,69 +86,53 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-newest-with-vfat:
-    name: Test VFAT Python:3.15 Ubuntu:26
-    needs: [lint, test-ubuntu-python-newest]
-    strategy:
-      matrix:
-        os: [ubuntu-26.04]
-        python-version: ['3.15']
-    runs-on: ${{ matrix.os }}
+    name: Test VFAT (Py:3.15 Ub:26)
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-loglevel]
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.15'
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu using VFAT
         run: tox -c pyproject.toml -e py_filesystem_vfat
 
   test-ubuntu-python-newest-with-vfat-utf8:
-    name: Test VFAT UTF-8 Python:3.15 Ubuntu:26
-    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-vfat]
-    strategy:
-      matrix:
-        os: [ubuntu-26.04]
-        python-version: ['3.15']
-    runs-on: ${{ matrix.os }}
+    name: Test VFAT UTF-8 (Py:3.15 Ub:26)
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-vfat, test-ubuntu-python-newest-loglevel]
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.15'
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu using VFAT UTF-8
         run: tox -c pyproject.toml -e py_filesystem_vfat_utf8
 
   test-ubuntu-python-newest-with-ntfs:
-    name: Test NTFS Python:3.15 Ubuntu:26
-    needs: [lint, test-ubuntu-python-newest]
-    strategy:
-      matrix:
-        os: [ubuntu-26.04]
-        python-version: ['3.15']
-    runs-on: ${{ matrix.os }}
+    name: Test NTFS (Py:3.15 Ub:26)
+    needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-loglevel]
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.15'
       - name: Install Test dependencies
         run: pip install tox
       - name: Test with newest Python on latest Ubuntu using NTFS
         run: tox -c pyproject.toml -e py_filesystem_ntfs
 
   test-python-32bit:
-    name: Test 32-bit Python:3.11 Ubuntu:24
-    needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-with-passlib]
-    strategy:
-      matrix:
-        os: [ubuntu-24.04]
-        python-version: ['3.11']
-    runs-on: ${{ matrix.os }}
+    name: Test 32-bit (Py:3.11 Ub:24)
+    needs: [lint, test-ubuntu-python-newest, integ-test, test-ubuntu-python-newest-loglevel]
+    runs-on: ubuntu-24.04
     container:
-      image: i386/python:${{ matrix.python-version }}
+      image: i386/python:3.11
       volumes:
         - /home/runner/work/_temp:/__e/node24
     steps:
@@ -174,7 +164,7 @@ jobs:
           tox -c /__w/Radicale/Radicale/pyproject.toml -e py
 
   test-otheros-python-newest:
-    name: Test MacOS/Windows:latest Python:3.15
+    name: Test MacOS/Windows:latest Py:3.15
     needs: [lint, test-ubuntu-python-newest, test-ubuntu-python-newest-with-ntfs, test-ubuntu-python-newest-with-vfat, test-ubuntu-python-newest-with-vfat-utf8]
     strategy:
       matrix:
@@ -192,7 +182,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-versions:
-    name: Test Ubuntu:26 Python:Matrix
+    name: Test Ub:26 Py:Matrix
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
@@ -210,7 +200,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-ubuntu-python-versions-older:
-    name: Test Ubuntu:24 Python:3.9
+    name: Test Ub:24 Py:3.9
     needs: [lint, test-ubuntu-python-newest, test-python-32bit]
     strategy:
       matrix:
@@ -228,7 +218,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   test-otheros-python-versions:
-    name: Test MacOS/Windows:latest Python:Matrix
+    name: Test MacOS/Windows:latest Py:Matrix
     needs: [lint, test-otheros-python-newest, test-ubuntu-python-versions, test-ubuntu-python-versions-older]
     strategy:
       matrix:
@@ -253,7 +243,7 @@ jobs:
         run: tox -c pyproject.toml -e py
 
   coveralls-dryrun:
-    name: Coveralls:DryRun (Ubuntu:26)
+    name: Coveralls:DryRun (Py:3.15 Ub:26)
     needs: test-ubuntu-python-newest
     runs-on: ubuntu-26.04
     steps:
@@ -273,7 +263,7 @@ jobs:
         run: tox -c pyproject.toml -e py_coverage
 
   coveralls-test:
-    name: Coveralls:Test (Ubuntu:26)
+    name: Coveralls:Test (Py:3.15 Ub:26)
     needs: coveralls-dryrun
     if: github.event_name == 'push'
     runs-on: ubuntu-26.04
@@ -301,7 +291,7 @@ jobs:
         run: coveralls --service=github
 
   coveralls-finish:
-    name: Coveralls:Finish (Ubuntu:26)
+    name: Coveralls:Finish (Py:3.15 Ub:26)
     needs: coveralls-test
     if: github.event_name == 'push'
     runs-on: ubuntu-26.04
@@ -317,7 +307,7 @@ jobs:
         run: coveralls --service=github --finish
 
   js-test:
-    name: JS Type Check (Ubuntu:26)
+    name: JS Type Check (TS:7 Ub:26)
     runs-on: ubuntu-26.04
     needs: [test-ubuntu-python-newest]
     steps:
@@ -330,7 +320,7 @@ jobs:
           npx -y -p typescript@7.0.2 tsc -p radicale/web/jsconfig.json
 
   lint:
-    name: Lint (Ubuntu:26)
+    name: Lint (Py:3.15 Ub:26)
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
@@ -340,10 +330,10 @@ jobs:
       - name: Install tox
         run: pip install tox
       - name: Lint
-        run: tox -c pyproject.toml -e flake8,isort,mypy
+        run: tox --fail-fast -c pyproject.toml -e flake8,isort,mypy
 
   htmlvalidator:
-    name: HTML Validator (Ubuntu:26)
+    name: HTML Validator (Py:3.15 Ub:26)
     runs-on: ubuntu-26.04
     needs: test-ubuntu-python-newest
     steps:
@@ -357,7 +347,7 @@ jobs:
           css: true
 
   integ-test:
-    name: WebUI Integration (Ubuntu:26)
+    name: WebUI Integration (Py:3.15 Ub:26)
     timeout-minutes: 60
     runs-on: ubuntu-26.04
     needs: [test-ubuntu-python-newest, htmlvalidator, js-test]
@@ -374,7 +364,7 @@ jobs:
         run: uv run --extra dev pytest integ_tests/ -v
 
   caldav-compat-test:
-    name: CalDAV compatibility (Ubuntu:26)
+    name: CalDAV compatibility (Py:3.15 Ub:26)
     timeout-minutes: 15
     runs-on: ubuntu-26.04
     needs: [test-ubuntu-python-newest]

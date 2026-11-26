@@ -4862,6 +4862,7 @@ permissions: RrWw""")
 
             # reload database by trigger restart with configure
             logging.info("\n*** reload database_type: %s", db_type)
+            caplog.clear()
             self.configure({"sharing": {"type": db_type}})
             assert "ERROR" not in caplog.text
 
@@ -9723,8 +9724,8 @@ permissions: RrWw""")
             assert "D:write" not in privileges_list
             assert "D:all" not in privileges_list
 
-    def test_sharing_api_map_colissions(self) -> None:
-        """share-by-map API usage tests related to colissions."""
+    def test_sharing_api_map_collisions(self) -> None:
+        """share-by-map API usage tests related to collisions."""
         self.configure({"auth": {"type": "htpasswd",
                                  "htpasswd_filename": self.htpasswd_file_path,
                                  "htpasswd_encryption": "plain"},
@@ -9832,6 +9833,65 @@ permissions: RrWw""")
 
             json_dict['PathMapped'] = path_mapped_o2
             _, headers, answer = self._sharing_api_json("map", "create", check=409, login="owner2:owner2pw", json_dict=json_dict)
+
+    def test_sharing_api_map_group_no_hide(self) -> None:
+        """share-by-map API usage tests related to colisions."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "group": {"type": "htgroup",
+                                  "htgroup_filename": self.htgroup_file_path},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": "True",
+                                    "permit_create_token": "False",
+                                    "collection_by_map": "True",
+                                    "collection_by_token": "False"},
+                        "logging": {"request_header_on_debug": "False",
+                                    "response_content_on_debug": "True",
+                                    "request_content_on_debug": "True"},
+                        "rights": {"type": "owner_only"}})
+
+        json_dict: dict
+
+        logging.info("\n*** prepare and test access")
+
+        for db_type in list(filter(lambda item: item != "none", sharing.INTERNAL_TYPES)):
+            logging.info("\n*** test: %s", db_type)
+            self.configure({"sharing": {"type": db_type}})
+
+            path_mapped_o1 = "/owner1/calendarO1-" + db_type + ".ics/"
+            path_mapped_o2 = "/owner2/calendarO2-" + db_type + ".ics/"
+            path_shared_ug = "/{user}/calendarO-shared-by-owner-" + db_type + ".ics/"
+            path_self_u1 = "/user1/calendarO-shared-by-owner-" + db_type + ".ics/"
+            self.mkcalendar(path_mapped_o1, login="owner1:owner1pw")
+            self.mkcalendar(path_mapped_o2, login="owner2:owner2pw")
+            self.mkcalendar(path_self_u1, login="user1:user1pw")
+
+            # upload item as user1 -> ok
+            logging.info("\n*** PUT to self as user1 -> 201")
+            event = get_file_content("event1.ics")
+            self.put(path_self_u1 + "event1.ics", event, login="user1:user1pw")
+
+            # get item as user1 -> ok
+            logging.info("\n*** GET from self as user1 -> 200")
+            self.get(path_self_u1 + "event1.ics", login="user1:user1pw")
+
+            # create shared-by-realm maps without placeholder
+            json_dict = {}
+            json_dict['User'] = ":group1"
+            json_dict['PathOrToken'] = path_shared_ug
+            json_dict['Permissions'] = "rw"
+            json_dict['Enabled'] = True
+            json_dict['Hidden'] = False
+
+            logging.info("\n*** create map with placeholder :group1/owner1 -> 200")
+            json_dict['PathMapped'] = path_mapped_o1
+            _, headers, answer = self._sharing_api_json("map", "create", check=200, login="owner1:owner1pw", json_dict=json_dict)
+
+            # get item as user1 -> ok
+            logging.info("\n*** GET from self as user1 -> 200")
+            self.get(path_self_u1 + "event1.ics", login="user1:user1pw")
 
     def test_sharing_api_caldav_carddav_workflow(self) -> None:
         """Share a calendar by map and an address book by token, then use both."""

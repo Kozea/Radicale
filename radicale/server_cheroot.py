@@ -121,12 +121,17 @@ def _build_ssl_adapter(configuration: config.Configuration
     if protocol:
         logger.info("SSL set explicit protocols (maybe not all supported by underlying OpenSSL): '%s'", protocol)
         context.options = utils.ssl_context_options_by_protocol(protocol, context.options)
-        context.minimum_version = utils.ssl_context_minimum_version_by_options(context.options)
-        if context.minimum_version == 0:
+        # ssl.SSLContext rejects version 0 with ValueError ("Unsupported TLS/SSL
+        # version"), so the inactive-protocol result (0) has to be checked before
+        # it is assigned.
+        minimum_version = utils.ssl_context_minimum_version_by_options(context.options)
+        if minimum_version == 0:
             raise RuntimeError("No SSL minimum protocol active")
-        context.maximum_version = utils.ssl_context_maximum_version_by_options(context.options)
-        if context.maximum_version == 0:
+        context.minimum_version = minimum_version
+        maximum_version = utils.ssl_context_maximum_version_by_options(context.options)
+        if maximum_version == 0:
             raise RuntimeError("No SSL maximum protocol active")
+        context.maximum_version = maximum_version
     else:
         logger.info("SSL active protocols: (system-default)")
     logger.debug("SSL minimum acceptable protocol: %s", context.minimum_version)

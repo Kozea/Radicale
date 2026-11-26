@@ -410,7 +410,7 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
             logger_method = logger.info  # default
             if status == 401 or status == 404 or status == 412 or status == 409 or request_method in ["PROPPATCH", "MKCALENDAR", "MKCOL"]:
                 logger_method = logger.notice
-            elif status >= 500 and status < 500:
+            elif status >= 400 and status < 500:
                 logger_method = logger.error
             elif status >= 500:
                 logger_method = logger.critical

@@ -15,7 +15,9 @@ A [pull request](/en/pull-requests/reference/pull-requests) is a way to suggest 
 When we merge those changes, they're available as nightly (UTC) built [container](https://github.com/Kozea/Radicale/pkgs/container/radicale), see also 
 [Wiki/Installing-on-Docker](https://github.com/Kozea/Radicale/wiki/Installing-on-Docker).
 
-In case of bigger changes, please start a discussion first [Radicale/Discussions](https://github.com/Kozea/Radicale/discussions)
+In case of bigger changes, please start a discussion first [Radicale/Discussions](https://github.com/Kozea/Radicale/discussions).
+
+The source layout, data on disk, CI, and the release steps are in [docs/README.md](docs/README.md).
  
 ### Reviewing your own pull requests
 
@@ -31,7 +33,7 @@ For any changes, make sure that you:
   * Extend test suite in case of fixing an issue which is currently not covered
 * Code `diff` is easy to review.
 * Review the change for technical accuracy.
-* Local run of test suite passed successfully, see also [Wiki/Development Testing Release](https://github.com/Kozea/Radicale/wiki/Development-Testing-Release)
+* Local run of test suite passed successfully, see also [Wiki/Development Testing Release](https://github.com/Kozea/Radicale/wiki/05-%E2%80%90-Development-Testing-Release)
 * If possible, include extension of [CHANGELOG.md](https://github.com/Kozea/Radicale/blob/master/CHANGELOG.md).
 * If senseful, include adjustment/extension of [DOCUMENTATION.md](https://github.com/Kozea/Radicale/blob/master/DOCUMENTATION.md).
 * On new or adjusted options do not forget to extend/update reference [config](https://github.com/Kozea/Radicale/blob/master/config),
@@ -41,9 +43,21 @@ For any changes, make sure that you:
 ### AI support
 
 It is accepted that your pull request is supported by AI under following conditions
-* Reviewed by HI (Human Intelligence).
+* Reviewed by HI (Human Intelligence): you have read the whole diff, run the test suite locally, and can explain what each change and each added test is meant to guarantee.
 * Coding style is aligned with current one.
-* AI support is mentioned in comment.
+* AI support is disclosed in the pull request description:
+  * the **model** (e.g. `Claude Sonnet 5.5`, `Grok 4`, `GPT-5`),
+  * ideally the **effort / reasoning level** and how it was used (e.g. autonomous agent, supervised, only drafted),
+  * which parts were generated, and what you verified yourself.
+* Preferably also disclose it in the commits, with a trailer such as `Co-Authored-By: <model> <noreply@...>` or `Assisted-by: <model>`, so that the information stays visible in `git log` after a squash.
+
+Generated tests need particular care:
+* A test must fail when the code it names is broken. Check this, e.g. by temporarily reverting the fix.
+* Do not assert on current behavior you do not understand, only to increase coverage. If the behavior looks wrong, open an issue instead of pinning it in a test.
+* Avoid assertions that cannot fail (`a or b` with a trivially true `b`, `status in (200, 400)`, membership of a single character).
+* Prefer several small pull requests over one that is too big to be reviewed.
+
+Maintainers may ask for a pull request to be split, reduced or reworked if it cannot be reviewed properly.
 
 ### Review pull request by maintainers
 

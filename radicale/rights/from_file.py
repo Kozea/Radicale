@@ -36,6 +36,7 @@ Leading or ending slashes are trimmed from collection's path.
 """
 
 import configparser
+import logging
 import re
 from typing import Union
 
@@ -114,7 +115,8 @@ class Rights(rights.BaseRights):
                 user_pattern = rules["user_pattern"]
                 collection_pattern = rules["collection_pattern"]
                 allowed_groups = rules["allowed_groups"]
-                logger.trace("user_groups=%r allowed_groups=%r", user_groups, allowed_groups)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.trace("user_groups=%r allowed_groups=%r", user_groups, allowed_groups)
                 try:
                     group_match = len(user_groups.intersection(allowed_groups)) > 0
                 except Exception:

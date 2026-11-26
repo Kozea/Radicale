@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Radicale.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import sys
 import time
@@ -55,7 +56,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
 
     def _get(self, href: str, verify_href: bool = True
              ) -> Optional[radicale_item.Item]:
-        logger.trace("storage/_get: href=%r", href)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/_get: href=%r", href)
         if verify_href:
             try:
                 if not pathutils.is_safe_filesystem_path_component(href):
@@ -81,10 +83,17 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
                         raise IsADirectoryError(path)
                 if not os.access(path, os.R_OK):
                     raise PermissionError(path)
+                if not os.path.isfile(path):
+                    # A socket or fifo is not an item. Opening it raises
+                    # ENXIO, which the request turns into HTTP 500.
+                    return None
                 # Single stat() reused below for both the cache hash and
                 # last_modified, instead of stat-ing the same path 3 times.
                 item_stat = os.stat(path)
             else:
+                if (os.path.exists(path) and not os.path.isfile(path) and
+                        not os.path.isdir(path)):
+                    return None
                 with open(path, "rb") as f:
                     # early read of the content
                     if self._storage._debug_cache_actions is True:
@@ -173,7 +182,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
         # we only need to call os.listdir once.
         files = None
         for href in hrefs:
-            logger.trace("storage/get_multi: href=%r", href)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("storage/get_multi: href=%r", href)
             if files is None:
                 # List dir after hrefs returned one item, the iterator may be
                 # empty and the for-loop is never executed.
@@ -193,7 +203,8 @@ class CollectionPartGet(CollectionPartCache, CollectionPartLock,
 
     def get_all(self) -> Iterator[radicale_item.Item]:
         for href in self._list():
-            logger.trace("storage/get_all: href=%r", href)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.trace("storage/get_all: href=%r", href)
             # We don't need to check for collisions, because the file names
             # are from os.listdir.
             try:

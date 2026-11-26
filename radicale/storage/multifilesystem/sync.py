@@ -18,8 +18,10 @@
 
 import contextlib
 import itertools
+import logging
 import os
 import pickle
+import re
 from hashlib import sha256
 from typing import BinaryIO, Iterable, Tuple, cast
 
@@ -39,9 +41,8 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
         def check_token_name(token_name: str) -> bool:
             if len(token_name) != 64:
                 return False
-            for c in token_name:
-                if c not in "0123456789abcdef":
-                    return False
+            if not re.search("^[0-9a-f]{64}$", token_name):
+                return False
             return True
 
         old_token_name = ""
@@ -56,7 +57,8 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
         state = {}
         token_name_hash = sha256()
         # Find the history of all existing and deleted items
-        logger.trace("storage/sync")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.trace("storage/sync")
         for href, item in itertools.chain(
                 ((item.href, item) for item in self.get_all()),
                 ((href, None) for href in self._get_deleted_history_hrefs())):
@@ -79,8 +81,9 @@ class CollectionPartSync(CollectionPartCache, CollectionPartHistory,
                 with open(old_token_path, "rb") as f:
                     old_state = pickle.load(f)
             except (FileNotFoundError, pickle.UnpicklingError,
-                    ValueError) as e:
-                if isinstance(e, (pickle.UnpicklingError, ValueError)):
+                    ValueError, KeyError) as e:
+                if isinstance(e, (pickle.UnpicklingError, ValueError,
+                                  KeyError)):
                     logger.warning(
                         "Failed to load stored sync token %r in %r: %s",
                         old_token_name, self.path, e, exc_info=True)
