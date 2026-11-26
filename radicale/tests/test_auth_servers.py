@@ -348,7 +348,7 @@ class TestAuthServers(BaseTest):
             assert directory.servers[0] == {}
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
             assert _principal(self, "a*:secret", check=401) == ""
-    
+
     @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
     @pytest.mark.parametrize("cache_logins", [False, True])
     def test_ldap3_login_cache_preserves_mapped_identity_and_groups(

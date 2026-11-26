@@ -31,12 +31,11 @@ Take a look at the class ``BaseAuth`` if you want to implement your own.
 
 import hashlib
 import os
+import secrets
 import threading
 import time
-import secrets
-from typing import Optional
 from collections import OrderedDict
-from typing import List, Sequence, Tuple, Union, final
+from typing import List, Optional, Sequence, Tuple, Union, final
 from urllib.parse import unquote
 
 from radicale import config, types, utils
@@ -117,27 +116,27 @@ class _AuthCacheEntry:
     _login: str
     _groups: Optional[frozenset] # only needed for successful cache
 
-    def __init__(self, expiry_ns: int, login: str, groups: Optional[tuple] = None):
+    def __init__(self, expiry_ns: int, login: str, groups: Optional[frozenset] = None):
         self._expiry_ns = expiry_ns
         self._login = login
         self._groups = groups
 
 
 class AuthCache:
-    
+
     _name: str                                # only used for logging ("successful" or "failed")
     _items: OrderedDict[str, _AuthCacheEntry] # first item = oldest
     _max_item_count: int
     _ttl_ns: int
     _lock: threading.RLock
-    
+
     def __init__(self, name, max_items, ttl) -> None:
         self._name = name
         self._items = OrderedDict()
         self._max_item_count = max_items
         self._ttl_ns = ttl * 10**9
         self._lock = threading.RLock()
-    
+
     def set_or_refresh(self, digest: str, login: str, groups: Optional[set] = None) -> None:
         with self._lock:
             now_ns = time.monotonic_ns()
@@ -146,9 +145,9 @@ class AuthCache:
                                                   frozenset(groups) if groups is not None else None)
             self._items.move_to_end(digest)
             self.cleanup(now_ns)
-            if len (self._items) > self._max_item_count:
+            if len(self._items) > self._max_item_count:
                 self._items.popitem(last=False)
-    
+
     def get(self, digest: str) -> Optional[tuple]:
         logger.trace("Entering AuthCache.get() for digest %s...", digest[:-DIGEST_TRUNCATION])
         with self._lock:
@@ -161,20 +160,20 @@ class AuthCache:
         if cache_found:
             age_s = (now_ns - (cache_entry._expiry_ns - self._ttl_ns)) / 10**9
             logger.debug("Login %s cache %s for %r (age: %.3f sec, TTL: %d sec)",
-                self._name, "hit" if cache_hit else "expired", cache_entry._login, age_s, self._ttl_ns // 10**9)
+                         self._name, "hit" if cache_hit else "expired", cache_entry._login, age_s, self._ttl_ns // 10**9)
             if cache_hit:
                 cache_groups = set(cache_entry._groups) if cache_entry._groups is not None else None
                 return cache_entry._login, cache_groups
         logger.trace("Exiting AuthCache.get() for digest %s... without hit", digest[:-DIGEST_TRUNCATION])
         return None
-    
+
     def clear(self, digest: str) -> bool:
         with self._lock:
             return self._items.pop(digest, None) is not None
-    
+
     def cleanup(self, now_ns: Optional[int] = None) -> None:
         logger.debug("Login %s cache cleanup start (entries: %d)",
-            self._name, len(self._items))
+                     self._name, len(self._items))
         with self._lock:
             if now_ns is None:
                 now_ns = time.monotonic_ns()
@@ -184,10 +183,10 @@ class AuthCache:
                 if oldest_entry_expired_for_ns < 0:
                     break
                 logger.trace("Login %s cache entry for user+password expired: %r (age over ttl: %.3f sec)",
-                    self._name, oldest_entry, oldest_entry_expired_for_ns / 10**9)
+                             self._name, oldest_entry, oldest_entry_expired_for_ns / 10**9)
                 self._items.popitem(last=False)
         logger.debug("Login %s cache investigation finished (remaining entries: %d)",
-            self._name, len(self._items))
+                     self._name, len(self._items))
 
 
 class _AuthLimiter:
@@ -343,7 +342,7 @@ class BaseAuth:
             logger.info("auth.cache_successful_logins_max_count: %s", cache_successful_logins_max_count)
             logger.info("auth.cache_failed_logins_max_count: %s", cache_failed_logins_max_count)
             if ((cache_successful_logins_max_count == 0 or cache_successful_logins_expiry == 0)
-                and (cache_failed_logins_max_count == 0 or cache_failed_logins_expiry == 0)):
+                    and (cache_failed_logins_max_count == 0 or cache_failed_logins_expiry == 0)):
                 logger.notice("Both successful and failed login cache have TTL = 0 and/or max_count = 0; therefore disabling cache")
                 self._cache_logins = False
         if self._cache_logins is True:
@@ -543,8 +542,8 @@ class BaseAuth:
                         if cache_result:
                             break
                     timeout = self._limiter_max_wait - (time.monotonic_ns() - monotonic_ns_begin) * 1e-9
-                    if (self._limiter.wait_to_acquire(limiter_token, timeout) == False
-                        or self._limiter_max_wait - (time.monotonic_ns() - monotonic_ns_begin) * 1e-9 < 0):
+                    if (self._limiter.wait_to_acquire(limiter_token, timeout) is False
+                            or self._limiter_max_wait - (time.monotonic_ns() - monotonic_ns_begin) * 1e-9 < 0):
                         _type = _type + "/error:temp:concurrent-session-limit"
                         logger.notice("auth/login concurrent limit reached timeout: %.3f seconds", self._limiter_max_wait)
                         return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS

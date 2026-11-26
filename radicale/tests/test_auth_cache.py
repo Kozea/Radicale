@@ -6,7 +6,6 @@ import pytest
 
 from radicale import auth, config
 
-
 NS = 10**9
 
 
@@ -453,21 +452,6 @@ def test_failed_cache_expires_and_allows_new_verification(clock):
     assert len(backend.calls) == 2
 
 
-def test_failure_timing_uses_monotonic_elapsed_time(clock):
-    # Isolate the helper from configuration and cache behavior.
-    backend = object.__new__(auth.BaseAuth)
-    backend._lock = threading.Lock()
-    backend._failed_auth_delay = 0.25
-
-    started_ns = clock.ns
-    clock.ns += NS // 10  # 100 ms elapsed.
-
-    backend._sleep_for_constant_exec_time(started_ns)
-
-    assert backend._failed_auth_delay == pytest.approx(0.25)
-    assert clock.sleeps == pytest.approx([0.15])
-
-
 def test_cached_failure_does_not_pass_through_failure_padding(clock):
     backend = _backend()
     context = auth.AuthContext()
@@ -484,7 +468,8 @@ def test_cached_failure_does_not_pass_through_failure_padding(clock):
     assert len(backend.calls) == 1
     assert len(padding_calls) == 1
 
-@pytest.mark.parametrize("wall_adjustment", [-3600, 3600])
+
+@pytest.mark.parametrize("wall_adjustment", [-3600, 0, 3600])
 def test_failure_timing_uses_monotonic_elapsed_time(
         clock, wall_adjustment):
     backend = object.__new__(auth.BaseAuth)
@@ -676,7 +661,7 @@ def test_cache_copies_groups_on_lookup(clock):
     returned_groups.add("editors")
 
     assert cache.get("key") == ("alice", {"readers"})
-        
+
 
 class _PauseReaderAfterUnlock:
     """Wrap the cache lock and pause one reader after its outer unlock."""
@@ -880,5 +865,3 @@ def test_login_excludes_all_admission_waits_from_learned_padding(clock, monkeypa
     assert backend.calls == [("alias", "wrong")]
     assert backend._failed_auth_delay == pytest.approx(0.100)
     assert clock.sleeps == []
-
-

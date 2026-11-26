@@ -8,7 +8,6 @@ from radicale import auth, config
 from radicale.auth import _AuthLimiter
 from radicale.tests import BaseTest
 
-
 # Watchdog for test-owned events and futures. The timeout test configures
 # a shorter application deadline independently.
 WATCHDOG = 10
@@ -296,7 +295,7 @@ def test_identical_credentials_can_overlap_with_cache_disabled(monkeypatch):
 
     assert calls == [("alice", "pw"), ("alice", "pw")]
     assert login(instance, "bob", "pw")[0] == "bob"
-    
+
 
 TEMPORARY = "htpasswd/error:temp:concurrent-session-limit"
 EMPTY_LIMITER = (0, 0, {}, set())
@@ -552,38 +551,3 @@ class TestAuthConcurrencyHTTP(BaseTest):
             "PROPFIND", "/", login="alice:bad", check=401,
         )
         assert headers["WWW-Authenticate"].startswith("Basic ")
-    
-#class RecordingLimiter:
-#    def __init__(self):
-#        self.acquisition_inputs = []
-#        self.wait_inputs = []
-#        self.release_inputs = []
-#        self.waiting_token = (0, 1)
-#        self.active_token = None
-#
-#    def try_to_acquire(self, login, digest, token=None):
-#        self.acquisition_inputs.append(token)
-#        if len(self.acquisition_inputs) == 1:
-#            return self.waiting_token
-#        if len(self.acquisition_inputs) == 2:
-#            self.active_token = (1, 1, 1, login, digest)
-#            return self.active_token
-#        raise AssertionError("login() attempted acquisition after admission")
-#
-#    def wait_to_acquire(self, token, timeout):
-#        self.wait_inputs.append(token)
-#        return True
-#
-#    def release(self, token):
-#        self.release_inputs.append(token)
-#
-#
-#def test_login_promotes_waiting_token_once(make_auth_with_limiter):
-#    limiter = RecordingLimiter()
-#    auth = make_auth_with_limiter(limiter)
-#
-#    auth.login("alice", "password")
-#
-#    assert limiter.acquisition_inputs == [None, limiter.waiting_token]
-#    assert limiter.wait_inputs == [limiter.waiting_token]
-#    assert limiter.release_inputs == [limiter.active_token]
