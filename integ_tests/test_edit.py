@@ -78,6 +78,8 @@ def test_edit_cancel(
     article = page.locator("article:not(.hidden)")
     original_title = article.locator('[data-name="title"]').text_content()
     original_description = article.locator('[data-name="description"]').text_content()
+    assert original_title is not None
+    assert original_description is not None
 
     # Open edit scene
     page.hover("article:not(.hidden)")

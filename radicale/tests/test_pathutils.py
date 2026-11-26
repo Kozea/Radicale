@@ -31,8 +31,16 @@ from radicale import pathutils
 class TestPathToFilesystem:
     """Tests for path_to_filesystem function."""
 
-    @pytest.mark.filterwarnings("error::ResourceWarning")
+    # Checked before the error filters. PyPy finalizes importer files and
+    # sharing.csv handles from earlier tests during this collection. Those
+    # are not the scandir iterator.
+    @pytest.mark.filterwarnings(
+        "ignore:.*unclosed file.*:ResourceWarning")
+    @pytest.mark.filterwarnings(
+        "ignore:.*FileIO .*mode='rb'.*:"
+        "pytest.PytestUnraisableExceptionWarning")
     @pytest.mark.filterwarnings("error::pytest.PytestUnraisableExceptionWarning")
+    @pytest.mark.filterwarnings("error::ResourceWarning")
     def test_scandir_iterator_closed(self) -> None:
         """Verify that os.scandir iterator is properly closed.
 
