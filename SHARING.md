@@ -188,6 +188,10 @@ Dedicated configured share for a specific user overrules a share-by-group/realm 
     * `permissions_filter` by `Permissions` (of `to_path`)
     * `to_permissions_filter` by `Permissions` (of `to_path`)
 
+##### CxDav request "MOVE" collection
+
+- source or destination resolved through a share: rejected by error 403
+
 ## Sharing Access
 
 ### Sharing Access via Maps

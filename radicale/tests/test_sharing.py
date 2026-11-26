@@ -3324,6 +3324,34 @@ END:VCARD
                          login="user:userpw",
                          HTTP_DESTINATION="http://127.0.0.1/"+os.path.join(path_user, "event3.ics"))
 
+    def test_sharing_api_map_move_collection(self) -> None:
+        """A shared collection can not be moved by the user it is shared to."""
+        self.configure({"auth": {"type": "htpasswd",
+                                 "htpasswd_filename": self.htpasswd_file_path,
+                                 "htpasswd_encryption": "plain"},
+                        "sharing": {
+                                    "type": "csv",
+                                    "permit_create_map": True,
+                                    "collection_by_map": "True"},
+                        "rights": {"type": "owner_only"}})
+        path_owner = "/owner/calendar.ics/"
+        path_shared = "/user/calendar-shared.ics/"
+        self.mkcalendar(path_owner, login="owner:ownerpw")
+        self.put(path_owner + "event1.ics", get_file_content("event1.ics"),
+                 login="owner:ownerpw")
+        json_dict = {'User': "user", 'PathMapped': path_owner,
+                     'PathOrToken': path_shared, 'Permissions': "rw",
+                     'Enabled': True, 'Hidden': False}
+        self._sharing_api_json("map", "create", check=200,
+                               login="owner:ownerpw", json_dict=json_dict)
+        json_dict = {'PathMapped': path_owner, 'PathOrToken': path_shared}
+        self._sharing_api_json("map", "enable", check=200,
+                               login="user:userpw", json_dict=json_dict)
+        self.request("MOVE", path_shared, check=403, login="user:userpw",
+                     HTTP_DESTINATION="http://127.0.0.1/user/stolen.ics/")
+        self.get("/user/stolen.ics/", check=404, login="user:userpw")
+        self.get(path_owner + "event1.ics", login="owner:ownerpw")
+
     def test_sharing_api_update(self) -> None:
         """sharing API usage tests related to update."""
         self.configure({"auth": {"type": "htpasswd",

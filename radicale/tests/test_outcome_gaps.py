@@ -419,11 +419,11 @@ class TestWebdavErrors(BaseTest):
         assert status == 502
         assert body == "Remote destination not supported."
 
-    def test_move_collection_returns_405(self) -> None:
-        self.mkcalendar("/calendar.ics/")
+    def test_move_untagged_collection_returns_405(self) -> None:
+        self.mkcol("/user/")
         self.request(
-            "MOVE", "/calendar.ics/",
-            HTTP_DESTINATION="/elsewhere/calendar.ics/",
+            "MOVE", "/user/",
+            HTTP_DESTINATION="/elsewhere/",
             check=405)
 
     @pytest.mark.parametrize(("code", "status"), [

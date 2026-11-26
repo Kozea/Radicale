@@ -57,11 +57,13 @@ class ApplicationPartMove(ApplicationBase):
         to_user = user
         to_permissions_filter = None
         permissions_filter = None
+        shared = False
         if self._sharing._enabled:
             # Sharing by token or map (if enabled)
             share = self._sharing.sharing_collection_resolver(path, user, user_groups)
             if share:
                 if path != share['PathMapped']:
+                    shared = True
                     # overwrite and run through extended permission check
                     path = share['PathMapped']
                     user = share['Owner']
@@ -89,6 +91,7 @@ class ApplicationPartMove(ApplicationBase):
             # Sharing by token or map (if enabled)
             share = self._sharing.sharing_collection_resolver(to_path, to_user, user_groups)
             if share:
+                shared = True
                 # overwrite and run through extended permission check
                 to_path = share['PathMapped']
                 to_user = share['Owner']
@@ -105,8 +108,8 @@ class ApplicationPartMove(ApplicationBase):
                     not to_access.check("w", item)):
                 return httputils.NOT_ALLOWED
             if isinstance(item, storage.BaseCollection):
-                # TODO: support moving collections
-                return httputils.METHOD_NOT_ALLOWED
+                return self._move_collection(item, path, to_path, access,
+                                             shared)
 
             to_item = next(iter(self._storage.discover(to_path)), None)
             if isinstance(to_item, storage.BaseCollection):
@@ -151,3 +154,36 @@ class ApplicationPartMove(ApplicationBase):
                         "Bad MOVE request on %r: %s", path, e, exc_info=True)
                     return httputils.BAD_REQUEST
             return client.NO_CONTENT if to_item else client.CREATED, {}, None, None
+
+    def _move_collection(self, collection: storage.BaseCollection, path: str,
+                         to_path: str, access: Access,
+                         shared: bool) -> types.WSGIResponse:
+        """Rename or move a calendar/addressbook (lock already held)."""
+        if not collection.tag:
+            # Only calendars and addressbooks, not principals or folders
+            return httputils.METHOD_NOT_ALLOWED
+        if shared:
+            # Would hand the owner's collection over to the sharing user
+            return httputils.NOT_ALLOWED
+        # The source path disappears, so the rules of DELETE apply
+        if self._permit_delete_collection:
+            if access.check("d", collection):
+                return httputils.NOT_ALLOWED
+        elif not access.check("D", collection):
+            return httputils.NOT_ALLOWED
+        if next(iter(self._storage.discover(to_path)), None):
+            return httputils.PRECONDITION_FAILED
+        to_parent = next(iter(
+            self._storage.discover(pathutils.parent_path(to_path))), None)
+        if not to_parent:
+            return httputils.CONFLICT
+        if (not isinstance(to_parent, storage.BaseCollection) or
+                to_parent.tag):
+            return httputils.FORBIDDEN
+        try:
+            self._storage.move_collection(collection, to_path)
+        except ValueError as e:
+            logger.warning(
+                "Bad MOVE request on %r: %s", path, e, exc_info=True)
+            return httputils.BAD_REQUEST
+        return client.CREATED, {}, None, None

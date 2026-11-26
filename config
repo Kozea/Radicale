@@ -245,7 +245,7 @@ type = none
 # File for rights management from_file
 #file = /etc/radicale/rights
 
-# Permit delete of a collection (global)
+# Permit delete (and move) of a collection (global)
 #permit_delete_collection = True
 
 # Permit overwrite of a collection (global)

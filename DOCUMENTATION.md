@@ -1671,7 +1671,8 @@ Default: `/etc/radicale/rights`
 
 _(>= 3.1.9)_
 
-Global permission to delete complete collections.
+Global permission to delete complete collections. Moving or renaming a
+collection (`MOVE`) is treated as a delete.
 * If `False` it can be explicitly granted per collection by *rights* permissions: `D`
 * If `True` it can be explicitly forbidden per collection by *rights* permissions: `d`
 
@@ -3007,8 +3008,8 @@ The following `permissions` are recognized:
   `VFREEBUSY`
 * **W:** write collections (excluding address books and calendars)
 * **w:** write address book and calendar collections
-* **D:** allow deleting a collection in case `permit_delete_collection=False` _(>= 3.3.0)_
-* **d:** deny deleting a collection in case `permit_delete_collection=True` _(>= 3.3.0)_
+* **D:** allow deleting (or moving) a collection in case `permit_delete_collection=False` _(>= 3.3.0)_
+* **d:** deny deleting (or moving) a collection in case `permit_delete_collection=True` _(>= 3.3.0)_
 * **O:** allow overwriting a collection in case `permit_overwrite_collection=False` _(>= 3.3.0)_
 * **o:** deny overwriting a collection in case `permit_overwrite_collection=True` _(>= 3.3.0)_
 * **T:** permit create of token-based sharing of collection in case `permit_create_token=False` _(>= 3.7.0)_
