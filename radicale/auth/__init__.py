@@ -74,6 +74,8 @@ REMOTE_ADDR_SOURCE: Sequence[str] = ("REMOTE_ADDR", "X-Remote-Addr")
 NO_LOGIN_NO_GROUPS: Tuple[str, set] = ("", set([]))
 NO_LOGIN: str = ""
 
+DIGEST_TRUNCATION = 124
+
 
 def load(configuration: "config.Configuration") -> "BaseAuth":
     """Load the authentication module chosen in configuration."""
@@ -148,7 +150,7 @@ class AuthCache:
                 self._items.popitem(last=False)
     
     def get(self, digest: str) -> Optional[tuple]:
-        logger.trace("Entering AuthCache.get() for digest %s...", digest)
+        logger.trace("Entering AuthCache.get() for digest %s...", digest[:-DIGEST_TRUNCATION])
         with self._lock:
             now_ns = time.monotonic_ns()
             cache_entry = self._items.get(digest)
@@ -163,7 +165,7 @@ class AuthCache:
             if cache_hit:
                 cache_groups = set(cache_entry._groups) if cache_entry._groups is not None else None
                 return cache_entry._expiry_ns, cache_entry._login, cache_groups
-        logger.trace("Exiting AuthCache.get() for digest %s... without hit", digest)
+        logger.trace("Exiting AuthCache.get() for digest %s... without hit", digest[:-DIGEST_TRUNCATION])
         return None
     
     def clear(self, digest: str) -> bool:
@@ -242,7 +244,7 @@ class _AuthLimiter:
                 else:
                     result = (self._release_count, 1)
         if reason == 0:
-            logger.trace("auth/login concurrent limiter: slot reserved for login = %r,%r", login, digest)
+            logger.trace("auth/login concurrent limiter: slot reserved for login = %r,%r", login, digest[:-DIGEST_TRUNCATION])
             return reason, result
         if reason & 8:
             logger.trace("auth/login concurrent limit reached: %d total (waiting+active) threads", self._max_total)
@@ -251,7 +253,7 @@ class _AuthLimiter:
         if reason & 2:
             logger.trace("auth/login concurrent limit reached: %d threads active for login %r", self._max_per_login, login)
         if reason & 1:
-            logger.trace("auth/login concurrent limit reached: another thread is already checking digest %r", digest)
+            logger.trace("auth/login concurrent limit reached: another thread is already checking digest %r", digest[:-DIGEST_TRUNCATION])
         return reason, result
 
     def wait_to_acquire(self, token: tuple, timeout: float) -> bool:
@@ -381,13 +383,12 @@ class BaseAuth:
         if self._cache_logins or limiter_enabled:
             self._secret_salt = secrets.token_urlsafe()
 
-
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
         h.update(login.encode())
         h.update(salt.encode())
         h.update(password.encode())
-        return str(h.digest())
+        return h.hexdigest()
 
     def get_external_login(self, environ: types.WSGIEnviron) -> Union[
             Tuple[()], Tuple[str, str]]:
