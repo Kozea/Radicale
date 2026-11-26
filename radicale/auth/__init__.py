@@ -356,8 +356,6 @@ class BaseAuth:
         limiter_enabled = configuration.get("auth", "concurrency_limit_enabled")
         logger.info("auth.concurrency_limit_enabled: %s", limiter_enabled)
         if limiter_enabled:
-            self._limiter_max_wait = configuration.get("auth", "concurrency_wait_timeout")
-            logger.info("auth.concurrency_wait_timeout: %d", self._limiter_max_wait)
             concurrency_total_limit = configuration.get("auth", "concurrency_total_limit")
             logger.info("auth.concurrency_total_limit: %d", concurrency_total_limit)
             concurrency_active_limit = configuration.get("auth", "concurrency_active_limit")
