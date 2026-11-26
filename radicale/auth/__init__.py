@@ -384,8 +384,8 @@ class BaseAuth:
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
-        h.update(salt.encode())
         h.update(login.encode())
+        h.update(salt.encode())
         h.update(password.encode())
         return str(h.digest())
 

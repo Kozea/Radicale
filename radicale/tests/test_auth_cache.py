@@ -298,6 +298,12 @@ def _backend(success=(3, 10), failed=(3, 10), **auth_options):
     return _Backend(configuration)
 
 
+def test_cache_digest_preserves_login_password_boundary():
+    backend = _backend()
+    salt = "test-salt"
+    assert backend._cache_digest("ab", "c", salt) != backend._cache_digest("a", "bc", salt)
+
+
 CACHE_SETTINGS = [
     (0, 0),
     (0, 10),
