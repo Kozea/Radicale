@@ -164,7 +164,7 @@ class AuthCache:
                 self._name, "hit" if cache_hit else "expired", cache_entry._login, age_s, self._ttl_ns // 10**9)
             if cache_hit:
                 cache_groups = set(cache_entry._groups) if cache_entry._groups is not None else None
-                return cache_entry._expiry_ns, cache_entry._login, cache_groups
+                return cache_entry._login, cache_groups
         logger.trace("Exiting AuthCache.get() for digest %s... without hit", digest[:-DIGEST_TRUNCATION])
         return None
     
@@ -475,12 +475,7 @@ class BaseAuth:
         if self._cache_failed.get(login_digest):
             self._cache_successful.cleanup()
             return NO_LOGIN_NO_GROUPS
-        # return self._cache_successful.get(login_digest)
-        cache_successful_entry = self._cache_successful.get(login_digest)
-        if cache_successful_entry:
-            (_, result, groups) = cache_successful_entry
-            return (result, groups)
-        return None
+        return self._cache_successful.get(login_digest)
 
     @final
     def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, set, str]:

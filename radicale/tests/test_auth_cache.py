@@ -61,8 +61,7 @@ def test_insert_preserves_identity_and_groups(clock):
 
     cache.set_or_refresh("digest", "mapped-user", groups)
 
-    assert cache.get("digest") == (
-        10 * NS, "mapped-user", groups)
+    assert cache.get("digest") == ("mapped-user", groups)
 
 
 @pytest.mark.parametrize("offset_ns, present", [
@@ -110,8 +109,7 @@ def test_refresh_replaces_payload_and_extends_expiry(clock):
     clock.advance(3)
     cache.set_or_refresh("digest", "new-user", {"new-group"})
 
-    assert cache.get("digest") == (
-        13 * NS, "new-user", {"new-group"})
+    assert cache.get("digest") == ("new-user", {"new-group"})
 
     clock.advance(7)
     assert cache.get("digest") is not None
@@ -187,7 +185,9 @@ def test_concurrent_insertions_expire_in_lock_acquisition_order(clock, monkeypat
 
     clock.advance(9)
     assert cache.get("second") is None
-    assert cache.get("first") == (12 * NS, "alice", None)
+    assert cache.get("first") == ("alice", None)
+    clock.advance(1)
+    assert cache.get("first") is None
 
 
 def test_insertion_removes_all_expired_entries(clock):
@@ -264,8 +264,11 @@ def test_cache_instances_are_independent(clock):
     successful.clear("same-key")
 
     assert successful.get("same-key") is None
-    assert failed.get("same-key") == (
-        20 * NS, "failed-user", None)
+    assert failed.get("same-key") == ("failed-user", None)
+    clock.ns = 20 * NS - 1
+    assert failed.get("same-key") == ("failed-user", None)
+    clock.ns += 1
+    assert failed.get("same-key") is None
 
 
 class _Backend(auth.BaseAuth):
@@ -508,13 +511,11 @@ def test_cache_ttl_starts_after_backend_verification(
     verification_seconds = 7
     backend = _backend(success=(3, ttl), failed=(3, ttl))
     context = auth.AuthContext()
-    completions = []
 
     def slow_verification(login_name, supplied_password, context):
         backend.calls.append((login_name, supplied_password))
         clock.advance(verification_seconds)
         clock.advance_wall(wall_adjustment)
-        completions.append(clock.monotonic_ns())
 
         if supplied_password == "correct":
             return "mapped-user", {"readers"}
@@ -534,10 +535,7 @@ def test_cache_ttl_starts_after_backend_verification(
     )
     assert len(cache._items) == 1
     key = next(iter(cache._items))
-    entry = cache.get(key)
-
-    assert entry is not None
-    assert entry[0] == completions[0] + ttl * NS
+    assert cache.get(key) is not None
 
     # Nine seconds after completion: still cached.
     # A TTL measured before the seven-second verification would
@@ -555,9 +553,11 @@ def test_cache_ttl_starts_after_backend_verification(
     assert third[:2] == expected_identity
     assert len(backend.calls) == 2
 
-    refreshed_entry = cache.get(key)
-    assert refreshed_entry is not None
-    assert refreshed_entry[0] == completions[1] + ttl * NS
+    assert cache.get(key) is not None
+    clock.ns += ttl * NS - 1
+    assert cache.get(key) is not None
+    clock.ns += 1
+    assert cache.get(key) is None
 
 
 @pytest.mark.parametrize("wall_adjustment", [-3600, 3600])
@@ -645,8 +645,8 @@ def test_refresh_replaces_entry_without_mutating_previous_entry(clock):
         previous._login,
         previous._groups,
     ) == (10 * NS, "old-user", frozenset({"readers"}))
-    assert cache.get("key") == (
-        11 * NS, "new-user", {"editors"})
+    assert cache.get("key") == ("new-user", {"editors"})
+    assert current._expiry_ns == 11 * NS
 
 
 def test_cache_copies_groups_on_insert(clock):
@@ -657,8 +657,7 @@ def test_cache_copies_groups_on_insert(clock):
     groups.clear()
     groups.add("editors")
 
-    assert cache.get("key") == (
-        10 * NS, "alice", {"readers"})
+    assert cache.get("key") == ("alice", {"readers"})
     assert isinstance(cache._items["key"]._groups, frozenset)
 
 
@@ -668,14 +667,13 @@ def test_cache_copies_groups_on_lookup(clock):
 
     result = cache.get("key")
     assert result is not None
-    returned_groups = result[2]
+    _, returned_groups = result
     assert isinstance(returned_groups, set)
 
     returned_groups.clear()
     returned_groups.add("editors")
 
-    assert cache.get("key") == (
-        10 * NS, "alice", {"readers"})
+    assert cache.get("key") == ("alice", {"readers"})
         
 
 class _PauseReaderAfterUnlock:
@@ -786,7 +784,7 @@ def test_get_retains_snapshot_after_concurrent_change(clock, operation):
 
     # The in-progress lookup retains its original, consistent snapshot.
     assert results == [
-        (10 * NS, "old-user", {"readers"}),
+        ("old-user", {"readers"}),
     ]
     assert (
         previous._expiry_ns,
@@ -797,13 +795,13 @@ def test_get_retains_snapshot_after_concurrent_change(clock, operation):
     # A subsequent lookup observes the completed modification.
     if operation == "refresh":
         assert cache._items["key"] is not previous
-        assert cache.get("key") == (
-            11 * NS, "new-user", {"editors"})
+        assert cache.get("key") == ("new-user", {"editors"})
+        assert cache._items["key"]._expiry_ns == 11 * NS
     else:
         assert cache.get("key") is None
 
     if operation == "evict":
-        assert cache.get("other") == (
-            10 * NS, "other-user", {"other-group"})
+        assert cache.get("other") == ("other-user", {"other-group"})
+        assert cache._items["other"]._expiry_ns == 10 * NS
 
 
