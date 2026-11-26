@@ -551,46 +551,34 @@ class BaseAuth:
                         return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS
                     limiter_reason, limiter_token = self._limiter.try_to_acquire(login, login_digest, limiter_token)
 
-            if self._cache_logins is True:
-                if self._limiter and not cache_result:
-                    # need to check cache again to cover edge case
-                    cache_result = self._try_login_from_cache(login_digest)
-                if cache_result:
-                    result, groups = cache_result
-                    _type = _type + "/cached"
-                else:
-                    # verify login+password via configured backend
-                    logger.debug("Login verification for user+password via backend %r: %r", _type, login)
-                    try:
-                        (result, groups) = self._login_ext_with_groups(login, password, context)
-                        backend_error = False
-                    except Exception as e:
-                        logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
-                        _type = _type + "/error:perm:backend"
-                        backend_error = True
-                    if result != "":
-                        logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
-                        # store successful login in cache
-                        self._cache_successful.set_or_refresh(login_digest, result, groups)
-                        logger.debug("Login successful cache for user set: %r -> %r", login, result)
-                        if self._cache_failed.clear(login_digest):
-                            logger.debug("Login failed cache for user cleared: %r", login)
-                    elif not backend_error:
-                        # must not store failed auth in cache if backend yielded an exception
-                        logger.debug("Login failed for user+password via backend: %r", login)
-                        self._cache_failed.set_or_refresh(login_digest, login)
-                        logger.debug("Login failed cache for user set: %r", login)
+            if self._cache_logins and self._limiter and (cache_result is None):
+                # need to check cache again in case it was populated during admission
+                cache_result = self._try_login_from_cache(login_digest)
+            if cache_result:
+                result, groups = cache_result
+                _type = _type + "/cached"
             else:
-                # self._cache_logins is False
+                # common branch for self._cache_logins == False
+                #               and (self._cache_logins,cache_result) == (True,None)
                 logger.debug("Login verification for user+password via backend %r: %r", _type, login)
                 try:
                     (result, groups) = self._login_ext_with_groups(login, password, context)
                 except Exception as e:
                     logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
                     _type = _type + "/error:perm:backend"
-                if result != "":
-                    logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
-
+                else:
+                    if result != "":
+                        logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
+                        if self._cache_logins:
+                            self._cache_successful.set_or_refresh(login_digest, result, groups)
+                            logger.debug("Login successful cache for user set: %r -> %r", login, result)
+                            if self._cache_failed.clear(login_digest):
+                                logger.debug("Login failed cache for user cleared: %r", login)
+                    else:
+                        logger.debug("Login failed for user+password via backend: %r", login)
+                        if self._cache_logins:
+                            self._cache_failed.set_or_refresh(login_digest, login)
+                            logger.debug("Login failed cache for user set: %r", login)
         finally:
             if self._limiter and limiter_token:
                 self._limiter.release(limiter_token)
