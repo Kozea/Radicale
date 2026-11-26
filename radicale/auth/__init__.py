@@ -154,10 +154,9 @@ class AuthCache:
             now_ns = time.monotonic_ns()
             cache_entry = self._items.get(digest)
             self.cleanup(now_ns)
-            cache_found = cache_entry is not None
-            cache_hit = cache_found and digest in self._items
+            cache_hit = digest in self._items
         # other methods will not change the contents of an _AuthCacheEntry, so we can evaluate after lock release
-        if cache_found:
+        if cache_entry is not None:
             age_s = (now_ns - (cache_entry._expiry_ns - self._ttl_ns)) / 10**9
             logger.debug("Login %s cache %s for %r (age: %.3f sec, TTL: %d sec)",
                          self._name, "hit" if cache_hit else "expired", cache_entry._login, age_s, self._ttl_ns // 10**9)
@@ -189,6 +188,9 @@ class AuthCache:
                      self._name, len(self._items))
 
 
+_LimiterToken = Union[tuple[int], tuple[int, int], tuple[int, int, int, str, str]]
+
+
 class _AuthLimiter:
 
     _max_total: int
@@ -214,9 +216,9 @@ class _AuthLimiter:
         self._condition = threading.Condition()
         self._release_count = 0
 
-    def try_to_acquire(self, login: str, digest: str, token=None) -> tuple[int, tuple]:
+    def try_to_acquire(self, login: str, digest: str, token=None) -> tuple[int, _LimiterToken]:
         reason = 0
-        result = None
+        result: _LimiterToken
         with self._condition:
             if token is None or len(token) == 1: # first call or no waiting token
                 if self._curr_total >= self._max_total:

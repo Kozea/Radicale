@@ -298,7 +298,7 @@ def test_identical_credentials_can_overlap_with_cache_disabled(monkeypatch):
 
 
 TEMPORARY = "htpasswd/error:temp:concurrent-session-limit"
-EMPTY_LIMITER = (0, 0, {}, set())
+EMPTY_LIMITER: tuple[int, int, dict[str, int], set[str]] = (0, 0, {}, set())
 
 
 def limiter_state(limiter):
