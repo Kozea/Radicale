@@ -115,7 +115,7 @@
 #concurrency_active_limit = 4
 
 # Maximum number of concurrent backend checks per normalized login
-#concurrency_limit_per_user = 2
+#concurrency_per_user_limit = 2
 
 # Maximum that a request is allowed to stay blocked while waiting to enter backend authentication
 #concurrency_wait_timeout = 5.0
