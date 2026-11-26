@@ -105,6 +105,21 @@
 # Maximum number of cached failed logins (set to 0 to disable caching of failed logins)
 #cache_failed_logins_max_count = 1000
 
+# Limit concurrent password checks per authentication instance
+#concurrency_limit_enabled = false
+
+# Maximum number of requests allowed to concurrently call authentication backend or wait for it
+#concurrency_total_limit = 6
+
+# Maximum number of concurrent backend authentication calls
+#concurrency_active_limit = 4
+
+# Maximum number of concurrent backend checks per normalized login
+#concurrency_limit_per_user = 2
+
+# Maximum that a request is allowed to stay blocked while waiting to enter backend authentication
+#concurrency_wait_timeout = 5.0
+
 # URI to the LDAP server
 #ldap_uri = ldap://localhost
 

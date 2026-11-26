@@ -380,6 +380,26 @@ DEFAULT_CONFIG_SCHEMA: types.CONFIG_SCHEMA = OrderedDict([
             "value": "90",
             "help": "expiration time for caching failed logins in seconds",
             "type": int}),
+        ("concurrency_limit_enabled", {
+            "value": "false",
+            "help": "limit concurrent password checks per authentication instance",
+            "type": bool}),
+        ("concurrency_total_limit", {
+            "value": "6",
+            "help": "maximum number of requests allowed to concurrently call authentication backend or wait for it",
+            "type": int}),
+        ("concurrency_active_limit", {
+            "value": "4",
+            "help": "maximum number of concurrent backend authentication calls",
+            "type": int}),
+        ("concurrency_per_user_limit", {
+            "value": "2",
+            "help": "maximum number of concurrent backend checks per normalized login",
+            "type": int}),
+        ("concurrency_wait_timeout", {
+            "value": "5.0",
+            "help": "maximum that a request is allowed to stay blocked while waiting to enter backend authentication",
+            "type": float}),
         ("htpasswd_filename", {
             "value": "/etc/radicale/users",
             "help": "htpasswd filename",

@@ -1116,8 +1116,18 @@ Default: `none` _(< 3.5.0)_ / `denyall` _(>= 3.5.0)_
 
 _(>= 3.4.0)_
 
-Cache successful/failed logins until expiration time. Enable this to avoid
-overload of authentication backends.
+Cache successful/failed logins until expiration time to reduce repeated requests to the
+authentication backends.
+
+To more effectively avoid backend overload, it is recommended to also set
+ `concurrency_limit_enabled` to True (see below) and to choose a `concurrency_wait_timeout`
+longer than typical duration of a backend authentication. Otherwise, requests with the same
+credentials arriving before the first authentication fails or succeeds will still call the
+backend independently. When both `cache_logins` and  `concurrency_limit_enabled` are `True`,
+the concurrency limiter will only allow one parallel backend verification for the same
+credential set to call the backend at any time and subsequent requests will wait until the
+first request has had a chance to populate the cache, which can then reuse the cached result.
+Subsequent cache hits bypass the limiter.
 
 Default: `False`
 
@@ -1164,6 +1174,51 @@ reaches capacity and a new item needs to be stored, the oldest item will be evic
 yet expired. Setting this option to zero will deactivate caching of failed logins.
 
 Default: `1000`
+
+##### concurrency_limit_enabled
+
+Limit the number of requests that can check passwords concurrently.
+Each authentication instance has its own limits.
+
+Default: `True`
+
+##### concurrency_total_limit
+
+Maximum number of requests that can be waiting for or performing a backend authentication check
+at the same time. When this limit is reached, a new request that needs a backend check receives
+a temporary authentication error, which bypasses exceution time padding, so the server stays
+responsive. Login cache (see `cache_logins`) hits bypass this limit.
+
+Set this below `[server] max_connections`, so there is capacity to actually reject additional
+requests in this manner and to process requests with cached credentials.
+
+Default: `6`
+
+##### concurrency_active_limit
+
+Maximum number of requests that can be performing a backend authentication check at the same
+time. When this limit is reached but `concurrency_total_limit` is not, further requests will
+wait until a previous authentication backend call returns.
+
+Default: `4`
+
+##### concurrency_limit_per_user
+
+Maximum number of simultaneous backend password checks for one normalized login name
+(regardless of the password supplied).
+
+Default: `2`
+
+##### concurrency_wait_timeout
+
+Maximum time in seconds a request may wait for permission to start a backend check.
+A check that has already started can continue past this timeout.
+
+Set to `0` to allow only immediate admission. When `cache_logins` is enabled, it is
+recommended to set a timeout that is longer than the maximum expected duration of a
+backend authentication call.
+
+Default: `5.0`
 
 ##### htpasswd_filename
 

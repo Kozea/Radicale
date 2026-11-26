@@ -188,6 +188,93 @@ class AuthCache:
             self._name, len(self._items))
 
 
+class _AuthLimiter:
+
+    _max_total: int
+    _max_active: int
+    _max_per_login: int
+    _check_per_digest: bool
+    _curr_total: int
+    _curr_active: int
+    _curr_per_login: dict[str, int]
+    _curr_per_digest: set[str]
+    _condition: threading.Condition
+    _release_count: int
+
+    def __init__(self, total_limit: int, active_limit: int, per_login_limit: int, per_digest_check: bool):
+        self._max_total = total_limit
+        self._max_active = active_limit
+        self._max_per_login = per_login_limit
+        self._check_per_digest = per_digest_check
+        self._curr_total = 0
+        self._curr_active = 0
+        self._curr_per_login = {}
+        self._curr_per_digest = set()
+        self._condition = threading.Condition()
+        self._release_count = 0
+
+    def try_to_acquire(self, login: str, digest: str, token=None) -> tuple[int, tuple]:
+        reason = 0
+        result = None
+        with self._condition:
+            if token is None or len(token) == 1: # first call or no waiting token
+                if self._curr_total >= self._max_total:
+                    # no waiting capacity
+                    reason += 8
+                    result = (self._release_count,)
+                else:
+                    self._curr_total += 1
+            if reason == 0:
+                # assuming that either we passed through the else branch above or len(token) == 2
+                if self._curr_active >= self._max_active:
+                    reason += 4
+                if self._curr_per_login.get(login, 0) >= self._max_per_login:
+                    reason += 2
+                if self._check_per_digest and (digest in self._curr_per_digest):
+                    reason += 1
+                if reason == 0:
+                    self._curr_active += 1
+                    self._curr_per_login[login] = self._curr_per_login.get(login, 0) + 1
+                    if self._check_per_digest:
+                        self._curr_per_digest.add(digest)
+                    # capacity available: reserve accordingly and proceed
+                    result = (self._release_count, 1, 1, login, digest)
+                else:
+                    result = (self._release_count, 1)
+        if reason == 0:
+            logger.trace("auth/login concurrent limiter: slot reserved for login = %r,%r", login, digest)
+            return reason, result
+        if reason & 8:
+            logger.trace("auth/login concurrent limit reached: %d total (waiting+active) threads", self._max_total)
+        if reason & 4:
+            logger.trace("auth/login concurrent limit reached: %d active threads", self._max_active)
+        if reason & 2:
+            logger.trace("auth/login concurrent limit reached: %d threads active for login %r", self._max_per_login, login)
+        if reason & 1:
+            logger.trace("auth/login concurrent limit reached: another thread is already checking digest %r", digest)
+        return reason, result
+
+    def wait_to_acquire(self, token: tuple, timeout: float) -> bool:
+        waiter_release_count = token[0]
+        with self._condition:
+            return self._condition.wait_for(lambda: self._release_count != waiter_release_count, timeout)
+
+    def release(self, token: tuple) -> None:
+        with self._condition:
+            # only return what was reserved
+            if len(token) >= 2:
+                self._curr_total -= 1
+                if len(token) == 5:
+                    self._curr_active -= 1
+                    self._curr_per_login[token[3]] -= 1
+                    if self._curr_per_login[token[3]] == 0:
+                        del self._curr_per_login[token[3]]
+                    if self._check_per_digest:
+                        self._curr_per_digest.remove(token[4])
+                self._release_count += 1
+                self._condition.notify_all()
+
+
 class BaseAuth:
 
     _urldecode_username: bool
@@ -197,6 +284,7 @@ class BaseAuth:
     _auth_delay: float
     _failed_auth_delay: float
     _type: str
+    _secret_salt: str                 # persistent over runtime
     _cache_logins: bool
     _cache_successful: AuthCache
     _cache_successful_logins_expiry: int
@@ -204,11 +292,8 @@ class BaseAuth:
     _cache_failed: AuthCache
     _cache_failed_logins_expiry: int
     _cache_failed_logins_max_count: int
-    _cache_secret_salt: str                 # persistent over runtime
-    _active: int
-    _active_logins: dict[str, int]
-    _active_logins_digest: dict[str, int]
-    _active_logins_salt_ns: int             # persistent over runtime
+    _limiter: Optional[_AuthLimiter]
+    _limiter_max_wait: float
     _lock: threading.Lock
 
     def __init__(self, configuration: "config.Configuration") -> None:
@@ -269,25 +354,33 @@ class BaseAuth:
             logger.trace("BaseAuth._cache_successful = %r", self._cache_successful)
             self._cache_failed = AuthCache("failed", self._cache_failed_logins_max_count, self._cache_failed_logins_expiry)
             logger.trace("BaseAuth._cache_failed = %r", self._cache_failed)
-            self._cache_secret_salt = secrets.token_urlsafe()
-        # concurrent active login session limiter by
-        #  tracking authentication sessions
-        #   overall
-        #   per login
-        #   per login+password
-        #  entering loop if limit is reached until max
-        #  if max is reached trigger caller to return 503
-        # limiter should work with or without active login cache
-        self._active_limiter: bool = False
-        self._active_logins_salt_ns = time.monotonic_ns()
-        self._active: int = 0
-        self._active_logins: dict[str, int] = dict()
-        self._active_logins_digest: dict[str, int] = dict()
-        self._active_limit: int = 16
-        self._active_logins_limit: int = 8
-        self._active_logins_digest_limit: int = 1
-        self._active_logins_delay: float = 1  # seconds
-        self._active_logins_delay_repeat_max: int = 10
+
+
+        limiter_enabled = configuration.get("auth", "concurrency_limit_enabled")
+        logger.info("auth.concurrency_limit_enabled: %s", limiter_enabled)
+        if limiter_enabled:
+            self._limiter_max_wait = configuration.get("auth", "concurrency_wait_timeout")
+            logger.info("auth.concurrency_wait_timeout: %d", self._limiter_max_wait)
+            concurrency_total_limit = configuration.get("auth", "concurrency_total_limit")
+            logger.info("auth.concurrency_total_limit: %d", concurrency_total_limit)
+            concurrency_active_limit = configuration.get("auth", "concurrency_active_limit")
+            logger.info("auth.concurrency_active_limit: %d", concurrency_active_limit)
+            concurrency_per_user_limit = configuration.get("auth", "concurrency_per_user_limit")
+            logger.info("auth.concurrency_per_user_limit: %d", concurrency_per_user_limit)
+            self._limiter_max_wait = configuration.get("auth", "concurrency_wait_timeout")
+            logger.info("auth.concurrency_wait_timeout: %.3f seconds", self._limiter_max_wait)
+            self._limiter = _AuthLimiter(
+                concurrency_total_limit,
+                concurrency_active_limit,
+                concurrency_per_user_limit,
+                self._cache_logins,
+            )
+        else:
+            self._limiter = None
+
+        if self._cache_logins or limiter_enabled:
+            self._secret_salt = secrets.token_urlsafe()
+
 
     def _cache_digest(self, login: str, password: str, salt: str) -> str:
         h = hashlib.sha3_512()
@@ -383,6 +476,17 @@ class BaseAuth:
             logger.debug("Failed login constant exection time alignment, sleeping: %.9f sec", sleep)
             time.sleep(sleep)
 
+    def _try_login_from_cache(self, login_digest):
+        if self._cache_failed.get(login_digest):
+            self._cache_successful.cleanup()
+            return NO_LOGIN_NO_GROUPS
+        # return self._cache_successful.get(login_digest)
+        cache_successful_entry = self._cache_successful.get(login_digest)
+        if cache_successful_entry:
+            (_, result, groups) = cache_successful_entry
+            return (result, groups)
+        return None
+
     @final
     def login(self, login: str, password: str, context: AuthContext) -> Tuple[str, set, str]:
         """
@@ -420,79 +524,55 @@ class BaseAuth:
             return (result, groups, _type)
 
         # calculate digest from login+password+runtime-salt
-        login_digest = login + ":" + self._cache_digest(login, password, str(self._active_logins_salt_ns))
+        if self._cache_logins or self._limiter:
+            login_digest = login + ":" + self._cache_digest(login, password, self._secret_salt)
+        else:
+            login_digest = ""
 
-        if self._active_limiter:
-            # TODO: max entry limit for self._active_logins
-            # TODO: max entry limit for self._active_logins_digest
-            # increase counters
-            self._lock.acquire()
-            self._active += 1
-            if login in self._active_logins:
-                self._active_logins[login] += 1
-            else:
-                self._active_logins[login] = 1
-            if login_digest in self._active_logins_digest:
-                self._active_logins_digest[login_digest] += 1
-            else:
-                self._active_logins_digest[login_digest] = 1
-            self._lock.release()
-
-            # TODO: bypass repeat loop if self._cache_logins is True and entry is found (early lookup)
-
-            delay_repeat_counter: int = 0
-            while (delay_repeat_counter < self._active_logins_delay_repeat_max):
-                if self._active_logins_digest[login_digest] > self._active_logins_digest_limit:
-                    # active session with same digest (login+password)
-                    logger.trace("auth/login concurrent limit %d reached for login+password verification via backend %r: %r", self._active_logins_digest[login_digest], _type, login)
-                    pass
-                elif self._active_logins[login] > self._active_logins_limit:
-                    # active sessions with same user
-                    logger.trace("auth/login concurrent limit %d reached for login verification via backend %r: %r", self._active_logins[login], _type, login)
-                    pass
-                elif self._active > self._active_limit:
-                    # active sessions
-                    logger.trace("auth/login concurrent limit %d reached via backend %r: %r", self._active, _type, login)
-                    pass
-                else:
-                    break
-                logger.trace("auth/login concurrent limit reached delay: %.9f seconds (repeat counter: %d)", self._active_logins_delay, delay_repeat_counter)
-                time.sleep(self._active_logins_delay)
-                delay_repeat_counter += 1
-
-            if (delay_repeat_counter >= self._active_logins_delay_repeat_max):
-                # return authentication limit problem
-                _type = _type + "/error:temp:concurrent-session-limit"
-                logger.warning("auth/login concurrent limit delay repeat reached maximum: %d", delay_repeat_counter)
-                return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS
-
+        # cached results bypass limiter, so check cache first
+        cache_result = None
         if self._cache_logins is True:
-            login_digest = login + ":" + self._cache_digest(login, password, self._cache_secret_salt)
-            now_ns = time.monotonic_ns()
+            cache_result = self._try_login_from_cache(login_digest)
 
-            # check for cache failed login
-            cache_failed_entry = self._cache_failed.get(login_digest)
-            if cache_failed_entry:
-                # login+password found in cache "failed"
-                _type = _type + "/cached"
-                self._cache_successful.cleanup()
-            else:
-                cache_successful_entry = self._cache_successful.get(login_digest)
-                if cache_successful_entry:
-                    # login found in cache "successful"
-                    (expiry_ns_cache, login_cache, groups_cache) = cache_successful_entry
-                    result = login_cache
-                    groups = groups_cache
+        try:
+            # subject backend call to concurrency limiter if no cache result was found
+            limiter_token = None
+            if self._limiter and not cache_result:
+                limiter_reason, limiter_token = self._limiter.try_to_acquire(login, login_digest)
+                if len(limiter_token) == 1:
+                    _type = _type + "/error:temp:concurrent-session-limit"
+                    # TODO: support HTTP error code 429 in case reason is on client side
+                    return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS
+                while len(limiter_token) == 2:
+                    if self._cache_logins:
+                        cache_result = self._try_login_from_cache(login_digest)
+                        if cache_result:
+                            break
+                    timeout = self._limiter_max_wait - (time.monotonic_ns() - monotonic_ns_begin) * 1e-9
+                    if (self._limiter.wait_to_acquire(limiter_token, timeout) == False
+                        or self._limiter_max_wait - (time.monotonic_ns() - monotonic_ns_begin) * 1e-9 < 0):
+                        _type = _type + "/error:temp:concurrent-session-limit"
+                        logger.notice("auth/login concurrent limit reached timeout: %.3f seconds", self._limiter_max_wait)
+                        return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS
+                    limiter_reason, limiter_token = self._limiter.try_to_acquire(login, login_digest, limiter_token)
+
+            if self._cache_logins is True:
+                if self._limiter and not cache_result:
+                    # need to check cache again to cover edge case
+                    cache_result = self._try_login_from_cache(login_digest)
+                if cache_result:
+                    result, groups = cache_result
                     _type = _type + "/cached"
-
-                if result == "":
+                else:
                     # verify login+password via configured backend
                     logger.debug("Login verification for user+password via backend %r: %r", _type, login)
                     try:
                         (result, groups) = self._login_ext_with_groups(login, password, context)
+                        backend_error = False
                     except Exception as e:
                         logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
                         _type = _type + "/error:perm:backend"
+                        backend_error = True
                     if result != "":
                         logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
                         # store successful login in cache
@@ -500,36 +580,25 @@ class BaseAuth:
                         logger.debug("Login successful cache for user set: %r -> %r", login, result)
                         if self._cache_failed.clear(login_digest):
                             logger.debug("Login failed cache for user cleared: %r", login)
-                    else:
+                    elif not backend_error:
+                        # must not store failed auth in cache if backend yielded an exception
                         logger.debug("Login failed for user+password via backend: %r", login)
                         self._cache_failed.set_or_refresh(login_digest, login)
                         logger.debug("Login failed cache for user set: %r", login)
-        else:
-            # self._cache_logins is False
-            logger.debug("Login verification for user+password via backend %r: %r", _type, login)
-            try:
-                (result, groups) = self._login_ext_with_groups(login, password, context)
-            except Exception as e:
-                logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
-                _type = _type + "/error:perm:backend"
-            if result != "":
-                logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
+            else:
+                # self._cache_logins is False
+                logger.debug("Login verification for user+password via backend %r: %r", _type, login)
+                try:
+                    (result, groups) = self._login_ext_with_groups(login, password, context)
+                except Exception as e:
+                    logger.error("auth/login permanent error of backend %r: %r %r", _type, login, e)
+                    _type = _type + "/error:perm:backend"
+                if result != "":
+                    logger.debug("Login successful for user+password via backend %r: %r -> %r; groups: %r", _type, login, result, groups)
 
-        if self._active_limiter:
-            # decrease counters
-            self._lock.acquire()
-            self._active -= 1
-            if login in self._active_logins:
-                if self._active_logins[login] > 0:
-                    self._active_logins[login] -= 1
-            if login_digest in self._active_logins_digest:
-                if self._active_logins_digest[login_digest] > 0:
-                    self._active_logins_digest[login_digest] -= 1
-            # TODO: cleanup old entries in self._active_logins
-            # TODO: cleanup old entries in self._active_logins_digest
-            self._lock.release()
-
-        # finally
+        finally:
+            if self._limiter and limiter_token:
+                self._limiter.release(limiter_token)
         if result == "":
             self._sleep_for_constant_exec_time(monotonic_ns_begin)
         return (result, groups, _type)
