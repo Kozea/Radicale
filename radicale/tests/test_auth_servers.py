@@ -60,8 +60,9 @@ except ModuleNotFoundError:
     pass
 
 
-def _principal(test: BaseTest, login: str, check: int = 207) -> str:
-    _, responses = test.propfind("/", """\
+def _principal(test: BaseTest, login: str, check: int = 207, *,
+               path: str = "/") -> str:
+    _, responses = test.propfind(path, """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
     <prop>
@@ -70,7 +71,7 @@ def _principal(test: BaseTest, login: str, check: int = 207) -> str:
 </propfind>""", login=login, check=check)
     if check != 207:
         return ""
-    response = responses["/"]
+    response = responses[path]
     assert not isinstance(response, int)
     status, prop = response["D:current-user-principal"]
     assert status == 200
@@ -356,7 +357,7 @@ class TestAuthServers(BaseTest):
         directory = _MockLdap()
         directory.add(
             OWNER_DN,
-            uid="Owner",
+            uid="OwnerAlias",
             cn="owner",
             userPassword="secret",
             memberOf=[
@@ -382,6 +383,12 @@ class TestAuthServers(BaseTest):
             cache_failed_logins_expiry="60",
         )
 
+        calendar_path = "/owner/private/"
+        storage = self.application._storage
+        with storage.acquire_lock("w"):
+            storage.create_collection("/owner/")
+            storage.create_collection(calendar_path, props={"tag": "VCALENDAR"})
+
         auth_any: Any = self.application._auth
         verify = auth_any._login_ext_with_groups
         login = auth_any.login
@@ -403,21 +410,24 @@ class TestAuthServers(BaseTest):
         monkeypatch.setattr(auth_any, "login", record_login)
 
         with directory.patch():
-            # Fresh request: authenticate "Owner", expose mapped "owner".
-            assert _principal(self, "Owner:secret") == "/owner/"
+            # Fresh request: authenticate "OwnerAlias", expose mapped "owner".
+            assert _principal(self, "OwnerAlias:secret", path=calendar_path) == "/owner/"
             assert returned_identities == [
                 ("owner", {"family", "staff"}),
             ]
-            assert backend_calls == ["Owner"]
+            assert backend_calls == ["OwnerAlias"]
 
             # Same request again: mapping and groups must be preserved.
-            assert _principal(self, "Owner:secret") == "/owner/"
+            assert _principal(self, "OwnerAlias:secret", path=calendar_path) == "/owner/"
             assert returned_identities == [
                 ("owner", {"family", "staff"}),
                 ("owner", {"family", "staff"}),
             ]
             assert backend_calls == (
-                ["Owner"] if cache_logins else ["Owner", "Owner"])
+                ["OwnerAlias"] if cache_logins else ["OwnerAlias", "OwnerAlias"])
+
+            with storage.acquire_lock("r"):
+                assert next(iter(storage.discover("/OwnerAlias/")), None) is None
 
             assert directory.servers[0] == {}
 
