@@ -898,6 +898,8 @@ Solutions:
 
 The maximum number of parallel connections. Set to `0` to disable the limit.
 
+See also concurrency limiter settings in the `[auth]` section.
+
 Default: `8`
 
 ##### delay_on_error
@@ -1127,7 +1129,8 @@ backend independently. When both `cache_logins` and  `concurrency_limit_enabled`
 the concurrency limiter will only allow one parallel backend verification for the same
 credential set to call the backend at any time and subsequent requests will wait until the
 first request has had a chance to populate the cache, which can then reuse the cached result.
-Subsequent cache hits bypass the limiter.
+For this to work, neither `cache_successful_logins_expiry` nor `cache_failed_logins_expiry`
+should be set to `0`. Subsequent cache hits bypass the limiter.
 
 Default: `False`
 
