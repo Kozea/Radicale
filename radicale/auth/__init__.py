@@ -289,11 +289,7 @@ class BaseAuth:
     _secret_salt: str                 # persistent over runtime
     _cache_logins: bool
     _cache_successful: AuthCache
-    _cache_successful_logins_expiry: int
-    _cache_successful_logins_max_count: int
     _cache_failed: AuthCache
-    _cache_failed_logins_expiry: int
-    _cache_failed_logins_max_count: int
     _limiter: Optional[_AuthLimiter]
     _limiter_max_wait: float
     _lock: threading.Lock
@@ -330,34 +326,32 @@ class BaseAuth:
             logger.info("auth.cache_logins: %s (but not required for type '%s' and disabled therefore)", self._cache_logins, self._type)
             self._cache_logins = False
         if self._cache_logins is True:
-            self._cache_successful_logins_expiry = configuration.get("auth", "cache_successful_logins_expiry")
-            if self._cache_successful_logins_expiry < 0:
-                raise RuntimeError("self._cache_successful_logins_expiry cannot be < 0")
-            self._cache_failed_logins_expiry = configuration.get("auth", "cache_failed_logins_expiry")
-            if self._cache_failed_logins_expiry < 0:
-                raise RuntimeError("self._cache_failed_logins_expiry cannot be < 0")
-            self._cache_successful_logins_max_count = configuration.get("auth", "cache_successful_logins_max_count")
-            if self._cache_successful_logins_max_count < 0:
-                raise RuntimeError("self._cache_successful_logins_max_count cannot be < 0")
-            self._cache_failed_logins_max_count = configuration.get("auth", "cache_failed_logins_max_count")
-            if self._cache_failed_logins_max_count < 0:
-                raise RuntimeError("self._cache_failed_logins_max_count cannot be < 0")
-            logger.info("auth.cache_successful_logins_expiry: %s seconds", self._cache_successful_logins_expiry)
-            logger.info("auth.cache_failed_logins_expiry: %s seconds", self._cache_failed_logins_expiry)
-            logger.info("auth.cache_successful_logins_max_count: %s", self._cache_successful_logins_max_count)
-            logger.info("auth.cache_failed_logins_max_count: %s", self._cache_failed_logins_max_count)
-            if ((self._cache_successful_logins_max_count == 0 or self._cache_successful_logins_expiry == 0)
-                and (self._cache_failed_logins_max_count == 0 or self._cache_failed_logins_expiry == 0)):
+            cache_successful_logins_expiry = configuration.get("auth", "cache_successful_logins_expiry")
+            if cache_successful_logins_expiry < 0:
+                raise RuntimeError("cache_successful_logins_expiry cannot be < 0")
+            cache_failed_logins_expiry = configuration.get("auth", "cache_failed_logins_expiry")
+            if cache_failed_logins_expiry < 0:
+                raise RuntimeError("cache_failed_logins_expiry cannot be < 0")
+            cache_successful_logins_max_count = configuration.get("auth", "cache_successful_logins_max_count")
+            if cache_successful_logins_max_count < 0:
+                raise RuntimeError("cache_successful_logins_max_count cannot be < 0")
+            cache_failed_logins_max_count = configuration.get("auth", "cache_failed_logins_max_count")
+            if cache_failed_logins_max_count < 0:
+                raise RuntimeError("cache_failed_logins_max_count cannot be < 0")
+            logger.info("auth.cache_successful_logins_expiry: %s seconds", cache_successful_logins_expiry)
+            logger.info("auth.cache_failed_logins_expiry: %s seconds", cache_failed_logins_expiry)
+            logger.info("auth.cache_successful_logins_max_count: %s", cache_successful_logins_max_count)
+            logger.info("auth.cache_failed_logins_max_count: %s", cache_failed_logins_max_count)
+            if ((cache_successful_logins_max_count == 0 or cache_successful_logins_expiry == 0)
+                and (cache_failed_logins_max_count == 0 or cache_failed_logins_expiry == 0)):
                 logger.notice("Both successful and failed login cache have TTL = 0 and/or max_count = 0; therefore disabling cache")
                 self._cache_logins = False
         if self._cache_logins is True:
             # cache init
-            self._cache_successful = AuthCache("successful", self._cache_successful_logins_max_count, self._cache_successful_logins_expiry)
+            self._cache_successful = AuthCache("successful", cache_successful_logins_max_count, cache_successful_logins_expiry)
             logger.trace("BaseAuth._cache_successful = %r", self._cache_successful)
-            self._cache_failed = AuthCache("failed", self._cache_failed_logins_max_count, self._cache_failed_logins_expiry)
+            self._cache_failed = AuthCache("failed", cache_failed_logins_max_count, cache_failed_logins_expiry)
             logger.trace("BaseAuth._cache_failed = %r", self._cache_failed)
-
-
         limiter_enabled = configuration.get("auth", "concurrency_limit_enabled")
         logger.info("auth.concurrency_limit_enabled: %s", limiter_enabled)
         if limiter_enabled:
