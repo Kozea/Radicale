@@ -473,7 +473,9 @@ def test_cached_failure_does_not_pass_through_failure_padding(clock):
     context = auth.AuthContext()
     padding_calls = []
 
-    backend._sleep_for_constant_exec_time = padding_calls.append
+    def record_padding(monotonic_ns_begin, admission_wait_ns=0):
+        padding_calls.append((monotonic_ns_begin, admission_wait_ns))
+    backend._sleep_for_constant_exec_time = record_padding
 
     assert backend.login("alias", "wrong", context)[0] == ""
     assert backend.login("alias", "wrong", context)[0] == ""
@@ -803,5 +805,80 @@ def test_get_retains_snapshot_after_concurrent_change(clock, operation):
     if operation == "evict":
         assert cache.get("other") == ("other-user", {"other-group"})
         assert cache._items["other"]._expiry_ns == 10 * NS
+
+
+@pytest.mark.parametrize(
+    "admission_ms, processing_ms, expected_target, expected_sleeps",
+    [
+        (4000, 20, 0.100, []),
+        (40, 20, 0.100, [0.040]),
+        (80, 20, 0.100, []),
+        (4000, 120, 0.120, []),
+    ],
+    ids=["over-budget", "partial-budget", "exact-budget", "learn-slow-backend"],
+)
+def test_failure_padding_accounts_for_admission_time(
+        clock, admission_ms, processing_ms, expected_target, expected_sleeps):
+    backend = object.__new__(auth.BaseAuth)
+    backend._lock = threading.Lock()
+    backend._failed_auth_delay = 0.100
+    started_ns = clock.monotonic_ns()
+    clock.ns += (admission_ms + processing_ms) * 1_000_000
+
+    backend._sleep_for_constant_exec_time(
+        started_ns, admission_wait_ns=admission_ms * 1_000_000,
+    )
+
+    assert backend._failed_auth_delay == pytest.approx(expected_target)
+    assert clock.sleeps == pytest.approx(expected_sleeps)
+
+
+def test_login_excludes_all_admission_waits_from_learned_padding(clock, monkeypatch):
+    backend = _backend(
+        concurrency_limit_enabled="true",
+        concurrency_total_limit="3",
+        concurrency_active_limit="2",
+        concurrency_per_user_limit="1",
+        concurrency_wait_timeout="5.0",
+    )
+    backend._failed_auth_delay = 0.100
+    limiter = backend._limiter
+    assert limiter is not None
+
+    reason, holder = limiter.try_to_acquire("alias", "held-digest")
+    assert reason == 0
+    reason, unrelated = limiter.try_to_acquire("other", "other-digest")
+    assert reason == 0
+
+    # The first release wakes the waiter but leaves its per-login slot
+    # occupied. The second release lets it enter the backend.
+    releases = iter((unrelated, holder))
+    real_wait = limiter.wait_to_acquire
+    wait_count = 0
+
+    def wait_and_release(token, timeout):
+        nonlocal wait_count
+        wait_count += 1
+        assert timeout > 0
+        clock.advance(2)
+        limiter.release(next(releases))
+        return real_wait(token, 0)
+
+    verify = backend._login_ext_with_groups
+
+    def reject_after_processing(login, password, context):
+        clock.ns += 20_000_000
+        return verify(login, password, context)
+
+    monkeypatch.setattr(limiter, "wait_to_acquire", wait_and_release)
+    monkeypatch.setattr(backend, "_login_ext_with_groups", reject_after_processing)
+
+    assert backend.login("alias", "wrong", auth.AuthContext()) == (
+        "", set(), "htpasswd",
+    )
+    assert wait_count == 2
+    assert backend.calls == [("alias", "wrong")]
+    assert backend._failed_auth_delay == pytest.approx(0.100)
+    assert clock.sleeps == []
 
 

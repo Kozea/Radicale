@@ -443,7 +443,7 @@ class BaseAuth:
         # override this method instead of _login() if user_groups is supported
         return (self._login_ext(login, password, context), set([]))
 
-    def _sleep_for_constant_exec_time(self, monotonic_ns_begin: int):
+    def _sleep_for_constant_exec_time(self, monotonic_ns_begin: int, admission_wait_ns: int = 0):
         """Sleep some time to reach a constant execution time for failed logins
 
         Independent of time required by external backend or used digest methods
@@ -453,7 +453,8 @@ class BaseAuth:
         See also issue 591
 
         """
-        time_delta = (time.monotonic_ns() - monotonic_ns_begin) / 10**9
+        total_delta_ns = time.monotonic_ns() - monotonic_ns_begin
+        time_delta = (total_delta_ns - admission_wait_ns) / 10**9
         with self._lock:
             # avoid that another thread is changing global value at the same time
             failed_auth_delay = self._failed_auth_delay
@@ -467,9 +468,10 @@ class BaseAuth:
             logger.debug("Failed login constant execution time need increase of failed_auth_delay: %.9f -> %.9f sec", failed_auth_delay_old, failed_auth_delay)
             # sleep == 0
         else:
-            sleep = failed_auth_delay - time_delta
-            logger.debug("Failed login constant exection time alignment, sleeping: %.9f sec", sleep)
-            time.sleep(sleep)
+            sleep = failed_auth_delay - total_delta_ns / 10**9
+            if sleep > 0:
+                logger.debug("Failed login constant exection time alignment, sleeping: %.9f sec", sleep)
+                time.sleep(sleep)
 
     def _try_login_from_cache(self, login_digest):
         if self._cache_failed.get(login_digest):
@@ -526,8 +528,10 @@ class BaseAuth:
 
         try:
             # subject backend call to concurrency limiter if no cache result was found
+            admission_wait_ns = 0
             limiter_token = None
             if self._limiter and not cache_result:
+                admission_start_ns = time.monotonic_ns()
                 limiter_reason, limiter_token = self._limiter.try_to_acquire(login, login_digest)
                 if len(limiter_token) == 1:
                     _type = _type + "/error:temp:concurrent-session-limit"
@@ -545,6 +549,7 @@ class BaseAuth:
                         logger.notice("auth/login concurrent limit reached timeout: %.3f seconds", self._limiter_max_wait)
                         return (result, groups, _type)  # still NO_LOGIN_NO_GROUPS
                     limiter_reason, limiter_token = self._limiter.try_to_acquire(login, login_digest, limiter_token)
+                admission_wait_ns = time.monotonic_ns() - admission_start_ns
 
             if self._cache_logins and self._limiter and (cache_result is None):
                 # need to check cache again in case it was populated during admission
@@ -578,5 +583,5 @@ class BaseAuth:
             if self._limiter and limiter_token:
                 self._limiter.release(limiter_token)
         if result == "" and (cache_result is None):
-            self._sleep_for_constant_exec_time(monotonic_ns_begin)
+            self._sleep_for_constant_exec_time(monotonic_ns_begin, admission_wait_ns)
         return (result, groups, _type)
