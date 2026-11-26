@@ -577,6 +577,6 @@ class BaseAuth:
         finally:
             if self._limiter and limiter_token:
                 self._limiter.release(limiter_token)
-        if result == "":
+        if result == "" and (cache_result is None):
             self._sleep_for_constant_exec_time(monotonic_ns_begin)
         return (result, groups, _type)
