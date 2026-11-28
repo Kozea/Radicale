@@ -2773,8 +2773,9 @@ Default: `99`
 Radicale has been tested with:
 
 * [Android](https://android.com/) with
-  [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid) or
-  [KashCal](https://f-droid.org/packages/org.onekash.kashcal),
+  [DAVx⁵](https://www.davx5.com/) (formerly DAVdroid),
+  [KashCal](https://f-droid.org/packages/org.onekash.kashcal) or
+  [DAVsky](https://rypox.com/davsky),
 * [OneCalendar](https://www.onecalendar.nl/)
 * [GNOME Calendar](https://wiki.gnome.org/Apps/Calendar),
   [Contacts](https://wiki.gnome.org/Apps/Contacts) and
@@ -2809,6 +2810,13 @@ failures. In these cases, you want to make sure the Radicale server is
 Enter the URL of the Radicale server (e.g. `http://localhost:5232`) and your
 username. DAVx⁵ will show all existing calendars and address books and you
 can create new ones.
+
+#### DAVsky
+
+Add an account and choose _Radicale_ as the provider, then enter the address of the Radicale server (e.g. `https://yourdomain:5232`), your username and your password.
+DAVsky lists all existing calendars and address books, you choose which ones to sync, and they show up in the Android calendar and contacts apps.
+A step-by-step guide with screenshots is on the
+[DAVsky website](https://rypox.com/davsky/radicale-en.html).
 
 #### OneCalendar
 
