@@ -1,6 +1,14 @@
 # Changelog
 
 ## 3.9.3.dev
+* Add: [auth] option to limit concurrent authentication backend calls with configurable limits for total active and waiting requests, active checks per login, and wait time
+* Change: [auth] when both `cache_logins` and `concurrency_limit_enabled` are enabled, cache hits bypass the limiter and concurrent requests with the same credentials are coordinated so only one calls the backend
+* Change: [auth] reimplement cache in class AuthCache using OrderedDict: consistent and more efficient eviction/pruning of expired entries upon each authentication call
+* Add: [auth] options `cache_successful_logins_max_count` and `cache_failed_logins_max_count`
+* Change: [auth] cache ttl/expiry clock now starts after the authentication call (not before)
+* Change: [auth] use process-lifetime random constant secrets.token_urlsafe() instead of time to salt cache digest
+* Fix: [auth] cache now honors user name set by LDAP if ldap_user_attribute is set
+* Fix: [auth] uses time.monotonic_ns instead of time.time_ns
 * Fix: Docker images include the `oauth2` and `rabbitmq` extras again (`requests` and `pika` are no longer core dependencies since 3.9.1)
 * Fix: sharing update rejects a JSON `null` path with `400` and treats JSON `null` properties or actions as a clear. Those values used to crash the request with HTTP 500
 * Fix: sharing hide, unhide, enable, and disable report a failed update as `400 Internal Error`. The same failure on update and delete was already `400`, and these actions used to answer `200`

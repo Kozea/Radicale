@@ -86,6 +86,9 @@ INSUFFICIENT_STORAGE: types.WSGIResponse = (
 INTERNAL_SERVER_ERROR: types.WSGIResponse = (
     client.INTERNAL_SERVER_ERROR, (("Content-Type", "text/plain"),),
     "A server error occurred.  Please contact the administrator.", None)
+SERVICE_UNAVAILABLE: types.WSGIResponse = (
+    client.SERVICE_UNAVAILABLE, (("Content-Type", "text/plain"),),
+    "Service is currently not available.  Please try later.", None)
 
 DAV_HEADERS: str = "1, 2, 3, calendar-access, addressbook, extended-mkcol"
 

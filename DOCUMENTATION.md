@@ -905,6 +905,8 @@ Solutions:
 
 The maximum number of parallel connections. Set to `0` to disable the limit.
 
+See also concurrency limiter settings in the `[auth]` section.
+
 Default: `8`
 
 ##### delay_on_error
@@ -1127,10 +1129,28 @@ Default: `none` _(< 3.5.0)_ / `denyall` _(>= 3.5.0)_
 
 _(>= 3.4.0)_
 
-Cache successful/failed logins until expiration time. Enable this to avoid
-overload of authentication backends.
+Cache successful/failed logins to reduce repeated requests to authentication backends.
+Once expired, an entry can no longer be reused. However, expired entries may remain in memory
+until a later request triggers cleanup.
+
+To more effectively reduce backend load, set `concurrency_limit_enabled` to `True` (see below).
+Without the limiter, requests with the same credentials can call the backend independently if
+they arrive before a result is cached.
+
+When both `cache_logins` and  `concurrency_limit_enabled` are `True`, only one backend
+verification per credential set will run at a time. Subsequent requests will wait until the first
+request finishes. If the first request successfully populated the cache, the later requests will
+then use the cached result. Requests that find a cache hit on arrival will bypass the limiter.
+For this to work, none of the cache expiries or capacities should be set to `0`. Furthermore,
+`concurrency_wait_timeout` should be longer than the maximum expected duration of a backend
+authentication, so requests have enough time to wait for cache population without timing out
+and receiving a temporary authentication error.
 
 Default: `False`
+
+Note that certain options (e.g. setting expiry and/or capacity for both caches to
+`0` or using a backend that does not require caching, e.g., `remote_user`) will
+automatically disable the cache even when `cache_logins`  is set to `True`.
 
 ##### cache_successful_logins_expiry
 
@@ -1148,6 +1168,76 @@ Expiration time of caching failed logins in seconds
 
 Default: `90`
 
+##### cache_successful_logins_max_count
+
+_(>= 3.9.3)_
+
+Maximum number of successful logins that can be stored in the cache at the same time. When the cache
+reaches capacity and a new item needs to be stored, the oldest item will be evicted even if it is not
+yet expired. Setting this option to zero will deactivate caching of successful logins.
+
+Note that this option limits the number of cache entries, not directly the amount of memory. A size
+of <1kB per entry can usually be expected, but long usernames and membership in several groups can
+lead to higher memory consumption per entry.
+
+Default: `1000`
+
+##### cache_failed_logins_max_count
+
+_(>= 3.9.3)_
+
+Maximum number of failed logins that can be stored in the cache at the same time. When the cache
+reaches capacity and a new item needs to be stored, the oldest item will be evicted even if it is not
+yet expired. Setting this option to zero will deactivate caching of failed logins.
+
+Default: `1000`
+
+##### concurrency_limit_enabled
+
+Limit the number of requests that can check passwords concurrently.
+Each authentication instance has its own limits.
+
+Default: `False`
+
+##### concurrency_total_limit
+
+Maximum number of requests that can be waiting for or performing a backend authentication check
+at the same time. When this limit is reached, a new request that needs a backend check receives
+a temporary authentication error, which bypasses execution-time padding, so the server stays
+responsive. Login cache (see `cache_logins`) hits bypass this limit.
+
+Set this below `[server] max_connections`, so there is capacity to actually reject additional
+requests in this manner and to process requests with cached credentials.
+
+Default: `6`
+
+##### concurrency_active_limit
+
+Maximum number of requests that can be performing a backend authentication check at the same
+time. When this limit is reached but `concurrency_total_limit` is not, further requests will
+wait until a previous authentication backend call returns.
+
+Default: `4`
+
+##### concurrency_per_user_limit
+
+Maximum number of simultaneous backend password checks for one normalized login name
+(regardless of the password supplied).
+
+Default: `2`
+
+##### concurrency_wait_timeout
+
+Maximum time in seconds a request may wait for permission to start a backend check.
+A request that has already called the backend can continue past this timeout.
+A request that times out while waiting will receive a temporary authentication error.
+
+Set to `0` to allow only immediate admission. When `cache_logins` is enabled, it is
+recommended to set a timeout that is longer than the maximum expected duration of a
+backend authentication call.
+
+Default: `5.0`
+
 ##### htpasswd_filename
 
 Path to the htpasswd file.
@@ -1164,7 +1254,7 @@ Available methods:
 
 * `plain`  
   Passwords are stored in plaintext.
-  This is not recommended. as it is obviously **insecure!**
+  This is not recommended as it is obviously **insecure!**
   The htpasswd file for this can be created by hand and looks like:
 
   ```htpasswd
@@ -1283,6 +1373,10 @@ ldap_user_attribute = cn
 Even for simple filter setups, it is recommended to set it in order to get usernames exactly
 as they are stored in LDAP and to avoid inconsistencies in the upper-/lower-case spelling of the
 login names.
+
+Since 3.9.3, cached logins use the username returned by LDAP. In earlier versions, only backend
+authentication would return the mapped username while cached authentications would use the cached
+login name as provided by the client.
 
 Default: (unset, in which case the login name is directly used as the username)
 

@@ -65,8 +65,9 @@ except ModuleNotFoundError:
     pass
 
 
-def _principal(test: BaseTest, login: str, check: int = 207) -> str:
-    _, responses = test.propfind("/", """\
+def _principal(test: BaseTest, login: str, check: int = 207, *,
+               path: str = "/") -> str:
+    _, responses = test.propfind(path, """\
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:">
     <prop>
@@ -75,7 +76,7 @@ def _principal(test: BaseTest, login: str, check: int = 207) -> str:
 </propfind>""", login=login, check=check)
     if check != 207:
         return ""
-    response = responses["/"]
+    response = responses[path]
     assert not isinstance(response, int)
     status, prop = response["D:current-user-principal"]
     assert status == 200
@@ -364,6 +365,91 @@ class TestAuthServers(BaseTest):
             assert "staff" in user_groups
             assert "family" in user_groups
             assert directory.servers[0] == {}
+            assert _principal(self, "a(b):secret") == quote("/a(b)/")
+            assert _principal(self, "a*:secret", check=401) == ""
+
+    @pytest.mark.skipif(skip_ldap3 is True, reason="No LDAP module 'ldap3' found")
+    @pytest.mark.parametrize("cache_logins", [False, True])
+    def test_ldap3_login_cache_preserves_mapped_identity_and_groups(
+            self, monkeypatch, cache_logins) -> None:
+        directory = _MockLdap()
+        directory.add(
+            OWNER_DN,
+            uid="OwnerAlias",
+            cn="owner",
+            userPassword="secret",
+            memberOf=[
+                "cn=family,ou=groups,dc=example,dc=com",
+                "cn=staff,ou=groups,dc=example,dc=com",
+            ],
+        )
+        directory.add(
+            "uid=ab,ou=people,dc=example,dc=com",
+            uid="a(b)",
+            cn="a(b)",
+            userPassword="secret",
+        )
+        self._configure_ldap3(
+            ldap_user_attribute="cn",
+            ldap_groups_attribute="memberOf",
+            lc_username="False",
+            uc_username="False",
+            cache_logins=str(cache_logins),
+            cache_successful_logins_max_count="10",
+            cache_failed_logins_max_count="10",
+            cache_successful_logins_expiry="60",
+            cache_failed_logins_expiry="60",
+        )
+
+        calendar_path = "/owner/private/"
+        storage = self.application._storage
+        with storage.acquire_lock("w"):
+            storage.create_collection("/owner/")
+            storage.create_collection(calendar_path, props={"tag": "VCALENDAR"})
+
+        auth_any: Any = self.application._auth
+        verify = auth_any._login_ext_with_groups
+        login = auth_any.login
+        backend_calls = []
+        returned_identities = []
+
+        def record_verification(login_name, password, context):
+            backend_calls.append(login_name)
+            return verify(login_name, password, context)
+
+        def record_login(login_name, password, context):
+            result = login(login_name, password, context)
+            returned_identities.append(
+                (result[0], set(result[1])))
+            return result
+
+        monkeypatch.setattr(
+            auth_any, "_login_ext_with_groups", record_verification)
+        monkeypatch.setattr(auth_any, "login", record_login)
+
+        with directory.patch():
+            # Fresh request: authenticate "OwnerAlias", expose mapped "owner".
+            assert _principal(self, "OwnerAlias:secret", path=calendar_path) == "/owner/"
+            assert returned_identities == [
+                ("owner", {"family", "staff"}),
+            ]
+            assert backend_calls == ["OwnerAlias"]
+
+            # Same request again: mapping and groups must be preserved.
+            assert _principal(self, "OwnerAlias:secret", path=calendar_path) == "/owner/"
+            assert returned_identities == [
+                ("owner", {"family", "staff"}),
+                ("owner", {"family", "staff"}),
+            ]
+            assert backend_calls == (
+                ["OwnerAlias"] if cache_logins else ["OwnerAlias", "OwnerAlias"])
+
+            with storage.acquire_lock("r"):
+                assert next(iter(storage.discover("/OwnerAlias/")), None) is None
+
+            assert directory.servers[0] == {}
+
+            # Retain the original LDAP filter-escaping checks.
             assert _principal(self, "a(b):secret") == quote("/a(b)/")
             assert _principal(self, "a*:secret", check=401) == ""
 

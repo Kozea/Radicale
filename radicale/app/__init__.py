@@ -715,7 +715,14 @@ class Application(ApplicationPartDelete, ApplicationPartHead,
                 else:
                     logger.notice("Access to %r denied for %s", path, repr(user) if user else "anonymous user")
         else:
-            status, headers, answer, xml_request = httputils.NOT_ALLOWED
+            if info and "/error:temp" in info:
+                # flag from radicale/auth/__init__.py
+                status, headers, answer, xml_request = httputils.SERVICE_UNAVAILABLE
+            elif info and "/error:perm" in info:
+                # flag from radicale/auth/__init__.py
+                status, headers, answer, xml_request = httputils.INTERNAL_SERVER_ERROR
+            else:
+                status, headers, answer, xml_request = httputils.NOT_ALLOWED
 
         if ((status, headers, answer, xml_request) == httputils.NOT_ALLOWED and not user and
                 not path.startswith("/.token") and
